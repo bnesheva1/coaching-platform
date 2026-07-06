@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/app/actions";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -16,13 +16,6 @@ export default async function Home() {
       .eq("id", user.id)
       .single();
     profile = data;
-  }
-
-  async function signOut() {
-    "use server";
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-    redirect("/login");
   }
 
   return (

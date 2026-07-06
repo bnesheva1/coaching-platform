@@ -1,65 +1,26 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { SignupForm } from "./SignupForm";
 
-import { useActionState } from "react";
-import Link from "next/link";
-import { signup, type AuthFormState } from "./actions";
+export default async function SignupPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-const initialState: AuthFormState = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-export default function SignupPage() {
-  const [state, formAction, pending] = useActionState(signup, initialState);
+    redirect(
+      profile?.role === "practitioner"
+        ? "/practitioner-dashboard"
+        : "/client-dashboard",
+    );
+  }
 
-  return (
-    <main
-      style={{
-        maxWidth: 400,
-        margin: "4rem auto",
-        fontFamily: "sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-      }}
-    >
-      <h1>Sign up</h1>
-      <form
-        action={formAction}
-        style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-      >
-        <label>
-          Full name
-          <input name="fullName" type="text" required />
-        </label>
-        <label>
-          Email
-          <input name="email" type="email" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" required minLength={12} />
-        </label>
-        <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-          Must be at least 12 characters.
-        </p>
-        <fieldset>
-          <legend>I am a…</legend>
-          <label>
-            <input type="radio" name="role" value="client" defaultChecked />{" "}
-            Client
-          </label>
-          <br />
-          <label>
-            <input type="radio" name="role" value="practitioner" />{" "}
-            Practitioner
-          </label>
-        </fieldset>
-        {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
-        <button type="submit" disabled={pending}>
-          {pending ? "Creating account…" : "Sign up"}
-        </button>
-      </form>
-      <p>
-        Already have an account? <Link href="/login">Log in</Link>
-      </p>
-    </main>
-  );
+  return <SignupForm />;
 }

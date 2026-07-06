@@ -1,46 +1,26 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { LoginForm } from "./LoginForm";
 
-import { useActionState } from "react";
-import Link from "next/link";
-import { login, type AuthFormState } from "./actions";
+export default async function LoginPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-const initialState: AuthFormState = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(login, initialState);
+    redirect(
+      profile?.role === "practitioner"
+        ? "/practitioner-dashboard"
+        : "/client-dashboard",
+    );
+  }
 
-  return (
-    <main
-      style={{
-        maxWidth: 400,
-        margin: "4rem auto",
-        fontFamily: "sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-      }}
-    >
-      <h1>Log in</h1>
-      <form
-        action={formAction}
-        style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-      >
-        <label>
-          Email
-          <input name="email" type="email" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" required />
-        </label>
-        {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
-        <button type="submit" disabled={pending}>
-          {pending ? "Logging in…" : "Log in"}
-        </button>
-      </form>
-      <p>
-        Don&apos;t have an account? <Link href="/signup">Sign up</Link>
-      </p>
-    </main>
-  );
+  return <LoginForm />;
 }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function PractitionerDashboardPage() {
@@ -31,6 +32,9 @@ export default async function PractitionerDashboardPage() {
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>Practitioner Dashboard</h1>
+      <form action={signOut} style={{ marginBottom: "1.5rem" }}>
+        <button type="submit">Sign out</button>
+      </form>
       <ProfileForm
         initialBio={practitionerProfile?.bio ?? ""}
         initialSpecialties={practitionerProfile?.specialties ?? []}

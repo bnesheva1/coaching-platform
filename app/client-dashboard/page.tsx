@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/app/actions";
 
 export default async function ClientDashboardPage() {
   const supabase = await createClient();
@@ -24,6 +25,9 @@ export default async function ClientDashboardPage() {
   return (
     <main style={{ maxWidth: 400, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>Client Dashboard</h1>
+      <form action={signOut}>
+        <button type="submit">Sign out</button>
+      </form>
     </main>
   );
 }
