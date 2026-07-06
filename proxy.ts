@@ -1,0 +1,15 @@
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
+
+// Next.js 16 renamed the "middleware" file convention to "proxy" — this
+// runs on every matched request, before rendering, to refresh Supabase
+// auth cookies.
+export async function proxy(request: NextRequest) {
+  return updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
