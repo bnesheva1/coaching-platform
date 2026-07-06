@@ -27,7 +27,20 @@ export async function updateSession(request: NextRequest) {
 
   // Refreshes the auth token if it's expired — required so Server
   // Components always see a valid session.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const protectedPaths = ["/practitioner-dashboard", "/client-dashboard"];
+  const isProtectedPath = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path),
+  );
+
+  if (!user && isProtectedPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
   return response;
 }

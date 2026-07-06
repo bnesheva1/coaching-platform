@@ -36,7 +36,9 @@ export async function signup(
   // returns an active session immediately — otherwise the user has to
   // click the confirmation link first.
   if (data.session) {
-    redirect("/");
+    redirect(
+      role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
+    );
   }
 
   redirect("/signup/check-email");
