@@ -35,8 +35,11 @@ export default function SignupPage() {
         </label>
         <label>
           Password
-          <input name="password" type="password" required minLength={6} />
+          <input name="password" type="password" required minLength={12} />
         </label>
+        <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+          Must be at least 12 characters.
+        </p>
         <fieldset>
           <legend>I am a…</legend>
           <label>

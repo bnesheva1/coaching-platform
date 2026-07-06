@@ -14,6 +14,10 @@ export async function signup(
   const fullName = formData.get("fullName") as string;
   const role = formData.get("role") as string;
 
+  if (password.length < 12) {
+    return { error: "Password must be at least 12 characters." };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({
