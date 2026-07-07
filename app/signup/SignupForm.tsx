@@ -65,7 +65,7 @@ export function SignupForm() {
             type="text"
             required
             minLength={3}
-            pattern="[a-z0-9_-]+"
+            pattern="[a-z0-9_\-]+"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />

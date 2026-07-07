@@ -15,7 +15,7 @@ export default async function PractitionerDashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, display_name, username")
+    .select("role, display_name")
     .eq("id", user.id)
     .single();
 
@@ -25,7 +25,7 @@ export default async function PractitionerDashboardPage() {
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("bio, specialties, avatar_url")
+    .select("bio, specialties, avatar_url, username")
     .eq("id", user.id)
     .single();
 
@@ -36,7 +36,7 @@ export default async function PractitionerDashboardPage() {
         <button type="submit">Sign out</button>
       </form>
       <ProfileForm
-        username={profile?.username ?? null}
+        username={practitionerProfile?.username ?? null}
         initialDisplayName={profile?.display_name ?? ""}
         initialBio={practitionerProfile?.bio ?? ""}
         initialSpecialties={practitionerProfile?.specialties ?? []}
