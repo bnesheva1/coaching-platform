@@ -8,11 +8,11 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile: { role: string; full_name: string | null } | null = null;
+  let profile: { role: string; display_name: string | null } | null = null;
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("role, full_name")
+      .select("role, display_name")
       .eq("id", user.id)
       .single();
     profile = data;
@@ -24,7 +24,7 @@ export default async function Home() {
       {user ? (
         <>
           <p>
-            Signed in as <strong>{profile?.full_name || user.email}</strong>{" "}
+            Signed in as <strong>{profile?.display_name || user.email}</strong>{" "}
             ({profile?.role ?? "unknown role"})
           </p>
           <form action={signOut}>
