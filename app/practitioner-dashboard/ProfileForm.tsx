@@ -8,10 +8,14 @@ const SPECIALTY_OPTIONS = ["tarot", "astrology", "reiki", "coaching"];
 const initialState: ProfileFormState = null;
 
 export function ProfileForm({
+  username,
+  initialDisplayName,
   initialBio,
   initialSpecialties,
   initialAvatarUrl,
 }: {
+  username: string | null;
+  initialDisplayName: string;
   initialBio: string;
   initialSpecialties: string[];
   initialAvatarUrl: string | null;
@@ -28,6 +32,27 @@ export function ProfileForm({
         maxWidth: 400,
       }}
     >
+      {username && (
+        <p style={{ fontSize: "0.85rem", color: "#666" }}>
+          Your profile URL handle: <strong>@{username}</strong>
+        </p>
+      )}
+
+      <label>
+        Display name
+        <br />
+        <input
+          name="displayName"
+          type="text"
+          defaultValue={initialDisplayName}
+          style={{ width: "100%" }}
+        />
+      </label>
+      <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+        The public name shown on your profile — any language or script is
+        fine (unlike your username above, which is ASCII-only).
+      </p>
+
       <label>
         Bio
         <br />

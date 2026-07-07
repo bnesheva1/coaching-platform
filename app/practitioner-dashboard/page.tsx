@@ -15,7 +15,7 @@ export default async function PractitionerDashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, display_name, username")
     .eq("id", user.id)
     .single();
 
@@ -36,6 +36,8 @@ export default async function PractitionerDashboardPage() {
         <button type="submit">Sign out</button>
       </form>
       <ProfileForm
+        username={profile?.username ?? null}
+        initialDisplayName={profile?.display_name ?? ""}
         initialBio={practitionerProfile?.bio ?? ""}
         initialSpecialties={practitionerProfile?.specialties ?? []}
         initialAvatarUrl={practitionerProfile?.avatar_url ?? null}

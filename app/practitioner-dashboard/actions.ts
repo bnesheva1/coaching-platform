@@ -21,6 +21,7 @@ export async function saveProfile(
     return { error: "Not logged in." };
   }
 
+  const displayName = formData.get("displayName") as string;
   const bio = formData.get("bio") as string;
   const specialties = formData.getAll("specialties") as string[];
 
@@ -68,6 +69,15 @@ export async function saveProfile(
     // Cache-bust: the path never changes, so without this the browser
     // (or a CDN) may keep showing the old photo after it's replaced.
     payload.avatar_url = `${publicUrl}?t=${Date.now()}`;
+  }
+
+  const { error: displayNameError } = await supabase
+    .from("profiles")
+    .update({ display_name: displayName })
+    .eq("id", user.id);
+
+  if (displayNameError) {
+    return { error: displayNameError.message };
   }
 
   const { error } = await supabase
