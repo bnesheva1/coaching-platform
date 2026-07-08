@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { saveProfile, checkUsernameAvailability, type ProfileFormState } from "./actions";
-
-const SPECIALTY_OPTIONS = ["tarot", "astrology", "reiki", "coaching"];
+import specialties from "@/data/specialties.json";
 
 const initialState: ProfileFormState = null;
 
@@ -128,15 +127,15 @@ export function ProfileForm({
 
       <fieldset>
         <legend>Specialties</legend>
-        {SPECIALTY_OPTIONS.map((specialty) => (
-          <label key={specialty} style={{ display: "block" }}>
+        {specialties.map((specialty) => (
+          <label key={specialty.key} style={{ display: "block" }}>
             <input
               type="checkbox"
               name="specialties"
-              value={specialty}
-              defaultChecked={initialSpecialties.includes(specialty)}
+              value={specialty.key}
+              defaultChecked={initialSpecialties.includes(specialty.key)}
             />{" "}
-            {specialty}
+            {specialty.en}
           </label>
         ))}
       </fieldset>
