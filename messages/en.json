@@ -90,5 +90,13 @@
     "profilePhotoAlt": "Profile photo",
     "servicesTitle": "Services",
     "serviceDuration": "{minutes} min"
+  },
+  "Browse": {
+    "title": "Find a practitioner",
+    "searchLabel": "Search by name",
+    "specialtiesLabel": "Filter by specialty",
+    "filterButton": "Filter",
+    "clearFiltersLink": "Clear filters",
+    "noResults": "No practitioners found."
   }
 }
