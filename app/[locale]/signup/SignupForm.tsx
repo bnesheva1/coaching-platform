@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { signup, type AuthFormState } from "./actions";
 
 const initialState: AuthFormState = null;
 
 export function SignupForm() {
+  const t = useTranslations("Auth");
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   return (
@@ -20,48 +22,50 @@ export function SignupForm() {
         gap: "1rem",
       }}
     >
-      <h1>Sign up</h1>
+      <h1>{t("signupTitle")}</h1>
       <form
         action={formAction}
         style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
       >
         <label>
-          Display name
+          {t("displayNameLabel")}
           <input name="displayName" type="text" required />
         </label>
         <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-          Your public name — any language or script is fine.
+          {t("displayNameHint")}
         </p>
         <label>
-          Email
+          {t("emailLabel")}
           <input name="email" type="email" required />
         </label>
         <label>
-          Password
+          {t("passwordLabel")}
           <input name="password" type="password" required minLength={12} />
         </label>
         <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-          Must be at least 12 characters.
+          {t("passwordHint")}
         </p>
         <fieldset>
-          <legend>I am a…</legend>
+          <legend>{t("roleLegend")}</legend>
           <label>
             <input type="radio" name="role" value="client" defaultChecked />{" "}
-            Client
+            {t("roleClient")}
           </label>
           <br />
           <label>
             <input type="radio" name="role" value="practitioner" />{" "}
-            Practitioner
+            {t("rolePractitioner")}
           </label>
         </fieldset>
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         <button type="submit" disabled={pending}>
-          {pending ? "Creating account…" : "Sign up"}
+          {pending ? t("signupButtonPending") : t("signupButton")}
         </button>
       </form>
       <p>
-        Already have an account? <Link href="/login">Log in</Link>
+        {t.rich("hasAccountPrompt", {
+          login: (chunks) => <Link href="/login">{chunks}</Link>,
+        })}
       </p>
     </main>
   );

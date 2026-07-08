@@ -4,5 +4,28 @@
     "signedInAs": "Signed in as <strong>{name}</strong> ({role})",
     "signOut": "Sign out",
     "loggedOutPrompt": "<login>Log in</login> or <signup>sign up</signup>"
+  },
+  "Auth": {
+    "loginTitle": "Log in",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "loginButton": "Log in",
+    "loginButtonPending": "Logging in…",
+    "noAccountPrompt": "Don't have an account? <signup>Sign up</signup>",
+
+    "signupTitle": "Sign up",
+    "displayNameLabel": "Display name",
+    "displayNameHint": "Your public name — any language or script is fine.",
+    "passwordHint": "Must be at least 12 characters.",
+    "roleLegend": "I am a…",
+    "roleClient": "Client",
+    "rolePractitioner": "Practitioner",
+    "signupButton": "Sign up",
+    "signupButtonPending": "Creating account…",
+    "hasAccountPrompt": "Already have an account? <login>Log in</login>",
+    "passwordTooShort": "Password must be at least 12 characters.",
+
+    "checkEmailTitle": "Check your email",
+    "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in."
   }
 }

@@ -1,6 +1,7 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = { error: string } | null;
@@ -14,8 +15,10 @@ export async function signup(
   const displayName = formData.get("displayName") as string;
   const role = formData.get("role") as string;
 
+  const t = await getTranslations("Auth");
+
   if (password.length < 12) {
-    return { error: "Password must be at least 12 characters." };
+    return { error: t("passwordTooShort") };
   }
 
   const supabase = await createClient();
@@ -29,17 +32,25 @@ export async function signup(
   });
 
   if (error) {
+    // Supabase's own auth error messages (e.g. "User already
+    // registered") aren't ours to translate — see the same note in
+    // login/actions.ts.
     return { error: error.message };
   }
+
+  const locale = await getLocale();
 
   // If email confirmation is disabled on the Supabase project, signUp
   // returns an active session immediately — otherwise the user has to
   // click the confirmation link first.
   if (data.session) {
-    redirect(
-      role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
-    );
+    redirect({
+      href: role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
+      locale,
+    });
+    return null;
   }
 
-  redirect("/signup/check-email");
+  redirect({ href: "/signup/check-email", locale });
+  return null;
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { login, type AuthFormState } from "./actions";
 
 const initialState: AuthFormState = null;
 
 export function LoginForm() {
+  const t = useTranslations("Auth");
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
@@ -20,26 +22,28 @@ export function LoginForm() {
         gap: "1rem",
       }}
     >
-      <h1>Log in</h1>
+      <h1>{t("loginTitle")}</h1>
       <form
         action={formAction}
         style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
       >
         <label>
-          Email
+          {t("emailLabel")}
           <input name="email" type="email" required />
         </label>
         <label>
-          Password
+          {t("passwordLabel")}
           <input name="password" type="password" required />
         </label>
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         <button type="submit" disabled={pending}>
-          {pending ? "Logging in…" : "Log in"}
+          {pending ? t("loginButtonPending") : t("loginButton")}
         </button>
       </form>
       <p>
-        Don&apos;t have an account? <Link href="/signup">Sign up</Link>
+        {t.rich("noAccountPrompt", {
+          signup: (chunks) => <Link href="/signup">{chunks}</Link>,
+        })}
       </p>
     </main>
   );

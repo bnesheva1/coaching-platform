@@ -1,4 +1,5 @@
-import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
 
@@ -15,11 +16,11 @@ export default async function LoginPage() {
       .eq("id", user.id)
       .single();
 
-    redirect(
-      profile?.role === "practitioner"
-        ? "/practitioner-dashboard"
-        : "/client-dashboard",
-    );
+    const locale = await getLocale();
+    redirect({
+      href: profile?.role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
+      locale,
+    });
   }
 
   return <LoginForm />;

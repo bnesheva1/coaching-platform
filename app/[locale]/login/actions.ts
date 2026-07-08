@@ -1,6 +1,7 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = { error: string } | null;
@@ -20,6 +21,11 @@ export async function login(
   });
 
   if (error) {
+    // Supabase's own auth error messages (e.g. "Invalid login
+    // credentials") aren't ours to translate — they come from the Auth
+    // API directly, always in English, regardless of locale. Mapping
+    // every possible Supabase error code to a translated equivalent
+    // would be a separate, larger effort.
     return { error: error.message };
   }
 
@@ -29,9 +35,10 @@ export async function login(
     .eq("id", data.user.id)
     .single();
 
-  redirect(
-    profile?.role === "practitioner"
-      ? "/practitioner-dashboard"
-      : "/client-dashboard",
-  );
+  const locale = await getLocale();
+  redirect({
+    href: profile?.role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
+    locale,
+  });
+  return null;
 }
