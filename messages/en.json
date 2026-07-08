@@ -84,5 +84,11 @@
     "nameRequired": "Name is required.",
     "durationInvalid": "Duration must be a positive number of minutes.",
     "priceInvalid": "Enter a valid price."
+  },
+  "PublicProfile": {
+    "editProfile": "Edit profile",
+    "profilePhotoAlt": "Profile photo",
+    "servicesTitle": "Services",
+    "serviceDuration": "{minutes} min"
   }
 }

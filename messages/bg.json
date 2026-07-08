@@ -84,5 +84,11 @@
     "nameRequired": "Името е задължително.",
     "durationInvalid": "Продължителността е нужно да е положително число минути.",
     "priceInvalid": "Въведете валида цена."
+  },
+  "PublicProfile": {
+    "editProfile": "Редактирай профила",
+    "profilePhotoAlt": "Профилна снимка",
+    "servicesTitle": "Услуги",
+    "serviceDuration": "{minutes} мин."
   }
 }

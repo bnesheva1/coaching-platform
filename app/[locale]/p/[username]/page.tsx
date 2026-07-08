@@ -1,9 +1,13 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { getTranslations, getLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import specialties from "@/data/specialties.json";
 
-const specialtyLabels = new Map(specialties.map((s) => [s.key, s.en]));
+const INTL_LOCALES: Record<string, string> = {
+  bg: "bg-BG",
+  en: "en-US",
+};
 
 export default async function PublicProfilePage({
   params,
@@ -12,6 +16,13 @@ export default async function PublicProfilePage({
 }) {
   const { username } = await params;
   const normalizedUsername = username.toLowerCase();
+
+  const t = await getTranslations("PublicProfile");
+  const locale = await getLocale();
+  const intlLocale = INTL_LOCALES[locale] ?? "en-US";
+  const specialtyLabels = new Map(
+    specialties.map((s) => [s.key, s[locale as "en" | "bg"] ?? s.en]),
+  );
 
   const supabase = await createClient();
 
@@ -48,7 +59,7 @@ export default async function PublicProfilePage({
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
       {isOwner && (
         <p>
-          <Link href="/practitioner-dashboard">Edit profile</Link>
+          <Link href="/practitioner-dashboard">{t("editProfile")}</Link>
         </p>
       )}
 
@@ -56,7 +67,7 @@ export default async function PublicProfilePage({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={practitionerProfile.avatar_url}
-          alt={profile?.display_name || practitionerProfile.username || "Profile photo"}
+          alt={profile?.display_name || practitionerProfile.username || t("profilePhotoAlt")}
           style={{
             width: 120,
             height: 120,
@@ -83,13 +94,13 @@ export default async function PublicProfilePage({
 
       {services && services.length > 0 && (
         <section>
-          <h2>Services</h2>
+          <h2>{t("servicesTitle")}</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
             {services.map((service) => (
               <li key={service.id} style={{ marginBottom: "1rem" }}>
-                <strong>{service.name}</strong> — {service.duration_minutes}{" "}
-                min —{" "}
-                {new Intl.NumberFormat("en-US", {
+                <strong>{service.name}</strong> —{" "}
+                {t("serviceDuration", { minutes: service.duration_minutes })} —{" "}
+                {new Intl.NumberFormat(intlLocale, {
                   style: "currency",
                   currency: service.currency,
                 }).format(service.price_cents / 100)}
