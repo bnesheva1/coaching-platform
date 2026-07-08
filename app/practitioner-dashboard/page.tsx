@@ -36,7 +36,7 @@ export default async function PractitionerDashboardPage() {
         <button type="submit">Sign out</button>
       </form>
       <ProfileForm
-        username={practitionerProfile?.username ?? null}
+        initialUsername={practitionerProfile?.username ?? null}
         initialDisplayName={profile?.display_name ?? ""}
         initialBio={practitionerProfile?.bio ?? ""}
         initialSpecialties={practitionerProfile?.specialties ?? []}

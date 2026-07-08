@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { validateUsernameFormat } from "@/lib/validation/username";
 
 export type ProfileFormState = { error?: string; success?: boolean } | null;
 
@@ -22,6 +23,7 @@ export async function saveProfile(
   }
 
   const displayName = formData.get("displayName") as string;
+  const rawUsername = formData.get("username") as string;
   const bio = formData.get("bio") as string;
   const specialties = formData.getAll("specialties") as string[];
 
@@ -34,11 +36,33 @@ export async function saveProfile(
     bio: string;
     specialties: string[];
     avatar_url?: string;
+    username?: string;
   } = {
     id: user.id,
     bio,
     specialties,
   };
+
+  // Left blank, username is simply not touched — a practitioner without
+  // one yet is a valid, expected state, not an error.
+  if (rawUsername.trim()) {
+    const usernameResult = validateUsernameFormat(rawUsername);
+    if (!usernameResult.valid) {
+      return { error: usernameResult.reason };
+    }
+
+    // Exclude our own row — re-saving your own unchanged username must
+    // not report itself as taken.
+    const { data: taken } = await supabase.rpc("is_username_taken", {
+      candidate: usernameResult.normalized,
+      exclude_id: user.id,
+    });
+    if (taken) {
+      return { error: "That username is already taken." };
+    }
+
+    payload.username = usernameResult.normalized;
+  }
 
   if (avatarFile) {
     if (!ALLOWED_AVATAR_TYPES.includes(avatarFile.type)) {
@@ -90,4 +114,39 @@ export async function saveProfile(
 
   revalidatePath("/practitioner-dashboard");
   return { success: true };
+}
+
+export type UsernameAvailability =
+  | { available: true }
+  | { available: false; reason: string };
+
+export async function checkUsernameAvailability(
+  rawUsername: string,
+): Promise<UsernameAvailability> {
+  const result = validateUsernameFormat(rawUsername);
+  if (!result.valid) {
+    return { available: false, reason: result.reason };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { available: false, reason: "Not logged in." };
+  }
+
+  const { data: taken, error } = await supabase.rpc("is_username_taken", {
+    candidate: result.normalized,
+    exclude_id: user.id,
+  });
+
+  if (error) {
+    return { available: false, reason: "Couldn't check availability right now." };
+  }
+
+  return taken
+    ? { available: false, reason: "That username is already taken." }
+    : { available: true };
 }
