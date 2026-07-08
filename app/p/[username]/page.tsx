@@ -34,6 +34,7 @@ export default async function PublicProfilePage({
       .from("services")
       .select("id, name, description, duration_minutes, price_cents, currency")
       .eq("practitioner_id", practitionerProfile.id)
+      .eq("is_active", true)
       .order("created_at", { ascending: true }),
     supabase.auth.getUser(),
   ]);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
+import { ServicesSection } from "./ServicesSection";
 
 export default async function PractitionerDashboardPage() {
   const supabase = await createClient();
@@ -30,6 +31,12 @@ export default async function PractitionerDashboardPage() {
     .eq("id", user.id)
     .single();
 
+  const { data: services } = await supabase
+    .from("services")
+    .select("id, name, description, duration_minutes, price_cents, currency, is_active")
+    .eq("practitioner_id", user.id)
+    .order("created_at", { ascending: true });
+
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>Practitioner Dashboard</h1>
@@ -50,6 +57,7 @@ export default async function PractitionerDashboardPage() {
         initialSpecialties={practitionerProfile?.specialties ?? []}
         initialAvatarUrl={practitionerProfile?.avatar_url ?? null}
       />
+      <ServicesSection services={services ?? []} />
     </main>
   );
 }
