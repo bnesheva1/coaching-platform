@@ -1,0 +1,8 @@
+{
+  "HomePage": {
+    "title": "Coaching Platform",
+    "signedInAs": "Signed in as <strong>{name}</strong> ({role})",
+    "signOut": "Sign out",
+    "loggedOutPrompt": "<login>Log in</login> or <signup>sign up</signup>"
+  }
+}

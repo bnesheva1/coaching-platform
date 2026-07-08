@@ -1,0 +1,8 @@
+{
+  "HomePage": {
+    "title": "⚠️ NEEDS TRANSLATION: Coaching Platform",
+    "signedInAs": "⚠️ NEEDS TRANSLATION: Signed in as <strong>{name}</strong> ({role})",
+    "signOut": "Изход",
+    "loggedOutPrompt": "⚠️ NEEDS TRANSLATION: <login>Log in</login> or <signup>sign up</signup>"
+  }
+}
