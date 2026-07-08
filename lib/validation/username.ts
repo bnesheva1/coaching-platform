@@ -3,6 +3,7 @@ import {
   englishDataset,
   englishRecommendedTransformers,
 } from "obscenity";
+import { getTranslations } from "next-intl/server";
 import reservedSpecialtyWords from "@/data/reserved-specialty-words.json";
 
 // (a) Maintainable hardcoded list — platform/system terms that would be
@@ -85,30 +86,36 @@ export type UsernameValidationResult =
   | { valid: true; normalized: string }
   | { valid: false; reason: string };
 
-export function validateUsernameFormat(raw: string): UsernameValidationResult {
+// Async because the error messages need translating (getTranslations is
+// the Server-Action/Server-Component-safe way to do that, same as
+// everywhere else translated strings are produced outside of a rendered
+// component tree).
+export async function validateUsernameFormat(
+  raw: string,
+): Promise<UsernameValidationResult> {
   const normalized = normalizeUsername(raw);
+  const t = await getTranslations("Profile");
 
   if (normalized.length < MIN_USERNAME_LENGTH) {
     return {
       valid: false,
-      reason: `Username must be at least ${MIN_USERNAME_LENGTH} characters.`,
+      reason: t("usernameTooShort", { min: MIN_USERNAME_LENGTH }),
     };
   }
 
   if (!USERNAME_FORMAT.test(normalized)) {
     return {
       valid: false,
-      reason:
-        "Username can only contain lowercase letters, numbers, hyphens, and underscores.",
+      reason: t("usernameInvalidChars"),
     };
   }
 
   if (RESERVED_USERNAMES.has(normalized)) {
-    return { valid: false, reason: "That username is reserved and can't be used." };
+    return { valid: false, reason: t("usernameReserved") };
   }
 
   if (profanityMatcher.hasMatch(normalized)) {
-    return { valid: false, reason: "That username isn't allowed." };
+    return { valid: false, reason: t("usernameNotAllowed") };
   }
 
   return { valid: true, normalized };

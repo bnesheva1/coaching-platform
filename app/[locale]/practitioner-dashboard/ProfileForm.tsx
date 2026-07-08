@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { saveProfile, checkUsernameAvailability, type ProfileFormState } from "./actions";
 import specialties from "@/data/specialties.json";
 
@@ -26,6 +27,8 @@ export function ProfileForm({
   initialSpecialties: string[];
   initialAvatarUrl: string | null;
 }) {
+  const t = useTranslations("Profile");
+  const locale = useLocale() as "en" | "bg";
   const [state, formAction, pending] = useActionState(saveProfile, initialState);
   const [username, setUsername] = useState(initialUsername ?? "");
   const [lastResult, setLastResult] = useState<CheckResult | null>(null);
@@ -66,7 +69,7 @@ export function ProfileForm({
       }}
     >
       <label>
-        Username
+        {t("usernameLabel")}
         <br />
         <input
           name="username"
@@ -79,18 +82,16 @@ export function ProfileForm({
         />
       </label>
       <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-        Your ASCII URL handle — lowercase letters, numbers, hyphens, and
-        underscores only. Required before your profile can be found
-        publicly.
+        {t("usernameHint")}
       </p>
       {isChecking && (
         <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-          Checking availability…
+          {t("checkingAvailability")}
         </p>
       )}
       {isAvailable && (
         <p style={{ fontSize: "0.85rem", color: "green", marginTop: "-0.5rem" }}>
-          ✓ Available
+          {t("available")}
         </p>
       )}
       {unavailableReason && (
@@ -100,7 +101,7 @@ export function ProfileForm({
       )}
 
       <label>
-        Display name
+        {t("displayNameLabel")}
         <br />
         <input
           name="displayName"
@@ -110,12 +111,11 @@ export function ProfileForm({
         />
       </label>
       <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
-        The public name shown on your profile — any language or script is
-        fine (unlike your username above, which is ASCII-only).
+        {t("displayNameHint")}
       </p>
 
       <label>
-        Bio
+        {t("bioLabel")}
         <br />
         <textarea
           name="bio"
@@ -126,7 +126,7 @@ export function ProfileForm({
       </label>
 
       <fieldset>
-        <legend>Specialties</legend>
+        <legend>{t("specialtiesLegend")}</legend>
         {specialties.map((specialty) => (
           <label key={specialty.key} style={{ display: "block" }}>
             <input
@@ -135,19 +135,19 @@ export function ProfileForm({
               value={specialty.key}
               defaultChecked={initialSpecialties.includes(specialty.key)}
             />{" "}
-            {specialty.en}
+            {specialty[locale]}
           </label>
         ))}
       </fieldset>
 
       <label>
-        Profile photo
+        {t("photoLabel")}
         <br />
         {initialAvatarUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={initialAvatarUrl}
-            alt="Current profile"
+            alt={t("photoAlt")}
             style={{
               width: 100,
               height: 100,
@@ -162,10 +162,10 @@ export function ProfileForm({
       </label>
 
       {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
-      {state?.success && <p style={{ color: "green" }}>Saved!</p>}
+      {state?.success && <p style={{ color: "green" }}>{t("savedMessage")}</p>}
 
       <button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save profile"}
+        {pending ? t("saveButtonPending") : t("saveButton")}
       </button>
     </form>
   );

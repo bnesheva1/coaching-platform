@@ -1,18 +1,21 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
+import { getTranslations, getLocale } from "next-intl/server";
+import { redirect, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { ServicesSection } from "./ServicesSection";
 
 export default async function PractitionerDashboardPage() {
+  const t = await getTranslations("Dashboard");
+  const locale = await getLocale();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect({ href: "/login", locale });
+    return null;
   }
 
   const { data: profile } = await supabase
@@ -22,7 +25,8 @@ export default async function PractitionerDashboardPage() {
     .single();
 
   if (profile?.role !== "practitioner") {
-    redirect("/client-dashboard");
+    redirect({ href: "/client-dashboard", locale });
+    return null;
   }
 
   const { data: practitionerProfile } = await supabase
@@ -39,14 +43,14 @@ export default async function PractitionerDashboardPage() {
 
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      <h1>Practitioner Dashboard</h1>
+      <h1>{t("practitionerTitle")}</h1>
       <form action={signOut} style={{ marginBottom: "1.5rem" }}>
-        <button type="submit">Sign out</button>
+        <button type="submit">{t("signOut")}</button>
       </form>
       {practitionerProfile?.username && (
         <p>
           <Link href={`/p/${practitionerProfile.username}`}>
-            View your public profile
+            {t("viewPublicProfile")}
           </Link>
         </p>
       )}

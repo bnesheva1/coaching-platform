@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 
 export type ServiceFormState = { error?: string; success?: boolean } | null;
@@ -27,21 +28,22 @@ type ParsedServiceForm =
     }
   | { ok: false; error: string };
 
-function parseServiceForm(formData: FormData): ParsedServiceForm {
+async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> {
+  const t = await getTranslations("Services");
   const name = (formData.get("name") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
   const durationMinutes = parseInt(formData.get("durationMinutes") as string, 10);
   const rawPrice = formData.get("price") as string;
 
   if (!name) {
-    return { ok: false, error: "Name is required." };
+    return { ok: false, error: t("nameRequired") };
   }
   if (!Number.isInteger(durationMinutes) || durationMinutes <= 0) {
-    return { ok: false, error: "Duration must be a positive number of minutes." };
+    return { ok: false, error: t("durationInvalid") };
   }
   const priceCents = eurosToCents(rawPrice);
   if (priceCents === null) {
-    return { ok: false, error: "Enter a valid price." };
+    return { ok: false, error: t("priceInvalid") };
   }
 
   return { ok: true, name, description: description || null, durationMinutes, priceCents };
@@ -51,15 +53,16 @@ export async function createService(
   _prevState: ServiceFormState,
   formData: FormData,
 ): Promise<ServiceFormState> {
+  const t = await getTranslations("Services");
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "Not logged in." };
+    return { error: t("notLoggedIn") };
   }
 
-  const parsed = parseServiceForm(formData);
+  const parsed = await parseServiceForm(formData);
   if (!parsed.ok) {
     return { error: parsed.error };
   }
@@ -85,16 +88,17 @@ export async function updateService(
   _prevState: ServiceFormState,
   formData: FormData,
 ): Promise<ServiceFormState> {
+  const t = await getTranslations("Services");
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "Not logged in." };
+    return { error: t("notLoggedIn") };
   }
 
   const serviceId = formData.get("serviceId") as string;
-  const parsed = parseServiceForm(formData);
+  const parsed = await parseServiceForm(formData);
   if (!parsed.ok) {
     return { error: parsed.error };
   }

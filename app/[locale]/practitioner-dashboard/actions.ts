@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUsernameFormat } from "@/lib/validation/username";
 
@@ -13,13 +14,14 @@ export async function saveProfile(
   _prevState: ProfileFormState,
   formData: FormData,
 ): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Not logged in." };
+    return { error: t("notLoggedIn") };
   }
 
   const displayName = formData.get("displayName") as string;
@@ -46,7 +48,7 @@ export async function saveProfile(
   // Left blank, username is simply not touched — a practitioner without
   // one yet is a valid, expected state, not an error.
   if (rawUsername.trim()) {
-    const usernameResult = validateUsernameFormat(rawUsername);
+    const usernameResult = await validateUsernameFormat(rawUsername);
     if (!usernameResult.valid) {
       return { error: usernameResult.reason };
     }
@@ -58,7 +60,7 @@ export async function saveProfile(
       exclude_id: user.id,
     });
     if (taken) {
-      return { error: "That username is already taken." };
+      return { error: t("usernameAlreadyTaken") };
     }
 
     payload.username = usernameResult.normalized;
@@ -66,10 +68,10 @@ export async function saveProfile(
 
   if (avatarFile) {
     if (!ALLOWED_AVATAR_TYPES.includes(avatarFile.type)) {
-      return { error: "Photo must be a PNG, JPEG, or WebP image." };
+      return { error: t("photoInvalidType") };
     }
     if (avatarFile.size > MAX_AVATAR_BYTES) {
-      return { error: "Photo must be smaller than 2MB." };
+      return { error: t("photoTooLarge") };
     }
 
     // Fixed path per user (no extension) so re-uploading always overwrites
@@ -83,7 +85,7 @@ export async function saveProfile(
       });
 
     if (uploadError) {
-      return { error: `Photo upload failed: ${uploadError.message}` };
+      return { error: t("photoUploadFailed", { message: uploadError.message }) };
     }
 
     const {
@@ -123,7 +125,8 @@ export type UsernameAvailability =
 export async function checkUsernameAvailability(
   rawUsername: string,
 ): Promise<UsernameAvailability> {
-  const result = validateUsernameFormat(rawUsername);
+  const t = await getTranslations("Profile");
+  const result = await validateUsernameFormat(rawUsername);
   if (!result.valid) {
     return { available: false, reason: result.reason };
   }
@@ -134,7 +137,7 @@ export async function checkUsernameAvailability(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { available: false, reason: "Not logged in." };
+    return { available: false, reason: t("notLoggedIn") };
   }
 
   const { data: taken, error } = await supabase.rpc("is_username_taken", {
@@ -143,10 +146,10 @@ export async function checkUsernameAvailability(
   });
 
   if (error) {
-    return { available: false, reason: "Couldn't check availability right now." };
+    return { available: false, reason: t("availabilityCheckFailed") };
   }
 
   return taken
-    ? { available: false, reason: "That username is already taken." }
+    ? { available: false, reason: t("usernameAlreadyTaken") }
     : { available: true };
 }
