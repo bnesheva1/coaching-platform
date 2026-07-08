@@ -32,7 +32,7 @@ export default async function PublicProfilePage({
       .single(),
     supabase
       .from("services")
-      .select("id, name, description, duration_minutes, price")
+      .select("id, name, description, duration_minutes, price_cents, currency")
       .eq("practitioner_id", practitionerProfile.id)
       .order("created_at", { ascending: true }),
     supabase.auth.getUser(),
@@ -80,7 +80,11 @@ export default async function PublicProfilePage({
             {services.map((service) => (
               <li key={service.id} style={{ marginBottom: "1rem" }}>
                 <strong>{service.name}</strong> — {service.duration_minutes}{" "}
-                min — ${service.price}
+                min —{" "}
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: service.currency,
+                }).format(service.price_cents / 100)}
                 {service.description && (
                   <p style={{ margin: "0.25rem 0 0" }}>{service.description}</p>
                 )}
