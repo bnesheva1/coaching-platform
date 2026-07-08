@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import specialties from "@/data/specialties.json";
+
+const specialtyLabels = new Map(specialties.map((s) => [s.key, s.en]));
 
 export default async function PublicProfilePage({
   params,
@@ -69,7 +72,11 @@ export default async function PublicProfilePage({
       <p style={{ color: "#666" }}>@{practitionerProfile.username}</p>
 
       {practitionerProfile.specialties?.length > 0 && (
-        <p>{practitionerProfile.specialties.join(" · ")}</p>
+        <p>
+          {practitionerProfile.specialties
+            .map((key: string) => specialtyLabels.get(key) ?? key)
+            .join(" · ")}
+        </p>
       )}
 
       {practitionerProfile.bio && <p>{practitionerProfile.bio}</p>}
