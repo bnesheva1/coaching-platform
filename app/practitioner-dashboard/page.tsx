@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
@@ -35,6 +36,13 @@ export default async function PractitionerDashboardPage() {
       <form action={signOut} style={{ marginBottom: "1.5rem" }}>
         <button type="submit">Sign out</button>
       </form>
+      {practitionerProfile?.username && (
+        <p>
+          <Link href={`/p/${practitionerProfile.username}`}>
+            View your public profile
+          </Link>
+        </p>
+      )}
       <ProfileForm
         initialUsername={practitionerProfile?.username ?? null}
         initialDisplayName={profile?.display_name ?? ""}
