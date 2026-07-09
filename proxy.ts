@@ -46,6 +46,16 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // /auth/callback lives outside app/[locale] — it's a route handler, not
+  // a page, and was never meant to be locale-prefixed. Without this, the
+  // routing config below (localePrefix: "always") redirects it to
+  // /bg/auth/callback or /en/auth/callback, neither of which is a real
+  // route, breaking every magic-link/OAuth redirect into this app. This
+  // predates the rate-limiting work above — found while testing it.
+  if (request.nextUrl.pathname === "/auth/callback") {
+    return updateSession(request, NextResponse.next());
+  }
+
   const intlResponse = handleI18nRouting(request);
   return updateSession(request, intlResponse);
 }
