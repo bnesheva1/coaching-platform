@@ -1,8 +1,10 @@
 "use server";
 
-import { getLocale } from "next-intl/server";
+import { headers } from "next/headers";
+import { getTranslations, getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp, loginLimiter } from "@/lib/rate-limit";
 
 export type AuthFormState = { error: string } | null;
 
@@ -10,6 +12,14 @@ export async function login(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const t = await getTranslations("Auth");
+
+  const ip = getClientIp(await headers());
+  const { success } = await checkRateLimit(loginLimiter, ip);
+  if (!success) {
+    return { error: t("tooManyAttempts") };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 

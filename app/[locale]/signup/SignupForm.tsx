@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Link } from "@/i18n/navigation";
 import { signup, type AuthFormState } from "./actions";
 
@@ -57,6 +58,9 @@ export function SignupForm() {
             {t("rolePractitioner")}
           </label>
         </fieldset>
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+        )}
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         <button type="submit" disabled={pending}>
           {pending ? t("signupButtonPending") : t("signupButton")}

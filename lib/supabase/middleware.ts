@@ -1,14 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
-
-const localePattern = routing.locales.join("|");
-const localePrefixRegex = new RegExp(`^/(${localePattern})(?=/|$)`);
-
-function extractLocale(pathname: string): string | null {
-  const match = pathname.match(localePrefixRegex);
-  return match ? match[1] : null;
-}
+import { extractLocale, stripLocale } from "@/lib/locale-path";
 
 // `response` is whatever next-intl's own middleware already decided
 // (a locale redirect, or a pass-through) — we layer Supabase's session
@@ -50,7 +43,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
     : request.nextUrl.pathname;
 
   const locale = extractLocale(pathToCheck) ?? routing.defaultLocale;
-  const pathWithoutLocale = pathToCheck.replace(localePrefixRegex, "") || "/";
+  const pathWithoutLocale = stripLocale(pathToCheck);
 
   const protectedPaths = ["/practitioner-dashboard", "/client-dashboard"];
   const isProtectedPath = protectedPaths.some((path) =>

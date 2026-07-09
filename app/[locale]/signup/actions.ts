@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { getTranslations, getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 
 export type AuthFormState = { error: string } | null;
 
@@ -10,12 +12,19 @@ export async function signup(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const t = await getTranslations("Auth");
+
+  const ip = getClientIp(await headers());
+  const { success } = await checkRateLimit(signupLimiter, ip);
+  if (!success) {
+    return { error: t("tooManyAttempts") };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const displayName = formData.get("displayName") as string;
   const role = formData.get("role") as string;
-
-  const t = await getTranslations("Auth");
+  const captchaToken = formData.get("cf-turnstile-response") as string | null;
 
   if (password.length < 12) {
     return { error: t("passwordTooShort") };
@@ -28,6 +37,7 @@ export async function signup(
     password,
     options: {
       data: { display_name: displayName, role },
+      captchaToken: captchaToken ?? undefined,
     },
   });
 
