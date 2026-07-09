@@ -1,6 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { searchPractitioners } from "@/lib/practitioners/search";
+import { PractitionerSearchInput } from "@/components/PractitionerSearchInput";
 import specialtiesData from "@/data/specialties.json";
 
 const BIO_SNIPPET_LENGTH = 140;
@@ -39,11 +40,7 @@ export default async function BrowsePage({
         method="get"
         style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "2rem" }}
       >
-        <label>
-          {t("searchLabel")}
-          <br />
-          <input type="text" name="q" defaultValue={searchText} />
-        </label>
+        <PractitionerSearchInput defaultValue={searchText} />
 
         <fieldset>
           <legend>{t("specialtiesLabel")}</legend>

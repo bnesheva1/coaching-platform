@@ -93,10 +93,12 @@
   },
   "Browse": {
     "title": "Открий специалист",
-    "searchLabel": "Търси по име",
     "specialtiesLabel": "Филтрирай по специалност",
     "filterButton": "Филтрирай",
     "clearFiltersLink": "Изчисти филтрите",
     "noResults": "Няма открити резултати."
+  },
+  "Search": {
+    "label": "Търсене"
   }
 }
