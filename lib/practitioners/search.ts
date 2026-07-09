@@ -37,7 +37,7 @@ export async function searchPractitioners({
 
   const { data, error } = await supabase.rpc("search_practitioners", {
     specialty_keys: specialtyKeys && specialtyKeys.length > 0 ? specialtyKeys : null,
-    search_text: searchText?.trim() || null,
+    search_query: searchText?.trim() || null,
   });
 
   if (error) {
