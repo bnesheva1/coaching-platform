@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 
+// PGroonga's &@~ operator parses the input as a small query language
+// (supports -exclude, OR, quoted phrases, etc.) — an unbounded string is a
+// cheap way to make it do unnecessary work, so cap it here, the one place
+// all search callers go through.
+const MAX_SEARCH_LENGTH = 200;
+
 export type PractitionerSearchResult = {
   id: string;
   username: string;
@@ -35,13 +41,16 @@ export async function searchPractitioners({
 }): Promise<PractitionerSearchResult[]> {
   const supabase = await createClient();
 
+  const trimmedSearchText = searchText?.trim().slice(0, MAX_SEARCH_LENGTH) || null;
+
   const { data, error } = await supabase.rpc("search_practitioners", {
     specialty_keys: specialtyKeys && specialtyKeys.length > 0 ? specialtyKeys : null,
-    search_query: searchText?.trim() || null,
+    search_query: trimmedSearchText,
   });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("searchPractitioners failed:", error);
+    throw new Error("Unable to search practitioners right now.");
   }
 
   return (data ?? []).map((row: SearchPractitionersRow) => ({
