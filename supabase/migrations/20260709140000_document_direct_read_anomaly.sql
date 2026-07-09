@@ -1,0 +1,28 @@
+-- Documents an unexplained platform-level anomaly found while verifying
+-- the SECURITY INVOKER switch in 20260709130000: a direct anon REST read
+-- of this table (`select * from practitioner_search_documents` via
+-- PostgREST/supabase-js, bypassing the search_practitioners RPC) returns
+-- 0 rows with no error — even though the "Anyone can view practitioner
+-- search documents" policy (`using (true)`) is in place and the
+-- search_practitioners RPC, running as the same anon role under
+-- SECURITY INVOKER, successfully reads this same table (verified: it
+-- correctly matches active services and excludes inactive ones).
+--
+-- Ruled out: browser/session caching (reproduced in incognito with a
+-- fresh login) and a stale PostgREST schema cache (reproduced after
+-- `NOTIFY pgrst, 'reload schema'`). Root cause not identified.
+--
+-- This is not currently a security concern: it fails CLOSED, not open —
+-- the practical effect is that this table is MORE locked down than the
+-- policy alone would suggest, not less. Nothing in the app queries this
+-- table directly; only search_practitioners does, and that path is fully
+-- verified correct (see the adversarial regression suite run against a
+-- logged-out anon caller covering: inactive/hidden services, clients,
+-- username-less profiles, private-field exposure, specialty+search
+-- composition, and malformed input — all passed).
+--
+-- Re-verify this note if anything is ever added that reads this table
+-- directly (not via the RPC) — a future change relying on direct reads
+-- working could break silently given this unexplained behavior.
+comment on table public.practitioner_search_documents is
+  'Internal search index for search_practitioners (SECURITY INVOKER). Do not read directly — a direct anon/authenticated REST read of this table has been observed to return 0 rows for unexplained reasons (ruled out: browser cache, stale PostgREST schema cache); only the RPC path is verified working. See migration 20260709140000 for full detail.';
