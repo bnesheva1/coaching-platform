@@ -5,62 +5,118 @@ import { Redis } from "@upstash/redis";
 // environment automatically.
 const redis = Redis.fromEnv();
 
+export type RateLimiter = {
+  upstash: Ratelimit;
+  limit: number;
+  windowMs: number;
+  prefix: string;
+};
+
 // Distinct `prefix` per limiter so the same IP never shares a bucket
 // across endpoints (e.g. hammering search shouldn't burn down your login
 // budget). Numbers are deliberately hardcoded here rather than pulled
 // into env vars — four static values don't warrant a config layer at
 // this stage. See the rate-limiting plan for the reasoning behind each.
-export const signupLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(5, "10 m"),
-  prefix: "rl:signup",
-  analytics: true,
-});
+//
+// limit/windowMs are duplicated here (Ratelimit.slidingWindow only takes
+// a string like "10 m") so checkRateLimit's in-memory fallback below can
+// enforce the *same* numbers without needing to parse them back out of
+// the Upstash config.
+function createLimiter(prefix: string, limit: number, window: `${number} ${"ms" | "s" | "m" | "h" | "d"}`, windowMs: number): RateLimiter {
+  return {
+    upstash: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(limit, window),
+      prefix,
+      analytics: true,
+    }),
+    limit,
+    windowMs,
+    prefix,
+  };
+}
 
-export const loginLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "5 m"),
-  prefix: "rl:login",
-  analytics: true,
-});
-
-export const searchLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(30, "1 m"),
-  prefix: "rl:search",
-  analytics: true,
-});
-
-export const authCallbackLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(20, "10 m"),
-  prefix: "rl:callback",
-  analytics: true,
-});
+export const signupLimiter = createLimiter("rl:signup", 5, "10 m", 10 * 60 * 1000);
+export const loginLimiter = createLimiter("rl:login", 10, "5 m", 5 * 60 * 1000);
+export const searchLimiter = createLimiter("rl:search", 30, "1 m", 60 * 1000);
+export const authCallbackLimiter = createLimiter("rl:callback", 20, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;
   retryAfterSeconds: number;
 };
 
-// The single fail-open implementation: if Upstash itself errors (network
-// blip, outage), log it and let the request through rather than taking
-// down signup/login/search for everyone over a rate-limiter dependency
-// failure. Every caller goes through this one function so that choice
-// can't drift or get re-implemented differently per endpoint.
+// Last-resort backstop for when Upstash itself is unreachable — including
+// exhausting the free-tier command quota, which Upstash's own docs
+// confirm causes it to start rejecting requests, indistinguishable here
+// from an outage. Without this, a flood large enough to burn through the
+// monthly quota would make the *rate limiter itself* fail open at
+// exactly the moment it's needed, which defeats the point.
+//
+// This is a fixed-window counter in a module-level Map, so it only
+// persists across warm invocations of the SAME serverless function
+// instance — Vercel can run several instances concurrently, so the true
+// global limit while in fallback mode is looser than the configured
+// number (up to roughly limit × concurrent-instance-count). That's a
+// real, known weakness, not a hidden one: it's meaningfully better than
+// zero protection (the old fail-open behavior), but weaker than the
+// primary Upstash-backed check. Good enough as a backstop for a small
+// platform; not a substitute for keeping Upstash itself healthy.
+const fallbackBuckets = new Map<string, { count: number; windowStart: number }>();
+let fallbackCheckCount = 0;
+
+function pruneFallbackBuckets(now: number) {
+  for (const [key, bucket] of fallbackBuckets) {
+    if (now - bucket.windowStart > 60 * 60 * 1000) fallbackBuckets.delete(key);
+  }
+}
+
+function checkFallback(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+
+  // Opportunistic cleanup so a long-lived warm instance doesn't
+  // accumulate unbounded distinct-IP entries — cheap, no timers/cron
+  // needed for a proportionate backstop like this.
+  fallbackCheckCount++;
+  if (fallbackCheckCount % 1000 === 0) pruneFallbackBuckets(now);
+
+  const bucket = fallbackBuckets.get(key);
+  if (!bucket || now - bucket.windowStart >= windowMs) {
+    fallbackBuckets.set(key, { count: 1, windowStart: now });
+    return true;
+  }
+  if (bucket.count >= limit) return false;
+  bucket.count++;
+  return true;
+}
+
+// Every caller goes through this one function so the fail-open ->
+// fallback-protected behavior can't drift or get re-implemented
+// differently per endpoint.
 export async function checkRateLimit(
-  limiter: Ratelimit,
+  limiter: RateLimiter,
   identifier: string,
 ): Promise<RateLimitResult> {
   try {
-    const result = await limiter.limit(identifier);
+    const result = await limiter.upstash.limit(identifier);
     return {
       success: result.success,
       retryAfterSeconds: Math.max(0, Math.ceil((result.reset - Date.now()) / 1000)),
     };
   } catch (error) {
-    console.error("[rate-limit] check failed, failing open", { identifier, error });
-    return { success: true, retryAfterSeconds: 0 };
+    console.error("[rate-limit] Upstash unreachable, using in-memory fallback", {
+      prefix: limiter.prefix,
+      identifier,
+      error,
+    });
+    const allowed = checkFallback(`${limiter.prefix}:${identifier}`, limiter.limit, limiter.windowMs);
+    if (!allowed) {
+      console.error("[rate-limit] in-memory fallback also rejected this request", {
+        prefix: limiter.prefix,
+        identifier,
+      });
+    }
+    return { success: allowed, retryAfterSeconds: allowed ? 0 : Math.ceil(limiter.windowMs / 1000) };
   }
 }
 
