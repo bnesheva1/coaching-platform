@@ -8,6 +8,7 @@ export type ServiceFormState = { error?: string; success?: boolean } | null;
 
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_DURATION_MINUTES = 240; // 4 hours
 
 // JavaScript represents decimals as IEEE754 floats, so e.g. 75.10 * 100
 // can come out as 7509.999999999999 rather than exactly 7510 — rounding
@@ -47,8 +48,13 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
   if (description && description.length > MAX_DESCRIPTION_LENGTH) {
     return { ok: false, error: t("descriptionTooLong", { max: MAX_DESCRIPTION_LENGTH }) };
   }
-  if (!Number.isInteger(durationMinutes) || durationMinutes <= 0) {
-    return { ok: false, error: t("durationInvalid") };
+  if (
+    !Number.isInteger(durationMinutes) ||
+    durationMinutes <= 0 ||
+    durationMinutes % 15 !== 0 ||
+    durationMinutes > MAX_DURATION_MINUTES
+  ) {
+    return { ok: false, error: t("durationInvalid", { max: MAX_DURATION_MINUTES }) };
   }
   const priceCents = eurosToCents(rawPrice);
   if (priceCents === null) {

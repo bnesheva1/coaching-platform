@@ -88,7 +88,7 @@
     "hiddenStatus": "Hidden",
     "notLoggedIn": "Not logged in.",
     "nameRequired": "Name is required.",
-    "durationInvalid": "Duration must be a positive number of minutes.",
+    "durationInvalid": "Duration must be a multiple of 15 minutes (e.g. 30, 45, 60), up to {max} minutes.",
     "priceInvalid": "Enter a valid price.",
     "nameTooLong": "Name must be {max} characters or fewer.",
     "descriptionTooLong": "Description must be {max} characters or fewer.",

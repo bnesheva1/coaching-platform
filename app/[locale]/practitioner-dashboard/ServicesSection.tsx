@@ -55,8 +55,9 @@ function ServiceRow({ service }: { service: Service }) {
             <input
               name="durationMinutes"
               type="number"
-              min={1}
-              step={1}
+              min={15}
+              max={240}
+              step={15}
               required
               defaultValue={service.duration_minutes}
             />
@@ -147,7 +148,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
         </label>
         <label>
           {t("durationLabel")}
-          <input name="durationMinutes" type="number" min={1} step={1} required />
+          <input name="durationMinutes" type="number" min={15} max={240} step={15} required />
         </label>
         <label>
           {t("priceLabel")}
