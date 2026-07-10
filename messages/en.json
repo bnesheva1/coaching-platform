@@ -96,6 +96,22 @@
     "daySaturday": "Saturday",
     "daySunday": "Sunday"
   },
+  "AvailabilityExceptions": {
+    "title": "Blocked dates",
+    "dateLabel": "Date",
+    "addButton": "Block date",
+    "addButtonPending": "Blocking…",
+    "addedMessage": "Date blocked!",
+    "deleteButton": "Unblock",
+    "deleteConfirm": "Unblock {date}? New bookings will be allowed on this date again.",
+    "noExceptionsYet": "You haven't blocked any dates.",
+    "notLoggedIn": "Not logged in.",
+    "invalidDate": "Please select a valid date.",
+    "dateInPast": "You can't block a date in the past.",
+    "dateAlreadyBlocked": "That date is already blocked.",
+    "saveFailed": "Unable to block this date right now. Please try again.",
+    "existingBookingsWarning": "Heads up: {count} existing booking(s) fall on this date. They won't be cancelled — you'll need to handle them separately."
+  },
   "Services": {
     "title": "My services",
     "noServicesYet": "You haven't added any services yet.",

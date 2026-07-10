@@ -64,6 +64,7 @@ export function generateSlots({
   timezone,
   serviceDurationMinutes,
   existingBookings = [],
+  blockedDates = [],
   windowDays = WINDOW_DAYS,
   now = DateTime.utc(),
 }: {
@@ -71,10 +72,12 @@ export function generateSlots({
   timezone: string;
   serviceDurationMinutes: number;
   existingBookings?: ExistingBooking[];
+  blockedDates?: string[]; // ISO "YYYY-MM-DD", in the practitioner's own calendar
   windowDays?: number;
   now?: DateTime;
 }): Slot[] {
   const slots: Slot[] = [];
+  const blockedDateSet = new Set(blockedDates);
   // "Today" and day-of-week iteration are anchored to the practitioner's
   // own timezone, not the server's or a client's — availability rules
   // are inherently practitioner-local concepts.
@@ -82,6 +85,15 @@ export function generateSlots({
 
   for (let dayOffset = 0; dayOffset < windowDays; dayOffset++) {
     const date = startOfWindow.plus({ days: dayOffset });
+
+    // A whole-date block removes the day entirely, before any rule is
+    // even considered — "block July 15th" means July 15th in the
+    // practitioner's own calendar, which is exactly what `date` already
+    // is at this point (set to their timezone, not UTC or the caller's).
+    if (blockedDateSet.has(date.toISODate()!)) {
+      continue;
+    }
+
     const matchingRules = rules.filter((rule) => rule.day_of_week === date.weekday);
 
     for (const rule of matchingRules) {

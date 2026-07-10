@@ -5,6 +5,7 @@ import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { ServicesSection } from "./ServicesSection";
 import { AvailabilitySection } from "./AvailabilitySection";
+import { AvailabilityExceptionsSection } from "./AvailabilityExceptionsSection";
 import { BookingsList, type PractitionerBooking } from "./BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 
@@ -48,6 +49,12 @@ export default async function PractitionerDashboardPage() {
     .from("practitioner_availability")
     .select("id, day_of_week, start_time, end_time")
     .eq("practitioner_id", user.id);
+
+  const { data: availabilityExceptions } = await supabase
+    .from("availability_exceptions")
+    .select("id, exception_date")
+    .eq("practitioner_id", user.id)
+    .eq("exception_type", "blocked");
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -108,6 +115,7 @@ export default async function PractitionerDashboardPage() {
         rules={availabilityRules ?? []}
         timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
       />
+      <AvailabilityExceptionsSection exceptions={availabilityExceptions ?? []} />
       <BookingsList
         upcoming={upcomingBookings}
         past={pastBookings}

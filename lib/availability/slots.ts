@@ -31,6 +31,7 @@ export async function getBookableSlots({
     { data: rules, error: rulesError },
     { data: service, error: serviceError },
     { data: busyTimes, error: busyTimesError },
+    { data: exceptions, error: exceptionsError },
   ] = await Promise.all([
     supabase.from("practitioner_profiles").select("timezone").eq("id", practitionerId).single(),
     supabase
@@ -54,6 +55,15 @@ export async function getBookableSlots({
       window_start: now.toISOString(),
       window_end: windowEnd.toISOString(),
     }),
+    // No date-range filter — the table stays small at this scale, and
+    // generateSlots does the exact-date-string match itself, so an
+    // unbounded fetch here can't produce a wrong result, only a
+    // slightly larger (harmless) one.
+    supabase
+      .from("availability_exceptions")
+      .select("exception_date")
+      .eq("practitioner_id", practitionerId)
+      .eq("exception_type", "blocked"),
   ]);
 
   if (profileError || !profile) {
@@ -73,6 +83,10 @@ export async function getBookableSlots({
     console.error("getBookableSlots: failed to load existing bookings:", busyTimesError);
     return [];
   }
+  if (exceptionsError) {
+    console.error("getBookableSlots: failed to load availability exceptions:", exceptionsError);
+    return [];
+  }
 
   const existingBookings: ExistingBooking[] = (
     (busyTimes ?? []) as { start_utc: string; end_utc: string }[]
@@ -81,10 +95,13 @@ export async function getBookableSlots({
     endUtc: b.end_utc,
   }));
 
+  const blockedDates: string[] = (exceptions ?? []).map((e) => e.exception_date);
+
   return generateSlots({
     rules: rules ?? [],
     timezone: profile.timezone,
     serviceDurationMinutes: service.duration_minutes,
     existingBookings,
+    blockedDates,
   });
 }
