@@ -1,10 +1,17 @@
-// Epic 5, slice 3: proves availability_exceptions' RLS ownership holds
-// at the DB level, not just in the app's own .eq("practitioner_id", ...)
-// scoping — a malicious practitioner B must not be able to create or
-// delete practitioner A's blocked dates via a direct API call, while
-// public read of a DISCOVERABLE practitioner's exceptions must still
-// work (that's required for getBookableSlots to compute correct slots
-// for anonymous/other-user visitors — intentional, not a leak).
+// Epic 5, slice 3 (+ partial-day blocking extension): proves
+// availability_exceptions' RLS ownership holds at the DB level, not
+// just in the app's own .eq("practitioner_id", ...) scoping — a
+// malicious practitioner B must not be able to create or delete
+// practitioner A's blocked dates via a direct API call, while public
+// read of a DISCOVERABLE practitioner's exceptions must still work
+// (that's required for getBookableSlots to compute correct slots for
+// anonymous/other-user visitors — intentional, not a leak). Also
+// covers the partial-day (time-range) extension: a malformed range is
+// rejected purely by the new CHECK constraints (independent of RLS —
+// ownership and row validity are separate, both-solved problems), and
+// multiple partial blocks can coexist on one date while a second
+// whole-date block on an already-blocked date still cannot (the
+// narrowed partial unique index).
 //
 // Run: node --env-file=.env.local scripts/verify-availability-exceptions-security.mjs
 
@@ -86,6 +93,57 @@ const { data: exceptionB } = await practitionerB.supabase
   .single();
 const crossReadOfNonDiscoverable = await practitionerA.supabase.from("availability_exceptions").select("id").eq("id", exceptionB?.id ?? "");
 check("practitionerA cannot read practitionerB's exception (B has no username, not discoverable)", (crossReadOfNonDiscoverable.data ?? []).length === 0);
+
+console.log("\n=== 6. practitionerA can create a partial-day (time-range) block for themselves ===");
+const rangeDate = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const { data: partialA } = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "14:00", end_time: "16:00" })
+  .select()
+  .single();
+check("practitionerA can create a 14:00-16:00 block", !!partialA);
+
+console.log("\n=== 7. A malformed range is rejected by the CHECK constraints, independent of ownership ===");
+const halfSpecified = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "10:00", end_time: null })
+  .select();
+check("a half-specified range (start set, end null) is rejected", !!halfSpecified.error);
+
+const endBeforeStart = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "16:00", end_time: "14:00" })
+  .select();
+check("a range where end <= start is rejected", !!endBeforeStart.error);
+
+const offGrid = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "10:05", end_time: "11:00" })
+  .select();
+check("an off-15-minute-grid start time is rejected", !!offGrid.error);
+
+console.log("\n=== 8. Multiple non-overlapping partial blocks CAN coexist on the same date ===");
+const { data: partialA2 } = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "09:00", end_time: "10:00" })
+  .select()
+  .single();
+check("a second, non-overlapping partial block on the SAME date succeeds (narrowed unique index)", !!partialA2);
+
+console.log("\n=== 9. A second WHOLE-DATE block on an already-whole-date-blocked date is still rejected (regression) ===");
+const duplicateWholeDate = await practitionerA.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: blockedDate, exception_type: "blocked" })
+  .select();
+check("a duplicate whole-date block on the same date is still rejected", !!duplicateWholeDate.error);
+check("rejection is the unique-index violation specifically", duplicateWholeDate.error?.code === "23505");
+
+console.log("\n=== 10. An uninvolved practitioner cannot INSERT a partial-day block for practitionerA either ===");
+const forgedPartialInsert = await practitionerB.supabase
+  .from("availability_exceptions")
+  .insert({ practitioner_id: practitionerA.user.id, exception_date: rangeDate, exception_type: "blocked", start_time: "11:00", end_time: "12:00" })
+  .select();
+check("practitionerB's forged partial-block insert (practitioner_id = A) is rejected", !!forgedPartialInsert.error);
 
 console.log(`\n=== RESULT: ${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`} ===`);
 process.exit(failures === 0 ? 0 : 1);

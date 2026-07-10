@@ -25,6 +25,12 @@ export type ExistingBooking = {
   endUtc: string; // ISO instant
 };
 
+export type BlockedRange = {
+  date: string; // ISO "YYYY-MM-DD", same semantics as blockedDates
+  startTime: string; // "HH:MM:SS", practitioner's local wall-clock time — same shape as AvailabilityRule
+  endTime: string; // "HH:MM:SS"
+};
+
 export type Slot = {
   startUtc: string; // ISO instant string
 };
@@ -65,6 +71,7 @@ export function generateSlots({
   serviceDurationMinutes,
   existingBookings = [],
   blockedDates = [],
+  blockedRanges = [],
   minNoticeHours = 0,
   windowDays = WINDOW_DAYS,
   now = DateTime.utc(),
@@ -74,6 +81,7 @@ export function generateSlots({
   serviceDurationMinutes: number;
   existingBookings?: ExistingBooking[];
   blockedDates?: string[]; // ISO "YYYY-MM-DD", in the practitioner's own calendar
+  blockedRanges?: BlockedRange[]; // partial-day blocks — same date semantics, plus a local time range
   minNoticeHours?: number; // same setting governs the cancellation cutoff (see cancel-booking-actions.ts)
   windowDays?: number;
   now?: DateTime;
@@ -102,6 +110,18 @@ export function generateSlots({
       continue;
     }
 
+    // Once resolved, a partial-day block is structurally identical to
+    // an existing booking — just a UTC range a candidate slot must not
+    // overlap. Reuses resolveLocalToUtc verbatim (the same call rule
+    // periods use below), so this inherits identical DST-per-occurrence
+    // correctness with no new time-resolution code.
+    const dayBlocks: ExistingBooking[] = blockedRanges
+      .filter((range) => range.date === date.toISODate())
+      .map((range) => ({
+        startUtc: resolveLocalToUtc(date, range.startTime, timezone).toISO()!,
+        endUtc: resolveLocalToUtc(date, range.endTime, timezone).toISO()!,
+      }));
+
     const matchingRules = rules.filter((rule) => rule.day_of_week === date.weekday);
 
     for (const rule of matchingRules) {
@@ -125,8 +145,9 @@ export function generateSlots({
         const isBooked = existingBookings.some((booking) =>
           overlaps(candidateStart, candidateEnd, booking),
         );
+        const isBlocked = dayBlocks.some((block) => overlaps(candidateStart, candidateEnd, block));
 
-        if (!isTooSoon && !isBooked) {
+        if (!isTooSoon && !isBooked && !isBlocked) {
           slots.push({ startUtc: candidateStart.toISO()! });
         }
 

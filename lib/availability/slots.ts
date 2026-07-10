@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { generateSlots, type ExistingBooking, type Slot } from "./generateSlots";
+import { generateSlots, type BlockedRange, type ExistingBooking, type Slot } from "./generateSlots";
 
 export type { Slot } from "./generateSlots";
 
@@ -65,7 +65,7 @@ export async function getBookableSlots({
     // slightly larger (harmless) one.
     supabase
       .from("availability_exceptions")
-      .select("exception_date")
+      .select("exception_date, start_time, end_time")
       .eq("practitioner_id", practitionerId)
       .eq("exception_type", "blocked"),
   ]);
@@ -99,7 +99,14 @@ export async function getBookableSlots({
     endUtc: b.end_utc,
   }));
 
-  const blockedDates: string[] = (exceptions ?? []).map((e) => e.exception_date);
+  // One query, split by whether a time range is set — start_time is
+  // null exactly for whole-date blocks (unchanged meaning).
+  const blockedDates: string[] = (exceptions ?? [])
+    .filter((e) => e.start_time === null)
+    .map((e) => e.exception_date);
+  const blockedRanges: BlockedRange[] = (exceptions ?? [])
+    .filter((e) => e.start_time !== null)
+    .map((e) => ({ date: e.exception_date, startTime: e.start_time!, endTime: e.end_time! }));
 
   return generateSlots({
     rules: rules ?? [],
@@ -107,6 +114,7 @@ export async function getBookableSlots({
     serviceDurationMinutes: service.duration_minutes,
     existingBookings,
     blockedDates,
+    blockedRanges,
     minNoticeHours: profile.min_notice_hours,
   });
 }

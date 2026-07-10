@@ -58,7 +58,7 @@ export default async function PractitionerDashboardPage({
 
   const { data: availabilityExceptions } = await supabase
     .from("availability_exceptions")
-    .select("id, exception_date")
+    .select("id, exception_date, start_time, end_time")
     .eq("practitioner_id", user.id)
     .eq("exception_type", "blocked");
 

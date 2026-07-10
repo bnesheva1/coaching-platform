@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   createAvailabilityException,
@@ -11,6 +11,8 @@ import {
 type AvailabilityException = {
   id: string;
   exception_date: string; // "YYYY-MM-DD"
+  start_time: string | null; // "HH:MM:SS", null for a whole-date block
+  end_time: string | null;
 };
 
 const initialState: AvailabilityExceptionFormState = null;
@@ -25,9 +27,41 @@ function formatDate(value: string) {
   );
 }
 
+// Stored as HH:MM:SS (Postgres `time` default text form) — drop the
+// seconds for display, same convention as AvailabilitySection.tsx's
+// formatTime.
+function formatTime(value: string) {
+  return value.slice(0, 5);
+}
+
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
+
+// Mirrors AvailabilitySection.tsx's own grid-construction constants
+// verbatim — duplicated rather than shared, same established precedent
+// (client/server boundary aside, it's a handful of lines). Native
+// <input type="time"> pickers don't reliably restrict their own UI to a
+// step (this project already hit and fixed that exact reliability
+// problem once) — a <select> populated with only valid grid values
+// makes an off-grid selection structurally impossible instead.
+const MIN_DURATION_MINUTES = 15;
+
+function toMinutes(time: string): number {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function minutesToTime(totalMinutes: number): string {
+  const hour = Math.floor(totalMinutes / 60);
+  const minute = totalMinutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+const ALL_TIME_OPTIONS = Array.from({ length: (24 * 60) / MIN_DURATION_MINUTES }, (_, i) =>
+  minutesToTime(i * MIN_DURATION_MINUTES),
+);
+const START_TIME_OPTIONS = ALL_TIME_OPTIONS.slice(0, -1);
 
 export function AvailabilityExceptionsSection({
   exceptions,
@@ -35,10 +69,31 @@ export function AvailabilityExceptionsSection({
   exceptions: AvailabilityException[];
 }) {
   const t = useTranslations("AvailabilityExceptions");
+  const tAvailability = useTranslations("Availability");
   const [state, formAction, pending] = useActionState(createAvailabilityException, initialState);
+  const [blockType, setBlockType] = useState<"wholeDay" | "timeRange">("wholeDay");
+  const defaultStart = START_TIME_OPTIONS.includes("09:00") ? "09:00" : START_TIME_OPTIONS[0];
+  const [startTime, setStartTime] = useState(defaultStart);
+  const [endTime, setEndTime] = useState(
+    ALL_TIME_OPTIONS[ALL_TIME_OPTIONS.indexOf(defaultStart) + 1],
+  );
+
+  const endTimeOptions = ALL_TIME_OPTIONS.filter(
+    (time) => toMinutes(time) >= toMinutes(startTime) + MIN_DURATION_MINUTES,
+  );
+
+  function handleStartChange(newStart: string) {
+    setStartTime(newStart);
+    const minValidEnd = toMinutes(newStart) + MIN_DURATION_MINUTES;
+    if (toMinutes(endTime) < minValidEnd) {
+      setEndTime(minutesToTime(minValidEnd));
+    }
+  }
 
   const sortedExceptions = [...exceptions].sort((a, b) =>
-    a.exception_date.localeCompare(b.exception_date),
+    a.exception_date === b.exception_date
+      ? (a.start_time ?? "").localeCompare(b.start_time ?? "")
+      : a.exception_date.localeCompare(b.exception_date),
   );
 
   return (
@@ -47,22 +102,28 @@ export function AvailabilityExceptionsSection({
 
       {sortedExceptions.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {sortedExceptions.map((exception) => (
-            <li key={exception.id} style={{ marginBottom: "0.5rem" }}>
-              {formatDate(exception.exception_date)}{" "}
-              <form
-                action={deleteAvailabilityException.bind(null, exception.id)}
-                style={{ display: "inline" }}
-                onSubmit={(e) => {
-                  if (!confirm(t("deleteConfirm", { date: formatDate(exception.exception_date) }))) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <button type="submit">{t("deleteButton")}</button>
-              </form>
-            </li>
-          ))}
+          {sortedExceptions.map((exception) => {
+            const label =
+              exception.start_time && exception.end_time
+                ? `${formatDate(exception.exception_date)}, ${formatTime(exception.start_time)}–${formatTime(exception.end_time)}`
+                : formatDate(exception.exception_date);
+            return (
+              <li key={exception.id} style={{ marginBottom: "0.5rem" }}>
+                {label}{" "}
+                <form
+                  action={deleteAvailabilityException.bind(null, exception.id)}
+                  style={{ display: "inline" }}
+                  onSubmit={(e) => {
+                    if (!confirm(t("deleteConfirm", { date: label }))) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  <button type="submit">{t("deleteButton")}</button>
+                </form>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p style={{ color: "#666" }}>{t("noExceptionsYet")}</p>
@@ -76,6 +137,59 @@ export function AvailabilityExceptionsSection({
           {t("dateLabel")}
           <input type="date" name="exceptionDate" min={todayIsoDate()} required />
         </label>
+
+        <fieldset style={{ border: "none", padding: 0 }}>
+          <legend style={{ padding: 0 }}>{t("blockTypeLegend")}</legend>
+          <label style={{ display: "block" }}>
+            <input
+              type="radio"
+              name="blockType"
+              checked={blockType === "wholeDay"}
+              onChange={() => setBlockType("wholeDay")}
+            />{" "}
+            {t("wholeDayOption")}
+          </label>
+          <label style={{ display: "block" }}>
+            <input
+              type="radio"
+              name="blockType"
+              checked={blockType === "timeRange"}
+              onChange={() => setBlockType("timeRange")}
+            />{" "}
+            {t("timeRangeOption")}
+          </label>
+        </fieldset>
+
+        {blockType === "timeRange" && (
+          <>
+            <label>
+              {tAvailability("startTimeLabel")}
+              <select
+                name="startTime"
+                required
+                value={startTime}
+                onChange={(e) => handleStartChange(e.target.value)}
+              >
+                {START_TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {tAvailability("endTimeLabel")}
+              <select name="endTime" required value={endTime} onChange={(e) => setEndTime(e.target.value)}>
+                {endTimeOptions.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         {state?.success && (
           <>

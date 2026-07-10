@@ -106,14 +106,18 @@
     "addButtonPending": "Blocking…",
     "addedMessage": "Date blocked!",
     "deleteButton": "Unblock",
-    "deleteConfirm": "Unblock {date}? New bookings will be allowed on this date again.",
+    "deleteConfirm": "Remove this block ({date})? New bookings will be allowed again.",
     "noExceptionsYet": "You haven't blocked any dates.",
     "notLoggedIn": "Not logged in.",
     "invalidDate": "Please select a valid date.",
     "dateInPast": "You can't block a date in the past.",
     "dateAlreadyBlocked": "That date is already blocked.",
     "saveFailed": "Unable to block this date right now. Please try again.",
-    "existingBookingsWarning": "Heads up: {count} existing booking(s) fall on this date. They won't be cancelled — you'll need to handle them separately."
+    "existingBookingsWarning": "Heads up: {count} existing booking(s) fall in this range. They won't be cancelled — you'll need to handle them separately.",
+    "blockTypeLegend": "Block type",
+    "wholeDayOption": "Whole day",
+    "timeRangeOption": "Specific time range",
+    "invalidTimeRange": "Enter both a start and end time, or leave both blank for a whole-day block."
   },
   "Services": {
     "title": "My services",
