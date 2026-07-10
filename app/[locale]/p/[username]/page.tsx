@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getBookableSlots } from "@/lib/availability/slots";
+import { SlotList } from "./SlotList";
 import specialties from "@/data/specialties.json";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -11,13 +13,19 @@ const INTL_LOCALES: Record<string, string> = {
 
 export default async function PublicProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { username } = await params;
   const normalizedUsername = username.toLowerCase();
+  const resolvedSearchParams = await searchParams;
+  const selectedServiceId =
+    typeof resolvedSearchParams.service === "string" ? resolvedSearchParams.service : null;
 
   const t = await getTranslations("PublicProfile");
+  const tBooking = await getTranslations("Booking");
   const locale = await getLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const specialtyLabels = new Map(
@@ -28,7 +36,7 @@ export default async function PublicProfilePage({
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("id, bio, specialties, avatar_url, username")
+    .select("id, bio, specialties, avatar_url, username, timezone")
     .eq("username", normalizedUsername)
     .single();
 
@@ -54,6 +62,20 @@ export default async function PublicProfilePage({
   ]);
 
   const isOwner = authData.user?.id === practitionerProfile.id;
+
+  // Only fetch slots for a service that's actually in this practitioner's
+  // own active service list — getBookableSlots also re-checks this
+  // server-side (never trusts the id alone), this just avoids a wasted
+  // call for an obviously-invalid selection.
+  const selectedService = selectedServiceId
+    ? (services ?? []).find((s) => s.id === selectedServiceId)
+    : null;
+  const slots = selectedService
+    ? await getBookableSlots({
+        practitionerId: practitionerProfile.id,
+        serviceId: selectedService.id,
+      })
+    : null;
 
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
@@ -95,20 +117,35 @@ export default async function PublicProfilePage({
       {services && services.length > 0 && (
         <section>
           <h2>{t("servicesTitle")}</h2>
+          {!selectedServiceId && (
+            <p style={{ fontSize: "0.85rem", color: "#666" }}>{tBooking("selectService")}</p>
+          )}
           <ul style={{ listStyle: "none", padding: 0 }}>
-            {services.map((service) => (
-              <li key={service.id} style={{ marginBottom: "1rem" }}>
-                <strong>{service.name}</strong> —{" "}
-                {t("serviceDuration", { minutes: service.duration_minutes })} —{" "}
-                {new Intl.NumberFormat(intlLocale, {
-                  style: "currency",
-                  currency: service.currency,
-                }).format(service.price_cents / 100)}
-                {service.description && (
-                  <p style={{ margin: "0.25rem 0 0" }}>{service.description}</p>
-                )}
-              </li>
-            ))}
+            {services.map((service) => {
+              const isSelected = service.id === selectedServiceId;
+              return (
+                <li key={service.id} style={{ marginBottom: "1rem" }}>
+                  <Link href={isSelected ? "?" : `?service=${service.id}`}>
+                    <strong>{service.name}</strong>
+                  </Link>{" "}
+                  —{" "}
+                  {t("serviceDuration", { minutes: service.duration_minutes })} —{" "}
+                  {new Intl.NumberFormat(intlLocale, {
+                    style: "currency",
+                    currency: service.currency,
+                  }).format(service.price_cents / 100)}
+                  {service.description && (
+                    <p style={{ margin: "0.25rem 0 0" }}>{service.description}</p>
+                  )}
+                  {isSelected && (
+                    <div style={{ marginTop: "0.5rem" }}>
+                      <h3>{tBooking("availableTimes")}</h3>
+                      <SlotList slots={slots ?? []} />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

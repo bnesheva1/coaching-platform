@@ -131,6 +131,12 @@
     "servicesTitle": "Услуги",
     "serviceDuration": "{minutes} мин."
   },
+  "Booking": {
+    "selectService": "Избери услуга по-долу, за да видиш свободните часове.",
+    "availableTimes": "Свободни часове",
+    "timesShownIn": "Часовете са показани в {timezone}",
+    "noSlotsAvailable": "Няма свободни часове през следващите две седмици."
+  },
   "Browse": {
     "title": "Открий специалист",
     "specialtiesLabel": "Филтрирай по специалност",

@@ -131,6 +131,12 @@
     "servicesTitle": "Services",
     "serviceDuration": "{minutes} min"
   },
+  "Booking": {
+    "selectService": "Select a service below to see available times.",
+    "availableTimes": "Available times",
+    "timesShownIn": "Times shown in {timezone}",
+    "noSlotsAvailable": "No available times in the next two weeks."
+  },
   "Browse": {
     "title": "Find a practitioner",
     "specialtiesLabel": "Filter by specialty",
