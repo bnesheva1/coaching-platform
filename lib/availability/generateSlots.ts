@@ -6,8 +6,11 @@ import { DateTime } from "luxon";
 
 // How far ahead to compute slots. A plain server-side constant, never
 // client-controllable — an arbitrarily large requested window would be
-// a cheap resource-exhaustion vector.
-const WINDOW_DAYS = 14;
+// a cheap resource-exhaustion vector. Exported as the single source of
+// truth (slots.ts imports it rather than redeclaring) so it's the one
+// place to change — including, later, if this becomes a per-practitioner
+// setting instead of a fixed platform-wide horizon (not built now).
+export const BOOKING_WINDOW_DAYS = 30;
 
 // Matches the grid practitioner_availability rows are already
 // constrained to (both app-side and DB-side, see Epic 4) — slot start
@@ -73,7 +76,7 @@ export function generateSlots({
   blockedDates = [],
   blockedRanges = [],
   minNoticeHours = 0,
-  windowDays = WINDOW_DAYS,
+  windowDays = BOOKING_WINDOW_DAYS,
   now = DateTime.utc(),
 }: {
   rules: AvailabilityRule[];

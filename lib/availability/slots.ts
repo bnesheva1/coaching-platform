@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { generateSlots, type BlockedRange, type ExistingBooking, type Slot } from "./generateSlots";
+import {
+  generateSlots,
+  BOOKING_WINDOW_DAYS,
+  type BlockedRange,
+  type ExistingBooking,
+  type Slot,
+} from "./generateSlots";
 
 export type { Slot } from "./generateSlots";
-
-// Matches generateSlots' own default — kept in sync explicitly here
-// rather than imported, since it also sizes the busy-times query window
-// below (padded by a day to safely cover timezone-offset edge effects
-// at the boundary, harmless to over-fetch).
-const WINDOW_DAYS = 14;
 
 // The server-only wrapper a page calls — it doesn't build the query
 // itself, mirroring lib/practitioners/search.ts's convention. Service
@@ -24,7 +24,7 @@ export async function getBookableSlots({
   const supabase = await createClient();
 
   const now = new Date();
-  const windowEnd = new Date(now.getTime() + (WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000);
+  const windowEnd = new Date(now.getTime() + (BOOKING_WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000);
 
   const [
     { data: profile, error: profileError },
