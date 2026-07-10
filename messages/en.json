@@ -135,7 +135,15 @@
     "selectService": "Select a service below to see available times.",
     "availableTimes": "Available times",
     "timesShownIn": "Times shown in {timezone}",
-    "noSlotsAvailable": "No available times in the next two weeks."
+    "noSlotsAvailable": "No available times in the next two weeks.",
+    "onlyClientsCanBook": "Only clients can book appointments.",
+    "logInToBookPrompt": "<login>Log in</login> to book a time.",
+    "confirmBooking": "Book the {time} slot?",
+    "bookingConfirmed": "Booked! You'll see it reflected in the times below.",
+    "rateLimited": "Too many booking attempts. Please wait a few minutes and try again.",
+    "slotNoLongerAvailable": "That time is no longer available. Please pick another.",
+    "slotTaken": "Sorry, that time was just taken. Please pick another.",
+    "bookingFailed": "Unable to complete the booking right now. Please try again."
   },
   "Browse": {
     "title": "Find a practitioner",

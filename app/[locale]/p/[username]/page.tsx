@@ -63,6 +63,18 @@ export default async function PublicProfilePage({
 
   const isOwner = authData.user?.id === practitionerProfile.id;
 
+  // The VIEWER's own role (not the practitioner-being-viewed's) —
+  // determines whether SlotList shows real book buttons, an
+  // "only clients can book" note, or a log-in prompt. Can't be part of
+  // the Promise.all above since it depends on that call's own result.
+  const { data: viewerProfile } = authData.user
+    ? await supabase.from("profiles").select("role").eq("id", authData.user.id).single()
+    : { data: null };
+  const viewerRole: "client" | "practitioner" | null =
+    viewerProfile?.role === "client" || viewerProfile?.role === "practitioner"
+      ? viewerProfile.role
+      : null;
+
   // Only fetch slots for a service that's actually in this practitioner's
   // own active service list — getBookableSlots also re-checks this
   // server-side (never trusts the id alone), this just avoids a wasted
@@ -76,6 +88,10 @@ export default async function PublicProfilePage({
         serviceId: selectedService.id,
       })
     : null;
+
+  const justBooked = resolvedSearchParams.booked === "1";
+  const bookingErrorCode =
+    typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
 
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
@@ -120,6 +136,14 @@ export default async function PublicProfilePage({
           {!selectedServiceId && (
             <p style={{ fontSize: "0.85rem", color: "#666" }}>{tBooking("selectService")}</p>
           )}
+          {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
+          {bookingErrorCode && (
+            <p style={{ color: "crimson" }}>
+              {tBooking.has(bookingErrorCode)
+                ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0])
+                : tBooking("bookingFailed")}
+            </p>
+          )}
           <ul style={{ listStyle: "none", padding: 0 }}>
             {services.map((service) => {
               const isSelected = service.id === selectedServiceId;
@@ -140,7 +164,13 @@ export default async function PublicProfilePage({
                   {isSelected && (
                     <div style={{ marginTop: "0.5rem" }}>
                       <h3>{tBooking("availableTimes")}</h3>
-                      <SlotList slots={slots ?? []} />
+                      <SlotList
+                        slots={slots ?? []}
+                        practitionerId={practitionerProfile.id}
+                        serviceId={service.id}
+                        username={practitionerProfile.username!}
+                        viewerRole={viewerRole}
+                      />
                     </div>
                   )}
                 </li>

@@ -40,6 +40,11 @@ export const signupLimiter = createLimiter("rl:signup", 5, "10 m", 10 * 60 * 100
 export const loginLimiter = createLimiter("rl:login", 10, "5 m", 5 * 60 * 1000);
 export const searchLimiter = createLimiter("rl:search", 30, "1 m", 60 * 1000);
 export const authCallbackLimiter = createLimiter("rl:callback", 20, "10 m", 10 * 60 * 1000);
+// Keyed by the authenticated user's own id (not IP) — booking already
+// requires auth, so the user id is a more precise identifier than IP for
+// bounding one account spam-booking a practitioner's calendar. Generous
+// enough for any real client's normal use.
+export const bookingLimiter = createLimiter("rl:booking", 10, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;

@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { bookSlot } from "./booking-actions";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -27,7 +29,19 @@ function getServerTimezoneSnapshot(): string | null {
   return null;
 }
 
-export function SlotList({ slots }: { slots: { startUtc: string }[] }) {
+export function SlotList({
+  slots,
+  practitionerId,
+  serviceId,
+  username,
+  viewerRole,
+}: {
+  slots: { startUtc: string }[];
+  practitionerId: string;
+  serviceId: string;
+  username: string;
+  viewerRole: "client" | "practitioner" | null;
+}) {
   const t = useTranslations("Booking");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
@@ -57,15 +71,15 @@ export function SlotList({ slots }: { slots: { startUtc: string }[] }) {
     timeZone: clientTimezone,
   });
 
-  const groups = new Map<string, Date[]>();
+  const groups = new Map<string, { startUtc: string; date: Date }[]>();
   for (const slot of slots) {
     const date = new Date(slot.startUtc);
     const dayKey = dayFormatter.format(date);
     const existing = groups.get(dayKey);
     if (existing) {
-      existing.push(date);
+      existing.push({ startUtc: slot.startUtc, date });
     } else {
-      groups.set(dayKey, [date]);
+      groups.set(dayKey, [{ startUtc: slot.startUtc, date }]);
     }
   }
 
@@ -74,18 +88,47 @@ export function SlotList({ slots }: { slots: { startUtc: string }[] }) {
       <p style={{ fontSize: "0.85rem", color: "#666" }}>
         {t("timesShownIn", { timezone: clientTimezone })}
       </p>
-      {[...groups.entries()].map(([day, times]) => (
+      {viewerRole === "practitioner" && (
+        <p style={{ fontSize: "0.85rem", color: "#666" }}>{t("onlyClientsCanBook")}</p>
+      )}
+      {viewerRole === null && (
+        <p style={{ fontSize: "0.85rem", color: "#666" }}>
+          {t.rich("logInToBookPrompt", {
+            login: (chunks) => <Link href="/login">{chunks}</Link>,
+          })}
+        </p>
+      )}
+      {[...groups.entries()].map(([day, daySlots]) => (
         <div key={day} style={{ marginBottom: "1rem" }}>
           <strong>{day}</strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem" }}>
-            {times.map((time) => (
-              <span
-                key={time.toISOString()}
-                style={{ border: "1px solid #ddd", padding: "0.25rem 0.5rem", borderRadius: 4 }}
-              >
-                {timeFormatter.format(time)}
-              </span>
-            ))}
+            {daySlots.map((slot) =>
+              viewerRole === "client" ? (
+                <form
+                  key={slot.startUtc}
+                  action={bookSlot.bind(null, practitionerId, serviceId, username, slot.startUtc)}
+                  onSubmit={(e) => {
+                    if (!confirm(t("confirmBooking", { time: timeFormatter.format(slot.date) }))) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  <button
+                    type="submit"
+                    style={{ border: "1px solid #ddd", padding: "0.25rem 0.5rem", borderRadius: 4 }}
+                  >
+                    {timeFormatter.format(slot.date)}
+                  </button>
+                </form>
+              ) : (
+                <span
+                  key={slot.startUtc}
+                  style={{ border: "1px solid #ddd", padding: "0.25rem 0.5rem", borderRadius: 4, color: "#999" }}
+                >
+                  {timeFormatter.format(slot.date)}
+                </span>
+              ),
+            )}
           </div>
         </div>
       ))}
