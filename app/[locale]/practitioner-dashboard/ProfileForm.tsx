@@ -186,8 +186,8 @@ export function ProfileForm({
         <input
           name="minNoticeHours"
           type="number"
-          min={0}
-          max={336}
+          min={1}
+          max={48}
           step={1}
           defaultValue={initialMinNoticeHours}
           style={{ width: "100%" }}

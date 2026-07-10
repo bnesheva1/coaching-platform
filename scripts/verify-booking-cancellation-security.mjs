@@ -52,8 +52,9 @@ console.log("=== Setup ===");
 const practitionerA = await signUp("practitioner", `BookCancelPracA ${stamp}`);
 const practitionerB = await signUp("practitioner", `BookCancelPracB ${stamp}`);
 // A dedicated practitioner for the within-cutoff tests, whose
-// min_notice_hours starts at 0 so a near-term booking can even be
-// created, then gets raised afterward — see note above.
+// min_notice_hours starts at 1 (the DB-enforced minimum) so a near-term
+// booking can even be created, then gets raised afterward — see note
+// above.
 const practitionerC = await signUp("practitioner", `BookCancelPracC ${stamp}`);
 const client1 = await signUp("client", `BookCancelClient1 ${stamp}`);
 const client2 = await signUp("client", `BookCancelClient2 ${stamp}`);
@@ -64,7 +65,7 @@ await practitionerA.supabase.from("practitioner_profiles").update({ username: us
 // Default min_notice_hours (24) is left as-is for practitionerA.
 
 const usernameC = `bookcancelC${stamp}`;
-await practitionerC.supabase.from("practitioner_profiles").update({ username: usernameC, min_notice_hours: 0 }).eq("id", practitionerC.user.id);
+await practitionerC.supabase.from("practitioner_profiles").update({ username: usernameC, min_notice_hours: 1 }).eq("id", practitionerC.user.id);
 
 const { data: serviceA } = await practitionerA.supabase
   .from("services")
@@ -114,8 +115,8 @@ check("client1's cancellation outside the cutoff succeeds", (outsideCancel.data 
 check("resulting status is cancelled_by_client", outsideCancel.data?.[0]?.status === "cancelled_by_client");
 
 console.log("\n=== 2. Client attempts to cancel their own booking WITHIN the cutoff via direct API (rejected) ===");
-const inside = await bookAsClient(client1, practitionerC, serviceC, 1); // allowed: practitionerC's notice is 0 right now
-check("setup booking (1h ahead, practitionerC) created", !!inside.booking);
+const inside = await bookAsClient(client1, practitionerC, serviceC, 3); // allowed: practitionerC's notice is 1h right now, comfortable margin above that
+check("setup booking (3h ahead, practitionerC) created", !!inside.booking);
 // Raise the notice AFTER the booking exists — the booking now sits
 // inside practitionerC's cutoff, same as a real booking that was made
 // with enough lead time but has since drifted inside the window as
@@ -156,10 +157,12 @@ check("client setting status to cancelled_by_practitioner on their own booking i
 console.log("\n=== 5. Practitioner cancels their OWN booking WITHIN the client's cutoff (succeeds — emergency case) ===");
 // Lower the notice again so this near-term insert is even possible,
 // same as step 2's setup — then raise it right back so the
-// cancellation itself is genuinely tested within a real cutoff.
-await practitionerC.supabase.from("practitioner_profiles").update({ min_notice_hours: 0 }).eq("id", practitionerC.user.id);
-const emergency = await bookAsClient(client1, practitionerC, serviceC, 2);
-check("setup booking (2h ahead, practitionerC) created", !!emergency.booking);
+// cancellation itself is genuinely tested within a real cutoff. Uses a
+// distinct offset from step 2's booking (also on practitionerC) so the
+// two don't collide via the double-booking exclusion constraint.
+await practitionerC.supabase.from("practitioner_profiles").update({ min_notice_hours: 1 }).eq("id", practitionerC.user.id);
+const emergency = await bookAsClient(client1, practitionerC, serviceC, 6);
+check("setup booking (6h ahead, practitionerC) created", !!emergency.booking);
 await practitionerC.supabase.from("practitioner_profiles").update({ min_notice_hours: 24 }).eq("id", practitionerC.user.id);
 const emergencyCancel = await practitionerC.supabase
   .from("bookings")

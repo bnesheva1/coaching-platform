@@ -12,11 +12,11 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
 const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
-// Matches generateSlots' own 14-day window (see the DB CHECK on
-// practitioner_profiles.min_notice_hours) — a larger value would
-// trivially zero out all availability, so it's not a meaningful upper
-// bound to allow past that.
-const MAX_MIN_NOTICE_HOURS = 336;
+// Product-chosen range (see the matching DB CHECK on
+// practitioner_profiles.min_notice_hours): a practitioner must require
+// at least some notice, but not more than two days.
+const MIN_MIN_NOTICE_HOURS = 1;
+const MAX_MIN_NOTICE_HOURS = 48;
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 
 // The DB only shape-checks the timezone column (same philosophy as the
@@ -72,10 +72,12 @@ export async function saveProfile(
   }
   if (
     !Number.isInteger(minNoticeHours) ||
-    minNoticeHours < 0 ||
+    minNoticeHours < MIN_MIN_NOTICE_HOURS ||
     minNoticeHours > MAX_MIN_NOTICE_HOURS
   ) {
-    return { error: t("minNoticeHoursInvalid", { max: MAX_MIN_NOTICE_HOURS }) };
+    return {
+      error: t("minNoticeHoursInvalid", { min: MIN_MIN_NOTICE_HOURS, max: MAX_MIN_NOTICE_HOURS }),
+    };
   }
 
   const avatarEntry = formData.get("avatar");

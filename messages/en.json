@@ -70,7 +70,7 @@
     "timezoneInvalid": "Please select a valid timezone.",
     "minNoticeHoursLabel": "Minimum booking notice (hours)",
     "minNoticeHoursHint": "How far ahead a client must book, and how late they can cancel online. Default 24.",
-    "minNoticeHoursInvalid": "Enter a whole number of hours between 0 and {max}."
+    "minNoticeHoursInvalid": "Enter a whole number of hours between {min} and {max}."
   },
   "Availability": {
     "title": "Weekly availability",
