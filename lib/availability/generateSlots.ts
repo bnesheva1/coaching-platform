@@ -65,6 +65,7 @@ export function generateSlots({
   serviceDurationMinutes,
   existingBookings = [],
   blockedDates = [],
+  minNoticeHours = 0,
   windowDays = WINDOW_DAYS,
   now = DateTime.utc(),
 }: {
@@ -73,11 +74,18 @@ export function generateSlots({
   serviceDurationMinutes: number;
   existingBookings?: ExistingBooking[];
   blockedDates?: string[]; // ISO "YYYY-MM-DD", in the practitioner's own calendar
+  minNoticeHours?: number; // same setting governs the cancellation cutoff (see cancel-booking-actions.ts)
   windowDays?: number;
   now?: DateTime;
 }): Slot[] {
   const slots: Slot[] = [];
   const blockedDateSet = new Set(blockedDates);
+  // A duration relative to an instant, not a calendar concept — no
+  // timezone resolution needed here, unlike blockedDates above. The
+  // same cutoff also governs client self-cancellation (see
+  // cancel-booking-actions.ts), enforced there via an identical
+  // comparison against a fresh `now`.
+  const noticeCutoff = now.plus({ hours: minNoticeHours });
   // "Today" and day-of-week iteration are anchored to the practitioner's
   // own timezone, not the server's or a client's — availability rules
   // are inherently practitioner-local concepts.
@@ -113,12 +121,12 @@ export function generateSlots({
       while (candidateStart.plus({ minutes: serviceDurationMinutes }) <= periodEnd) {
         const candidateEnd = candidateStart.plus({ minutes: serviceDurationMinutes });
 
-        const isPast = candidateStart <= now;
+        const isTooSoon = candidateStart <= noticeCutoff;
         const isBooked = existingBookings.some((booking) =>
           overlaps(candidateStart, candidateEnd, booking),
         );
 
-        if (!isPast && !isBooked) {
+        if (!isTooSoon && !isBooked) {
           slots.push({ startUtc: candidateStart.toISO()! });
         }
 

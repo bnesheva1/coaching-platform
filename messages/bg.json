@@ -67,7 +67,10 @@
     "timezoneLabel": "Часова зона",
     "timezoneDetectedPrompt": "Открита часова зона: {timezone}",
     "timezoneUseDetected": "Използвай тази",
-    "timezoneInvalid": "Моля, избери валидна часова зона."
+    "timezoneInvalid": "Моля, избери валидна часова зона.",
+    "minNoticeHoursLabel": "Минимално предизвестие за резервация (часове)",
+    "minNoticeHoursHint": "Колко часа предварително трябва да записва клиент, и колко късно може да отказва онлайн. По подразбиране 24.",
+    "minNoticeHoursInvalid": "Въведете цяло число часове между 0 и {max}."
   },
   "Availability": {
     "title": "Седмична наличност",
@@ -167,9 +170,17 @@
     "noPastBookings": "Няма минали резервации.",
     "statusPending": "Изчаква",
     "statusConfirmed": "Потвърдена",
-    "statusCancelled": "Отказана",
+    "statusCancelledByClient": "Отказана от клиента",
+    "statusCancelledByPractitioner": "Отказана от специалиста",
     "withPractitioner": "Със: {name}",
-    "withClient": "Клиент: {name}"
+    "withClient": "Клиент: {name}",
+    "cancelButton": "Откажи резервацията",
+    "cancelConfirm": "Отказваш тази резервация? Това действие не може да се отмени.",
+    "cancelledMessage": "Резервацията е отказана.",
+    "cancellationFailed": "Неуспешно отказване на резервацията. Опитай отново.",
+    "tooLateToCancel": "Тази резервация вече не може да бъде отказана онлайн — моля, свържи се директно със специалиста.",
+    "cancelWindowNote": "В рамките на {hours}-часовия прозорец за предизвестие — свържи се със специалиста, за да откажеш.",
+    "alreadyCancelled": "Тази резервация вече е отказана."
   },
   "Browse": {
     "title": "Открий специалист",

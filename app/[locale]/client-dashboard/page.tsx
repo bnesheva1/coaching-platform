@@ -5,9 +5,15 @@ import { signOut } from "@/app/actions";
 import { BookingsList, type ClientBooking } from "./BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 
-export default async function ClientDashboardPage() {
+export default async function ClientDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const t = await getTranslations("Dashboard");
+  const tBooking = await getTranslations("Booking");
   const locale = await getLocale();
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,16 +44,23 @@ export default async function ClientDashboardPage() {
   const practitionerIds = [...new Set((bookings ?? []).map((b) => b.practitioner_id))];
   const serviceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
 
-  const [{ data: practitioners }, { data: services }] = await Promise.all([
-    practitionerIds.length > 0
-      ? supabase.from("profiles").select("id, display_name").in("id", practitionerIds)
-      : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
-    serviceIds.length > 0
-      ? supabase.from("services").select("id, name, duration_minutes").in("id", serviceIds)
-      : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number }[] }),
-  ]);
+  const [{ data: practitioners }, { data: practitionerNoticeSettings }, { data: services }] =
+    await Promise.all([
+      practitionerIds.length > 0
+        ? supabase.from("profiles").select("id, display_name").in("id", practitionerIds)
+        : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
+      practitionerIds.length > 0
+        ? supabase.from("practitioner_profiles").select("id, min_notice_hours").in("id", practitionerIds)
+        : Promise.resolve({ data: [] as { id: string; min_notice_hours: number }[] }),
+      serviceIds.length > 0
+        ? supabase.from("services").select("id, name, duration_minutes").in("id", serviceIds)
+        : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number }[] }),
+    ]);
 
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
+  const minNoticeHoursById = new Map(
+    (practitionerNoticeSettings ?? []).map((p) => [p.id, p.min_notice_hours]),
+  );
   const serviceById = new Map((services ?? []).map((s) => [s.id, s]));
 
   const mergedBookings: ClientBooking[] = (bookings ?? []).map((b) => ({
@@ -58,9 +71,14 @@ export default async function ClientDashboardPage() {
     startUtc: b.start_utc,
     endUtc: b.end_utc,
     status: b.status as ClientBooking["status"],
+    minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);
+
+  const justCancelled = resolvedSearchParams.cancelled === "1";
+  const cancelErrorCode =
+    typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
 
   return (
     <main style={{ maxWidth: 400, margin: "4rem auto", fontFamily: "sans-serif" }}>
@@ -68,6 +86,14 @@ export default async function ClientDashboardPage() {
       <form action={signOut}>
         <button type="submit">{t("signOut")}</button>
       </form>
+      {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
+      {cancelErrorCode && (
+        <p style={{ color: "crimson" }}>
+          {tBooking.has(cancelErrorCode)
+            ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
+            : tBooking("cancellationFailed")}
+        </p>
+      )}
       <BookingsList upcoming={upcoming} past={past} />
     </main>
   );

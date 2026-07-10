@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { cancelBookingAsClient } from "./cancel-booking-actions";
+import { isPastCancellationCutoff } from "@/lib/booking-time";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -11,8 +13,11 @@ const INTL_LOCALES: Record<string, string> = {
 const STATUS_KEYS = {
   pending: "statusPending",
   confirmed: "statusConfirmed",
-  cancelled: "statusCancelled",
+  cancelled_by_client: "statusCancelledByClient",
+  cancelled_by_practitioner: "statusCancelledByPractitioner",
 } as const;
+
+const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
 
 // Same useSyncExternalStore pattern as SlotList.tsx / ProfileForm.tsx —
 // the browser's timezone can't be known during SSR, so the server and
@@ -38,7 +43,10 @@ export type ClientBooking = {
   durationMinutes: number;
   startUtc: string;
   endUtc: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled_by_client" | "cancelled_by_practitioner";
+  // Per-booking, not per-list — a client can have bookings with
+  // different practitioners on different notice settings.
+  minNoticeHours: number;
 };
 
 export function BookingsList({
@@ -65,6 +73,9 @@ export function BookingsList({
   });
 
   function renderBooking(booking: ClientBooking) {
+    const isActive = ACTIVE_STATUSES.has(booking.status);
+    const isPastCutoff = isActive && isPastCancellationCutoff(booking.startUtc, booking.minNoticeHours);
+
     return (
       <li key={booking.id} style={{ marginBottom: "0.5rem" }}>
         <strong>{formatter.format(new Date(booking.startUtc))}</strong>
@@ -74,6 +85,30 @@ export function BookingsList({
         {booking.serviceName}
         {" · "}
         {t(STATUS_KEYS[booking.status])}
+        {isActive && !isPastCutoff && (
+          <>
+            {" · "}
+            <form
+              action={cancelBookingAsClient.bind(null, booking.id)}
+              style={{ display: "inline" }}
+              onSubmit={(e) => {
+                if (!confirm(t("cancelConfirm"))) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <button type="submit">{t("cancelButton")}</button>
+            </form>
+          </>
+        )}
+        {isActive && isPastCutoff && (
+          <>
+            {" · "}
+            <span style={{ color: "#666", fontSize: "0.85rem" }}>
+              {t("cancelWindowNote", { hours: booking.minNoticeHours })}
+            </span>
+          </>
+        )}
       </li>
     );
   }

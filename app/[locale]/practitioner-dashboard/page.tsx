@@ -9,9 +9,15 @@ import { AvailabilityExceptionsSection } from "./AvailabilityExceptionsSection";
 import { BookingsList, type PractitionerBooking } from "./BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 
-export default async function PractitionerDashboardPage() {
+export default async function PractitionerDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const t = await getTranslations("Dashboard");
+  const tBooking = await getTranslations("Booking");
   const locale = await getLocale();
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,7 +41,7 @@ export default async function PractitionerDashboardPage() {
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("bio, specialties, avatar_url, username, timezone")
+    .select("bio, specialties, avatar_url, username, timezone, min_notice_hours")
     .eq("id", user.id)
     .single();
 
@@ -89,12 +95,24 @@ export default async function PractitionerDashboardPage() {
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);
 
+  const justCancelled = resolvedSearchParams.cancelled === "1";
+  const cancelErrorCode =
+    typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
+
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>{t("practitionerTitle")}</h1>
       <form action={signOut} style={{ marginBottom: "1.5rem" }}>
         <button type="submit">{t("signOut")}</button>
       </form>
+      {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
+      {cancelErrorCode && (
+        <p style={{ color: "crimson" }}>
+          {tBooking.has(cancelErrorCode)
+            ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
+            : tBooking("cancellationFailed")}
+        </p>
+      )}
       {practitionerProfile?.username && (
         <p>
           <Link href={`/p/${practitionerProfile.username}`}>
@@ -109,6 +127,7 @@ export default async function PractitionerDashboardPage() {
         initialSpecialties={practitionerProfile?.specialties ?? []}
         initialAvatarUrl={practitionerProfile?.avatar_url ?? null}
         initialTimezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+        initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24}
       />
       <ServicesSection services={services ?? []} />
       <AvailabilitySection

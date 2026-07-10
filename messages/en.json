@@ -67,7 +67,10 @@
     "timezoneLabel": "Timezone",
     "timezoneDetectedPrompt": "Detected timezone: {timezone}",
     "timezoneUseDetected": "Use this",
-    "timezoneInvalid": "Please select a valid timezone."
+    "timezoneInvalid": "Please select a valid timezone.",
+    "minNoticeHoursLabel": "Minimum booking notice (hours)",
+    "minNoticeHoursHint": "How far ahead a client must book, and how late they can cancel online. Default 24.",
+    "minNoticeHoursInvalid": "Enter a whole number of hours between 0 and {max}."
   },
   "Availability": {
     "title": "Weekly availability",
@@ -167,9 +170,17 @@
     "noPastBookings": "No past bookings.",
     "statusPending": "Pending",
     "statusConfirmed": "Confirmed",
-    "statusCancelled": "Cancelled",
+    "statusCancelledByClient": "Cancelled by client",
+    "statusCancelledByPractitioner": "Cancelled by practitioner",
     "withPractitioner": "With {name}",
-    "withClient": "Client: {name}"
+    "withClient": "Client: {name}",
+    "cancelButton": "Cancel booking",
+    "cancelConfirm": "Cancel this booking? This can't be undone.",
+    "cancelledMessage": "Booking cancelled.",
+    "cancellationFailed": "Unable to cancel this booking right now. Please try again.",
+    "tooLateToCancel": "This booking can no longer be cancelled online — please contact the practitioner directly.",
+    "cancelWindowNote": "Within the {hours}-hour notice window — contact the practitioner to cancel.",
+    "alreadyCancelled": "This booking has already been cancelled."
   },
   "Browse": {
     "title": "Find a practitioner",

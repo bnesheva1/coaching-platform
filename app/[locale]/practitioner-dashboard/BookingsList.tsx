@@ -1,4 +1,5 @@
 import { getTranslations, getLocale } from "next-intl/server";
+import { CancelBookingButton } from "./CancelBookingButton";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -8,8 +9,11 @@ const INTL_LOCALES: Record<string, string> = {
 const STATUS_KEYS = {
   pending: "statusPending",
   confirmed: "statusConfirmed",
-  cancelled: "statusCancelled",
+  cancelled_by_client: "statusCancelledByClient",
+  cancelled_by_practitioner: "statusCancelledByPractitioner",
 } as const;
+
+const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
 
 export type PractitionerBooking = {
   id: string;
@@ -18,7 +22,7 @@ export type PractitionerBooking = {
   durationMinutes: number;
   startUtc: string;
   endUtc: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled_by_client" | "cancelled_by_practitioner";
 };
 
 // Unlike the client-dashboard's BookingsList, the practitioner's
@@ -54,6 +58,12 @@ export async function BookingsList({
         {booking.serviceName}
         {" · "}
         {t(STATUS_KEYS[booking.status])}
+        {ACTIVE_STATUSES.has(booking.status) && (
+          <>
+            {" · "}
+            <CancelBookingButton bookingId={booking.id} />
+          </>
+        )}
       </li>
     );
   }

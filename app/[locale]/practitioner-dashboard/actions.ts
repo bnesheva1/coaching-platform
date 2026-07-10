@@ -12,6 +12,11 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
 const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
+// Matches generateSlots' own 14-day window (see the DB CHECK on
+// practitioner_profiles.min_notice_hours) — a larger value would
+// trivially zero out all availability, so it's not a meaningful upper
+// bound to allow past that.
+const MAX_MIN_NOTICE_HOURS = 336;
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 
 // The DB only shape-checks the timezone column (same philosophy as the
@@ -47,6 +52,7 @@ export async function saveProfile(
   const rawUsername = formData.get("username") as string;
   const bio = (formData.get("bio") as string).trim();
   const timezone = (formData.get("timezone") as string)?.trim();
+  const minNoticeHours = Number(formData.get("minNoticeHours"));
   // Checkboxes are rendered from the known specialty list, but a raw
   // request could submit anything as a value — filter to the actual
   // taxonomy so junk/spam text can't end up displayed on a public
@@ -64,6 +70,13 @@ export async function saveProfile(
   if (!timezone || !isValidTimezone(timezone)) {
     return { error: t("timezoneInvalid") };
   }
+  if (
+    !Number.isInteger(minNoticeHours) ||
+    minNoticeHours < 0 ||
+    minNoticeHours > MAX_MIN_NOTICE_HOURS
+  ) {
+    return { error: t("minNoticeHoursInvalid", { max: MAX_MIN_NOTICE_HOURS }) };
+  }
 
   const avatarEntry = formData.get("avatar");
   const avatarFile =
@@ -74,6 +87,7 @@ export async function saveProfile(
     bio: string;
     specialties: string[];
     timezone: string;
+    min_notice_hours: number;
     avatar_url?: string;
     username?: string;
   } = {
@@ -81,6 +95,7 @@ export async function saveProfile(
     bio,
     specialties,
     timezone,
+    min_notice_hours: minNoticeHours,
   };
 
   // Left blank, username is simply not touched — a practitioner without

@@ -17,3 +17,16 @@ export function splitUpcomingPast<T extends { startUtc: string }>(
     .sort((a, b) => new Date(b.startUtc).getTime() - new Date(a.startUtc).getTime());
   return { upcoming, past };
 }
+
+// UX-only check (mirrors cancel-booking-actions.ts's identical
+// comparison, which is the actual enforcement, backed further by the
+// client-cancel RLS policy's own USING clause) — used to hide the
+// cancel button once a booking is within its practitioner's notice
+// window, since self-cancellation isn't offered there at all (the
+// client would contact the practitioner instead). Same reasoning as
+// splitUpcomingPast for why this needs to be a plain function rather
+// than inline in a component body.
+export function isPastCancellationCutoff(startUtc: string, minNoticeHours: number): boolean {
+  const cutoff = Date.now() + minNoticeHours * 60 * 60 * 1000;
+  return new Date(startUtc).getTime() < cutoff;
+}

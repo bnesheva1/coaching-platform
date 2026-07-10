@@ -46,6 +46,7 @@ export function ProfileForm({
   initialSpecialties,
   initialAvatarUrl,
   initialTimezone,
+  initialMinNoticeHours,
 }: {
   initialUsername: string | null;
   initialDisplayName: string;
@@ -53,6 +54,7 @@ export function ProfileForm({
   initialSpecialties: string[];
   initialAvatarUrl: string | null;
   initialTimezone: string;
+  initialMinNoticeHours: number;
 }) {
   const t = useTranslations("Profile");
   const locale = useLocale() as "en" | "bg";
@@ -177,6 +179,23 @@ export function ProfileForm({
           </button>
         </p>
       )}
+
+      <label>
+        {t("minNoticeHoursLabel")}
+        <br />
+        <input
+          name="minNoticeHours"
+          type="number"
+          min={0}
+          max={336}
+          step={1}
+          defaultValue={initialMinNoticeHours}
+          style={{ width: "100%" }}
+        />
+      </label>
+      <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+        {t("minNoticeHoursHint")}
+      </p>
 
       <label>
         {t("bioLabel")}

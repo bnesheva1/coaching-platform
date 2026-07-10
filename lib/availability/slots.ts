@@ -33,7 +33,11 @@ export async function getBookableSlots({
     { data: busyTimes, error: busyTimesError },
     { data: exceptions, error: exceptionsError },
   ] = await Promise.all([
-    supabase.from("practitioner_profiles").select("timezone").eq("id", practitionerId).single(),
+    supabase
+      .from("practitioner_profiles")
+      .select("timezone, min_notice_hours")
+      .eq("id", practitionerId)
+      .single(),
     supabase
       .from("practitioner_availability")
       .select("day_of_week, start_time, end_time")
@@ -103,5 +107,6 @@ export async function getBookableSlots({
     serviceDurationMinutes: service.duration_minutes,
     existingBookings,
     blockedDates,
+    minNoticeHours: profile.min_notice_hours,
   });
 }
