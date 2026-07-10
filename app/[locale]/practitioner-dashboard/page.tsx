@@ -5,6 +5,8 @@ import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { ServicesSection } from "./ServicesSection";
 import { AvailabilitySection } from "./AvailabilitySection";
+import { BookingsList, type PractitionerBooking } from "./BookingsList";
+import { splitUpcomingPast } from "@/lib/booking-time";
 
 export default async function PractitionerDashboardPage() {
   const t = await getTranslations("Dashboard");
@@ -47,6 +49,39 @@ export default async function PractitionerDashboardPage() {
     .select("id, day_of_week, start_time, end_time")
     .eq("practitioner_id", user.id);
 
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("id, client_id, service_id, start_utc, end_utc, status")
+    .eq("practitioner_id", user.id)
+    .order("start_utc", { ascending: true });
+
+  const clientIds = [...new Set((bookings ?? []).map((b) => b.client_id))];
+  const bookingServiceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
+
+  const [{ data: clients }, { data: bookingServices }] = await Promise.all([
+    clientIds.length > 0
+      ? supabase.from("profiles").select("id, display_name").in("id", clientIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
+    bookingServiceIds.length > 0
+      ? supabase.from("services").select("id, name, duration_minutes").in("id", bookingServiceIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number }[] }),
+  ]);
+
+  const clientNameById = new Map((clients ?? []).map((c) => [c.id, c.display_name ?? ""]));
+  const bookingServiceById = new Map((bookingServices ?? []).map((s) => [s.id, s]));
+
+  const mergedBookings: PractitionerBooking[] = (bookings ?? []).map((b) => ({
+    id: b.id,
+    clientName: clientNameById.get(b.client_id) ?? "",
+    serviceName: bookingServiceById.get(b.service_id)?.name ?? "",
+    durationMinutes: bookingServiceById.get(b.service_id)?.duration_minutes ?? 0,
+    startUtc: b.start_utc,
+    endUtc: b.end_utc,
+    status: b.status as PractitionerBooking["status"],
+  }));
+
+  const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);
+
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>{t("practitionerTitle")}</h1>
@@ -71,6 +106,11 @@ export default async function PractitionerDashboardPage() {
       <ServicesSection services={services ?? []} />
       <AvailabilitySection
         rules={availabilityRules ?? []}
+        timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+      />
+      <BookingsList
+        upcoming={upcomingBookings}
+        past={pastBookings}
         timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
       />
     </main>

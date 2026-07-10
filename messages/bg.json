@@ -143,7 +143,17 @@
     "rateLimited": "Твърде много опити за записване. Изчакай няколко минути и опитай отново.",
     "slotNoLongerAvailable": "Този час вече не е свободен. Моля, избери друг.",
     "slotTaken": "За съжаление часът току-що беше зает. Моля, избери друг.",
-    "bookingFailed": "Неуспешно записване на часа. Опитай отново."
+    "bookingFailed": "Неуспешно записване на часа. Опитай отново.",
+    "bookingsTitle": "Резервации",
+    "upcomingHeading": "Предстоящи",
+    "pastHeading": "Минали",
+    "noUpcomingBookings": "Няма предстоящи резервации.",
+    "noPastBookings": "Няма минали резервации.",
+    "statusPending": "Изчаква",
+    "statusConfirmed": "Потвърдена",
+    "statusCancelled": "Отказана",
+    "withPractitioner": "Със: {name}",
+    "withClient": "Клиент: {name}"
   },
   "Browse": {
     "title": "Открий специалист",

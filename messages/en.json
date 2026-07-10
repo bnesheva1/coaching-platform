@@ -143,7 +143,17 @@
     "rateLimited": "Too many booking attempts. Please wait a few minutes and try again.",
     "slotNoLongerAvailable": "That time is no longer available. Please pick another.",
     "slotTaken": "Sorry, that time was just taken. Please pick another.",
-    "bookingFailed": "Unable to complete the booking right now. Please try again."
+    "bookingFailed": "Unable to complete the booking right now. Please try again.",
+    "bookingsTitle": "Bookings",
+    "upcomingHeading": "Upcoming",
+    "pastHeading": "Past",
+    "noUpcomingBookings": "No upcoming bookings.",
+    "noPastBookings": "No past bookings.",
+    "statusPending": "Pending",
+    "statusConfirmed": "Confirmed",
+    "statusCancelled": "Cancelled",
+    "withPractitioner": "With {name}",
+    "withClient": "Client: {name}"
   },
   "Browse": {
     "title": "Find a practitioner",
