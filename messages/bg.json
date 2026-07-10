@@ -59,7 +59,11 @@
     "photoInvalidType": "Снимката е нужно да е PNG, JPEG, или WebP изображение.",
     "photoTooLarge": "Снимката е нужно да е по-малка от 2MB.",
     "photoUploadFailed": "Неуспешно качване на снимка: {message}",
-    "availabilityCheckFailed": "Не успяхме да проверим точно сега."
+    "availabilityCheckFailed": "Не успяхме да проверим точно сега.",
+    "saveFailed": "Неуспешно запазване на профила. Опитай отново.",
+    "displayNameTooLong": "Видимото име трябва да е до {max} символа.",
+    "bioTooLong": "Представянето трябва да е до {max} символа.",
+    "usernameTooLong": "Потребителското име трябва да е до {max} символа."
   },
   "Services": {
     "title": "Моите услуги",
@@ -84,6 +88,9 @@
     "hiddenStatus": "Неактивни",
     "notLoggedIn": "Не си влазъл.",
     "nameRequired": "Името е задължително.",
+    "nameTooLong": "Името трябва да е до {max} символа.",
+    "descriptionTooLong": "Описанието трябва да е до {max} символа.",
+    "saveFailed": "Неуспешно запазване на услугата. Опитай отново.",
     "durationInvalid": "Продължителността е нужно да е положително число минути.",
     "priceInvalid": "Въведете валида цена."
   },

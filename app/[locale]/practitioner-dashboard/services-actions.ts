@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export type ServiceFormState = { error?: string; success?: boolean } | null;
 
+const MAX_NAME_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 1000;
+
 // JavaScript represents decimals as IEEE754 floats, so e.g. 75.10 * 100
 // can come out as 7509.999999999999 rather than exactly 7510 — rounding
 // after multiplying corrects for that regardless of which way the error
@@ -37,6 +40,12 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
 
   if (!name) {
     return { ok: false, error: t("nameRequired") };
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    return { ok: false, error: t("nameTooLong", { max: MAX_NAME_LENGTH }) };
+  }
+  if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+    return { ok: false, error: t("descriptionTooLong", { max: MAX_DESCRIPTION_LENGTH }) };
   }
   if (!Number.isInteger(durationMinutes) || durationMinutes <= 0) {
     return { ok: false, error: t("durationInvalid") };
@@ -77,7 +86,8 @@ export async function createService(
   });
 
   if (error) {
-    return { error: error.message };
+    console.error("createService failed:", error);
+    return { error: t("saveFailed") };
   }
 
   revalidatePath("/practitioner-dashboard");
@@ -118,7 +128,8 @@ export async function updateService(
     .eq("practitioner_id", user.id);
 
   if (error) {
-    return { error: error.message };
+    console.error("updateService failed:", error);
+    return { error: t("saveFailed") };
   }
 
   revalidatePath("/practitioner-dashboard");
@@ -138,11 +149,15 @@ export async function setServiceActive(
     return;
   }
 
-  await supabase
+  const { error } = await supabase
     .from("services")
     .update({ is_active: isActive })
     .eq("id", serviceId)
     .eq("practitioner_id", user.id);
+
+  if (error) {
+    console.error("setServiceActive failed:", error);
+  }
 
   revalidatePath("/practitioner-dashboard");
 }
@@ -162,11 +177,15 @@ export async function deleteService(serviceId: string, _formData: FormData) {
     return;
   }
 
-  await supabase
+  const { error } = await supabase
     .from("services")
     .delete()
     .eq("id", serviceId)
     .eq("practitioner_id", user.id);
+
+  if (error) {
+    console.error("deleteService failed:", error);
+  }
 
   revalidatePath("/practitioner-dashboard");
 }

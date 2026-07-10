@@ -59,7 +59,11 @@
     "photoInvalidType": "Photo must be a PNG, JPEG, or WebP image.",
     "photoTooLarge": "Photo must be smaller than 2MB.",
     "photoUploadFailed": "Photo upload failed: {message}",
-    "availabilityCheckFailed": "Couldn't check availability right now."
+    "availabilityCheckFailed": "Couldn't check availability right now.",
+    "saveFailed": "Unable to save your profile right now. Please try again.",
+    "displayNameTooLong": "Display name must be {max} characters or fewer.",
+    "bioTooLong": "Bio must be {max} characters or fewer.",
+    "usernameTooLong": "Username must be {max} characters or fewer."
   },
   "Services": {
     "title": "My services",
@@ -85,7 +89,10 @@
     "notLoggedIn": "Not logged in.",
     "nameRequired": "Name is required.",
     "durationInvalid": "Duration must be a positive number of minutes.",
-    "priceInvalid": "Enter a valid price."
+    "priceInvalid": "Enter a valid price.",
+    "nameTooLong": "Name must be {max} characters or fewer.",
+    "descriptionTooLong": "Description must be {max} characters or fewer.",
+    "saveFailed": "Unable to save this service right now. Please try again."
   },
   "PublicProfile": {
     "editProfile": "Edit profile",

@@ -77,6 +77,7 @@ const profanityMatcher = new RegExpMatcher({
 
 const USERNAME_FORMAT = /^[a-z0-9_-]+$/;
 const MIN_USERNAME_LENGTH = 3;
+const MAX_USERNAME_LENGTH = 30;
 
 export function normalizeUsername(raw: string): string {
   return raw.trim().toLowerCase();
@@ -100,6 +101,13 @@ export async function validateUsernameFormat(
     return {
       valid: false,
       reason: t("usernameTooShort", { min: MIN_USERNAME_LENGTH }),
+    };
+  }
+
+  if (normalized.length > MAX_USERNAME_LENGTH) {
+    return {
+      valid: false,
+      reason: t("usernameTooLong", { max: MAX_USERNAME_LENGTH }),
     };
   }
 

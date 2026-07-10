@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUsernameFormat } from "@/lib/validation/username";
+import specialtiesData from "@/data/specialties.json";
 
 export type ProfileFormState = { error?: string; success?: boolean } | null;
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
 const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_DISPLAY_NAME_LENGTH = 100;
+const MAX_BIO_LENGTH = 1000;
+const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 
 export async function saveProfile(
   _prevState: ProfileFormState,
@@ -24,10 +28,23 @@ export async function saveProfile(
     return { error: t("notLoggedIn") };
   }
 
-  const displayName = formData.get("displayName") as string;
+  const displayName = (formData.get("displayName") as string).trim();
   const rawUsername = formData.get("username") as string;
-  const bio = formData.get("bio") as string;
-  const specialties = formData.getAll("specialties") as string[];
+  const bio = (formData.get("bio") as string).trim();
+  // Checkboxes are rendered from the known specialty list, but a raw
+  // request could submit anything as a value — filter to the actual
+  // taxonomy so junk/spam text can't end up displayed on a public
+  // profile as if it were a real specialty.
+  const specialties = (formData.getAll("specialties") as string[]).filter((key) =>
+    KNOWN_SPECIALTY_KEYS.has(key),
+  );
+
+  if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+    return { error: t("displayNameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }) };
+  }
+  if (bio.length > MAX_BIO_LENGTH) {
+    return { error: t("bioTooLong", { max: MAX_BIO_LENGTH }) };
+  }
 
   const avatarEntry = formData.get("avatar");
   const avatarFile =
@@ -103,7 +120,8 @@ export async function saveProfile(
     .eq("id", user.id);
 
   if (displayNameError) {
-    return { error: displayNameError.message };
+    console.error("saveProfile: failed to update display_name:", displayNameError);
+    return { error: t("saveFailed") };
   }
 
   const { error } = await supabase
@@ -111,7 +129,8 @@ export async function saveProfile(
     .upsert(payload);
 
   if (error) {
-    return { error: error.message };
+    console.error("saveProfile: failed to upsert practitioner_profiles:", error);
+    return { error: t("saveFailed") };
   }
 
   revalidatePath("/practitioner-dashboard");
