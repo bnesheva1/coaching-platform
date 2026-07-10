@@ -25,6 +25,7 @@
     "hasAccountPrompt": "Already have an account? <login>Log in</login>",
     "passwordTooShort": "Password must be at least 12 characters.",
     "tooManyAttempts": "Too many attempts. Please wait a few minutes and try again.",
+    "captchaFailed": "CAPTCHA verification failed. Please try again.",
 
     "checkEmailTitle": "Check your email",
     "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in."

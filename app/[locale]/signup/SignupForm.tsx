@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
-import { Turnstile } from "@marsidev/react-turnstile";
+import Script from "next/script";
+import { Turnstile, SCRIPT_URL, DEFAULT_SCRIPT_ID } from "@marsidev/react-turnstile";
 import { Link } from "@/i18n/navigation";
 import { signup, type AuthFormState } from "./actions";
 
@@ -24,6 +25,10 @@ export function SignupForm() {
       }}
     >
       <h1>{t("signupTitle")}</h1>
+      {/* Manually injecting the Turnstile script (rather than letting the
+          component do it) avoids a hydration mismatch — recommended by
+          the library itself for Next.js App Router. */}
+      <Script id={DEFAULT_SCRIPT_ID} src={SCRIPT_URL} strategy="afterInteractive" />
       <form
         action={formAction}
         style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
@@ -59,7 +64,10 @@ export function SignupForm() {
           </label>
         </fieldset>
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
-          <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            injectScript={false}
+          />
         )}
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         <button type="submit" disabled={pending}>

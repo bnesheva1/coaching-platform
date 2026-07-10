@@ -8,6 +8,29 @@ import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 
 export type AuthFormState = { error: string } | null;
 
+// Verified here, in code, rather than via Supabase's own "Bot and Abuse
+// Protection" dashboard toggle — that toggle turned out to be a single
+// global on/off covering every auth flow, which would have required
+// CAPTCHA on login too. Doing it ourselves keeps this signup-only, as
+// intended. Not configured yet locally/in early environments returns
+// true (fail open) rather than blocking every signup over a missing
+// optional key.
+async function verifyTurnstileToken(token: string | null): Promise<boolean> {
+  if (!process.env.TURNSTILE_SECRET_KEY) return true;
+  if (!token) return false;
+
+  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      secret: process.env.TURNSTILE_SECRET_KEY,
+      response: token,
+    }),
+  });
+  const result = await response.json();
+  return result.success === true;
+}
+
 export async function signup(
   _prevState: AuthFormState,
   formData: FormData,
@@ -30,6 +53,11 @@ export async function signup(
     return { error: t("passwordTooShort") };
   }
 
+  const captchaValid = await verifyTurnstileToken(captchaToken);
+  if (!captchaValid) {
+    return { error: t("captchaFailed") };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -37,7 +65,6 @@ export async function signup(
     password,
     options: {
       data: { display_name: displayName, role },
-      captchaToken: captchaToken ?? undefined,
     },
   });
 
