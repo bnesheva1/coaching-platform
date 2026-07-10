@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { ServicesSection } from "./ServicesSection";
+import { AvailabilitySection } from "./AvailabilitySection";
 
 export default async function PractitionerDashboardPage() {
   const t = await getTranslations("Dashboard");
@@ -31,7 +32,7 @@ export default async function PractitionerDashboardPage() {
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("bio, specialties, avatar_url, username")
+    .select("bio, specialties, avatar_url, username, timezone")
     .eq("id", user.id)
     .single();
 
@@ -40,6 +41,11 @@ export default async function PractitionerDashboardPage() {
     .select("id, name, description, duration_minutes, price_cents, currency, is_active")
     .eq("practitioner_id", user.id)
     .order("created_at", { ascending: true });
+
+  const { data: availabilityRules } = await supabase
+    .from("practitioner_availability")
+    .select("id, day_of_week, start_time, end_time")
+    .eq("practitioner_id", user.id);
 
   return (
     <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
@@ -60,8 +66,13 @@ export default async function PractitionerDashboardPage() {
         initialBio={practitionerProfile?.bio ?? ""}
         initialSpecialties={practitionerProfile?.specialties ?? []}
         initialAvatarUrl={practitionerProfile?.avatar_url ?? null}
+        initialTimezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
       />
       <ServicesSection services={services ?? []} />
+      <AvailabilitySection
+        rules={availabilityRules ?? []}
+        timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+      />
     </main>
   );
 }

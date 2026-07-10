@@ -1,11 +1,36 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { saveProfile, checkUsernameAvailability, type ProfileFormState } from "./actions";
 import specialties from "@/data/specialties.json";
 
 const initialState: ProfileFormState = null;
+
+// Computed once — stable within a browser session, no need to recompute
+// per render. ~400 real IANA identifiers, no external data file needed.
+const TIMEZONES = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+
+// The browser's timezone can't be known during SSR, so it must differ
+// between the server-rendered snapshot and the client one — exactly the
+// case useSyncExternalStore exists for (unlike a plain useEffect+setState,
+// it hands React the server snapshot during hydration and swaps to the
+// real client value right after, without a hydration-mismatch warning).
+// No real subscription exists (a browser's timezone essentially never
+// changes mid-session), so `subscribe` is a permanent no-op.
+function subscribeToNothing() {
+  return () => {};
+}
+function getDetectedTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return null;
+  }
+}
+function getServerTimezoneSnapshot(): string | null {
+  return null;
+}
 
 // Same pattern as the old signup-form live check: only the last
 // *completed* check result is stored, "checking" is derived by comparing
@@ -20,18 +45,28 @@ export function ProfileForm({
   initialBio,
   initialSpecialties,
   initialAvatarUrl,
+  initialTimezone,
 }: {
   initialUsername: string | null;
   initialDisplayName: string;
   initialBio: string;
   initialSpecialties: string[];
   initialAvatarUrl: string | null;
+  initialTimezone: string;
 }) {
   const t = useTranslations("Profile");
   const locale = useLocale() as "en" | "bg";
   const [state, formAction, pending] = useActionState(saveProfile, initialState);
   const [username, setUsername] = useState(initialUsername ?? "");
   const [lastResult, setLastResult] = useState<CheckResult | null>(null);
+  const [timezone, setTimezone] = useState(initialTimezone);
+  const browserTimezone = useSyncExternalStore(
+    subscribeToNothing,
+    getDetectedTimezone,
+    getServerTimezoneSnapshot,
+  );
+  const detectedTimezone =
+    browserTimezone && browserTimezone !== initialTimezone ? browserTimezone : null;
 
   useEffect(() => {
     if (!username || username === initialUsername) {
@@ -113,6 +148,35 @@ export function ProfileForm({
       <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
         {t("displayNameHint")}
       </p>
+
+      <label>
+        {t("timezoneLabel")}
+        <br />
+        <select
+          name="timezone"
+          value={timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          style={{ width: "100%" }}
+        >
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz}
+            </option>
+          ))}
+        </select>
+      </label>
+      {detectedTimezone && detectedTimezone !== timezone && (
+        <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+          {t("timezoneDetectedPrompt", { timezone: detectedTimezone })}{" "}
+          <button
+            type="button"
+            onClick={() => setTimezone(detectedTimezone)}
+            style={{ fontSize: "0.85rem" }}
+          >
+            {t("timezoneUseDetected")}
+          </button>
+        </p>
+      )}
 
       <label>
         {t("bioLabel")}

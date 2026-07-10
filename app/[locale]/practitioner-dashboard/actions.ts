@@ -14,6 +14,21 @@ const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 
+// The DB only shape-checks the timezone column (same philosophy as the
+// specialties fix) — this is the actual correctness check, using the
+// same mechanism the timezone will be used with later (Intl-based
+// conversion), rather than maintaining a separate list of valid IANA
+// identifiers. Throws on a bogus zone, which is exactly what we want to
+// catch.
+function isValidTimezone(candidate: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: candidate });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function saveProfile(
   _prevState: ProfileFormState,
   formData: FormData,
@@ -31,6 +46,7 @@ export async function saveProfile(
   const displayName = (formData.get("displayName") as string).trim();
   const rawUsername = formData.get("username") as string;
   const bio = (formData.get("bio") as string).trim();
+  const timezone = (formData.get("timezone") as string)?.trim();
   // Checkboxes are rendered from the known specialty list, but a raw
   // request could submit anything as a value — filter to the actual
   // taxonomy so junk/spam text can't end up displayed on a public
@@ -45,6 +61,9 @@ export async function saveProfile(
   if (bio.length > MAX_BIO_LENGTH) {
     return { error: t("bioTooLong", { max: MAX_BIO_LENGTH }) };
   }
+  if (!timezone || !isValidTimezone(timezone)) {
+    return { error: t("timezoneInvalid") };
+  }
 
   const avatarEntry = formData.get("avatar");
   const avatarFile =
@@ -54,12 +73,14 @@ export async function saveProfile(
     id: string;
     bio: string;
     specialties: string[];
+    timezone: string;
     avatar_url?: string;
     username?: string;
   } = {
     id: user.id,
     bio,
     specialties,
+    timezone,
   };
 
   // Left blank, username is simply not touched — a practitioner without
