@@ -195,5 +195,18 @@
   },
   "Search": {
     "label": "Търсене"
+  },
+  "Email": {
+    "bookingConfirmationClientSubject": "Резервацията ти с {counterpartyName} е потвърдена",
+    "bookingConfirmationClientHeading": "Резервацията е потвърдена",
+    "bookingConfirmationClientBody": "Здравей, {recipientName}, твоята резервация за {serviceName} със {counterpartyName} е потвърдена за {sessionTime}.",
+    "bookingConfirmationPractitionerSubject": "Нова резервация от {counterpartyName}",
+    "bookingConfirmationPractitionerHeading": "Нова резервация",
+    "bookingConfirmationPractitionerBody": "Здравей, {recipientName}, {counterpartyName} резервира час за {serviceName} с теб за {sessionTime}.",
+    "cancellationNoticeSubject": "Резервацията е отказана: {serviceName}",
+    "cancellationNoticeHeading": "Резервацията е отказана",
+    "cancellationNoticeBodyByClient": "Здравей, {recipientName}, {counterpartyName} отказа своята резервация за {serviceName}, насрочена за {sessionTime}.",
+    "cancellationNoticeBodyByPractitioner": "Здравей, {recipientName}, {counterpartyName} отказа резервацията за {serviceName}, насрочена за {sessionTime}.",
+    "footer": "Това е автоматично съобщение от платформата за консултации."
   }
 }

@@ -59,12 +59,17 @@ export async function signup(
   }
 
   const supabase = await createClient();
+  const locale = await getLocale();
 
+  // Captured once at signup as the recipient's stored preference for
+  // emails they aren't live-in-a-request for (see lib/email) — signup
+  // is itself a locale-prefixed route, so this is simply "whichever
+  // language they signed up in," not a separate question asked of them.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { display_name: displayName, role },
+      data: { display_name: displayName, role, locale },
     },
   });
 
@@ -74,8 +79,6 @@ export async function signup(
     // login/actions.ts.
     return { error: error.message };
   }
-
-  const locale = await getLocale();
 
   // If email confirmation is disabled on the Supabase project, signUp
   // returns an active session immediately — otherwise the user has to

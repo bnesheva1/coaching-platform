@@ -106,7 +106,7 @@ export function SlotList({
               viewerRole === "client" ? (
                 <form
                   key={slot.startUtc}
-                  action={bookSlot.bind(null, practitionerId, serviceId, username, slot.startUtc)}
+                  action={bookSlot.bind(null, practitionerId, serviceId, username, slot.startUtc, clientTimezone)}
                   onSubmit={(e) => {
                     if (!confirm(t("confirmBooking", { time: timeFormatter.format(slot.date) }))) {
                       e.preventDefault();

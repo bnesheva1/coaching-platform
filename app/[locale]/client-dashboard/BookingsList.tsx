@@ -89,7 +89,7 @@ export function BookingsList({
           <>
             {" · "}
             <form
-              action={cancelBookingAsClient.bind(null, booking.id)}
+              action={cancelBookingAsClient.bind(null, booking.id, clientTimezone)}
               style={{ display: "inline" }}
               onSubmit={(e) => {
                 if (!confirm(t("cancelConfirm"))) {

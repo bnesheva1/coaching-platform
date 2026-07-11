@@ -195,5 +195,18 @@
   },
   "Search": {
     "label": "Search"
+  },
+  "Email": {
+    "bookingConfirmationClientSubject": "Your booking with {counterpartyName} is confirmed",
+    "bookingConfirmationClientHeading": "Booking confirmed",
+    "bookingConfirmationClientBody": "Hi {recipientName}, your {serviceName} session with {counterpartyName} is confirmed for {sessionTime}.",
+    "bookingConfirmationPractitionerSubject": "New booking from {counterpartyName}",
+    "bookingConfirmationPractitionerHeading": "New booking",
+    "bookingConfirmationPractitionerBody": "Hi {recipientName}, {counterpartyName} booked a {serviceName} session with you for {sessionTime}.",
+    "cancellationNoticeSubject": "Booking cancelled: {serviceName}",
+    "cancellationNoticeHeading": "Booking cancelled",
+    "cancellationNoticeBodyByClient": "Hi {recipientName}, {counterpartyName} cancelled their {serviceName} session that was scheduled for {sessionTime}.",
+    "cancellationNoticeBodyByPractitioner": "Hi {recipientName}, {counterpartyName} cancelled the {serviceName} session that was scheduled for {sessionTime}.",
+    "footer": "This is an automated message from the coaching platform."
   }
 }

@@ -3,6 +3,7 @@
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendCancellationNoticeEmail } from "@/lib/email";
 
 // No notice-cutoff check here, deliberately — a practitioner can cancel
 // any of their own bookings at any time, including within the client's
@@ -38,6 +39,10 @@ export async function cancelBookingAsPractitioner(bookingId: string, _formData: 
     await redirectWithError("cancellationFailed");
     return;
   }
+
+  // Notifies the client (the counterparty) — never fails or blocks the
+  // cancellation that already succeeded above.
+  await sendCancellationNoticeEmail(bookingId, "practitioner");
 
   redirect({ href: { pathname: "/practitioner-dashboard", query: { cancelled: "1" } }, locale });
 }

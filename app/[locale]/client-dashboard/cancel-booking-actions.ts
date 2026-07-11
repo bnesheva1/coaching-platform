@@ -4,16 +4,24 @@ import { getLocale } from "next-intl/server";
 import { DateTime } from "luxon";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendCancellationNoticeEmail } from "@/lib/email";
 
-// Bound via .bind(null, bookingId) from the cancel button, not an
-// editable form field — but binding isn't a security boundary, a
-// direct API call can still send any id it wants. Every check here is
-// re-derived server-side and, critically, the notice cutoff is also
-// enforced independently by the client-cancel RLS UPDATE policy's
-// USING clause (identical comparison) — this app-level check only
-// exists to produce a specific, translated message before that policy
-// would otherwise just silently affect zero rows.
-export async function cancelBookingAsClient(bookingId: string, _formData: FormData) {
+// Bound via .bind(null, bookingId, clientTimezone) from the cancel
+// button, not editable form fields — but binding isn't a security
+// boundary, a direct API call can still send any values it wants.
+// Every check here is re-derived server-side and, critically, the
+// notice cutoff is also enforced independently by the client-cancel
+// RLS UPDATE policy's USING clause (identical comparison) — this
+// app-level check only exists to produce a specific, translated
+// message before that policy would otherwise just silently affect zero
+// rows. clientTimezone is not a security-relevant value (see the same
+// note in booking-actions.ts) — only used to refresh this client's own
+// saved timezone for future emails.
+export async function cancelBookingAsClient(
+  bookingId: string,
+  clientTimezone: string,
+  _formData: FormData,
+) {
   const locale = await getLocale();
 
   async function redirectWithError(code: string) {
@@ -78,6 +86,18 @@ export async function cancelBookingAsClient(bookingId: string, _formData: FormDa
     await redirectWithError("cancellationFailed");
     return;
   }
+
+  const { error: timezoneError } = await supabase
+    .from("profiles")
+    .update({ timezone: clientTimezone })
+    .eq("id", user.id);
+  if (timezoneError) {
+    console.error("cancelBookingAsClient: failed to refresh profiles.timezone:", timezoneError);
+  }
+
+  // Notifies the practitioner (the counterparty) — never fails or
+  // blocks the cancellation that already succeeded above.
+  await sendCancellationNoticeEmail(bookingId, "client");
 
   redirect({ href: { pathname: "/client-dashboard", query: { cancelled: "1" } }, locale });
 }

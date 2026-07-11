@@ -5,17 +5,24 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
 import { getBookableSlots } from "@/lib/availability/slots";
+import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
 
 // Bound via .bind() from the button, not editable form fields — but
 // binding isn't a security boundary, a direct API call can still send
 // any arguments it wants. Every value here is re-derived/re-validated
 // from scratch below before anything is written; nothing is trusted
-// just because it arrived via a bound action.
+// just because it arrived via a bound action. clientTimezone is the
+// one exception to "never trust a bound value": it's not used for any
+// access-control or booking-correctness decision, only for how the
+// confirmation email displays the session time to this client — a
+// forged value there just makes their own email display wrong, not a
+// security concern.
 export async function bookSlot(
   practitionerId: string,
   serviceId: string,
   username: string,
   startUtc: string,
+  clientTimezone: string,
   _formData: FormData,
 ) {
   const locale = await getLocale();
@@ -87,13 +94,17 @@ export async function bookSlot(
     new Date(startUtc).getTime() + service.duration_minutes * 60 * 1000,
   ).toISOString();
 
-  const { error } = await supabase.from("bookings").insert({
-    practitioner_id: practitionerId,
-    client_id: user.id,
-    service_id: serviceId,
-    start_utc: startUtc,
-    end_utc: endUtc,
-  });
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .insert({
+      practitioner_id: practitionerId,
+      client_id: user.id,
+      service_id: serviceId,
+      start_utc: startUtc,
+      end_utc: endUtc,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     // 23P01 = exclusion_violation — the race case: this slot passed
@@ -110,6 +121,25 @@ export async function bookSlot(
     await redirectWithError("bookingFailed");
     return;
   }
+
+  // Best-effort refresh of this client's saved timezone — own row,
+  // covered by the same update policy/grant as display_name. A failure
+  // here doesn't block the booking; it just means their next email
+  // falls back to an older (or absent) saved value.
+  const { error: timezoneError } = await supabase
+    .from("profiles")
+    .update({ timezone: clientTimezone })
+    .eq("id", user.id);
+  if (timezoneError) {
+    console.error("bookSlot: failed to refresh profiles.timezone:", timezoneError);
+  }
+
+  // Sending happens after the booking is already committed — a failed
+  // email must never fail or roll back the booking. sendBookingConfirmationEmails
+  // never throws (see lib/email); still awaited, not fire-and-forget,
+  // so the attempt genuinely completes before this serverless
+  // invocation's response is sent.
+  await sendBookingConfirmationEmails(booking.id, normalizeLocale(locale));
 
   redirect({
     href: { pathname: `/p/${username}`, query: { service: serviceId, booked: "1" } },
