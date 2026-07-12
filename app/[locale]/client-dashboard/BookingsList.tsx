@@ -1,9 +1,10 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { Fragment, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { cancelBookingAsClient } from "./cancel-booking-actions";
 import { isPastCancellationCutoff } from "@/lib/booking-time";
+import { splitTextAndUrls } from "@/lib/linkify";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -47,7 +48,28 @@ export type ClientBooking = {
   // Per-booking, not per-list — a client can have bookings with
   // different practitioners on different notice settings.
   minNoticeHours: number;
+  // deliveryInfo is null whenever this booking isn't active (see
+  // get_my_active_booking_delivery_info in page.tsx) OR the service
+  // predates this feature — both render the same way, no info shown.
+  deliveryType: "online" | "in_person" | null;
+  deliveryInfo: string | null;
 };
+
+function LinkifiedText({ text }: { text: string }) {
+  return (
+    <>
+      {splitTextAndUrls(text).map((segment, i) =>
+        segment.type === "url" ? (
+          <a key={i} href={segment.value} target="_blank" rel="noreferrer">
+            {segment.value}
+          </a>
+        ) : (
+          <Fragment key={i}>{segment.value}</Fragment>
+        ),
+      )}
+    </>
+  );
+}
 
 export function BookingsList({
   upcoming,
@@ -108,6 +130,14 @@ export function BookingsList({
               {t("cancelWindowNote", { hours: booking.minNoticeHours })}
             </span>
           </>
+        )}
+        {isActive && booking.deliveryInfo && (
+          <p style={{ margin: "0.25rem 0 0", backgroundColor: "#f0f4f8", padding: "0.5rem", borderRadius: 4 }}>
+            <strong>
+              {booking.deliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson")}:
+            </strong>{" "}
+            <LinkifiedText text={booking.deliveryInfo} />
+          </p>
         )}
       </li>
     );

@@ -43,10 +43,13 @@ await new Promise((r) => setTimeout(r, 500));
 const username = `bookrace${stamp}`;
 await practitioner.supabase.from("practitioner_profiles").update({ username }).eq("id", practitioner.user.id);
 
+// .select("id, duration_minutes") only — delivery_info is excluded
+// from the column grant, and a bare .select() implicitly requests
+// every granted-visible column via RETURNING.
 const { data: service } = await practitioner.supabase
   .from("services")
-  .insert({ practitioner_id: practitioner.user.id, name: "Race Test Svc", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true })
-  .select()
+  .insert({ practitioner_id: practitioner.user.id, name: "Race Test Svc", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes")
   .single();
 
 // A specific future instant — the exact same slot both clients will race for.

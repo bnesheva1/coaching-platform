@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Fragment, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   createService,
@@ -9,6 +9,7 @@ import {
   deleteService,
   type ServiceFormState,
 } from "./services-actions";
+import { splitTextAndUrls } from "@/lib/linkify";
 
 type Service = {
   id: string;
@@ -18,6 +19,8 @@ type Service = {
   price_cents: number;
   currency: string;
   is_active: boolean;
+  delivery_type: "online" | "in_person" | null;
+  delivery_info: string | null;
 };
 
 const initialState: ServiceFormState = null;
@@ -27,6 +30,70 @@ function formatPrice(priceCents: number, currency: string) {
     style: "currency",
     currency,
   }).format(priceCents / 100);
+}
+
+// Reused for both the practitioner's own read-only display and (once
+// rendered client-side) any future reuse — same splitTextAndUrls
+// helper the email templates and client dashboard also use, so a URL
+// in delivery info is clickable everywhere it's shown, not just some
+// places.
+function LinkifiedText({ text }: { text: string }) {
+  return (
+    <>
+      {splitTextAndUrls(text).map((segment, i) =>
+        segment.type === "url" ? (
+          <a key={i} href={segment.value} target="_blank" rel="noreferrer">
+            {segment.value}
+          </a>
+        ) : (
+          <Fragment key={i}>{segment.value}</Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
+function DeliveryFields({
+  defaultType,
+  defaultInfo,
+}: {
+  defaultType: Service["delivery_type"];
+  defaultInfo: string;
+}) {
+  const t = useTranslations("Services");
+  const [deliveryType, setDeliveryType] = useState<"online" | "in_person">(defaultType ?? "online");
+
+  return (
+    <>
+      <fieldset style={{ border: "none", padding: 0 }}>
+        <legend style={{ padding: 0 }}>{t("deliveryTypeLegend")}</legend>
+        <label style={{ display: "block" }}>
+          <input
+            type="radio"
+            name="deliveryType"
+            value="online"
+            checked={deliveryType === "online"}
+            onChange={() => setDeliveryType("online")}
+          />{" "}
+          {t("deliveryTypeOnline")}
+        </label>
+        <label style={{ display: "block" }}>
+          <input
+            type="radio"
+            name="deliveryType"
+            value="in_person"
+            checked={deliveryType === "in_person"}
+            onChange={() => setDeliveryType("in_person")}
+          />{" "}
+          {t("deliveryTypeInPerson")}
+        </label>
+      </fieldset>
+      <label>
+        {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
+        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} />
+      </label>
+    </>
+  );
 }
 
 function ServiceRow({ service }: { service: Service }) {
@@ -73,6 +140,7 @@ function ServiceRow({ service }: { service: Service }) {
               defaultValue={(service.price_cents / 100).toFixed(2)}
             />
           </label>
+          <DeliveryFields defaultType={service.delivery_type} defaultInfo={service.delivery_info ?? ""} />
           {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
           <div>
             <button type="submit" disabled={pending}>
@@ -95,6 +163,18 @@ function ServiceRow({ service }: { service: Service }) {
         {service.is_active ? t("activeStatus") : t("hiddenStatus")}
       </span>
       {service.description && <p style={{ margin: "0.25rem 0" }}>{service.description}</p>}
+      <p style={{ margin: "0.25rem 0", fontSize: "0.9rem" }}>
+        {service.delivery_type && (
+          <strong>
+            {service.delivery_type === "online" ? t("deliveryTypeOnline") : t("deliveryTypeInPerson")}:{" "}
+          </strong>
+        )}
+        {service.delivery_info ? (
+          <LinkifiedText text={service.delivery_info} />
+        ) : (
+          <span style={{ color: "#a15c00" }}>{t("deliveryInfoMissingNudge")}</span>
+        )}
+      </p>
       <button type="button" onClick={() => setIsEditing(true)}>
         {t("editButton")}
       </button>{" "}
@@ -154,6 +234,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
           {t("priceLabel")}
           <input name="price" type="number" min={0} step={0.01} required />
         </label>
+        <DeliveryFields defaultType={null} defaultInfo="" />
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         {state?.success && <p style={{ color: "green" }}>{t("addedMessage")}</p>}
         <button type="submit" disabled={pending}>

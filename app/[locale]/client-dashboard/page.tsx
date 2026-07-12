@@ -53,9 +53,22 @@ export default async function ClientDashboardPage({
         ? supabase.from("practitioner_profiles").select("id, min_notice_hours").in("id", practitionerIds)
         : Promise.resolve({ data: [] as { id: string; min_notice_hours: number }[] }),
       serviceIds.length > 0
-        ? supabase.from("services").select("id, name, duration_minutes").in("id", serviceIds)
-        : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number }[] }),
+        ? supabase.from("services").select("id, name, duration_minutes, delivery_type").in("id", serviceIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; duration_minutes: number; delivery_type: string | null }[],
+          }),
     ]);
+
+  // delivery_info is excluded from the general column grant — this RPC
+  // is the only way to read it, scoped to services this client has an
+  // ACTIVE (pending/confirmed) booking for. A cancelled booking's
+  // service simply won't appear here.
+  const { data: deliveryInfoRows } = (await supabase.rpc("get_my_active_booking_delivery_info")) as {
+    data: { service_id: string; delivery_info: string | null }[] | null;
+  };
+  const deliveryInfoByServiceId = new Map(
+    (deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]),
+  );
 
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
   const minNoticeHoursById = new Map(
@@ -72,6 +85,8 @@ export default async function ClientDashboardPage({
     endUtc: b.end_utc,
     status: b.status as ClientBooking["status"],
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
+    deliveryType: serviceById.get(b.service_id)?.delivery_type as ClientBooking["deliveryType"],
+    deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);

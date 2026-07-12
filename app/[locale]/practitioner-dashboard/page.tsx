@@ -47,9 +47,24 @@ export default async function PractitionerDashboardPage({
 
   const { data: services } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, currency, is_active")
+    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type")
     .eq("practitioner_id", user.id)
     .order("created_at", { ascending: true });
+
+  // delivery_info is excluded from the general column grant entirely —
+  // even the owning practitioner can't read it via the plain select
+  // above. This RPC is the only way it's ever readable, scoped to
+  // exactly the caller's own services.
+  const { data: deliveryInfoRows } = (await supabase.rpc("get_my_services_delivery_info")) as {
+    data: { service_id: string; delivery_info: string | null }[] | null;
+  };
+  const deliveryInfoByServiceId = new Map(
+    (deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]),
+  );
+  const servicesWithDeliveryInfo = (services ?? []).map((service) => ({
+    ...service,
+    delivery_info: deliveryInfoByServiceId.get(service.id) ?? null,
+  }));
 
   const { data: availabilityRules } = await supabase
     .from("practitioner_availability")
@@ -129,7 +144,7 @@ export default async function PractitionerDashboardPage({
         initialTimezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
         initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24}
       />
-      <ServicesSection services={services ?? []} />
+      <ServicesSection services={servicesWithDeliveryInfo} />
       <AvailabilitySection
         rules={availabilityRules ?? []}
         timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}

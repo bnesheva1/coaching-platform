@@ -43,10 +43,13 @@ await new Promise((r) => setTimeout(r, 500));
 const usernameA = `emailctxA${stamp}`;
 await practitionerA.supabase.from("practitioner_profiles").update({ username: usernameA }).eq("id", practitionerA.user.id);
 
+// .select("id, duration_minutes") only — delivery_info is excluded
+// from the column grant, and a bare .select() implicitly requests
+// every granted-visible column via RETURNING.
 const { data: service } = await practitionerA.supabase
   .from("services")
-  .insert({ practitioner_id: practitionerA.user.id, name: "Email Ctx Test Svc", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true })
-  .select().single();
+  .insert({ practitioner_id: practitionerA.user.id, name: "Email Ctx Test Svc", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes").single();
 
 const startUtc = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString();
 const endUtc = new Date(new Date(startUtc).getTime() + service.duration_minutes * 60 * 1000).toISOString();

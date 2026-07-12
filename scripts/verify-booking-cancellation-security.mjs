@@ -67,14 +67,18 @@ await practitionerA.supabase.from("practitioner_profiles").update({ username: us
 const usernameC = `bookcancelC${stamp}`;
 await practitionerC.supabase.from("practitioner_profiles").update({ username: usernameC, min_notice_hours: 1 }).eq("id", practitionerC.user.id);
 
+// .select("id, duration_minutes") only, not a bare .select() — the new
+// column-level grant excludes delivery_info from what's readable, and
+// an unqualified .select() implicitly requests every granted-visible
+// column via RETURNING.
 const { data: serviceA } = await practitionerA.supabase
   .from("services")
-  .insert({ practitioner_id: practitionerA.user.id, name: "Cancel Test Svc A", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true })
-  .select().single();
+  .insert({ practitioner_id: practitionerA.user.id, name: "Cancel Test Svc A", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes").single();
 const { data: serviceC } = await practitionerC.supabase
   .from("services")
-  .insert({ practitioner_id: practitionerC.user.id, name: "Cancel Test Svc C", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true })
-  .select().single();
+  .insert({ practitioner_id: practitionerC.user.id, name: "Cancel Test Svc C", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes").single();
 
 function slotFor(hoursAhead, durationMinutes) {
   const start = new Date(Date.now() + hoursAhead * 60 * 60 * 1000).toISOString();

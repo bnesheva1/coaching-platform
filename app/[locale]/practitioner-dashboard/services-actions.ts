@@ -9,6 +9,9 @@ export type ServiceFormState = { error?: string; success?: boolean } | null;
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_DURATION_MINUTES = 240; // 4 hours
+const MAX_DELIVERY_INFO_LENGTH = 500;
+const DELIVERY_TYPES = ["online", "in_person"] as const;
+type DeliveryType = (typeof DELIVERY_TYPES)[number];
 
 // JavaScript represents decimals as IEEE754 floats, so e.g. 75.10 * 100
 // can come out as 7509.999999999999 rather than exactly 7510 — rounding
@@ -29,8 +32,14 @@ type ParsedServiceForm =
       description: string | null;
       durationMinutes: number;
       priceCents: number;
+      deliveryType: DeliveryType;
+      deliveryInfo: string;
     }
   | { ok: false; error: string };
+
+function isDeliveryType(value: string): value is DeliveryType {
+  return (DELIVERY_TYPES as readonly string[]).includes(value);
+}
 
 async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> {
   const t = await getTranslations("Services");
@@ -38,6 +47,8 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
   const description = (formData.get("description") as string)?.trim();
   const durationMinutes = parseInt(formData.get("durationMinutes") as string, 10);
   const rawPrice = formData.get("price") as string;
+  const rawDeliveryType = (formData.get("deliveryType") as string)?.trim();
+  const deliveryInfo = (formData.get("deliveryInfo") as string)?.trim();
 
   if (!name) {
     return { ok: false, error: t("nameRequired") };
@@ -60,8 +71,29 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
   if (priceCents === null) {
     return { ok: false, error: t("priceInvalid") };
   }
+  // Required, not just nudged — a bookable service with no "how to
+  // attend" info is a broken client experience. The DB's own NOT VALID
+  // check constraint is the backstop against a direct-API bypass; this
+  // is what gives a practitioner a clean, specific message instead.
+  if (!rawDeliveryType || !isDeliveryType(rawDeliveryType)) {
+    return { ok: false, error: t("deliveryTypeRequired") };
+  }
+  if (!deliveryInfo) {
+    return { ok: false, error: t("deliveryInfoRequired") };
+  }
+  if (deliveryInfo.length > MAX_DELIVERY_INFO_LENGTH) {
+    return { ok: false, error: t("deliveryInfoTooLong", { max: MAX_DELIVERY_INFO_LENGTH }) };
+  }
 
-  return { ok: true, name, description: description || null, durationMinutes, priceCents };
+  return {
+    ok: true,
+    name,
+    description: description || null,
+    durationMinutes,
+    priceCents,
+    deliveryType: rawDeliveryType,
+    deliveryInfo,
+  };
 }
 
 export async function createService(
@@ -89,6 +121,8 @@ export async function createService(
     duration_minutes: parsed.durationMinutes,
     price_cents: parsed.priceCents,
     currency: "EUR",
+    delivery_type: parsed.deliveryType,
+    delivery_info: parsed.deliveryInfo,
   });
 
   if (error) {
@@ -129,6 +163,8 @@ export async function updateService(
       description: parsed.description,
       duration_minutes: parsed.durationMinutes,
       price_cents: parsed.priceCents,
+      delivery_type: parsed.deliveryType,
+      delivery_info: parsed.deliveryInfo,
     })
     .eq("id", serviceId)
     .eq("practitioner_id", user.id);

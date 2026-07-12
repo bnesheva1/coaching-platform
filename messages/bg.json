@@ -146,7 +146,16 @@
     "descriptionTooLong": "Описанието трябва да е до {max} символа.",
     "saveFailed": "Неуспешно запазване на услугата. Опитай отново.",
     "durationInvalid": "Продължителността трябва да е кратна на 15 минути (напр. 30, 45, 60), до {max} минути.",
-    "priceInvalid": "Въведете валида цена."
+    "priceInvalid": "Въведете валида цена.",
+    "deliveryTypeLegend": "Как клиентите присъстват",
+    "deliveryTypeOnline": "Онлайн",
+    "deliveryTypeInPerson": "На място",
+    "deliveryInfoLabelOnline": "Линк за среща / инструкции за включване",
+    "deliveryInfoLabelInPerson": "Локация / адрес",
+    "deliveryTypeRequired": "Избери как клиентите присъстват на тази услуга.",
+    "deliveryInfoRequired": "Въведи как клиентите да присъстват — линк за среща, адрес, телефонен номер или други инструкции.",
+    "deliveryInfoTooLong": "Това трябва да е до {max} символа.",
+    "deliveryInfoMissingNudge": "Клиентите няма да знаят как да се включат — добави информация за присъствие."
   },
   "PublicProfile": {
     "editProfile": "Редактирай профила",
@@ -184,7 +193,9 @@
     "cancellationFailed": "Неуспешно отказване на резервацията. Опитай отново.",
     "tooLateToCancel": "Тази резервация вече не може да бъде отказана онлайн — моля, свържи се директно със специалиста.",
     "cancelWindowNote": "В рамките на {hours}-часовия прозорец за предизвестие — свържи се със специалиста, за да откажеш.",
-    "alreadyCancelled": "Тази резервация вече е отказана."
+    "alreadyCancelled": "Тази резервация вече е отказана.",
+    "deliveryLabelOnline": "Как да се включиш",
+    "deliveryLabelInPerson": "Локация"
   },
   "Browse": {
     "title": "Открий специалист",
@@ -211,6 +222,8 @@
     "reminderHeading": "Напомняне за предстояща среща",
     "reminderBodyClient": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
     "reminderBodyPractitioner": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
+    "deliveryLabelOnline": "Как да се включиш",
+    "deliveryLabelInPerson": "Локация",
     "footer": "Това е автоматично съобщение от платформата за консултации."
   }
 }

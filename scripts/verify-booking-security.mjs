@@ -45,14 +45,17 @@ await practitionerA.supabase.from("practitioner_profiles").update({ username: us
 const usernameB = `booksecB${stamp}`;
 await practitionerB.supabase.from("practitioner_profiles").update({ username: usernameB }).eq("id", practitionerB.user.id);
 
+// .select("id, duration_minutes") only — delivery_info is excluded
+// from the column grant, and a bare .select() implicitly requests
+// every granted-visible column via RETURNING.
 const { data: serviceA } = await practitionerA.supabase
   .from("services")
-  .insert({ practitioner_id: practitionerA.user.id, name: "Sec Test Svc A", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true })
-  .select().single();
+  .insert({ practitioner_id: practitionerA.user.id, name: "Sec Test Svc A", duration_minutes: 30, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes").single();
 const { data: serviceB } = await practitionerB.supabase
   .from("services")
-  .insert({ practitioner_id: practitionerB.user.id, name: "Sec Test Svc B", duration_minutes: 45, price_cents: 1000, currency: "EUR", is_active: true })
-  .select().single();
+  .insert({ practitioner_id: practitionerB.user.id, name: "Sec Test Svc B", duration_minutes: 45, price_cents: 1000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "https://example.com/meeting" })
+  .select("id, duration_minutes").single();
 
 function slotFor(daysAhead, durationMinutes) {
   const start = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString();

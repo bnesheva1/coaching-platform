@@ -146,7 +146,16 @@
     "priceInvalid": "Enter a valid price.",
     "nameTooLong": "Name must be {max} characters or fewer.",
     "descriptionTooLong": "Description must be {max} characters or fewer.",
-    "saveFailed": "Unable to save this service right now. Please try again."
+    "saveFailed": "Unable to save this service right now. Please try again.",
+    "deliveryTypeLegend": "How clients attend",
+    "deliveryTypeOnline": "Online",
+    "deliveryTypeInPerson": "In person",
+    "deliveryInfoLabelOnline": "Meeting link / joining instructions",
+    "deliveryInfoLabelInPerson": "Location / address",
+    "deliveryTypeRequired": "Select how clients attend this service.",
+    "deliveryInfoRequired": "Enter how clients should attend — a meeting link, address, phone number, or other instructions.",
+    "deliveryInfoTooLong": "This must be {max} characters or fewer.",
+    "deliveryInfoMissingNudge": "Clients won't know how to join — add delivery info."
   },
   "PublicProfile": {
     "editProfile": "Edit profile",
@@ -184,7 +193,9 @@
     "cancellationFailed": "Unable to cancel this booking right now. Please try again.",
     "tooLateToCancel": "This booking can no longer be cancelled online — please contact the practitioner directly.",
     "cancelWindowNote": "Within the {hours}-hour notice window — contact the practitioner to cancel.",
-    "alreadyCancelled": "This booking has already been cancelled."
+    "alreadyCancelled": "This booking has already been cancelled.",
+    "deliveryLabelOnline": "How to join",
+    "deliveryLabelInPerson": "Location"
   },
   "Browse": {
     "title": "Find a practitioner",
@@ -211,6 +222,8 @@
     "reminderHeading": "Upcoming session reminder",
     "reminderBodyClient": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
     "reminderBodyPractitioner": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
+    "deliveryLabelOnline": "How to join",
+    "deliveryLabelInPerson": "Location",
     "footer": "This is an automated message from the coaching platform."
   }
 }

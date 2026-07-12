@@ -19,10 +19,21 @@ type BookingEmailContext = {
   practitioner_locale: string;
   practitioner_timezone: string;
   service_name: string;
+  service_delivery_type: string | null;
+  service_delivery_info: string | null;
   start_utc: string;
   end_utc: string;
   status: string;
 };
+
+// The type-aware "how to join" label — shared by the confirmation
+// email below and lib/email/reminders.ts, since both show the exact
+// same delivery-info block. Not exported beyond this module's own
+// callers deliberately; reminders.ts has its own copy since it doesn't
+// import from index.ts (see the comment there for why).
+function deliveryLabel(t: ReturnType<typeof translator>, deliveryType: string | null): string {
+  return deliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson");
+}
 
 // The single data-fetch point for all of this slice's email
 // composition — get_booking_email_context is SECURITY DEFINER, scoped
@@ -77,6 +88,8 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
           sessionTime: clientTime,
         }),
         footer: tClient("footer"),
+        deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
+        deliveryInfo: context.service_delivery_info ?? undefined,
       }),
     });
     if (!clientResult.success) {
@@ -115,6 +128,8 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
         sessionTime: practitionerTime,
       }),
       footer: tPractitioner("footer"),
+      deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
+      deliveryInfo: context.service_delivery_info ?? undefined,
     }),
   });
   if (!practitionerResult.success) {

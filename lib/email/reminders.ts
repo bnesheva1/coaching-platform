@@ -31,6 +31,8 @@ type ReminderBatchRow = {
   practitioner_locale: string;
   practitioner_timezone: string;
   service_name: string;
+  service_delivery_type: string | null;
+  service_delivery_info: string | null;
   start_utc: string;
   end_utc: string;
 };
@@ -59,12 +61,19 @@ async function sendReminderTo(params: {
   includeUtcBracket: boolean;
   counterpartyName: string | null;
   serviceName: string;
+  serviceDeliveryType: string | null;
+  serviceDeliveryInfo: string | null;
   startUtc: string;
   bodyKey: "reminderBodyClient" | "reminderBodyPractitioner";
 }): Promise<SendEmailResult> {
   const locale = normalizeLocale(params.locale);
   const t = translator(locale);
   const sessionTime = formatSessionTime(params.startUtc, params.timezone, locale, params.includeUtcBracket);
+  // This is the "here's where to go" moment the reminder exists for —
+  // same type-aware label as the confirmation email in lib/email/index.ts
+  // (a separate copy, not imported from there: index.ts isn't meant to
+  // be a dependency of this file, they're siblings under lib/email/).
+  const deliveryLabel = params.serviceDeliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson");
 
   return provider.send({
     to: params.email,
@@ -78,6 +87,8 @@ async function sendReminderTo(params: {
         sessionTime,
       }),
       footer: t("footer"),
+      deliveryLabel,
+      deliveryInfo: params.serviceDeliveryInfo ?? undefined,
     }),
   });
 }
@@ -126,6 +137,8 @@ export async function sendReminderBatch(): Promise<ReminderBatchResult> {
             includeUtcBracket: true,
             counterpartyName: row.practitioner_display_name,
             serviceName: row.service_name,
+            serviceDeliveryType: row.service_delivery_type,
+            serviceDeliveryInfo: row.service_delivery_info,
             startUtc: row.start_utc,
             bodyKey: "reminderBodyClient",
           });
@@ -164,6 +177,8 @@ export async function sendReminderBatch(): Promise<ReminderBatchResult> {
             includeUtcBracket: false,
             counterpartyName: row.client_display_name,
             serviceName: row.service_name,
+            serviceDeliveryType: row.service_delivery_type,
+            serviceDeliveryInfo: row.service_delivery_info,
             startUtc: row.start_utc,
             bodyKey: "reminderBodyPractitioner",
           });
