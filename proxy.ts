@@ -62,6 +62,11 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // api/ excluded: locale routing and session-cookie refresh are both
+    // meaningless for API routes — found while adding the reminders
+    // cron endpoint, which was getting redirected to a locale-prefixed
+    // path (breaking Vercel Cron's invocation, not just local curl
+    // testing) before this exclusion existed.
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

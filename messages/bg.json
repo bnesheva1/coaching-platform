@@ -207,6 +207,10 @@
     "cancellationNoticeHeading": "Резервацията е отказана",
     "cancellationNoticeBodyByClient": "Здравей, {recipientName}, {counterpartyName} отказа своята резервация за {serviceName}, насрочена за {sessionTime}.",
     "cancellationNoticeBodyByPractitioner": "Здравей, {recipientName}, {counterpartyName} отказа резервацията за {serviceName}, насрочена за {sessionTime}.",
+    "reminderSubject": "Напомняне: {serviceName} утре",
+    "reminderHeading": "Напомняне за предстояща среща",
+    "reminderBodyClient": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
+    "reminderBodyPractitioner": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
     "footer": "Това е автоматично съобщение от платформата за консултации."
   }
 }

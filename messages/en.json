@@ -207,6 +207,10 @@
     "cancellationNoticeHeading": "Booking cancelled",
     "cancellationNoticeBodyByClient": "Hi {recipientName}, {counterpartyName} cancelled their {serviceName} session that was scheduled for {sessionTime}.",
     "cancellationNoticeBodyByPractitioner": "Hi {recipientName}, {counterpartyName} cancelled the {serviceName} session that was scheduled for {sessionTime}.",
+    "reminderSubject": "Reminder: {serviceName} tomorrow",
+    "reminderHeading": "Upcoming session reminder",
+    "reminderBodyClient": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
+    "reminderBodyPractitioner": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
     "footer": "This is an automated message from the coaching platform."
   }
 }
