@@ -13,6 +13,8 @@ export type PractitionerSearchResult = {
   bio: string | null;
   avatarUrl: string | null;
   specialties: string[];
+  averageRating: number | null;
+  reviewCount: number;
 };
 
 // Shape returned by the search_practitioners SQL function, before we
@@ -24,6 +26,8 @@ type SearchPractitionersRow = {
   bio: string | null;
   avatar_url: string | null;
   specialties: string[] | null;
+  average_rating: number | string | null;
+  review_count: number | string | null;
 };
 
 // The single place that knows how to find practitioners — a page calls
@@ -53,6 +57,10 @@ export async function searchPractitioners({
     throw new Error("Unable to search practitioners right now.");
   }
 
+  // Postgres numeric/bigint columns can come back as strings over
+  // PostgREST (bigint especially, to avoid JS float precision loss) —
+  // normalize both to real numbers here, the one place this RPC's rows
+  // get shaped.
   return (data ?? []).map((row: SearchPractitionersRow) => ({
     id: row.id,
     username: row.username,
@@ -60,5 +68,7 @@ export async function searchPractitioners({
     bio: row.bio,
     avatarUrl: row.avatar_url,
     specialties: row.specialties ?? [],
+    averageRating: row.average_rating === null ? null : Number(row.average_rating),
+    reviewCount: row.review_count === null ? 0 : Number(row.review_count),
   }));
 }

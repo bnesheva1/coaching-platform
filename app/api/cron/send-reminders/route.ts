@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendReminderBatch } from "@/lib/email/reminders";
+import { completePastBookings } from "@/lib/bookings/completePastBookings";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
 // env var (locally AND in the Vercel project dashboard — Vercel's
@@ -20,6 +21,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await sendReminderBatch();
-  return NextResponse.json(result);
+  // Completion runs first: purely a bookkeeping ordering (it and the
+  // reminder batch touch disjoint booking sets — reminders only look at
+  // a future 12-36h window, completion only looks at already-past
+  // bookings — so there's no interaction risk either way), but it means
+  // a booking that just completed is reflected in state before anything
+  // else in this invocation runs.
+  const completionResult = await completePastBookings();
+  const reminderResult = await sendReminderBatch();
+  return NextResponse.json({ ...completionResult, ...reminderResult });
 }

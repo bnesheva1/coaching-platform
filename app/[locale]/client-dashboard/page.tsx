@@ -70,6 +70,14 @@ export default async function ClientDashboardPage({
     (deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]),
   );
 
+  // booking_id is excluded from reviews' column grant, so this batched
+  // RPC (one call for every booking, not one per row) is the only way
+  // to know which of this client's own bookings already have a review.
+  const { data: reviewedBookingRows } = (await supabase.rpc("get_my_reviewed_booking_ids")) as {
+    data: { booking_id: string }[] | null;
+  };
+  const reviewedBookingIds = new Set((reviewedBookingRows ?? []).map((row) => row.booking_id));
+
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
   const minNoticeHoursById = new Map(
     (practitionerNoticeSettings ?? []).map((p) => [p.id, p.min_notice_hours]),
@@ -87,6 +95,7 @@ export default async function ClientDashboardPage({
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
     deliveryType: serviceById.get(b.service_id)?.delivery_type as ClientBooking["deliveryType"],
     deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
+    hasReview: reviewedBookingIds.has(b.id),
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);

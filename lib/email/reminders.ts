@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { provider, translator, normalizeLocale, formatSessionTime } from "./shared";
 import type { SendEmailResult } from "./types";
 import { ReminderEmail } from "./templates/ReminderEmail";
@@ -42,16 +42,6 @@ export type ReminderBatchResult = {
   remindersSent: number;
   remindersFailed: number;
 };
-
-// No logged-in user is behind a cron invocation, so the cookie-based
-// client (lib/supabase/server.ts) doesn't apply here — there's no
-// session to read. This is the one place in the app a service-role
-// client is used, deliberately isolated to this file: it bypasses RLS
-// entirely, which is exactly what a "read every user's due bookings"
-// batch job needs and no ordinary request ever should have.
-function createServiceRoleClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
-}
 
 async function sendReminderTo(params: {
   email: string;

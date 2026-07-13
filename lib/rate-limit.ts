@@ -45,6 +45,12 @@ export const authCallbackLimiter = createLimiter("rl:callback", 20, "10 m", 10 *
 // bounding one account spam-booking a practitioner's calendar. Generous
 // enough for any real client's normal use.
 export const bookingLimiter = createLimiter("rl:booking", 10, "10 m", 10 * 60 * 1000);
+// Defense-in-depth on top of the primary anti-abuse control, which is
+// the completed-booking gate itself (RLS already rejects a review
+// without a real completed booking, so a determined attacker still
+// needs one genuine completed session per review). Keyed by user id,
+// same reasoning as bookingLimiter.
+export const reviewLimiter = createLimiter("rl:review", 10, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;

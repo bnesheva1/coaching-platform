@@ -13,6 +13,7 @@ export default async function BrowsePage({
 }) {
   const resolvedSearchParams = await searchParams;
   const t = await getTranslations("Browse");
+  const tReviews = await getTranslations("Reviews");
   const locale = (await getLocale()) as "en" | "bg";
 
   const specialtyParam = resolvedSearchParams.specialty;
@@ -87,6 +88,12 @@ export default async function BrowsePage({
                 <Link href={`/p/${practitioner.username}`}>
                   <strong>{practitioner.displayName || `@${practitioner.username}`}</strong>
                 </Link>
+                {practitioner.averageRating !== null && (
+                  <span style={{ marginLeft: "0.5rem", color: "#666", fontSize: "0.9rem" }}>
+                    ★ {practitioner.averageRating.toFixed(1)}{" "}
+                    {tReviews("reviewCountBadge", { count: practitioner.reviewCount })}
+                  </span>
+                )}
                 {practitioner.specialties.length > 0 && (
                   <p style={{ margin: "0.25rem 0", color: "#666" }}>
                     {practitioner.specialties

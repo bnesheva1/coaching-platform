@@ -183,6 +183,7 @@
     "noPastBookings": "No past bookings.",
     "statusPending": "Pending",
     "statusConfirmed": "Confirmed",
+    "statusCompleted": "Completed",
     "statusCancelledByClient": "Cancelled by client",
     "statusCancelledByPractitioner": "Cancelled by practitioner",
     "withPractitioner": "With {name}",
@@ -203,6 +204,27 @@
     "filterButton": "Filter",
     "clearFiltersLink": "Clear filters",
     "noResults": "No practitioners found."
+  },
+  "Reviews": {
+    "reviewsTitle": "Reviews",
+    "averageRatingSummary": "{average} out of 5 ({count, plural, one {# review} other {# reviews}})",
+    "reviewCountBadge": "({count, plural, one {# review} other {# reviews}})",
+    "noReviewsYet": "No reviews yet.",
+    "verifiedUser": "Verified user",
+    "ratingLabel": "Rating",
+    "reviewTextPlaceholder": "Share how it went (optional)",
+    "submitButton": "Submit review",
+    "submitButtonPending": "Submitting…",
+    "submittedMessage": "Thanks for your review!",
+    "alreadyReviewedNote": "You've already reviewed this session.",
+    "notLoggedIn": "Please log in to leave a review.",
+    "rateLimited": "Too many review attempts. Please wait a few minutes and try again.",
+    "ratingRequired": "Please select a rating from 1 to 5.",
+    "reviewTextTooLong": "Review text is too long.",
+    "bookingNotFound": "We couldn't find that booking.",
+    "notCompletedYet": "This session isn't completed yet, so it can't be reviewed.",
+    "alreadyReviewed": "You've already reviewed this booking.",
+    "saveFailed": "Unable to save your review right now. Please try again."
   },
   "Search": {
     "label": "Search"

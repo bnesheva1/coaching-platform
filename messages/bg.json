@@ -183,6 +183,7 @@
     "noPastBookings": "Няма минали резервации.",
     "statusPending": "Изчаква",
     "statusConfirmed": "Потвърдена",
+    "statusCompleted": "Завършена",
     "statusCancelledByClient": "Отказана от клиента",
     "statusCancelledByPractitioner": "Отказана от специалиста",
     "withPractitioner": "Със: {name}",
@@ -203,6 +204,27 @@
     "filterButton": "Филтрирай",
     "clearFiltersLink": "Изчисти филтрите",
     "noResults": "Няма открити резултати."
+  },
+  "Reviews": {
+    "reviewsTitle": "Отзиви",
+    "averageRatingSummary": "{average} от 5 ({count, plural, one {# отзив} other {# отзива}})",
+    "reviewCountBadge": "({count, plural, one {# отзив} other {# отзива}})",
+    "noReviewsYet": "Все още няма отзиви.",
+    "verifiedUser": "Потвърден потребител",
+    "ratingLabel": "Оценка",
+    "reviewTextPlaceholder": "Сподели как мина (незадължително)",
+    "submitButton": "Изпрати отзив",
+    "submitButtonPending": "Изпращане…",
+    "submittedMessage": "Благодарим за отзива!",
+    "alreadyReviewedNote": "Вече има оставен отзив за тази среща.",
+    "notLoggedIn": "Моля, влез, за да оставиш отзив.",
+    "rateLimited": "Твърде много опити за отзив. Изчакай няколко минути и опитай отново.",
+    "ratingRequired": "Моля, избери оценка от 1 до 5.",
+    "reviewTextTooLong": "Текстът на отзива е твърде дълъг.",
+    "bookingNotFound": "Не успяхме да намерим тази резервация.",
+    "notCompletedYet": "Тази среща все още не е завършена, затова не може да бъде оценена.",
+    "alreadyReviewed": "Вече има оставен отзив за тази резервация.",
+    "saveFailed": "Неуспешно запазване на отзива. Опитай отново."
   },
   "Search": {
     "label": "Търсене"

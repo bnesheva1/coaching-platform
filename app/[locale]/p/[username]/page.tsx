@@ -26,6 +26,7 @@ export default async function PublicProfilePage({
 
   const t = await getTranslations("PublicProfile");
   const tBooking = await getTranslations("Booking");
+  const tReviews = await getTranslations("Reviews");
   const locale = await getLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const specialtyLabels = new Map(
@@ -46,7 +47,7 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const [{ data: profile }, { data: services }, { data: authData }] = await Promise.all([
+  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }] = await Promise.all([
     supabase
       .from("profiles")
       .select("display_name")
@@ -59,7 +60,21 @@ export default async function PublicProfilePage({
       .eq("is_active", true)
       .order("created_at", { ascending: true }),
     supabase.auth.getUser(),
+    // Public grant (rating, review_text, created_at) — booking_id is
+    // excluded from it entirely, and there's no name column at all: every
+    // review is shown as "Verified user", to the public and the
+    // practitioner alike, never any identifying detail.
+    supabase
+      .from("reviews")
+      .select("id, rating, review_text, created_at")
+      .eq("practitioner_id", practitionerProfile.id)
+      .order("created_at", { ascending: false }),
   ]);
+
+  const averageRating =
+    reviews && reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
 
   const isOwner = authData.user?.id === practitionerProfile.id;
 
@@ -179,6 +194,36 @@ export default async function PublicProfilePage({
           </ul>
         </section>
       )}
+
+      <section style={{ marginTop: "2rem" }}>
+        <h2>{tReviews("reviewsTitle")}</h2>
+        {averageRating !== null && (
+          <p style={{ color: "#666" }}>
+            {tReviews("averageRatingSummary", {
+              average: averageRating.toFixed(1),
+              count: reviews!.length,
+            })}
+          </p>
+        )}
+        {!reviews || reviews.length === 0 ? (
+          <p style={{ color: "#666" }}>{tReviews("noReviewsYet")}</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {reviews.map((review) => (
+              <li key={review.id} style={{ marginBottom: "1rem", borderTop: "1px solid #eee", paddingTop: "0.75rem" }}>
+                <strong>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</strong>
+                {" — "}
+                <span>{tReviews("verifiedUser")}</span>
+                {" · "}
+                <span style={{ color: "#666", fontSize: "0.85rem" }}>
+                  {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.created_at))}
+                </span>
+                {review.review_text && <p style={{ margin: "0.25rem 0 0" }}>{review.review_text}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

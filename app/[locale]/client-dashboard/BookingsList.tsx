@@ -3,6 +3,7 @@
 import { Fragment, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { cancelBookingAsClient } from "./cancel-booking-actions";
+import { LeaveReviewForm } from "./LeaveReviewForm";
 import { isPastCancellationCutoff } from "@/lib/booking-time";
 import { splitTextAndUrls } from "@/lib/linkify";
 
@@ -16,6 +17,7 @@ const STATUS_KEYS = {
   confirmed: "statusConfirmed",
   cancelled_by_client: "statusCancelledByClient",
   cancelled_by_practitioner: "statusCancelledByPractitioner",
+  completed: "statusCompleted",
 } as const;
 
 const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
@@ -44,7 +46,7 @@ export type ClientBooking = {
   durationMinutes: number;
   startUtc: string;
   endUtc: string;
-  status: "pending" | "confirmed" | "cancelled_by_client" | "cancelled_by_practitioner";
+  status: "pending" | "confirmed" | "cancelled_by_client" | "cancelled_by_practitioner" | "completed";
   // Per-booking, not per-list — a client can have bookings with
   // different practitioners on different notice settings.
   minNoticeHours: number;
@@ -53,6 +55,10 @@ export type ClientBooking = {
   // predates this feature — both render the same way, no info shown.
   deliveryType: "online" | "in_person" | null;
   deliveryInfo: string | null;
+  // Only meaningful when status === "completed" — whether this client
+  // has already left a review for it (see get_my_reviewed_booking_ids
+  // in page.tsx).
+  hasReview: boolean;
 };
 
 function LinkifiedText({ text }: { text: string }) {
@@ -79,6 +85,7 @@ export function BookingsList({
   past: ClientBooking[];
 }) {
   const t = useTranslations("Booking");
+  const tReviews = useTranslations("Reviews");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
 
@@ -139,6 +146,14 @@ export function BookingsList({
             <LinkifiedText text={booking.deliveryInfo} />
           </p>
         )}
+        {booking.status === "completed" &&
+          (booking.hasReview ? (
+            <p style={{ margin: "0.25rem 0 0", color: "#666", fontSize: "0.85rem" }}>
+              {tReviews("alreadyReviewedNote")}
+            </p>
+          ) : (
+            <LeaveReviewForm bookingId={booking.id} />
+          ))}
       </li>
     );
   }
