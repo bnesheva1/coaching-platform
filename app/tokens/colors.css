@@ -1,0 +1,72 @@
+/* Prozreniya — color tokens. Base warm-neutral hue (~90) + single gold accent hue (~85). Light is default; [data-theme="dark"] overrides. */
+:root{
+  --hue-neutral: 90;
+  --hue-accent: 85;
+
+  /* Light theme (default) */
+  --bg-page: oklch(98% 0.006 var(--hue-neutral));
+  --bg-surface: oklch(100% 0 0);
+  --bg-surface-2: oklch(95.5% 0.01 var(--hue-neutral));
+  --bg-sunken: oklch(93% 0.012 var(--hue-neutral));
+  --bg-inverse: oklch(16% 0.006 var(--hue-neutral));
+
+  --text-primary: oklch(20% 0.01 var(--hue-neutral));
+  --text-secondary: oklch(42% 0.012 var(--hue-neutral));
+  --text-tertiary: oklch(56% 0.01 var(--hue-neutral));
+  --text-on-accent: oklch(100% 0 0);
+  --text-on-inverse: oklch(96% 0.004 var(--hue-neutral));
+
+  --border-subtle: oklch(91% 0.006 var(--hue-neutral));
+  --border-default: oklch(85% 0.008 var(--hue-neutral));
+  --border-strong: oklch(74% 0.01 var(--hue-neutral));
+
+  --accent: oklch(55% 0.15 var(--hue-accent));
+  --accent-hover: oklch(50% 0.15 var(--hue-accent));
+  --accent-active: oklch(45% 0.15 var(--hue-accent));
+  --accent-subtle: oklch(93% 0.05 var(--hue-accent));
+  --accent-subtle-text: oklch(38% 0.11 var(--hue-accent));
+  --accent-glow: oklch(85% 0.10 var(--hue-accent) / .55);
+  /* Added post-handoff (not in the original bundle): an inverse-tone
+     surface (--bg-inverse) is, by definition, the opposite theme's
+     surface color — so it needs the opposite theme's --accent value to
+     stay readable, not this theme's own. This is literally dark
+     theme's --accent, hardcoded here rather than cross-referenced,
+     since these two blocks don't share scope. Verified 9.62:1 against
+     light-theme --bg-inverse (scripts/verify-color-contrast.mjs). */
+  --accent-on-inverse: oklch(78% 0.13 var(--hue-accent));
+
+  --focus-ring: oklch(55% 0.15 var(--hue-accent) / .45);
+  --shadow-color: 220 10% 10%;
+  --overlay-scrim: oklch(20% 0.01 var(--hue-neutral) / .45);
+}
+
+[data-theme="dark"]{
+  --bg-page: oklch(14% 0.006 var(--hue-neutral));
+  --bg-surface: oklch(18% 0.006 var(--hue-neutral));
+  --bg-surface-2: oklch(21% 0.006 var(--hue-neutral));
+  --bg-sunken: oklch(11% 0.006 var(--hue-neutral));
+  --bg-inverse: oklch(98% 0.006 var(--hue-neutral));
+
+  --text-primary: oklch(96% 0.004 var(--hue-neutral));
+  --text-secondary: oklch(78% 0.01 var(--hue-neutral));
+  --text-tertiary: oklch(58% 0.01 var(--hue-neutral));
+  --text-on-accent: oklch(18% 0.02 var(--hue-accent));
+  --text-on-inverse: oklch(18% 0.01 var(--hue-neutral));
+
+  --border-subtle: oklch(28% 0.006 var(--hue-neutral));
+  --border-default: oklch(33% 0.006 var(--hue-neutral));
+  --border-strong: oklch(42% 0.008 var(--hue-neutral));
+
+  --accent: oklch(78% 0.13 var(--hue-accent));
+  --accent-hover: oklch(82% 0.13 var(--hue-accent));
+  --accent-active: oklch(72% 0.13 var(--hue-accent));
+  --accent-subtle: oklch(28% 0.05 var(--hue-accent));
+  --accent-subtle-text: oklch(82% 0.10 var(--hue-accent));
+  --accent-glow: oklch(50% 0.08 var(--hue-accent) / .35);
+  /* Light theme's --accent value — see the :root block's comment.
+     Verified 4.66:1 against dark-theme --bg-inverse. */
+  --accent-on-inverse: oklch(55% 0.15 var(--hue-accent));
+
+  --focus-ring: oklch(78% 0.13 var(--hue-accent) / .45);
+  --overlay-scrim: oklch(5% 0.006 var(--hue-neutral) / .6);
+}

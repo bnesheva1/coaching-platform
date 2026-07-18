@@ -1,9 +1,26 @@
 {
   "HomePage": {
     "title": "Платформа за консултации",
-    "signedInAs": "Влизане като <strong>{name}</strong> ({role})",
+    "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
     "signOut": "Изход",
-    "loggedOutPrompt": "<login>Влез</login> или <signup>се регистрирай</signup>"
+    "dashboardLink": "Табло",
+    "navLogin": "Вход",
+    "navSignup": "Регистрация",
+    "navForClients": "За търсещи",
+    "navForPractitioners": "За практици",
+    "navHowItWorks": "Как работи",
+    "heroEyebrow": "Хората питат",
+    "heroQuestion1": "Каква е моята житейска мисия?",
+    "heroQuestion2": "Това ли е човекът за мен?",
+    "heroQuestion3": "Как да намеря вътрешен баланс?",
+    "heroQuestion4": "Да сменя ли работата, или да остана?",
+    "heroQuestion5": "Как да изчистя негативната енергия?",
+    "heroSubhead": "Свързваме хора, търсещи яснота, с проверени таролози, астролози и практици по енергийни и духовни практики в България.",
+    "heroSearchPlaceholder": "Търсете по име, направление или въпрос…",
+    "heroSearchHelper": "Търсете по име, по направление или по вашия въпрос",
+    "heroChipLoveRelationships": "Любов и връзки",
+    "heroChipBusinessFinance": "Бизнес и финанси",
+    "heroChipLifePath": "Житейски път"
   },
   "Auth": {
     "loginTitle": "Вход",

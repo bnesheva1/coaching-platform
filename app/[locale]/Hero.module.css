@@ -1,0 +1,78 @@
+/* Rotating-question hero headline — ported verbatim from
+   design/design_handoff_prozreniya_design_system/reference/Hero Directions.dc.html
+   (direction 1b, the approved hero). Real @keyframes, so this can't be
+   expressed via inline style objects like the rest of the ported
+   primitives — the one place this project uses a CSS Module.
+
+   :first-of-type, not :first-child — the visually-hidden <h1> that
+   precedes these .rline divs (see Hero.tsx) IS the actual first child,
+   so :first-child never matches any .rline element. Under
+   prefers-reduced-motion specifically, that meant the hero rendered
+   completely blank to sighted users (nothing got the static opacity:1
+   override) — caught via Playwright, not visible from reading the CSS
+   alone. This looks like a latent bug in the reference file itself
+   (same h1-then-rlines DOM order there), fixed here rather than ported
+   faithfully, since it's a real accessibility regression, not a
+   stylistic choice. */
+
+.rotator {
+  position: relative;
+}
+
+.rline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+  animation: rotate 15s infinite;
+}
+
+.rline:first-of-type {
+  opacity: 1;
+}
+
+@keyframes rotate {
+  0% {
+    opacity: 1;
+  }
+  3% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+  }
+  24% {
+    opacity: 0;
+  }
+  99% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rline {
+    animation: none;
+    opacity: 0;
+    position: static;
+    display: none;
+  }
+
+  .rline:first-of-type {
+    opacity: 1;
+    display: block;
+    position: static;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -1,19 +1,32 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { PT_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Bulgarian-first app — cyrillic is an explicit subset on every font,
+// not assumed. next/font self-hosts these (no runtime CDN @import),
+// matching how Geist was already loaded here.
+const fontDisplay = PT_Serif({
+  variable: "--font-display",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const fontUi = Manrope({
+  variable: "--font-ui",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const fontMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -40,15 +53,24 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fontDisplay.variable} ${fontUi.variable} ${fontMono.variable} h-full antialiased`}
+      // The theme is decided client-side, before paint, by next-themes'
+      // own blocking script (see ThemeProvider) — the server can't know
+      // the visitor's localStorage or OS preference, so the data-theme
+      // attribute legitimately differs between server-rendered HTML and
+      // the client DOM immediately after that script runs. Expected,
+      // not a bug being silenced.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>
-          <div style={{ position: "fixed", top: "1rem", right: "1rem" }}>
-            <LanguageSwitcher />
-          </div>
-          {children}
-        </NextIntlClientProvider>
+        <ThemeProvider>
+          <NextIntlClientProvider>
+            <div style={{ position: "fixed", top: "1rem", right: "1rem" }}>
+              <LanguageSwitcher />
+            </div>
+            {children}
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -11,6 +11,14 @@ const LOCALE_LABELS: Record<string, string> = {
 export function LanguageSwitcher() {
   const pathname = usePathname();
 
+  // The homepage has its own working language toggle built into its
+  // NavBar now — this floating switcher would otherwise duplicate it.
+  // Every other (still-unstyled) page keeps this as its only language
+  // control.
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
     <p style={{ fontSize: "0.85rem", fontFamily: "sans-serif" }}>
       {routing.locales.map((locale, i) => (

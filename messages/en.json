@@ -1,9 +1,26 @@
 {
   "HomePage": {
     "title": "Coaching Platform",
-    "signedInAs": "Signed in as <strong>{name}</strong> ({role})",
+    "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
     "signOut": "Sign out",
-    "loggedOutPrompt": "<login>Log in</login> or <signup>sign up</signup>"
+    "dashboardLink": "Dashboard",
+    "navLogin": "Log in",
+    "navSignup": "Sign up",
+    "navForClients": "For clients",
+    "navForPractitioners": "For practitioners",
+    "navHowItWorks": "How it works",
+    "heroEyebrow": "People are asking",
+    "heroQuestion1": "What is my life purpose?",
+    "heroQuestion2": "Is this the right person for me?",
+    "heroQuestion3": "How do I find inner balance?",
+    "heroQuestion4": "Should I change jobs, or stay?",
+    "heroQuestion5": "How do I clear negative energy?",
+    "heroSubhead": "We connect people seeking clarity with verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
+    "heroSearchPlaceholder": "Search by name, specialty, or your question…",
+    "heroSearchHelper": "Search by name, by specialty, or by your question",
+    "heroChipLoveRelationships": "Love & relationships",
+    "heroChipBusinessFinance": "Business & finance",
+    "heroChipLifePath": "Life path"
   },
   "Auth": {
     "loginTitle": "Log in",
