@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 
 // Split out from BookingsList.tsx (a plain server component — the
@@ -21,7 +22,7 @@ export function CancelBookingButton({ bookingId }: { bookingId: string }) {
         }
       }}
     >
-      <button type="submit">{t("cancelButton")}</button>
+      <Button type="submit" variant="secondary" size="sm">{t("cancelButton")}</Button>
     </form>
   );
 }

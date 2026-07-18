@@ -21,7 +21,7 @@ export async function PractitionerSearchInput({
           (e.g. the planned header search), add a ~300ms debounce before
           querying on change — the current submit-based form doesn't need
           one, but a live input would. */}
-      <input type="text" name="q" defaultValue={defaultValue} />
+      <input type="text" name="q" defaultValue={defaultValue} className="form-field" />
     </label>
   );
 }

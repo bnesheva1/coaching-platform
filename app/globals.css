@@ -41,3 +41,33 @@ body {
   color: var(--text-primary);
   font: var(--text-body-md);
 }
+
+/* Shared recipe for every plain text-like input/select/textarea in the
+   app — extracted from components/ui/Input.tsx's plain-field variant.
+   The first global CSS class (rather than an inline style object) in
+   this project: inline styles can't express :focus, and Input.tsx's
+   focus-ring only works today because it's a Client Component tracking
+   focus state in JS — replicating that per-field across every plain
+   form field in the app would mean wiring the same boilerplate
+   everywhere, or converting server-rendered forms into Client
+   Components just for this. Real CSS does it natively.
+   Deliberately NOT applied via a blanket `input` selector — only to
+   genuine text-like fields (text/email/password/number/date inputs,
+   select, textarea), added by hand per element. Checkboxes, radios,
+   file inputs, and buttons render natively on purpose and are never
+   given this class. */
+.form-field {
+  font: var(--text-body-md);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--field-padding);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.form-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}

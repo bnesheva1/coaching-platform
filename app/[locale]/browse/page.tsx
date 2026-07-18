@@ -2,6 +2,8 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { PractitionerSearchInput } from "@/components/PractitionerSearchInput";
+import { ContentContainer } from "@/components/ui/ContentContainer";
+import { Button } from "@/components/ui/Button";
 import specialtiesData from "@/data/specialties.json";
 
 const BIO_SNIPPET_LENGTH = 140;
@@ -34,85 +36,87 @@ export default async function BrowsePage({
   );
 
   return (
-    <main style={{ maxWidth: 700, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      <h1>{t("title")}</h1>
+    <main style={{ padding: "var(--space-16) 0" }}>
+      <ContentContainer maxWidth={700}>
+        <h1 style={{ font: "var(--text-heading-lg)" }}>{t("title")}</h1>
 
-      <form
-        method="get"
-        style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "2rem" }}
-      >
-        <PractitionerSearchInput defaultValue={searchText} />
+        <form
+          method="get"
+          style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", marginBottom: "var(--space-8)" }}
+        >
+          <PractitionerSearchInput defaultValue={searchText} />
 
-        <fieldset>
-          <legend>{t("specialtiesLabel")}</legend>
-          {specialtiesData.map((specialty) => (
-            <label key={specialty.key} style={{ display: "block" }}>
-              <input
-                type="checkbox"
-                name="specialty"
-                value={specialty.key}
-                defaultChecked={selectedSpecialties.includes(specialty.key)}
-              />{" "}
-              {specialty[locale] ?? specialty.en}
-            </label>
-          ))}
-        </fieldset>
+          <fieldset>
+            <legend>{t("specialtiesLabel")}</legend>
+            {specialtiesData.map((specialty) => (
+              <label key={specialty.key} style={{ display: "block" }}>
+                <input
+                  type="checkbox"
+                  name="specialty"
+                  value={specialty.key}
+                  defaultChecked={selectedSpecialties.includes(specialty.key)}
+                />{" "}
+                {specialty[locale] ?? specialty.en}
+              </label>
+            ))}
+          </fieldset>
 
-        <div>
-          <button type="submit">{t("filterButton")}</button>{" "}
-          <Link href="/browse">{t("clearFiltersLink")}</Link>
-        </div>
-      </form>
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <Button type="submit">{t("filterButton")}</Button>
+            <Button href="/browse" variant="ghost">{t("clearFiltersLink")}</Button>
+          </div>
+        </form>
 
-      {practitioners.length === 0 ? (
-        <p>{t("noResults")}</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {practitioners.map((practitioner) => (
-            <li key={practitioner.id} style={{ display: "flex", gap: "1rem" }}>
-              {practitioner.avatarUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={practitioner.avatarUrl}
-                  alt={practitioner.displayName ?? practitioner.username}
-                  style={{
-                    width: 64,
-                    height: 64,
-                    objectFit: "cover",
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-              <div>
-                <Link href={`/p/${practitioner.username}`}>
-                  <strong>{practitioner.displayName || `@${practitioner.username}`}</strong>
-                </Link>
-                {practitioner.averageRating !== null && (
-                  <span style={{ marginLeft: "0.5rem", color: "#666", fontSize: "0.9rem" }}>
-                    ★ {practitioner.averageRating.toFixed(1)}{" "}
-                    {tReviews("reviewCountBadge", { count: practitioner.reviewCount })}
-                  </span>
+        {practitioners.length === 0 ? (
+          <p>{t("noResults")}</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+            {practitioners.map((practitioner) => (
+              <li key={practitioner.id} style={{ display: "flex", gap: "var(--space-4)" }}>
+                {practitioner.avatarUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={practitioner.avatarUrl}
+                    alt={practitioner.displayName ?? practitioner.username}
+                    style={{
+                      width: 64,
+                      height: 64,
+                      objectFit: "cover",
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                    }}
+                  />
                 )}
-                {practitioner.specialties.length > 0 && (
-                  <p style={{ margin: "0.25rem 0", color: "#666" }}>
-                    {practitioner.specialties
-                      .map((key) => specialtyLabels.get(key) ?? key)
-                      .join(" · ")}
-                  </p>
-                )}
-                {practitioner.bio && (
-                  <p style={{ margin: "0.25rem 0" }}>
-                    {practitioner.bio.length > BIO_SNIPPET_LENGTH
-                      ? `${practitioner.bio.slice(0, BIO_SNIPPET_LENGTH)}…`
-                      : practitioner.bio}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                <div>
+                  <Link href={`/p/${practitioner.username}`}>
+                    <strong>{practitioner.displayName || `@${practitioner.username}`}</strong>
+                  </Link>
+                  {practitioner.averageRating !== null && (
+                    <span style={{ marginLeft: "var(--space-2)", color: "#666", font: "var(--text-body-md)" }}>
+                      ★ {practitioner.averageRating.toFixed(1)}{" "}
+                      {tReviews("reviewCountBadge", { count: practitioner.reviewCount })}
+                    </span>
+                  )}
+                  {practitioner.specialties.length > 0 && (
+                    <p style={{ margin: "var(--space-1) 0", color: "#666" }}>
+                      {practitioner.specialties
+                        .map((key) => specialtyLabels.get(key) ?? key)
+                        .join(" · ")}
+                    </p>
+                  )}
+                  {practitioner.bio && (
+                    <p style={{ margin: "var(--space-1) 0" }}>
+                      {practitioner.bio.length > BIO_SNIPPET_LENGTH
+                        ? `${practitioner.bio.slice(0, BIO_SNIPPET_LENGTH)}…`
+                        : practitioner.bio}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ContentContainer>
     </main>
   );
 }

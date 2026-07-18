@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import { saveProfile, checkUsernameAvailability, type ProfileFormState } from "./actions";
 import specialties from "@/data/specialties.json";
 
@@ -101,8 +102,7 @@ export function ProfileForm({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "1rem",
-        maxWidth: 400,
+        gap: "var(--space-4)",
       }}
     >
       <label>
@@ -115,24 +115,25 @@ export function ProfileForm({
           pattern="[a-z0-9_\-]+"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="form-field"
           style={{ width: "100%" }}
         />
       </label>
-      <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+      <p style={{ font: "var(--text-body-sm)", color: "#666", marginTop: "calc(-1 * var(--space-2))" }}>
         {t("usernameHint")}
       </p>
       {isChecking && (
-        <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+        <p style={{ font: "var(--text-body-sm)", color: "#666", marginTop: "calc(-1 * var(--space-2))" }}>
           {t("checkingAvailability")}
         </p>
       )}
       {isAvailable && (
-        <p style={{ fontSize: "0.85rem", color: "green", marginTop: "-0.5rem" }}>
+        <p style={{ font: "var(--text-body-sm)", color: "green", marginTop: "calc(-1 * var(--space-2))" }}>
           {t("available")}
         </p>
       )}
       {unavailableReason && (
-        <p style={{ fontSize: "0.85rem", color: "crimson", marginTop: "-0.5rem" }}>
+        <p style={{ font: "var(--text-body-sm)", color: "crimson", marginTop: "calc(-1 * var(--space-2))" }}>
           {unavailableReason}
         </p>
       )}
@@ -144,10 +145,11 @@ export function ProfileForm({
           name="displayName"
           type="text"
           defaultValue={initialDisplayName}
+          className="form-field"
           style={{ width: "100%" }}
         />
       </label>
-      <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+      <p style={{ font: "var(--text-body-sm)", color: "#666", marginTop: "calc(-1 * var(--space-2))" }}>
         {t("displayNameHint")}
       </p>
 
@@ -158,6 +160,7 @@ export function ProfileForm({
           name="timezone"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
+          className="form-field"
           style={{ width: "100%" }}
         >
           {TIMEZONES.map((tz) => (
@@ -168,15 +171,16 @@ export function ProfileForm({
         </select>
       </label>
       {detectedTimezone && detectedTimezone !== timezone && (
-        <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+        <p style={{ font: "var(--text-body-sm)", color: "#666", marginTop: "calc(-1 * var(--space-2))" }}>
           {t("timezoneDetectedPrompt", { timezone: detectedTimezone })}{" "}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setTimezone(detectedTimezone)}
-            style={{ fontSize: "0.85rem" }}
           >
             {t("timezoneUseDetected")}
-          </button>
+          </Button>
         </p>
       )}
 
@@ -190,10 +194,11 @@ export function ProfileForm({
           max={48}
           step={1}
           defaultValue={initialMinNoticeHours}
+          className="form-field"
           style={{ width: "100%" }}
         />
       </label>
-      <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "-0.5rem" }}>
+      <p style={{ font: "var(--text-body-sm)", color: "#666", marginTop: "calc(-1 * var(--space-2))" }}>
         {t("minNoticeHoursHint")}
       </p>
 
@@ -204,6 +209,7 @@ export function ProfileForm({
           name="bio"
           rows={5}
           defaultValue={initialBio}
+          className="form-field"
           style={{ width: "100%" }}
         />
       </label>
@@ -237,7 +243,7 @@ export function ProfileForm({
               objectFit: "cover",
               borderRadius: "50%",
               display: "block",
-              marginBottom: "0.5rem",
+              marginBottom: "var(--space-2)",
             }}
           />
         )}
@@ -247,9 +253,9 @@ export function ProfileForm({
       {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
       {state?.success && <p style={{ color: "green" }}>{t("savedMessage")}</p>}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending}>
         {pending ? t("saveButtonPending") : t("saveButton")}
-      </button>
+      </Button>
     </form>
   );
 }

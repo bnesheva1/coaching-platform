@@ -1,22 +1,28 @@
-/* Type scale. Display = PT Serif (headlines, editorial warmth); UI/body = Manrope (Cyrillic-friendly, neutral). */
+/* Type scale. Display = PT Serif (headlines, editorial warmth); UI/body = Manrope (Cyrillic-friendly, neutral).
+   Font sizes in rem (relative to a 16px root, the browser default — this
+   project sets no custom root font-size) rather than px: a browser/OS
+   text-size setting scales rem but not px, so px font sizes silently
+   ignore that accessibility preference entirely. Line-heights were
+   already unitless ratios (e.g. 1.18, not 18px), which is already the
+   scale-friendly form — no change needed there. */
 :root{
-  --text-display-xl: 400 56px/1.18 var(--font-display);
-  --text-display-lg: 400 40px/1.24 var(--font-display);
-  --text-display-md: 400 32px/1.28 var(--font-display);
-  --text-display-sm: 400 26px/1.32 var(--font-display);
+  --text-display-xl: 400 3.5rem/1.18 var(--font-display);      /* 56px */
+  --text-display-lg: 400 2.5rem/1.24 var(--font-display);      /* 40px */
+  --text-display-md: 400 2rem/1.28 var(--font-display);        /* 32px */
+  --text-display-sm: 400 1.625rem/1.32 var(--font-display);    /* 26px */
 
-  --text-heading-lg: 700 22px/1.35 var(--font-display);
-  --text-heading-md: 700 18px/1.4 var(--font-ui);
-  --text-heading-sm: 600 15px/1.4 var(--font-ui);
+  --text-heading-lg: 700 1.375rem/1.35 var(--font-display);    /* 22px */
+  --text-heading-md: 700 1.125rem/1.4 var(--font-ui);          /* 18px */
+  --text-heading-sm: 600 0.9375rem/1.4 var(--font-ui);         /* 15px */
 
-  --text-body-lg: 400 17px/1.6 var(--font-ui);
-  --text-body-md: 400 15px/1.6 var(--font-ui);
-  --text-body-sm: 400 13.5px/1.55 var(--font-ui);
+  --text-body-lg: 400 1.0625rem/1.6 var(--font-ui);            /* 17px */
+  --text-body-md: 400 0.9375rem/1.6 var(--font-ui);            /* 15px */
+  --text-body-sm: 400 0.84375rem/1.55 var(--font-ui);          /* 13.5px */
 
-  --text-label: 600 13px/1.3 var(--font-ui);
-  --text-caption: 400 12px/1.5 var(--font-ui);
-  --text-overline: 700 12px/1.3 var(--font-ui);
+  --text-label: 600 0.8125rem/1.3 var(--font-ui);              /* 13px */
+  --text-caption: 400 0.75rem/1.5 var(--font-ui);              /* 12px */
+  --text-overline: 700 0.75rem/1.3 var(--font-ui);             /* 12px */
   --letter-overline: .06em;
 
-  --text-mono-sm: 400 12.5px/1.5 var(--font-mono);
+  --text-mono-sm: 400 0.78125rem/1.5 var(--font-mono);         /* 12.5px */
 }

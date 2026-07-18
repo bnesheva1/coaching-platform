@@ -85,23 +85,23 @@ export function SlotList({
 
   return (
     <div>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+      <p style={{ font: "var(--text-body-sm)", color: "#666" }}>
         {t("timesShownIn", { timezone: clientTimezone })}
       </p>
       {viewerRole === "practitioner" && (
-        <p style={{ fontSize: "0.85rem", color: "#666" }}>{t("onlyClientsCanBook")}</p>
+        <p style={{ font: "var(--text-body-sm)", color: "#666" }}>{t("onlyClientsCanBook")}</p>
       )}
       {viewerRole === null && (
-        <p style={{ fontSize: "0.85rem", color: "#666" }}>
+        <p style={{ font: "var(--text-body-sm)", color: "#666" }}>
           {t.rich("logInToBookPrompt", {
             login: (chunks) => <Link href="/login">{chunks}</Link>,
           })}
         </p>
       )}
       {[...groups.entries()].map(([day, daySlots]) => (
-        <div key={day} style={{ marginBottom: "1rem" }}>
+        <div key={day} style={{ marginBottom: "var(--space-4)" }}>
           <strong>{day}</strong>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", marginTop: "var(--space-1)" }}>
             {daySlots.map((slot) =>
               viewerRole === "client" ? (
                 <form
@@ -115,7 +115,7 @@ export function SlotList({
                 >
                   <button
                     type="submit"
-                    style={{ border: "1px solid #ddd", padding: "0.25rem 0.5rem", borderRadius: 4 }}
+                    style={{ border: "1px solid #ddd", padding: "var(--space-1) var(--space-2)", borderRadius: 4 }}
                   >
                     {timeFormatter.format(slot.date)}
                   </button>
@@ -123,7 +123,7 @@ export function SlotList({
               ) : (
                 <span
                   key={slot.startUtc}
-                  style={{ border: "1px solid #ddd", padding: "0.25rem 0.5rem", borderRadius: 4, color: "#999" }}
+                  style={{ border: "1px solid #ddd", padding: "var(--space-1) var(--space-2)", borderRadius: 4, color: "#999" }}
                 >
                   {timeFormatter.format(slot.date)}
                 </span>

@@ -7,12 +7,12 @@ import { Link } from "@/i18n/navigation";
 export type ButtonVariant = "primary" | "secondary" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
-type SizeStyle = { padY: string; padX: string; font: string; radius: string };
+type SizeStyle = { padding: string; font: string; radius: string };
 
 const SIZES: Record<ButtonSize, SizeStyle> = {
-  sm: { padY: "7px", padX: "14px", font: "var(--text-body-sm)", radius: "var(--radius-sm)" },
-  md: { padY: "10px", padX: "20px", font: "600 14px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
-  lg: { padY: "13px", padX: "26px", font: "600 16px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
+  sm: { padding: "var(--button-padding-sm)", font: "var(--text-body-sm)", radius: "var(--radius-sm)" },
+  md: { padding: "var(--button-padding-md)", font: "600 14px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
+  lg: { padding: "var(--button-padding-lg)", font: "600 16px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
 };
 
 const VARIANTS: Record<ButtonVariant, CSSProperties> = {
@@ -57,7 +57,7 @@ export function Button({
   const style: CSSProperties = {
     fontFamily: "var(--font-ui)",
     font: s.font,
-    padding: `${s.padY} ${s.padX}`,
+    padding: s.padding,
     borderRadius: s.radius,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,

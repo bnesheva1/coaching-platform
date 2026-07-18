@@ -2,6 +2,7 @@
 
 import { Fragment, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import {
   createService,
   updateService,
@@ -90,7 +91,7 @@ function DeliveryFields({
       </fieldset>
       <label>
         {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
-        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} />
+        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} className="form-field" style={{ width: "100%" }} />
       </label>
     </>
   );
@@ -103,19 +104,19 @@ function ServiceRow({ service }: { service: Service }) {
 
   if (isEditing) {
     return (
-      <li style={{ marginBottom: "1rem", border: "1px solid #ddd", padding: "0.75rem" }}>
+      <li style={{ marginBottom: "var(--space-4)", border: "1px solid #ddd", padding: "var(--space-3)" }}>
         <form
           action={formAction}
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+          style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}
         >
           <input type="hidden" name="serviceId" value={service.id} />
           <label>
             {t("nameLabel")}
-            <input name="name" type="text" required defaultValue={service.name} />
+            <input name="name" type="text" required defaultValue={service.name} className="form-field" style={{ width: "100%" }} />
           </label>
           <label>
             {t("descriptionLabel")}
-            <textarea name="description" rows={2} defaultValue={service.description ?? ""} />
+            <textarea name="description" rows={2} defaultValue={service.description ?? ""} className="form-field" style={{ width: "100%" }} />
           </label>
           <label>
             {t("durationLabel")}
@@ -127,6 +128,8 @@ function ServiceRow({ service }: { service: Service }) {
               step={15}
               required
               defaultValue={service.duration_minutes}
+              className="form-field"
+              style={{ width: "100%" }}
             />
           </label>
           <label>
@@ -138,17 +141,19 @@ function ServiceRow({ service }: { service: Service }) {
               step={0.01}
               required
               defaultValue={(service.price_cents / 100).toFixed(2)}
+              className="form-field"
+              style={{ width: "100%" }}
             />
           </label>
           <DeliveryFields defaultType={service.delivery_type} defaultInfo={service.delivery_info ?? ""} />
           {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
-          <div>
-            <button type="submit" disabled={pending}>
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <Button type="submit" disabled={pending}>
               {pending ? t("saveButtonPending") : t("saveButton")}
-            </button>{" "}
-            <button type="button" onClick={() => setIsEditing(false)}>
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
               {t("cancelButton")}
-            </button>
+            </Button>
           </div>
         </form>
       </li>
@@ -156,14 +161,14 @@ function ServiceRow({ service }: { service: Service }) {
   }
 
   return (
-    <li style={{ marginBottom: "1rem" }}>
+    <li style={{ marginBottom: "var(--space-4)" }}>
       <strong>{service.name}</strong> — {service.duration_minutes} min —{" "}
       {formatPrice(service.price_cents, service.currency)}{" "}
       <span style={{ color: service.is_active ? "green" : "#999" }}>
         {service.is_active ? t("activeStatus") : t("hiddenStatus")}
       </span>
-      {service.description && <p style={{ margin: "0.25rem 0" }}>{service.description}</p>}
-      <p style={{ margin: "0.25rem 0", fontSize: "0.9rem" }}>
+      {service.description && <p style={{ margin: "var(--space-1) 0" }}>{service.description}</p>}
+      <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-md)" }}>
         {service.delivery_type && (
           <strong>
             {service.delivery_type === "online" ? t("deliveryTypeOnline") : t("deliveryTypeInPerson")}:{" "}
@@ -175,11 +180,11 @@ function ServiceRow({ service }: { service: Service }) {
           <span style={{ color: "#a15c00" }}>{t("deliveryInfoMissingNudge")}</span>
         )}
       </p>
-      <button type="button" onClick={() => setIsEditing(true)}>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setIsEditing(true)}>
         {t("editButton")}
-      </button>{" "}
+      </Button>{" "}
       <form action={setServiceActive.bind(null, service.id, !service.is_active)} style={{ display: "inline" }}>
-        <button type="submit">{service.is_active ? t("hideButton") : t("showButton")}</button>
+        <Button type="submit" variant="secondary" size="sm">{service.is_active ? t("hideButton") : t("showButton")}</Button>
       </form>{" "}
       <form
         action={deleteService.bind(null, service.id)}
@@ -190,7 +195,7 @@ function ServiceRow({ service }: { service: Service }) {
           }
         }}
       >
-        <button type="submit">{t("deleteButton")}</button>
+        <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
       </form>
     </li>
   );
@@ -201,8 +206,8 @@ export function ServicesSection({ services }: { services: Service[] }) {
   const [state, formAction, pending] = useActionState(createService, initialState);
 
   return (
-    <section style={{ marginTop: "2rem", maxWidth: 400 }}>
-      <h2>{t("title")}</h2>
+    <section style={{ marginTop: "var(--space-8)" }}>
+      <h2 style={{ font: "var(--text-heading-md)" }}>{t("title")}</h2>
       {services.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {services.map((service) => (
@@ -213,33 +218,33 @@ export function ServicesSection({ services }: { services: Service[] }) {
         <p style={{ color: "#666" }}>{t("noServicesYet")}</p>
       )}
 
-      <h3>{t("addNewTitle")}</h3>
+      <h3 style={{ font: "var(--text-heading-sm)" }}>{t("addNewTitle")}</h3>
       <form
         action={formAction}
-        style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}
       >
         <label>
           {t("nameLabel")}
-          <input name="name" type="text" required />
+          <input name="name" type="text" required className="form-field" style={{ width: "100%" }} />
         </label>
         <label>
           {t("descriptionLabel")}
-          <textarea name="description" rows={2} />
+          <textarea name="description" rows={2} className="form-field" style={{ width: "100%" }} />
         </label>
         <label>
           {t("durationLabel")}
-          <input name="durationMinutes" type="number" min={15} max={240} step={15} required />
+          <input name="durationMinutes" type="number" min={15} max={240} step={15} required className="form-field" style={{ width: "100%" }} />
         </label>
         <label>
           {t("priceLabel")}
-          <input name="price" type="number" min={0} step={0.01} required />
+          <input name="price" type="number" min={0} step={0.01} required className="form-field" style={{ width: "100%" }} />
         </label>
         <DeliveryFields defaultType={null} defaultInfo="" />
         {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
         {state?.success && <p style={{ color: "green" }}>{t("addedMessage")}</p>}
-        <button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? t("addButtonPending") : t("addButton")}
-        </button>
+        </Button>
       </form>
     </section>
   );

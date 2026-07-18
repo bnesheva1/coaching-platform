@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import {
   createAvailabilityException,
   deleteAvailabilityException,
@@ -97,8 +98,8 @@ export function AvailabilityExceptionsSection({
   );
 
   return (
-    <section style={{ marginTop: "2rem", maxWidth: 400 }}>
-      <h2>{t("title")}</h2>
+    <section style={{ marginTop: "var(--space-8)" }}>
+      <h2 style={{ font: "var(--text-heading-md)" }}>{t("title")}</h2>
 
       {sortedExceptions.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0 }}>
@@ -108,7 +109,7 @@ export function AvailabilityExceptionsSection({
                 ? `${formatDate(exception.exception_date)}, ${formatTime(exception.start_time)}–${formatTime(exception.end_time)}`
                 : formatDate(exception.exception_date);
             return (
-              <li key={exception.id} style={{ marginBottom: "0.5rem" }}>
+              <li key={exception.id} style={{ marginBottom: "var(--space-2)" }}>
                 {label}{" "}
                 <form
                   action={deleteAvailabilityException.bind(null, exception.id)}
@@ -119,7 +120,7 @@ export function AvailabilityExceptionsSection({
                     }
                   }}
                 >
-                  <button type="submit">{t("deleteButton")}</button>
+                  <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
                 </form>
               </li>
             );
@@ -131,11 +132,11 @@ export function AvailabilityExceptionsSection({
 
       <form
         action={formAction}
-        style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}
+        style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-4)" }}
       >
         <label>
           {t("dateLabel")}
-          <input type="date" name="exceptionDate" min={todayIsoDate()} required />
+          <input type="date" name="exceptionDate" min={todayIsoDate()} required className="form-field" />
         </label>
 
         <fieldset style={{ border: "none", padding: 0 }}>
@@ -169,6 +170,7 @@ export function AvailabilityExceptionsSection({
                 required
                 value={startTime}
                 onChange={(e) => handleStartChange(e.target.value)}
+                className="form-field"
               >
                 {START_TIME_OPTIONS.map((time) => (
                   <option key={time} value={time}>
@@ -179,7 +181,7 @@ export function AvailabilityExceptionsSection({
             </label>
             <label>
               {tAvailability("endTimeLabel")}
-              <select name="endTime" required value={endTime} onChange={(e) => setEndTime(e.target.value)}>
+              <select name="endTime" required value={endTime} onChange={(e) => setEndTime(e.target.value)} className="form-field">
                 {endTimeOptions.map((time) => (
                   <option key={time} value={time}>
                     {time}
@@ -201,9 +203,9 @@ export function AvailabilityExceptionsSection({
             )}
           </>
         )}
-        <button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? t("addButtonPending") : t("addButton")}
-        </button>
+        </Button>
       </form>
     </section>
   );

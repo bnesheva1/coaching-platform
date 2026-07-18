@@ -2,6 +2,8 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
+import { ContentContainer } from "@/components/ui/ContentContainer";
+import { Button } from "@/components/ui/Button";
 import { BookingsList, type ClientBooking } from "./BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 
@@ -105,20 +107,22 @@ export default async function ClientDashboardPage({
     typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
 
   return (
-    <main style={{ maxWidth: 400, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      <h1>{t("clientTitle")}</h1>
-      <form action={signOut}>
-        <button type="submit">{t("signOut")}</button>
-      </form>
-      {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
-      {cancelErrorCode && (
-        <p style={{ color: "crimson" }}>
-          {tBooking.has(cancelErrorCode)
-            ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
-            : tBooking("cancellationFailed")}
-        </p>
-      )}
-      <BookingsList upcoming={upcoming} past={past} />
+    <main style={{ padding: "var(--space-16) 0" }}>
+      <ContentContainer maxWidth={400}>
+        <h1 style={{ font: "var(--text-heading-lg)" }}>{t("clientTitle")}</h1>
+        <form action={signOut}>
+          <Button type="submit" variant="ghost">{t("signOut")}</Button>
+        </form>
+        {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
+        {cancelErrorCode && (
+          <p style={{ color: "crimson" }}>
+            {tBooking.has(cancelErrorCode)
+              ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
+              : tBooking("cancellationFailed")}
+          </p>
+        )}
+        <BookingsList upcoming={upcoming} past={past} />
+      </ContentContainer>
     </main>
   );
 }

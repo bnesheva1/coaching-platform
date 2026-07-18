@@ -3,6 +3,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
+import { ContentContainer } from "@/components/ui/ContentContainer";
 import { SlotList } from "./SlotList";
 import specialties from "@/data/specialties.json";
 
@@ -109,121 +110,123 @@ export default async function PublicProfilePage({
     typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
 
   return (
-    <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      {isOwner && (
-        <p>
-          <Link href="/practitioner-dashboard">{t("editProfile")}</Link>
-        </p>
-      )}
-
-      {practitionerProfile.avatar_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={practitionerProfile.avatar_url}
-          alt={profile?.display_name || practitionerProfile.username || t("profilePhotoAlt")}
-          style={{
-            width: 120,
-            height: 120,
-            objectFit: "cover",
-            borderRadius: "50%",
-            display: "block",
-            marginBottom: "1rem",
-          }}
-        />
-      )}
-
-      <h1>{profile?.display_name || `@${practitionerProfile.username}`}</h1>
-      <p style={{ color: "#666" }}>@{practitionerProfile.username}</p>
-
-      {practitionerProfile.specialties?.length > 0 && (
-        <p>
-          {practitionerProfile.specialties
-            .map((key: string) => specialtyLabels.get(key) ?? key)
-            .join(" · ")}
-        </p>
-      )}
-
-      {practitionerProfile.bio && <p>{practitionerProfile.bio}</p>}
-
-      {services && services.length > 0 && (
-        <section>
-          <h2>{t("servicesTitle")}</h2>
-          {!selectedServiceId && (
-            <p style={{ fontSize: "0.85rem", color: "#666" }}>{tBooking("selectService")}</p>
-          )}
-          {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
-          {bookingErrorCode && (
-            <p style={{ color: "crimson" }}>
-              {tBooking.has(bookingErrorCode)
-                ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0])
-                : tBooking("bookingFailed")}
-            </p>
-          )}
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {services.map((service) => {
-              const isSelected = service.id === selectedServiceId;
-              return (
-                <li key={service.id} style={{ marginBottom: "1rem" }}>
-                  <Link href={isSelected ? "?" : `?service=${service.id}`}>
-                    <strong>{service.name}</strong>
-                  </Link>{" "}
-                  —{" "}
-                  {t("serviceDuration", { minutes: service.duration_minutes })} —{" "}
-                  {new Intl.NumberFormat(intlLocale, {
-                    style: "currency",
-                    currency: service.currency,
-                  }).format(service.price_cents / 100)}
-                  {service.description && (
-                    <p style={{ margin: "0.25rem 0 0" }}>{service.description}</p>
-                  )}
-                  {isSelected && (
-                    <div style={{ marginTop: "0.5rem" }}>
-                      <h3>{tBooking("availableTimes")}</h3>
-                      <SlotList
-                        slots={slots ?? []}
-                        practitionerId={practitionerProfile.id}
-                        serviceId={service.id}
-                        username={practitionerProfile.username!}
-                        viewerRole={viewerRole}
-                      />
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
-      <section style={{ marginTop: "2rem" }}>
-        <h2>{tReviews("reviewsTitle")}</h2>
-        {averageRating !== null && (
-          <p style={{ color: "#666" }}>
-            {tReviews("averageRatingSummary", {
-              average: averageRating.toFixed(1),
-              count: reviews!.length,
-            })}
+    <main style={{ padding: "var(--space-16) 0" }}>
+      <ContentContainer maxWidth={500}>
+        {isOwner && (
+          <p>
+            <Link href="/practitioner-dashboard">{t("editProfile")}</Link>
           </p>
         )}
-        {!reviews || reviews.length === 0 ? (
-          <p style={{ color: "#666" }}>{tReviews("noReviewsYet")}</p>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {reviews.map((review) => (
-              <li key={review.id} style={{ marginBottom: "1rem", borderTop: "1px solid #eee", paddingTop: "0.75rem" }}>
-                <strong>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</strong>
-                {" — "}
-                <span>{tReviews("verifiedUser")}</span>
-                {" · "}
-                <span style={{ color: "#666", fontSize: "0.85rem" }}>
-                  {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.created_at))}
-                </span>
-                {review.review_text && <p style={{ margin: "0.25rem 0 0" }}>{review.review_text}</p>}
-              </li>
-            ))}
-          </ul>
+
+        {practitionerProfile.avatar_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={practitionerProfile.avatar_url}
+            alt={profile?.display_name || practitionerProfile.username || t("profilePhotoAlt")}
+            style={{
+              width: 120,
+              height: 120,
+              objectFit: "cover",
+              borderRadius: "50%",
+              display: "block",
+              marginBottom: "var(--space-4)",
+            }}
+          />
         )}
-      </section>
+
+        <h1 style={{ font: "var(--text-heading-lg)" }}>{profile?.display_name || `@${practitionerProfile.username}`}</h1>
+        <p style={{ color: "#666" }}>@{practitionerProfile.username}</p>
+
+        {practitionerProfile.specialties?.length > 0 && (
+          <p>
+            {practitionerProfile.specialties
+              .map((key: string) => specialtyLabels.get(key) ?? key)
+              .join(" · ")}
+          </p>
+        )}
+
+        {practitionerProfile.bio && <p>{practitionerProfile.bio}</p>}
+
+        {services && services.length > 0 && (
+          <section>
+            <h2 style={{ font: "var(--text-heading-md)" }}>{t("servicesTitle")}</h2>
+            {!selectedServiceId && (
+              <p style={{ font: "var(--text-body-sm)", color: "#666" }}>{tBooking("selectService")}</p>
+            )}
+            {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
+            {bookingErrorCode && (
+              <p style={{ color: "crimson" }}>
+                {tBooking.has(bookingErrorCode)
+                  ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0])
+                  : tBooking("bookingFailed")}
+              </p>
+            )}
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {services.map((service) => {
+                const isSelected = service.id === selectedServiceId;
+                return (
+                  <li key={service.id} style={{ marginBottom: "var(--space-4)" }}>
+                    <Link href={isSelected ? "?" : `?service=${service.id}`}>
+                      <strong>{service.name}</strong>
+                    </Link>{" "}
+                    —{" "}
+                    {t("serviceDuration", { minutes: service.duration_minutes })} —{" "}
+                    {new Intl.NumberFormat(intlLocale, {
+                      style: "currency",
+                      currency: service.currency,
+                    }).format(service.price_cents / 100)}
+                    {service.description && (
+                      <p style={{ margin: "var(--space-1) 0 0" }}>{service.description}</p>
+                    )}
+                    {isSelected && (
+                      <div style={{ marginTop: "var(--space-2)" }}>
+                        <h3 style={{ font: "var(--text-heading-sm)" }}>{tBooking("availableTimes")}</h3>
+                        <SlotList
+                          slots={slots ?? []}
+                          practitionerId={practitionerProfile.id}
+                          serviceId={service.id}
+                          username={practitionerProfile.username!}
+                          viewerRole={viewerRole}
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        <section style={{ marginTop: "var(--space-8)" }}>
+          <h2 style={{ font: "var(--text-heading-md)" }}>{tReviews("reviewsTitle")}</h2>
+          {averageRating !== null && (
+            <p style={{ color: "#666" }}>
+              {tReviews("averageRatingSummary", {
+                average: averageRating.toFixed(1),
+                count: reviews!.length,
+              })}
+            </p>
+          )}
+          {!reviews || reviews.length === 0 ? (
+            <p style={{ color: "#666" }}>{tReviews("noReviewsYet")}</p>
+          ) : (
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {reviews.map((review) => (
+                <li key={review.id} style={{ marginBottom: "var(--space-4)", borderTop: "1px solid #eee", paddingTop: "var(--space-3)" }}>
+                  <strong>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</strong>
+                  {" — "}
+                  <span>{tReviews("verifiedUser")}</span>
+                  {" · "}
+                  <span style={{ color: "#666", font: "var(--text-body-sm)" }}>
+                    {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.created_at))}
+                  </span>
+                  {review.review_text && <p style={{ margin: "var(--space-1) 0 0" }}>{review.review_text}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </ContentContainer>
     </main>
   );
 }

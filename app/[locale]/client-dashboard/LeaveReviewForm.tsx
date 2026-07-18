@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import { createReview, type ReviewFormState } from "./review-actions";
 
 const initialState: ReviewFormState = null;
@@ -12,11 +13,11 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   if (state?.success) {
-    return <p style={{ color: "green", margin: "0.25rem 0 0" }}>{t("submittedMessage")}</p>;
+    return <p style={{ color: "green", margin: "var(--space-1) 0 0" }}>{t("submittedMessage")}</p>;
   }
 
   return (
-    <form action={formAction} style={{ marginTop: "0.5rem" }}>
+    <form action={formAction} style={{ marginTop: "var(--space-2)" }}>
       {/* Radio inputs trigger a browser's native implicit form submission
           on Enter when there's a single submit button in the form — a
           user pressing Enter right after picking a star (before ever
@@ -24,14 +25,14 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
           text. Scoped to the fieldset only, so Enter still inserts a
           newline in the textarea as normal. */}
       <fieldset
-        style={{ border: "1px solid #ddd", padding: "0.5rem" }}
+        style={{ border: "1px solid #ddd", padding: "var(--space-2)" }}
         onKeyDown={(e) => {
           if (e.key === "Enter") e.preventDefault();
         }}
       >
         <legend>{t("ratingLabel")}</legend>
         {[1, 2, 3, 4, 5].map((value) => (
-          <label key={value} style={{ marginRight: "0.75rem" }}>
+          <label key={value} style={{ marginRight: "var(--space-3)" }}>
             <input type="radio" name="rating" value={value} required /> {value}
           </label>
         ))}
@@ -41,12 +42,13 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
         placeholder={t("reviewTextPlaceholder")}
         maxLength={1000}
         rows={3}
-        style={{ width: "100%", marginTop: "0.5rem" }}
+        className="form-field"
+        style={{ width: "100%", marginTop: "var(--space-2)" }}
       />
       {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending}>
         {pending ? t("submitButtonPending") : t("submitButton")}
-      </button>
+      </Button>
     </form>
   );
 }

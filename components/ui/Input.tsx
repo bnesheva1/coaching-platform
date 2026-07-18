@@ -107,22 +107,9 @@ export function Input({
         name={name}
         value={value}
         onChange={onChange}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        style={{
-          font: "var(--text-body-md)",
-          fontFamily: "var(--font-ui)",
-          color: "var(--text-primary)",
-          background: "var(--bg-surface)",
-          border: `1px solid ${focused ? "var(--accent)" : "var(--border-default)"}`,
-          borderRadius: "var(--radius-md)",
-          padding: "11px 16px",
-          outline: "none",
-          boxShadow: focused ? "0 0 0 4px var(--focus-ring)" : "none",
-          transition:
-            "border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard)",
-        }}
+        className="form-field"
+        style={{ width: "100%" }}
       />
       {helperText && <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>{helperText}</span>}
     </div>

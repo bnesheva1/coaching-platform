@@ -50,7 +50,7 @@ export async function BookingsList({
 
   function renderBooking(booking: PractitionerBooking) {
     return (
-      <li key={booking.id} style={{ marginBottom: "0.5rem" }}>
+      <li key={booking.id} style={{ marginBottom: "var(--space-2)" }}>
         <strong>{formatter.format(new Date(booking.startUtc))}</strong>
         {" — "}
         {t("withClient", { name: booking.clientName })}
@@ -69,24 +69,24 @@ export async function BookingsList({
   }
 
   return (
-    <section style={{ marginTop: "1.5rem" }}>
-      <h2>{t("bookingsTitle")}</h2>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+    <section style={{ marginTop: "var(--space-6)" }}>
+      <h2 style={{ font: "var(--text-heading-md)" }}>{t("bookingsTitle")}</h2>
+      <p style={{ font: "var(--text-body-sm)", color: "#666" }}>
         {t("timesShownIn", { timezone })}
       </p>
 
-      <h3>{t("upcomingHeading")}</h3>
+      <h3 style={{ font: "var(--text-heading-sm)" }}>{t("upcomingHeading")}</h3>
       {upcoming.length === 0 ? (
         <p style={{ color: "#666" }}>{t("noUpcomingBookings")}</p>
       ) : (
-        <ul style={{ paddingLeft: "1.25rem" }}>{upcoming.map(renderBooking)}</ul>
+        <ul style={{ paddingLeft: "var(--space-5)" }}>{upcoming.map(renderBooking)}</ul>
       )}
 
-      <h3>{t("pastHeading")}</h3>
+      <h3 style={{ font: "var(--text-heading-sm)" }}>{t("pastHeading")}</h3>
       {past.length === 0 ? (
         <p style={{ color: "#666" }}>{t("noPastBookings")}</p>
       ) : (
-        <ul style={{ paddingLeft: "1.25rem" }}>{past.map(renderBooking)}</ul>
+        <ul style={{ paddingLeft: "var(--space-5)" }}>{past.map(renderBooking)}</ul>
       )}
     </section>
   );

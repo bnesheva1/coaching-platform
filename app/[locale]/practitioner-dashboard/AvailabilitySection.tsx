@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import {
   createAvailabilityRule,
   deleteAvailabilityRule,
@@ -140,16 +141,16 @@ export function AvailabilitySection({
   );
 
   return (
-    <section style={{ marginTop: "2rem", maxWidth: 400 }}>
-      <h2>{t("title")}</h2>
-      <p style={{ fontSize: "0.85rem", color: "#666" }}>
+    <section style={{ marginTop: "var(--space-8)" }}>
+      <h2 style={{ font: "var(--text-heading-md)" }}>{t("title")}</h2>
+      <p style={{ font: "var(--text-body-sm)", color: "#666" }}>
         {t("timezoneNote", { timezone })}
       </p>
 
       {sortedRules.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {sortedRules.map((rule) => (
-            <li key={rule.id} style={{ marginBottom: "0.5rem" }}>
+            <li key={rule.id} style={{ marginBottom: "var(--space-2)" }}>
               <strong>{t(DAY_KEYS[rule.day_of_week - 1])}</strong>{" "}
               {formatTime(rule.start_time)}–{formatTime(rule.end_time)}{" "}
               <form
@@ -161,7 +162,7 @@ export function AvailabilitySection({
                   }
                 }}
               >
-                <button type="submit">{t("deleteButton")}</button>
+                <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
               </form>
             </li>
           ))}
@@ -179,11 +180,11 @@ export function AvailabilitySection({
           }
           setClientError(error);
         }}
-        style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}
+        style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-4)" }}
       >
         <label>
           {t("dayLabel")}
-          <select name="dayOfWeek" defaultValue="1" required>
+          <select name="dayOfWeek" defaultValue="1" required className="form-field">
             {DAY_KEYS.map((key, index) => (
               <option key={key} value={index + 1}>
                 {t(key)}
@@ -198,6 +199,7 @@ export function AvailabilitySection({
             required
             value={startTime}
             onChange={(e) => handleStartChange(e.target.value)}
+            className="form-field"
           >
             {START_TIME_OPTIONS.map((time) => (
               <option key={time} value={time}>
@@ -216,6 +218,7 @@ export function AvailabilitySection({
               setEndTime(e.target.value);
               setClientError(null);
             }}
+            className="form-field"
           >
             {endTimeOptions.map((time) => (
               <option key={time} value={time}>
@@ -228,9 +231,9 @@ export function AvailabilitySection({
           <p style={{ color: "crimson" }}>{clientError ?? state?.error}</p>
         )}
         {!clientError && state?.success && <p style={{ color: "green" }}>{t("addedMessage")}</p>}
-        <button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? t("addButtonPending") : t("addButton")}
-        </button>
+        </Button>
       </form>
     </section>
   );

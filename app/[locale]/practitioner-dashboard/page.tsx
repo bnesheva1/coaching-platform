@@ -2,6 +2,8 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { redirect, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
+import { ContentContainer } from "@/components/ui/ContentContainer";
+import { Button } from "@/components/ui/Button";
 import { ProfileForm } from "./ProfileForm";
 import { ServicesSection } from "./ServicesSection";
 import { AvailabilitySection } from "./AvailabilitySection";
@@ -115,46 +117,48 @@ export default async function PractitionerDashboardPage({
     typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
 
   return (
-    <main style={{ maxWidth: 500, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      <h1>{t("practitionerTitle")}</h1>
-      <form action={signOut} style={{ marginBottom: "1.5rem" }}>
-        <button type="submit">{t("signOut")}</button>
-      </form>
-      {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
-      {cancelErrorCode && (
-        <p style={{ color: "crimson" }}>
-          {tBooking.has(cancelErrorCode)
-            ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
-            : tBooking("cancellationFailed")}
-        </p>
-      )}
-      {practitionerProfile?.username && (
-        <p>
-          <Link href={`/p/${practitionerProfile.username}`}>
-            {t("viewPublicProfile")}
-          </Link>
-        </p>
-      )}
-      <ProfileForm
-        initialUsername={practitionerProfile?.username ?? null}
-        initialDisplayName={profile?.display_name ?? ""}
-        initialBio={practitionerProfile?.bio ?? ""}
-        initialSpecialties={practitionerProfile?.specialties ?? []}
-        initialAvatarUrl={practitionerProfile?.avatar_url ?? null}
-        initialTimezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
-        initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24}
-      />
-      <ServicesSection services={servicesWithDeliveryInfo} />
-      <AvailabilitySection
-        rules={availabilityRules ?? []}
-        timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
-      />
-      <AvailabilityExceptionsSection exceptions={availabilityExceptions ?? []} />
-      <BookingsList
-        upcoming={upcomingBookings}
-        past={pastBookings}
-        timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
-      />
+    <main style={{ padding: "var(--space-16) 0" }}>
+      <ContentContainer maxWidth={500}>
+        <h1 style={{ font: "var(--text-heading-lg)" }}>{t("practitionerTitle")}</h1>
+        <form action={signOut} style={{ marginBottom: "var(--space-6)" }}>
+          <Button type="submit" variant="ghost">{t("signOut")}</Button>
+        </form>
+        {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
+        {cancelErrorCode && (
+          <p style={{ color: "crimson" }}>
+            {tBooking.has(cancelErrorCode)
+              ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0])
+              : tBooking("cancellationFailed")}
+          </p>
+        )}
+        {practitionerProfile?.username && (
+          <p>
+            <Link href={`/p/${practitionerProfile.username}`}>
+              {t("viewPublicProfile")}
+            </Link>
+          </p>
+        )}
+        <ProfileForm
+          initialUsername={practitionerProfile?.username ?? null}
+          initialDisplayName={profile?.display_name ?? ""}
+          initialBio={practitionerProfile?.bio ?? ""}
+          initialSpecialties={practitionerProfile?.specialties ?? []}
+          initialAvatarUrl={practitionerProfile?.avatar_url ?? null}
+          initialTimezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+          initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24}
+        />
+        <ServicesSection services={servicesWithDeliveryInfo} />
+        <AvailabilitySection
+          rules={availabilityRules ?? []}
+          timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+        />
+        <AvailabilityExceptionsSection exceptions={availabilityExceptions ?? []} />
+        <BookingsList
+          upcoming={upcomingBookings}
+          past={pastBookings}
+          timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+        />
+      </ContentContainer>
     </main>
   );
 }

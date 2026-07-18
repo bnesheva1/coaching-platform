@@ -1,17 +1,31 @@
+/* Spacing scale in rem (relative to a 16px root — same reasoning as
+   typography.css): a fixed px spacing scale doesn't grow when a user
+   increases their browser/OS text size, so padding/gaps stay the same
+   physical size while the text around them gets bigger — the layout
+   gets visually cramped exactly for the users who most need more room.
+   rem keeps the whole scale proportional to text size automatically.
+   The scale already sat on a clean 4px grid, so every value converts to
+   an exact, clean rem number (4px = 0.25rem, the root font-size itself). */
 :root{
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --space-20: 80px;
-  --space-24: 96px;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
 
+  /* Radii and shadows stay in px, deliberately — out of scope for the
+     rem conversion (not typography or spacing/layout rhythm; a rounded
+     corner or a shadow blur isn't something that needs to grow when
+     text size does, and doing so isn't a WCAG concern the way font size
+     and layout spacing are). Worth a follow-up review, not decided
+     unilaterally here. */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -32,6 +46,31 @@
      components/ui/ContentContainer.tsx; no page or component should
      hardcode a maxWidth number of its own. Bounds CONTENT only —
      section backgrounds (color/gradient/glow/image) stay full-bleed on
-     their own outer element and are never wrapped in this. */
-  --content-max-width: 1200px;
+     their own outer element and are never wrapped in this.
+     In rem (75rem = 1200px at the default root), not px — a fixed-px
+     max-width doesn't grow when a user scales up their text size, so
+     the reading column gets relatively narrower and text wraps more
+     awkwardly exactly as it gets bigger. rem keeps the column
+     proportional to the text it holds, same reasoning as the rest of
+     this file. */
+  --content-max-width: 75rem;   /* 1200px */
+
+  /* Extracted from components/ui/Input.tsx's plain-field variant — the
+     one genuinely new value in that recipe (everything else already
+     resolves to an existing token). Doesn't land on the --space-N grid
+     (0.6875rem sits between --space-2/0.5rem and --space-3/0.75rem);
+     kept as its own explicit value rather than rounded, since it's what's
+     actually in the approved component, not a value invented here.
+     Consumed via the .form-field class in globals.css. */
+  --field-padding: 0.6875rem 1rem;   /* 11px 16px */
+
+  /* Extracted from components/ui/Button.tsx's SIZES object — the only
+     un-tokenized values in that component (variant colors, radii, and
+     font all already resolve to existing tokens). Same reasoning as
+     --field-padding: kept as their own explicit values rather than
+     rounded onto the --space-N grid, since they're what's actually in
+     the approved component. */
+  --button-padding-sm: 0.4375rem 0.875rem;  /* 7px 14px */
+  --button-padding-md: 0.625rem 1.25rem;    /* 10px 20px */
+  --button-padding-lg: 0.8125rem 1.625rem;  /* 13px 26px */
 }
