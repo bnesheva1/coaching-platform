@@ -1,0 +1,20 @@
+<!-- @dsCard group="Colors" viewport="700x220" subtitle="Text colors on their default surfaces, both themes" name="Text & Border" -->
+<!DOCTYPE html><html><head><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;font-family:var(--font-ui);display:flex}
+.half{flex:1;padding:24px;display:flex;flex-direction:column;gap:8px}
+</style></head><body>
+<div class="half" style="background:var(--bg-page)">
+  <span style="font:var(--text-heading-md);color:var(--text-primary)">text-primary</span>
+  <span style="font:var(--text-body-md);color:var(--text-secondary)">text-secondary</span>
+  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">text-tertiary</span>
+  <div style="height:1px;background:var(--border-default);margin-top:8px"></div>
+  <span style="font:var(--text-caption);color:var(--text-tertiary)">border-default</span>
+</div>
+<div class="half" data-theme="dark" style="background:var(--bg-page)">
+  <span style="font:var(--text-heading-md);color:var(--text-primary)">text-primary</span>
+  <span style="font:var(--text-body-md);color:var(--text-secondary)">text-secondary</span>
+  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">text-tertiary</span>
+  <div style="height:1px;background:var(--border-default);margin-top:8px"></div>
+  <span style="font:var(--text-caption);color:var(--text-tertiary)">border-default</span>
+</div>
+</body></html>

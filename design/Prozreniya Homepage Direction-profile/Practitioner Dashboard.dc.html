@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0}
+  *{box-sizing:border-box}
+  .om-navitem{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font:var(--text-body-sm);text-decoration:none;cursor:pointer}
+  .om-navitem:hover{background:var(--bg-surface-2)}
+  .om-pill{font:600 13px/1.2 var(--font-ui);padding:9px 16px;border-radius:10px;border:none;cursor:pointer;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  a{color:var(--accent)}
+  a:hover{color:var(--accent-hover)}
+</style>
+</helmet>
+
+<div data-theme="{{theme}}" style="{{rootStyle}}">
+  <sc-if value="{{!isMobile}}" hint-placeholder-val="{{true}}">
+    <div style="width:{{desktopSidebarWidth}};flex:none;overflow:hidden;border-right:{{desktopSidebarBorder}};transition:width var(--duration-base) var(--ease-standard);background:var(--bg-page)">
+      <div style="width:220px;padding:24px 16px;display:flex;flex-direction:column;gap:28px;height:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px">
+          <span style="font:700 20px/1 var(--font-display);color:var(--text-primary)">Прозрения</span>
+          <button type="button" onClick="{{toggleDesktopSidebar}}" aria-label="{{collapseLabel}}" style="width:28px;height:28px;flex:none;border:none;border-radius:8px;background:transparent;color:var(--text-tertiary);cursor:pointer;display:flex;align-items:center;justify-content:center;font:16px var(--font-ui)">‹</button>
+        </div>
+        <nav aria-label="{{navLabel}}" style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{navItems}}" as="item" hint-placeholder-count="5">
+            <a href="{{item.href}}" class="om-navitem" style="{{item.style}}" aria-current="{{item.ariaCurrent}}">{{item.label}}</a>
+          </sc-for>
+        </nav>
+        <div style="margin-top:auto;padding:14px;border-radius:var(--radius-lg);background:var(--bg-surface-2);display:flex;flex-direction:column;gap:4px">
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{pulse.week}}</span>
+          <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{pulse.sessions}}</span>
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{pulse.rating}}</span>
+        </div>
+      </div>
+    </div>
+    <sc-if value="{{!desktopSidebarOpen}}" hint-placeholder-val="{{false}}">
+      <button type="button" onClick="{{toggleDesktopSidebar}}" aria-label="{{expandLabel}}" style="align-self:flex-start;margin:24px 0 0 8px;width:28px;height:28px;flex:none;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface);color:var(--text-tertiary);cursor:pointer;display:flex;align-items:center;justify-content:center;font:16px var(--font-ui)">›</button>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{isMobile}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{mobileSidebarOpen}}" hint-placeholder-val="{{false}}">
+      <div onClick="{{closeMobileSidebar}}" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:40"></div>
+      <div style="position:fixed;top:0;left:0;bottom:0;width:min(260px,80vw);background:var(--bg-page);z-index:41;padding:20px 16px;display:flex;flex-direction:column;gap:24px;box-shadow:var(--shadow-md);overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font:700 19px/1 var(--font-display);color:var(--text-primary)">Прозрения</span>
+          <button type="button" onClick="{{closeMobileSidebar}}" aria-label="{{closeMenuLabel}}" style="width:32px;height:32px;flex:none;border:none;border-radius:8px;background:var(--bg-surface-2);color:var(--text-tertiary);cursor:pointer;display:flex;align-items:center;justify-content:center;font:18px var(--font-ui)">✕</button>
+        </div>
+        <nav aria-label="{{navLabel}}" style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{navItems}}" as="item" hint-placeholder-count="5">
+            <a href="{{item.href}}" class="om-navitem" style="{{item.style}}" aria-current="{{item.ariaCurrent}}" onClick="{{closeMobileSidebar}}">{{item.label}}</a>
+          </sc-for>
+        </nav>
+        <div style="padding:14px;border-radius:var(--radius-lg);background:var(--bg-surface-2);display:flex;flex-direction:column;gap:4px">
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{pulse.week}}</span>
+          <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{pulse.sessions}}</span>
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{pulse.rating}}</span>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <main style="flex:1;min-width:0;padding:{{mainPadding}};display:flex;flex-direction:column;gap:24px;padding-bottom:{{mainBottomPad}}">
+    <sc-if value="{{isMobile}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font:700 19px/1 var(--font-display);color:var(--text-primary)">Прозрения</span>
+        <button type="button" onClick="{{openMobileSidebar}}" aria-label="{{openMenuLabel}}" style="width:36px;height:36px;flex:none;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font:18px var(--font-ui)">☰</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isBookable}}" hint-placeholder-val="{{false}}">
+      <!-- ESTABLISHED / AGENDA STATE -->
+      <div>
+        <h1 style="margin:2px 0 0;font:400 clamp(24px,4vw,28px) var(--font-display);color:var(--text-primary)" tabindex="-1">{{t.agenda.heading}}</h1>
+        <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{greeting}}</span>
+      </div>
+
+      <sc-if value="{{hasAttention}}" hint-placeholder-val="{{false}}">
+        <div role="region" aria-label="{{attentionLabel}}" style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{attentionItems}}" as="a" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-radius:var(--radius-md);background:{{a.bg}};border:1px solid var(--border-subtle)">
+              <span style="font:var(--text-body-sm);color:{{a.titleColor}};font-weight:600">{{a.title}}</span>
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{a.desc}}</span>
+              <a href="{{a.href}}" style="margin-left:auto;font:var(--text-label);color:{{a.titleColor}};text-decoration:none">{{a.cta}} →</a>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{hasNextSession}}" hint-placeholder-val="{{false}}">
+        <div style="background:var(--bg-inverse);color:var(--text-on-inverse);border-radius:var(--radius-xl);padding:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:var(--shadow-md)">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;font:700 16px var(--font-ui);flex:none">{{nextSession.initials}}</div>
+          <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px">
+            <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">{{t.agenda.next_session_label}} · {{nextSessionIn}}</span>
+            <span style="font:400 clamp(18px,3vw,21px) var(--font-display)">{{nextSession.client}} — {{nextSession.service}}, {{nextSession.duration}} {{t.common.minutes}}</span>
+            <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{nextSession.timeLabel}} ({{nextSession.tz}})</span>
+          </div>
+          <a href="{{nextSession.joinUrl}}" class="om-pill" style="background:var(--accent);color:var(--text-on-accent);text-decoration:none">{{t.agenda.join}}</a>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle)">
+        <span style="font:var(--text-label);color:var(--text-tertiary);padding:10px 18px;background:var(--bg-surface-2)">{{t.agenda.upcoming_title}}</span>
+        <sc-if value="{{hasUpcoming}}" hint-placeholder-val="{{true}}">
+          <sc-for list="{{upcomingSessions}}" as="s" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 18px;background:var(--bg-surface)">
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px;flex:none">{{s.timeLabel}}</span>
+              <span style="font:var(--text-body-md);color:var(--text-primary);flex:1;min-width:160px">{{s.client}} — {{s.service}}</span>
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">{{s.duration}} {{t.common.minutes}}</span>
+            </div>
+          </sc-for>
+        </sc-if>
+        <sc-if value="{{!hasUpcoming}}" hint-placeholder-val="{{false}}">
+          <div style="padding:16px 18px;background:var(--bg-surface)">
+            <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{t.agenda.empty_upcoming}}</span>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{!isBookable}}" hint-placeholder-val="{{true}}">
+      <!-- ACTIVATION STATE -->
+      <div style="position:relative;max-width:640px;display:flex;flex-direction:column;gap:28px">
+        <div style="position:absolute;top:-100px;right:-140px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,var(--accent-glow),transparent 70%);pointer-events:none;z-index:0"></div>
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative">
+          <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">{{t.activation.eyebrow}}</span>
+          <h1 style="margin:0;font:400 clamp(24px,4vw,34px)/1.25 var(--font-display);color:var(--text-primary)" tabindex="-1">{{activationHeading}}</h1>
+          <p style="margin:0;font:var(--text-body-lg);color:var(--text-secondary)">{{t.activation.sub}}</p>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;position:relative" role="progressbar" aria-valuenow="{{stepsDone}}" aria-valuemin="0" aria-valuemax="3" aria-label="{{progressLabel}}">
+          <div style="flex:1;height:6px;border-radius:99px;background:var(--bg-sunken);overflow:hidden">
+            <div style="width:{{progressPct}}%;height:100%;background:var(--accent);transition:width var(--duration-base) var(--ease-standard)"></div>
+          </div>
+          <span style="font:var(--text-label);color:var(--text-tertiary);white-space:nowrap">{{progressLabel}}</span>
+        </div>
+
+        <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;position:relative" aria-label="{{checklistLabel}}">
+          <sc-for list="{{steps}}" as="step" hint-placeholder-count="3">
+            <li aria-current="{{step.ariaCurrent}}">
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 20px;border-radius:var(--radius-xl);background:{{step.bg}};border:{{step.border}};box-shadow:{{step.shadow}};opacity:{{step.opacity}}">
+                <div style="width:34px;height:34px;border-radius:50%;background:{{step.badgeBg}};color:{{step.badgeColor}};display:flex;align-items:center;justify-content:center;font:700 15px var(--font-ui);flex:none" aria-hidden="true">{{step.badge}}</div>
+                <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:var(--text-heading-sm);color:{{step.titleColor}}">{{step.title}}<span style="{{step.srDoneStyle}}"> — {{step.srDoneText}}</span></span>
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{step.desc}}</span>
+                </div>
+                <sc-if value="{{step.showCta}}" hint-placeholder-val="{{false}}">
+                  <a href="{{step.href}}" class="om-pill" style="background:var(--accent);color:var(--text-on-accent);text-decoration:none">{{step.cta}}</a>
+                </sc-if>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+        <span style="font:var(--text-caption);color:var(--text-tertiary);position:relative">{{t.activation.reassurance}}</span>
+      </div>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{isMobile}}" hint-placeholder-val="{{false}}">
+    <nav aria-label="{{navLabel}}" style="position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--bg-page);border-top:1px solid var(--border-subtle);padding:6px 4px calc(6px + env(safe-area-inset-bottom))">
+      <sc-for list="{{navItems}}" as="item" hint-placeholder-count="5">
+        <a href="{{item.href}}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;min-height:44px;justify-content:center;text-decoration:none;font:var(--text-caption);color:{{item.mobileColor}}" aria-current="{{item.ariaCurrent}}">{{item.label}}</a>
+      </sc-for>
+    </nav>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1200, &quot;height&quot;: 800},
+  &quot;locale&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;bg&quot;, &quot;options&quot;: [&quot;bg&quot;, &quot;en&quot;], &quot;tsType&quot;: &quot;'bg' | 'en'&quot;, &quot;section&quot;: &quot;Language&quot;},
+  &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;light&quot;, &quot;options&quot;: [&quot;light&quot;, &quot;dark&quot;], &quot;tsType&quot;: &quot;'light' | 'dark'&quot;, &quot;section&quot;: &quot;Appearance&quot;},
+  &quot;forceMobile&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Appearance&quot;},
+  &quot;demoScenario&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;established&quot;, &quot;options&quot;: [&quot;activation&quot;, &quot;established&quot;], &quot;tsType&quot;: &quot;'activation' | 'established'&quot;, &quot;section&quot;: &quot;Demo data (preview only)&quot;}
+}">
+const LOCALES = {
+  bg: {
+    nav: { home: 'Начало', profile: 'Профил', services: 'Услуги', schedule: 'График', reviews: 'Отзиви' },
+    activation: {
+      eyebrow: 'Добре дошли',
+      heading: 'Здравейте, {{name}} — да ви подготвим за първата резервация',
+      sub: 'Три кратки стъпки и вашият профил става видим за търсещите.',
+      progress: '{{done}} от {{total}} завършени',
+      step1_title: 'Профилът е попълнен', step1_desc: 'Снимка, биография и специализации',
+      step2_title: 'Добавете първата си услуга', step2_desc: 'Напр. „Таро четене · 45 мин · 60 лв“', step2_cta: 'Добавете услуга',
+      step3_title: 'Задайте своя график', step3_desc: 'Кога сте на разположение за резервации', step3_cta: 'Задайте график',
+      reassurance: 'Профилът ви ще стане видим за търсещите веднага след третата стъпка.',
+    },
+    agenda: {
+      greeting: 'Добър ден, {{name}}', heading: 'Какво предстои',
+      attention_new_bookings: '{{count}} нови резервации', attention_since: 'от вчера',
+      attention_review: 'Преглед', attention_cancelled: 'Отменена сесия', attention_cancelled_desc: '{{name}} — {{time}}',
+      attention_missing_link: 'Липсва линк за среща', attention_missing_desc: 'сесия в {{time}}', attention_add: 'Добавете',
+      next_session_label: 'Следваща сесия', next_session_in: 'след {{mins}} мин', join: 'Влезте в срещата',
+      upcoming_title: 'Предстоящи тази седмица', empty_upcoming: 'Няма предстоящи сесии тази седмица.',
+      pulse_week: 'Тази седмица', pulse_sessions: '{{count}} сесии', pulse_rating: '★ {{rating}} · {{reviews}} отзива',
+    },
+    common: { minutes: 'мин' },
+  },
+  en: {
+    nav: { home: 'Home', profile: 'Profile', services: 'Services', schedule: 'Schedule', reviews: 'Reviews' },
+    activation: {
+      eyebrow: 'Welcome',
+      heading: "Hi {{name}} — let's get you ready for your first booking",
+      sub: 'Three short steps and your profile becomes visible to seekers.',
+      progress: '{{done}} of {{total}} complete',
+      step1_title: 'Profile complete', step1_desc: 'Photo, bio and specialties',
+      step2_title: 'Add your first service', step2_desc: 'E.g. "Tarot reading · 45 min · 60 BGN"', step2_cta: 'Add a service',
+      step3_title: 'Set your schedule', step3_desc: 'When you\'re available for bookings', step3_cta: 'Set schedule',
+      reassurance: 'Your profile becomes visible to seekers right after step 3.',
+    },
+    agenda: {
+      greeting: 'Hi {{name}}', heading: "What's on your plate",
+      attention_new_bookings: '{{count}} new bookings', attention_since: 'since yesterday',
+      attention_review: 'Review', attention_cancelled: 'Cancelled session', attention_cancelled_desc: '{{name}} — {{time}}',
+      attention_missing_link: 'Missing meeting link', attention_missing_desc: 'session at {{time}}', attention_add: 'Add',
+      next_session_label: 'Next session', next_session_in: 'in {{mins}} min', join: 'Join session',
+      upcoming_title: 'Upcoming this week', empty_upcoming: 'No upcoming sessions this week.',
+      pulse_week: 'This week', pulse_sessions: '{{count}} sessions', pulse_rating: '★ {{rating}} · {{reviews}} reviews',
+    },
+    common: { minutes: 'min' },
+  },
+};
+
+class Component extends DCLogic {
+  state = { isMobile: false, desktopSidebarOpen: true, mobileSidebarOpen: false };
+
+  componentDidMount() {
+    const check = () => this.setState({ isMobile: window.innerWidth < 860 });
+    check();
+    window.addEventListener('resize', check);
+    this._onResize = check;
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+  }
+
+  toggleDesktopSidebar = () => this.setState(s => ({ desktopSidebarOpen: !s.desktopSidebarOpen }));
+  openMobileSidebar = () => this.setState({ mobileSidebarOpen: true });
+  closeMobileSidebar = () => this.setState({ mobileSidebarOpen: false });
+
+  interpolate(str, vars) {
+    if (!str) return str;
+    return str.replace(/\{\{(\w+)\}\}/g, (_, k) => (vars && vars[k] != null ? vars[k] : ''));
+  }
+
+  // mock practitioner data, shaped for a real API swap (demoScenario only swaps these inputs — bookable state is still derived, not hardcoded)
+  getPractitioner() {
+    const established = (this.props.demoScenario ?? 'established') === 'established';
+    return {
+      name: 'Ивет',
+      profileComplete: true,
+      services: established ? [{ id: 1, name: 'Таро четене', active: true }] : [],
+      availabilitySet: established,
+      attention: {
+        newBookings: 2,
+        cancelled: null,
+        missingLink: { time: 'утре 16:00' },
+      },
+      nextSession: {
+        client: 'Мария Костова', service: 'Таро четене', duration: 45,
+        minsUntil: 40, timeLabel: 'Днес, 14:30', tz: 'Europe/Sofia',
+        initials: 'МК', joinUrl: '#session-join',
+      },
+      upcoming: [
+        { timeLabel: 'Утре, 16:00', client: 'Георги Петров', service: 'Астрологична консултация', duration: 60 },
+        { timeLabel: 'Чет, 11:00', client: 'Диана Иванова', service: 'Ретрийк на енергия', duration: 30 },
+        { timeLabel: 'Пет, 09:30', client: 'Николай Тодоров', service: 'Таро четене', duration: 45 },
+      ],
+      pulse: { sessionsThisWeek: 6, rating: 4.9, reviews: 32 },
+    };
+  }
+
+  renderVals() {
+    const locale = this.props.locale ?? 'bg';
+    const t = LOCALES[locale] ?? LOCALES.bg;
+    const theme = this.props.theme ?? 'light';
+    const isMobile = this.props.forceMobile ?? this.state.isMobile;
+    const p = this.getPractitioner();
+
+    const activeServices = p.services.filter(s => s.active);
+    const isBookable = p.profileComplete && activeServices.length >= 1 && p.availabilitySet;
+
+    const navLabel = locale === 'en' ? 'Main navigation' : 'Основна навигация';
+    const navDefs = [
+      { key: 'home', href: '#home', current: true },
+      { key: 'profile', href: '#profile', current: false },
+      { key: 'services', href: '#services', current: false },
+      { key: 'schedule', href: '#schedule', current: false },
+      { key: 'reviews', href: '#reviews', current: false },
+    ];
+    const navItems = navDefs.map(n => ({
+      href: n.href,
+      label: t.nav[n.key],
+      ariaCurrent: n.current ? 'page' : undefined,
+      style: n.current
+        ? 'background:var(--accent-subtle);color:var(--accent-subtle-text);font-weight:600'
+        : 'color:var(--text-secondary)',
+      mobileColor: n.current ? 'var(--accent-subtle-text)' : 'var(--text-tertiary)',
+    }));
+
+    const pulse = {
+      week: t.agenda.pulse_week,
+      sessions: this.interpolate(t.agenda.pulse_sessions, { count: p.pulse.sessionsThisWeek }),
+      rating: this.interpolate(t.agenda.pulse_rating, { rating: p.pulse.rating, reviews: p.pulse.reviews }),
+    };
+
+    // --- attention zone ---
+    const attentionItems = [];
+    if (p.attention.newBookings > 0) {
+      attentionItems.push({
+        title: this.interpolate(t.agenda.attention_new_bookings, { count: p.attention.newBookings }),
+        desc: t.agenda.attention_since, cta: t.agenda.attention_review, href: '#bookings',
+        bg: 'var(--accent-subtle)', titleColor: 'var(--accent-subtle-text)',
+      });
+    }
+    if (p.attention.cancelled) {
+      attentionItems.push({
+        title: t.agenda.attention_cancelled,
+        desc: this.interpolate(t.agenda.attention_cancelled_desc, p.attention.cancelled),
+        cta: t.agenda.attention_review, href: '#bookings',
+        bg: 'var(--bg-surface-2)', titleColor: 'var(--text-primary)',
+      });
+    }
+    if (p.attention.missingLink) {
+      attentionItems.push({
+        title: t.agenda.attention_missing_link,
+        desc: this.interpolate(t.agenda.attention_missing_desc, p.attention.missingLink),
+        cta: t.agenda.attention_add, href: '#schedule',
+        bg: 'var(--bg-surface-2)', titleColor: 'var(--text-primary)',
+      });
+    }
+
+    // --- checklist steps ---
+    const stepsDone = (p.profileComplete ? 1 : 0) + (activeServices.length >= 1 ? 1 : 0) + (p.availabilitySet ? 1 : 0);
+    const rawSteps = [
+      { key: 'step1', done: p.profileComplete, href: '#profile', cta: null },
+      { key: 'step2', done: activeServices.length >= 1, href: '#services', cta: t.activation.step2_cta },
+      { key: 'step3', done: p.availabilitySet, href: '#schedule', cta: t.activation.step3_cta },
+    ];
+    let currentAssigned = false;
+    const steps = rawSteps.map((s, i) => {
+      const isDone = s.done;
+      const isCurrent = !isDone && !currentAssigned;
+      if (isCurrent) currentAssigned = true;
+      const isFuture = !isDone && !isCurrent;
+      return {
+        title: t.activation[`${s.key}_title`],
+        desc: t.activation[`${s.key}_desc`],
+        cta: s.cta,
+        href: s.href,
+        showCta: isCurrent && !!s.cta,
+        ariaCurrent: isCurrent ? 'step' : undefined,
+        badge: isDone ? '✓' : String(i + 1),
+        badgeBg: isDone ? 'var(--accent)' : 'var(--bg-sunken)',
+        badgeColor: isDone ? 'var(--text-on-accent)' : 'var(--text-tertiary)',
+        titleColor: isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
+        bg: isFuture ? 'var(--bg-surface-2)' : 'var(--bg-surface)',
+        border: isCurrent ? '1px solid var(--border-strong)' : '1px solid var(--border-subtle)',
+        shadow: isCurrent ? 'var(--shadow-md)' : (isFuture ? 'none' : 'var(--shadow-sm)'),
+        opacity: isFuture ? 0.7 : 1,
+        srDoneText: locale === 'en' ? 'complete' : 'завършено',
+        srDoneStyle: isDone
+          ? 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap'
+          : 'display:none',
+      };
+    });
+
+    const ns = p.nextSession;
+    const greeting = this.interpolate(t.agenda.greeting, { name: p.name });
+
+    const desktopSidebarOpen = this.state.desktopSidebarOpen;
+    const collapseLabel = locale === 'en' ? 'Collapse menu' : 'Свиване на менюто';
+    const expandLabel = locale === 'en' ? 'Expand menu' : 'Разгъване на менюто';
+    const openMenuLabel = locale === 'en' ? 'Open menu' : 'Отваряне на менюто';
+    const closeMenuLabel = locale === 'en' ? 'Close menu' : 'Затваряне на менюто';
+
+    return {
+      theme, isMobile, t, isBookable, navLabel, navItems, pulse, greeting,
+      desktopSidebarOpen, mobileSidebarOpen: this.state.mobileSidebarOpen,
+      desktopSidebarWidth: desktopSidebarOpen ? '220px' : '0px',
+      desktopSidebarBorder: desktopSidebarOpen ? '1px solid var(--border-subtle)' : 'none',
+      toggleDesktopSidebar: this.toggleDesktopSidebar,
+      openMobileSidebar: this.openMobileSidebar,
+      closeMobileSidebar: this.closeMobileSidebar,
+      collapseLabel, expandLabel, openMenuLabel, closeMenuLabel,
+      rootStyle: `display:flex;min-height:100vh;background:var(--bg-page);flex-direction:${isMobile ? 'column' : 'row'}`,
+      mainPadding: isMobile ? '20px 16px' : '32px 44px',
+      mainBottomPad: isMobile ? '84px' : '32px',
+      attentionLabel: locale === 'en' ? 'Needs your attention' : 'Изисква внимание',
+      hasAttention: attentionItems.length > 0,
+      attentionItems,
+      hasNextSession: !!ns,
+      nextSession: ns ? { ...ns, joinUrl: ns.joinUrl } : null,
+      nextSessionIn: ns ? this.interpolate(t.agenda.next_session_in, { mins: ns.minsUntil }) : '',
+      hasUpcoming: p.upcoming.length > 0,
+      upcomingSessions: p.upcoming,
+      activationHeading: this.interpolate(t.activation.heading, { name: p.name }),
+      progressPct: Math.round((stepsDone / 3) * 100),
+      progressLabel: this.interpolate(t.activation.progress, { done: stepsDone, total: 3 }),
+      checklistLabel: locale === 'en' ? 'Activation checklist' : 'Списък за активация',
+      stepsDone,
+      steps,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

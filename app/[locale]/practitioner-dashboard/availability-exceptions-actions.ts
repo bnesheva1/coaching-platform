@@ -130,7 +130,9 @@ export async function createAvailabilityException(
     .lt("start_utc", rangeEndUtc!)
     .gt("end_utc", rangeStartUtc!);
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
   return { success: true, warningCount: warningCount ?? 0 };
 }
 
@@ -153,5 +155,7 @@ export async function deleteAvailabilityException(exceptionId: string, _formData
     console.error("deleteAvailabilityException failed:", error);
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
 }

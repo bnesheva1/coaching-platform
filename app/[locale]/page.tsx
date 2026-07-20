@@ -48,8 +48,8 @@ export default async function Home() {
             href="/"
             locale={otherLocale}
             style={{
-              font: "600 13px/1 var(--font-ui)",
-              letterSpacing: ".02em",
+              font: "var(--text-label)",
+              letterSpacing: "var(--letter-pill)",
               padding: "6px 12px",
               borderRadius: "var(--radius-pill)",
               border: "1px solid var(--border-strong)",

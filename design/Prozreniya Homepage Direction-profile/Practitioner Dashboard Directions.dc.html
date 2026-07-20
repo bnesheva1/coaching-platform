@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0;background:#e9e6df;font-family:var(--font-ui)}
+  .dv-turn{padding:44px 44px 36px;border-bottom:1px solid rgba(0,0,0,.08)}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:900px}
+  .dv-card{width:1000px;max-width:1000px;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.12), 0 12px 40px rgba(0,0,0,.10)}
+  .dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+
+  .navitem{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;font:var(--text-body-sm);cursor:default}
+  .pillbtn{font:600 13px/1.2 var(--font-ui);padding:9px 16px;border-radius:10px;cursor:default;white-space:nowrap}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Practitioner dashboard — established-state directions + activation state</span></div>
+  <div class="dv-opts">
+
+    <!-- 2a: Established, light, agenda-first vertical -->
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Established — light, agenda-first, sidebar nav quiet-weighted</div>
+      <div class="dv-card">
+        <div style="display:flex;background:var(--bg-page);min-height:720px">
+          <!-- sidebar -->
+          <div style="width:210px;flex:none;background:var(--bg-page);border-right:1px solid var(--border-subtle);padding:24px 16px;display:flex;flex-direction:column;gap:28px;box-sizing:border-box">
+            <div style="font:700 19px/1 var(--font-display);color:var(--text-primary);padding:0 6px">Прозрения</div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navitem" style="background:var(--accent-subtle);color:var(--accent-subtle-text);font-weight:600">Начало</div>
+              <div class="navitem" style="color:var(--text-secondary)">Профил</div>
+              <div class="navitem" style="color:var(--text-secondary)">Услуги</div>
+              <div class="navitem" style="color:var(--text-secondary)">Достъпност</div>
+              <div class="navitem" style="color:var(--text-secondary)">Отзиви</div>
+            </div>
+            <div style="margin-top:auto;padding:14px;border-radius:var(--radius-lg);background:var(--bg-surface-2);display:flex;flex-direction:column;gap:4px">
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">Тази седмица</span>
+              <span style="font:var(--text-heading-sm);color:var(--text-primary)">6 сесии</span>
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">★ 4.9 · 32 отзива</span>
+            </div>
+          </div>
+          <!-- main -->
+          <div style="flex:1;padding:32px 40px;display:flex;flex-direction:column;gap:24px;box-sizing:border-box">
+            <div>
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary)">Добър ден, Ивет</span>
+              <h1 style="margin:2px 0 0;font:400 28px var(--font-display);color:var(--text-primary)">Какво предстои</h1>
+            </div>
+
+            <!-- attention zone -->
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-md);background:var(--accent-subtle);border:1px solid var(--border-subtle)">
+                <span style="font:var(--text-body-sm);color:var(--accent-subtle-text);font-weight:600">2 нови резервации</span>
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary)">от вчера</span>
+                <span style="margin-left:auto;font:var(--text-label);color:var(--accent-subtle-text)">Преглед →</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-md);background:var(--bg-surface-2);border:1px solid var(--border-subtle)">
+                <span style="font:var(--text-body-sm);color:var(--text-primary);font-weight:600">Липсва линк за среща</span>
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary)">сесия в 16:00 утре</span>
+                <span style="margin-left:auto;font:var(--text-label);color:var(--text-primary)">Добавете →</span>
+              </div>
+            </div>
+
+            <!-- next session hero -->
+            <div style="background:var(--bg-inverse);color:var(--text-on-inverse);border-radius:var(--radius-xl);padding:26px 28px;display:flex;align-items:center;gap:22px;box-shadow:var(--shadow-md)">
+              <div style="width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;font:700 18px var(--font-ui);flex:none">МК</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">Следваща сесия · след 40 мин</span>
+                <span style="font:400 22px var(--font-display)">Мария Костова — Таро четене, 45 мин</span>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary)">Днес, 14:30 (Europe/Sofia)</span>
+              </div>
+              <span class="pillbtn" style="background:var(--accent);color:var(--text-on-accent)">Влезте в срещата</span>
+            </div>
+
+            <!-- upcoming list -->
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:var(--text-label);color:var(--text-tertiary);padding:0 4px 6px">Предстоящи тази седмица</span>
+              <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle)">
+                <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Утре, 16:00</span>
+                  <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Георги Петров — Астрологична консултация</span>
+                  <span style="font:var(--text-caption);color:var(--text-tertiary)">60 мин</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Чет, 11:00</span>
+                  <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Диана Иванова — Ретрийки на енергия</span>
+                  <span style="font:var(--text-caption);color:var(--text-tertiary)">30 мин</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Пет, 09:30</span>
+                  <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Николай Тодоров — Таро четене</span>
+                  <span style="font:var(--text-caption);color:var(--text-tertiary)">45 мин</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2b: Established, dark, agenda main + quiet right rail -->
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Established — dark, agenda main column + quiet right-rail nav & pulse</div>
+      <div class="dv-card" data-theme="dark">
+        <div style="display:flex;background:var(--bg-page);min-height:720px" data-theme="dark">
+          <div style="flex:1;padding:32px 36px;display:flex;flex-direction:column;gap:22px;box-sizing:border-box">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div>
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary)">Добър ден, Ивет</span>
+                <h1 style="margin:2px 0 0;font:400 26px var(--font-display);color:var(--text-primary)">Какво предстои</h1>
+              </div>
+              <span style="font:700 18px var(--font-display);color:var(--text-primary)">Прозрения</span>
+            </div>
+
+            <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:24px 26px;display:flex;align-items:center;gap:20px">
+              <div style="width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;font:700 16px var(--font-ui);flex:none">МК</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+                <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">Следваща сесия · след 40 мин</span>
+                <span style="font:400 21px var(--font-display);color:var(--text-primary)">Мария Костова — Таро четене, 45 мин</span>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary)">Днес, 14:30 (Europe/Sofia)</span>
+              </div>
+              <span class="pillbtn" style="background:var(--accent);color:var(--text-on-accent)">Влезте в срещата</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle)">
+              <span style="font:var(--text-label);color:var(--text-tertiary);padding:10px 18px;background:var(--bg-surface-2)">Предстоящи тази седмица</span>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Утре, 16:00</span>
+                <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Георги Петров — Астрологична консултация</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">60 мин</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Чет, 11:00</span>
+                <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Диана Иванова — Ретрийки на енергия</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">30 мин</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;background:var(--bg-surface)">
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary);width:110px">Пет, 09:30</span>
+                <span style="font:var(--text-body-md);color:var(--text-primary);flex:1">Николай Тодоров — Таро четене</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">45 мин</span>
+              </div>
+            </div>
+          </div>
+          <!-- quiet right rail -->
+          <div style="width:230px;flex:none;border-left:1px solid var(--border-subtle);padding:24px 18px;display:flex;flex-direction:column;gap:22px;box-sizing:border-box">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:var(--radius-md);background:var(--accent-subtle)">
+              <span style="font:var(--text-body-sm);color:var(--accent-subtle-text);font-weight:600">2 нови резервации</span>
+              <span style="font:var(--text-caption);color:var(--text-secondary)">от вчера — Преглед →</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:var(--radius-md);background:var(--bg-surface-2)">
+              <span style="font:var(--text-body-sm);color:var(--text-primary);font-weight:600">Липсва линк</span>
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">утре 16:00 — Добавете →</span>
+            </div>
+            <div style="height:1px;background:var(--border-subtle)"></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navitem" style="color:var(--text-secondary)">Профил</div>
+              <div class="navitem" style="color:var(--text-secondary)">Услуги</div>
+              <div class="navitem" style="color:var(--text-secondary)">Достъпност</div>
+              <div class="navitem" style="color:var(--text-secondary)">Отзиви</div>
+            </div>
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:2px">
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">Тази седмица</span>
+              <span style="font:var(--text-heading-sm);color:var(--text-primary)">6 сесии · ★ 4.9</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2c: New practitioner activation state -->
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>New practitioner — activation checklist hero, light, warm glow</div>
+      <div class="dv-card">
+        <div style="display:flex;background:var(--bg-page);min-height:640px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-140px;right:-100px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,var(--accent-glow),transparent 70%);pointer-events:none"></div>
+          <div style="width:210px;flex:none;border-right:1px solid var(--border-subtle);padding:24px 16px;display:flex;flex-direction:column;gap:28px;box-sizing:border-box;position:relative">
+            <div style="font:700 19px/1 var(--font-display);color:var(--text-primary);padding:0 6px">Прозрения</div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navitem" style="background:var(--accent-subtle);color:var(--accent-subtle-text);font-weight:600">Начало</div>
+              <div class="navitem" style="color:var(--text-tertiary)">Профил</div>
+              <div class="navitem" style="color:var(--text-tertiary)">Услуги</div>
+              <div class="navitem" style="color:var(--text-tertiary)">Достъпност</div>
+              <div class="navitem" style="color:var(--text-tertiary)">Отзиви</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:56px 60px;display:flex;flex-direction:column;gap:28px;box-sizing:border-box;position:relative;max-width:640px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">Добре дошли</span>
+              <h1 style="margin:0;font:400 34px/1.25 var(--font-display);color:var(--text-primary)">Здравейте, Ивет — да ви подготвим за първата резервация</h1>
+              <p style="margin:0;font:var(--text-body-lg);color:var(--text-secondary)">Три кратки стъпки и вашият профил става видим за търсещите.</p>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1;height:6px;border-radius:99px;background:var(--bg-sunken);overflow:hidden">
+                <div style="width:33%;height:100%;background:var(--accent)"></div>
+              </div>
+              <span style="font:var(--text-label);color:var(--text-tertiary);white-space:nowrap">1 от 3 завършени</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:var(--radius-xl);background:var(--bg-surface);border:1px solid var(--border-subtle);box-shadow:var(--shadow-sm)">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;font:700 15px var(--font-ui);flex:none">✓</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:var(--text-heading-sm);color:var(--text-primary)">Профилът е попълнен</span>
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">Снимка, биография и специализации</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:var(--radius-xl);background:var(--bg-surface);border:1px solid var(--border-strong);box-shadow:var(--shadow-md)">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--bg-sunken);color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;font:700 15px var(--font-ui);flex:none">2</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:var(--text-heading-sm);color:var(--text-primary)">Добавете първата си услуга</span>
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">Напр. „Таро четене · 45 мин · 60 лв“</span>
+                </div>
+                <span class="pillbtn" style="background:var(--accent);color:var(--text-on-accent)">Добавете услуга</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:var(--radius-xl);background:var(--bg-surface-2);border:1px solid var(--border-subtle);opacity:.7">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--bg-sunken);color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;font:700 15px var(--font-ui);flex:none">3</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:var(--text-heading-sm);color:var(--text-secondary)">Задайте достъпност</span>
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">Кога сте на разположение за резервации</span>
+                </div>
+              </div>
+            </div>
+            <span style="font:var(--text-caption);color:var(--text-tertiary)">Профилът ви ще стане видим за търсещите веднага след третата стъпка.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "make <a class="dv-oid" href="#2a">2a</a> the direction, build full dashboard" · "combine <a class="dv-oid" href="#2b">2b</a> layout with <a class="dv-oid" href="#2a">2a</a> attention-zone style" · "add a cancellation row to the attention zone in <a class="dv-oid" href="#2c">2c</a>-style empty state"</p>
+</section>
+</x-dc>
+</body>
+</html>

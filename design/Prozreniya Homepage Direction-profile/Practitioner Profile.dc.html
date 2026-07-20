@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0}
+  *{box-sizing:border-box}
+  a{color:var(--accent)}
+  a:hover{color:var(--accent-hover)}
+  .pz-pencil{width:26px;height:26px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border-default);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);flex:none;box-shadow:var(--shadow-sm);cursor:pointer;padding:0}
+  .pz-pencil:hover{background:var(--bg-surface-2)}
+  .pz-cta{font:600 13px/1 var(--font-ui);padding:12px 22px;border-radius:var(--radius-md);border:none;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-decoration:none}
+  .pz-book:hover{background:var(--accent-hover)}
+  .pz-tile{border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;background:var(--bg-surface);display:flex;flex-direction:column;position:relative}
+  .pz-input{width:100%;font:var(--text-body-sm);color:var(--text-primary);background:var(--bg-page);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:8px 10px;font-family:var(--font-ui)}
+</style>
+</helmet>
+
+<div data-theme="{{theme}}" style="min-height:100vh;background:var(--bg-page);display:flex;flex-direction:column">
+
+  <!-- top bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:{{barPad}};border-bottom:1px solid var(--border-subtle);position:sticky;top:0;background:var(--bg-page);z-index:30">
+    <a href="#home" style="font:700 19px/1 var(--font-display);color:var(--text-primary);text-decoration:none">Прозрения</a>
+    <sc-if value="{{isOwner}}" hint-placeholder-val="{{true}}">
+      <div style="display:flex;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-pill);padding:3px;box-shadow:var(--shadow-sm)">
+        <button type="button" onClick="{{setViewMode}}" style="{{viewToggleStyle}}">{{t.mode_view}}</button>
+        <button type="button" onClick="{{setEditMode}}" style="{{editToggleStyle}}">{{t.mode_edit}}</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <main style="flex:1;max-width:900px;width:100%;margin:0 auto;padding-bottom:{{mainBottomPad}}">
+
+    <!-- banner -->
+    <div style="position:relative">
+      <sc-if value="{{hasBanner}}" hint-placeholder-val="{{false}}">
+        <img src="{{bannerUrlSafe}}" alt="" style="width:100%;height:{{bannerH}};object-fit:cover;display:block" />
+      </sc-if>
+      <sc-if value="{{!hasBanner}}" hint-placeholder-val="{{true}}">
+        <div style="width:100%;height:{{bannerH}};background:linear-gradient(135deg,var(--bg-sunken),var(--accent-glow))"></div>
+      </sc-if>
+      <sc-if value="{{isEditing}}" hint-placeholder-val="{{false}}">
+        <button type="button" class="pz-pencil" aria-label="{{t.edit_banner}}" style="position:absolute;top:14px;right:14px;width:32px;height:32px;font-size:14px">✎</button>
+      </sc-if>
+    </div>
+
+    <!-- identity -->
+    <div style="padding:0 {{sidePad}} 20px;position:relative">
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-top:{{avatarPullUp}}">
+        <sc-if value="{{practitioner.avatarUrl}}" hint-placeholder-val="{{false}}">
+          <img src="{{avatarUrlSafe}}" alt="" style="width:{{avatarSize}};height:{{avatarSize}};border-radius:50%;object-fit:cover;border:4px solid var(--bg-page);flex:none;box-shadow:var(--shadow-md)" />
+        </sc-if>
+        <sc-if value="{{!practitioner.avatarUrl}}" hint-placeholder-val="{{true}}">
+          <div style="width:{{avatarSize}};height:{{avatarSize}};border-radius:50%;background:var(--accent);border:4px solid var(--bg-page);display:flex;align-items:center;justify-content:center;font:700 30px var(--font-display);color:var(--text-on-accent);flex:none;box-shadow:var(--shadow-md)">{{practitioner.initial}}</div>
+        </sc-if>
+        <sc-if value="{{isEditing}}" hint-placeholder-val="{{false}}">
+          <button type="button" class="pz-pencil" aria-label="{{t.edit_photo}}" style="margin-bottom:6px">✎</button>
+        </sc-if>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+        <h1 style="margin:0;font:var(--text-display-sm);color:var(--text-primary)">{{practitioner.name}}</h1>
+        <span style="font:var(--text-body-md);color:var(--text-secondary)">{{practitioner.headline}}</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <a href="#reviews" style="font:var(--text-label);color:var(--text-primary);text-decoration:none">★ {{practitioner.rating}} · {{reviewCountLabel}}</a>
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{practitioner.location}}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <a href="#services" class="pz-cta pz-book" style="background:var(--accent);color:var(--text-on-accent)">{{t.see_availability}}</a>
+        <a href="#message" class="pz-cta" style="border:1px solid var(--border-default);color:var(--text-primary)">{{t.message}}</a>
+      </div>
+    </div>
+
+    <!-- about -->
+    <div style="padding:4px {{sidePad}} 26px;position:relative">
+      <sc-if value="{{isEditing}}" hint-placeholder-val="{{false}}">
+        <button type="button" class="pz-pencil" aria-label="{{t.edit_about}}" style="position:absolute;top:2px;right:{{sidePad}}">✎</button>
+      </sc-if>
+      <h2 style="margin:0 0 10px;font:var(--text-heading-md);color:var(--text-primary)">{{t.about_heading}}</h2>
+      <div style="font:var(--text-body-md);color:var(--text-secondary);line-height:1.6">
+        <sc-for list="{{aboutParagraphs}}" as="para" hint-placeholder-count="2">
+          <p style="margin:0 0 10px;white-space:pre-line">{{para}}</p>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- media -->
+    <sc-if value="{{hasMedia}}" hint-placeholder-val="{{false}}">
+      <div style="padding:0 {{sidePad}} 28px;display:flex;gap:14px;flex-wrap:wrap">
+        <sc-if value="{{practitioner.largeImageUrl}}" hint-placeholder-val="{{false}}">
+          <img src="{{largeImageUrlSafe}}" alt="" style="flex:1;min-width:240px;max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;border-radius:var(--radius-lg);background:var(--bg-sunken)" />
+        </sc-if>
+        <sc-if value="{{practitioner.youtubeId}}" hint-placeholder-val="{{false}}">
+          <div style="flex:1;min-width:240px;aspect-ratio:16/9;border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-inverse)">
+            <iframe src="{{youtubeEmbedUrl}}" title="{{t.video_title}}" style="width:100%;height:100%;border:0" allowfullscreen></iframe>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- services -->
+    <div id="services" style="padding:0 {{sidePad}} 30px">
+      <h2 style="margin:0 0 14px;font:var(--text-heading-md);color:var(--text-primary)">{{t.services_heading}}</h2>
+      <div style="display:grid;grid-template-columns:{{servicesCols}};gap:14px">
+        <sc-for list="{{services}}" as="svc" hint-placeholder-count="3">
+          <div class="pz-tile">
+            <sc-if value="{{isEditing}}" hint-placeholder-val="{{false}}">
+              <button type="button" class="pz-pencil" aria-label="{{svc.editLabel}}" onClick="{{svc.onEdit}}" style="position:absolute;top:8px;right:8px;z-index:1">✎</button>
+            </sc-if>
+            <sc-if value="{{svc.imageUrl}}" hint-placeholder-val="{{false}}">
+              <img src="{{svc.imageUrlSafe}}" alt="" style="width:100%;height:120px;object-fit:cover;display:block" />
+            </sc-if>
+            <sc-if value="{{!svc.imageUrl}}" hint-placeholder-val="{{true}}">
+              <div style="width:100%;height:120px;background:var(--bg-sunken)"></div>
+            </sc-if>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:6px;flex:1">
+              <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{svc.name}}</span>
+              <span style="font:var(--text-caption);color:var(--text-tertiary)">{{svc.durationLabel}} · {{svc.priceLabel}}</span>
+              <span style="font:var(--text-body-sm);color:var(--text-secondary);flex:1">{{svc.excerpt}}</span>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+                <a href="{{svc.detailsHref}}" style="font:var(--text-label);color:var(--text-primary);text-decoration:underline">{{t.details}}</a>
+                <button type="button" class="pz-cta" style="background:var(--accent);color:var(--text-on-accent);margin-left:auto;padding:8px 14px;font-size:12px;min-height:0">{{t.book}}</button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{isEditing}}" hint-placeholder-val="{{false}}">
+          <button type="button" onClick="{{openNewServiceDrawer}}" style="border:1.5px dashed var(--border-default);background:none;border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;min-height:160px;color:var(--text-tertiary);font:var(--text-body-sm);cursor:pointer;font-family:var(--font-ui)">{{t.add_service}}</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- reviews -->
+    <div id="reviews" style="padding:0 {{sidePad}} 40px;border-top:1px solid var(--border-subtle)">
+      <h2 style="margin:18px 0 14px;font:var(--text-heading-md);color:var(--text-primary)">{{t.reviews_heading}} ({{practitioner.reviewCount}})</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{reviews}}" as="rev" hint-placeholder-count="3">
+          <div style="padding:14px 16px;background:var(--bg-surface-2);border-radius:var(--radius-md)">
+            <span style="font:var(--text-label);color:var(--text-primary)">{{rev.author}} · {{rev.starsLabel}}</span>
+            <p style="margin:6px 0 0;font:var(--text-body-sm);color:var(--text-secondary)">{{rev.text}}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+
+  <!-- mobile sticky book bar -->
+  <sc-if value="{{isMobile}}" hint-placeholder-val="{{false}}">
+    <div style="position:fixed;left:0;right:0;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border-subtle);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);z-index:20">
+      <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{fromPriceLabel}}</span>
+      <a href="#services" class="pz-cta pz-book" style="background:var(--accent);color:var(--text-on-accent)">{{t.book_now}}</a>
+    </div>
+  </sc-if>
+
+  <!-- service edit drawer -->
+  <sc-if value="{{drawerOpen}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{closeDrawer}}" style="position:fixed;inset:0;background:var(--overlay-scrim);z-index:40"></div>
+    <div role="dialog" aria-label="{{t.edit_service_title}}" style="position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:var(--bg-surface);z-index:41;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-md);overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{t.edit_service_title}}</span>
+        <button type="button" onClick="{{closeDrawer}}" aria-label="{{t.close}}" style="border:none;background:none;font:16px var(--font-ui);color:var(--text-tertiary);cursor:pointer">✕</button>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span style="font:var(--text-caption);color:var(--text-tertiary)">{{t.field_name}}</span>
+        <input class="pz-input" defaultValue="{{drawerService.name}}" />
+      </label>
+      <div style="display:flex;gap:10px">
+        <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{t.field_duration}}</span>
+          <input class="pz-input" defaultValue="{{drawerService.durationLabel}}" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">{{t.field_price}}</span>
+          <input class="pz-input" defaultValue="{{drawerService.priceLabel}}" />
+        </label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+        <span style="font:var(--text-caption);color:var(--text-tertiary)">{{t.field_description}}</span>
+        <textarea class="pz-input" style="flex:1;min-height:100px;resize:vertical" defaultValue="{{drawerService.excerpt}}"></textarea>
+      </label>
+      <button type="button" onClick="{{closeDrawer}}" class="pz-cta" style="background:var(--accent);color:var(--text-on-accent);width:100%">{{t.save}}</button>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1000, &quot;height&quot;: 900},
+  &quot;locale&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;bg&quot;, &quot;options&quot;: [&quot;bg&quot;, &quot;en&quot;], &quot;tsType&quot;: &quot;'bg' | 'en'&quot;, &quot;section&quot;: &quot;Language&quot;},
+  &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;light&quot;, &quot;options&quot;: [&quot;light&quot;, &quot;dark&quot;], &quot;tsType&quot;: &quot;'light' | 'dark'&quot;, &quot;section&quot;: &quot;Appearance&quot;},
+  &quot;forceMobile&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Appearance&quot;},
+  &quot;isOwner&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo data (preview only)&quot;}
+}">
+const LOCALES = {
+  bg: {
+    mode_view: 'Преглед', mode_edit: 'Редактиране',
+    see_availability: 'Виж свободни часове', message: 'Съобщение',
+    about_heading: 'Относно мен', services_heading: 'Услуги', reviews_heading: 'Отзиви',
+    details: 'Детайли', book: 'Резервирай', book_now: 'Резервирай час', add_service: '+ Добави услуга',
+    edit_banner: 'Редактиране на банер', edit_photo: 'Редактиране на снимка', edit_about: 'Редактиране на описанието',
+    edit_service_title: 'Редактиране на услуга', close: 'Затвори',
+    field_name: 'Име', field_duration: 'Продължителност', field_price: 'Цена', field_description: 'Описание', save: 'Запази',
+    video_title: 'Видео на практика', from: 'от', reviews_word: 'отзива',
+  },
+  en: {
+    mode_view: 'Preview', mode_edit: 'Edit',
+    see_availability: 'See availability', message: 'Message',
+    about_heading: 'About me', services_heading: 'Services', reviews_heading: 'Reviews',
+    details: 'Details', book: 'Book', book_now: 'Book a session', add_service: '+ Add service',
+    edit_banner: 'Edit banner', edit_photo: 'Edit photo', edit_about: 'Edit description',
+    edit_service_title: 'Edit service', close: 'Close',
+    field_name: 'Name', field_duration: 'Duration', field_price: 'Price', field_description: 'Description', save: 'Save',
+    video_title: 'Practice video', from: 'from', reviews_word: 'reviews',
+  },
+};
+
+class Component extends DCLogic {
+  state = { isMobile: false, mode: 'view', drawerOpen: false, drawerService: null };
+
+  componentDidMount() {
+    const check = () => this.setState({ isMobile: window.innerWidth < 720 });
+    check();
+    window.addEventListener('resize', check);
+    this._onResize = check;
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+
+  setViewMode = () => this.setState({ mode: 'view' });
+  setEditMode = () => this.setState({ mode: 'edit' });
+  openDrawer = (svc) => this.setState({ drawerOpen: true, drawerService: svc });
+  openNewServiceDrawer = () => this.setState({ drawerOpen: true, drawerService: { name: '', durationLabel: '', priceLabel: '', excerpt: '' } });
+  closeDrawer = () => this.setState({ drawerOpen: false, drawerService: null });
+
+  getPractitioner() {
+    return {
+      name: 'Ивет Николова', initial: 'И',
+      headline: 'Таро четения и астрологични консултации',
+      location: 'София · Онлайн сесии',
+      rating: 4.9, reviewCount: 32,
+      bannerUrl: null, avatarUrl: null,
+      about: 'Работя с Таро и астрология от 9 години, като помагам на хората да видят по-ясно избора пред себе си — без предсказания, а с конкретни въпроси и наблюдения.\n\n· Сертифициран Таро практик, Астро школа София\n· Над 1200 проведени сесии',
+      largeImageUrl: null, youtubeId: null,
+      services: [
+        { id: 1, name: 'Таро четене', durationMin: 45, price: 60, excerpt: 'Разглеждане на текущ въпрос чрез карти.', imageUrl: null },
+        { id: 2, name: 'Астро консултация', durationMin: 60, price: 90, excerpt: 'Рождена карта, фокус кариера и връзки.', imageUrl: null },
+        { id: 3, name: 'Рейки сесия', durationMin: 30, price: 50, excerpt: 'Кратка енергийна сесия за баланс.', imageUrl: null },
+      ],
+      reviews: [
+        { author: 'Мария К.', stars: 5, text: 'Много спокойно и точно четене, усетих се разбрана.' },
+        { author: 'Георги П.', stars: 5, text: 'Консултацията ми помогна да взема важно решение.' },
+      ],
+    };
+  }
+
+  renderVals() {
+    const locale = this.props.locale ?? 'bg';
+    const t = LOCALES[locale] ?? LOCALES.bg;
+    const theme = this.props.theme ?? 'light';
+    const isMobile = this.props.forceMobile ?? this.state.isMobile;
+    const isOwner = this.props.isOwner ?? true;
+    const isEditing = isOwner && this.state.mode === 'edit';
+    const p = this.getPractitioner();
+
+    const minLabel = locale === 'en' ? 'min' : 'мин';
+    const services = p.services.map(s => ({
+      ...s,
+      durationLabel: `${s.durationMin} ${minLabel}`,
+      priceLabel: `${s.price} лв`,
+      detailsHref: `#service-${s.id}`,
+      editLabel: `${t.edit_service_title}: ${s.name}`,
+      onEdit: () => this.openDrawer(s),
+      imageUrlSafe: s.imageUrl || '',
+    }));
+
+    const reviews = p.reviews.map(r => ({ ...r, starsLabel: '★'.repeat(r.stars) }));
+
+    const aboutParagraphs = p.about.split('\n\n');
+
+    return {
+      theme, isMobile, isOwner, isEditing, t,
+      practitioner: p, services, reviews,
+      aboutParagraphs,
+      bannerUrlSafe: p.bannerUrl || '', avatarUrlSafe: p.avatarUrl || '', largeImageUrlSafe: p.largeImageUrl || '',
+      hasBanner: !!p.bannerUrl, hasMedia: !!(p.largeImageUrl || p.youtubeId),
+      youtubeEmbedUrl: p.youtubeId ? `https://www.youtube.com/embed/${p.youtubeId}` : '',
+      reviewCountLabel: locale === 'en' ? `${p.reviewCount} reviews` : `${p.reviewCount} отзива`,
+      fromPriceLabel: `${t.from} ${Math.min(...p.services.map(s => s.price))} лв`,
+      barPad: isMobile ? '14px 16px' : '16px 32px',
+      sidePad: isMobile ? '16px' : '28px',
+      bannerH: isMobile ? '120px' : '180px',
+      avatarSize: isMobile ? '64px' : '88px',
+      avatarPullUp: isMobile ? '-32px' : '-44px',
+      mainBottomPad: isMobile ? '76px' : '0px',
+      servicesCols: isMobile ? '1fr' : 'repeat(3,1fr)',
+      viewToggleStyle: `padding:5px 12px;border:none;border-radius:var(--radius-pill);cursor:pointer;font-family:var(--font-ui);font:${!isEditing ? '600 12px' : '12px'} var(--font-ui);background:${!isEditing ? 'var(--bg-sunken)' : 'transparent'};color:${!isEditing ? 'var(--text-primary)' : 'var(--text-tertiary)'}`,
+      editToggleStyle: `padding:5px 12px;border:none;border-radius:var(--radius-pill);cursor:pointer;font-family:var(--font-ui);font:${isEditing ? '600 12px' : '12px'} var(--font-ui);background:${isEditing ? 'var(--accent)' : 'transparent'};color:${isEditing ? 'var(--text-on-accent)' : 'var(--text-tertiary)'}`,
+      setViewMode: this.setViewMode, setEditMode: this.setEditMode,
+      drawerOpen: this.state.drawerOpen, drawerService: this.state.drawerService || { name: '', durationLabel: '', priceLabel: '', excerpt: '' },
+      openNewServiceDrawer: this.openNewServiceDrawer, closeDrawer: this.closeDrawer,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

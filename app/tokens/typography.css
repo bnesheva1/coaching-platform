@@ -11,13 +11,13 @@
   --text-display-md: 400 2rem/1.28 var(--font-display);        /* 32px */
   --text-display-sm: 400 1.625rem/1.32 var(--font-display);    /* 26px */
 
-  --text-heading-lg: 700 1.375rem/1.35 var(--font-display);    /* 22px */
-  --text-heading-md: 700 1.125rem/1.4 var(--font-ui);          /* 18px */
-  --text-heading-sm: 600 0.9375rem/1.4 var(--font-ui);         /* 15px */
+  --text-heading-lg: 700 1.75rem/1.35 var(--font-display);     /* 28px */
+  --text-heading-md: 700 1.5rem/1.4 var(--font-ui);            /* 24px */
+  --text-heading-sm: 600 1.313rem/1.4 var(--font-ui);          /* 21px */
 
-  --text-body-lg: 400 1.0625rem/1.6 var(--font-ui);            /* 17px */
-  --text-body-md: 400 0.9375rem/1.6 var(--font-ui);            /* 15px */
-  --text-body-sm: 400 0.84375rem/1.55 var(--font-ui);          /* 13.5px */
+  --text-body-lg: 400 1.313rem/1.6 var(--font-ui);             /* 21px */
+  --text-body-md: 400 1.125rem/1.6 var(--font-ui);             /* 18px */
+  --text-body-sm: 400 1rem/1.55 var(--font-ui);                /* 16px */
 
   --text-label: 600 0.8125rem/1.3 var(--font-ui);              /* 13px */
   --text-caption: 400 0.75rem/1.5 var(--font-ui);              /* 12px */
@@ -25,4 +25,19 @@
   --letter-overline: .06em;
 
   --text-mono-sm: 400 0.78125rem/1.5 var(--font-mono);         /* 12.5px */
+
+  /* Added for the practitioner-dashboard sidebar/NavBar work — values
+     already in use in more than one place as hand-copied literals
+     (NavBar's wordmark, its nav-link row, several icon-glyph buttons,
+     Button.tsx's own md/lg sizes) before being pulled out here. */
+  --text-wordmark: 700 1.3125rem/1 var(--font-display);        /* 21px, NavBar wordmark */
+  --text-nav: 500 0.875rem/1 var(--font-ui);                   /* 14px, NavBar link row */
+  --text-icon: 400 1rem/1 var(--font-ui);                      /* 16px, single-glyph icon buttons (‹ › ⚙ ☰ ✕) */
+  --text-button-md: 600 0.875rem/1.2 var(--font-ui);           /* 14px, Button.tsx size="md" */
+  --text-button-lg: 600 1rem/1.2 var(--font-ui);               /* 16px, Button.tsx size="lg" */
+
+  /* --letter-overline (above) is for uppercase eyebrow/overline labels
+     specifically. This is the separate, tighter tracking used on small
+     pill controls (lang toggle) — a distinct role, not a duplicate. */
+  --letter-pill: .02em;
 }

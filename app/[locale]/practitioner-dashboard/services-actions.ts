@@ -130,7 +130,9 @@ export async function createService(
     return { error: t("saveFailed") };
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
   return { success: true };
 }
 
@@ -174,7 +176,9 @@ export async function updateService(
     return { error: t("saveFailed") };
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
   return { success: true };
 }
 
@@ -201,7 +205,9 @@ export async function setServiceActive(
     console.error("setServiceActive failed:", error);
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
 }
 
 // Hard delete is fine for now — no bookings table exists yet, so nothing
@@ -229,5 +235,7 @@ export async function deleteService(serviceId: string, _formData: FormData) {
     console.error("deleteService failed:", error);
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — see availability-actions.ts's identical comment; the
+  // dashboard is now a layout + six pages, not one page.
+  revalidatePath("/practitioner-dashboard", "layout");
 }

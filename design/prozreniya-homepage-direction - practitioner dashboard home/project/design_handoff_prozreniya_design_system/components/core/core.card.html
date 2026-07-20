@@ -1,0 +1,40 @@
+<!-- @dsCard group="Components" viewport="700x520" name="Core: Button, Input, Chip, Card" -->
+<!DOCTYPE html><html><head><link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--bg-page);font-family:var(--font-ui)}</style>
+</head><body>
+<div id="root"></div>
+<script type="text/babel">
+const { Button, Input, Chip, Card } = window.ProzreniyaDesignSystem;
+function Demo(){
+  const [sel, setSel] = React.useState('Любов и връзки');
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:24,padding:28}}>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+        <Button variant="primary">Регистрация</Button>
+        <Button variant="secondary">Вход</Button>
+        <Button variant="ghost">Научете повече</Button>
+        <Button variant="primary" size="sm">Малък</Button>
+        <Button variant="primary" size="lg">Голям</Button>
+        <Button variant="primary" disabled>Неактивен</Button>
+      </div>
+      <Input search placeholder="Търсете по име, направление или въпрос…" helperText="Търсете по име, по направление или по вашия въпрос" />
+      <Input placeholder="Имейл" />
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {['Любов и връзки','Кариера и работа','Бизнес и финанси','Житейски път'].map(t => (
+          <Chip key={t} selected={sel===t} onClick={()=>setSel(t)}>{t}</Chip>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        <Card eyebrow="За търсещите" title="Намерете яснота" description="Проверени практици, реални отзиви, резервация онлайн." />
+        <Card tone="inverse" eyebrow="За практиците" title="Разширете практиката си" description="Достигнете до хора, търсещи точно вашите умения." />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script>
+</body></html>

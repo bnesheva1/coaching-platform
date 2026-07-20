@@ -74,7 +74,12 @@ export async function createAvailabilityRule(
     return { error: t("saveFailed") };
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — the dashboard is now a route group (layout.tsx + six
+  // pages) rather than one page; this invalidates the shared layout and
+  // every page beneath it (Начало's isBookable gate depends on this
+  // same availability data), not just the literal "/practitioner-
+  // dashboard" path a plain page-type revalidation would target.
+  revalidatePath("/practitioner-dashboard", "layout");
   return { success: true };
 }
 
@@ -97,5 +102,10 @@ export async function deleteAvailabilityRule(ruleId: string, _formData: FormData
     console.error("deleteAvailabilityRule failed:", error);
   }
 
-  revalidatePath("/practitioner-dashboard");
+  // "layout" — the dashboard is now a route group (layout.tsx + six
+  // pages) rather than one page; this invalidates the shared layout and
+  // every page beneath it (Начало's isBookable gate depends on this
+  // same availability data), not just the literal "/practitioner-
+  // dashboard" path a plain page-type revalidation would target.
+  revalidatePath("/practitioner-dashboard", "layout");
 }

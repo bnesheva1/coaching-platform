@@ -26,6 +26,16 @@ type Service = {
 
 const initialState: ServiceFormState = null;
 
+// Mirrors MAX_NAME_LENGTH/MAX_DESCRIPTION_LENGTH/MAX_DELIVERY_INFO_LENGTH
+// in services-actions.ts — duplicated, not imported, same
+// client/server-boundary reasoning as AvailabilitySection.tsx's
+// MIN_DURATION_MINUTES. The server action re-validates from scratch
+// regardless; this just stops you from typing past the limit instead
+// of only failing on submit.
+const MAX_NAME_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_DELIVERY_INFO_LENGTH = 500;
+
 function formatPrice(priceCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -91,7 +101,7 @@ function DeliveryFields({
       </fieldset>
       <label>
         {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
-        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} className="form-field" style={{ width: "100%" }} />
+        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} maxLength={MAX_DELIVERY_INFO_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
     </>
   );
@@ -112,11 +122,11 @@ function ServiceRow({ service }: { service: Service }) {
           <input type="hidden" name="serviceId" value={service.id} />
           <label>
             {t("nameLabel")}
-            <input name="name" type="text" required defaultValue={service.name} className="form-field" style={{ width: "100%" }} />
+            <input name="name" type="text" required defaultValue={service.name} maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
           </label>
           <label>
             {t("descriptionLabel")}
-            <textarea name="description" rows={2} defaultValue={service.description ?? ""} className="form-field" style={{ width: "100%" }} />
+            <textarea name="description" rows={2} defaultValue={service.description ?? ""} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
           </label>
           <label>
             {t("durationLabel")}
@@ -225,11 +235,11 @@ export function ServicesSection({ services }: { services: Service[] }) {
       >
         <label>
           {t("nameLabel")}
-          <input name="name" type="text" required className="form-field" style={{ width: "100%" }} />
+          <input name="name" type="text" required maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
         <label>
           {t("descriptionLabel")}
-          <textarea name="description" rows={2} className="form-field" style={{ width: "100%" }} />
+          <textarea name="description" rows={2} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
         <label>
           {t("durationLabel")}

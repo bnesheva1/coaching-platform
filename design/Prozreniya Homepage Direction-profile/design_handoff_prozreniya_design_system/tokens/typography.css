@@ -1,0 +1,22 @@
+/* Type scale. Display = PT Serif (headlines, editorial warmth); UI/body = Manrope (Cyrillic-friendly, neutral). */
+:root{
+  --text-display-xl: 400 56px/1.18 var(--font-display);
+  --text-display-lg: 400 40px/1.24 var(--font-display);
+  --text-display-md: 400 32px/1.28 var(--font-display);
+  --text-display-sm: 400 26px/1.32 var(--font-display);
+
+  --text-heading-lg: 700 22px/1.35 var(--font-display);
+  --text-heading-md: 700 18px/1.4 var(--font-ui);
+  --text-heading-sm: 600 15px/1.4 var(--font-ui);
+
+  --text-body-lg: 400 17px/1.6 var(--font-ui);
+  --text-body-md: 400 15px/1.6 var(--font-ui);
+  --text-body-sm: 400 13.5px/1.55 var(--font-ui);
+
+  --text-label: 600 13px/1.3 var(--font-ui);
+  --text-caption: 400 12px/1.5 var(--font-ui);
+  --text-overline: 700 12px/1.3 var(--font-ui);
+  --letter-overline: .06em;
+
+  --text-mono-sm: 400 12.5px/1.5 var(--font-mono);
+}

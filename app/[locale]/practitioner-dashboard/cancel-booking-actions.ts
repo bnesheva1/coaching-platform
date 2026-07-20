@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +15,7 @@ export async function cancelBookingAsPractitioner(bookingId: string, _formData: 
   const locale = await getLocale();
 
   async function redirectWithError(code: string) {
-    redirect({ href: { pathname: "/practitioner-dashboard", query: { cancelError: code } }, locale });
+    redirect({ href: { pathname: "/practitioner-dashboard/bookings", query: { cancelError: code } }, locale });
   }
 
   const supabase = await createClient();
@@ -44,5 +45,12 @@ export async function cancelBookingAsPractitioner(bookingId: string, _formData: 
   // cancellation that already succeeded above.
   await sendCancellationNoticeEmail(bookingId, "practitioner");
 
-  redirect({ href: { pathname: "/practitioner-dashboard", query: { cancelled: "1" } }, locale });
+  // "layout" — the shared layout's sidebar pulse card (this week's
+  // session count) reads bookings too; without this it would keep
+  // showing the pre-cancellation count until a hard refresh, since a
+  // redirect() navigation reuses the already-rendered layout segment
+  // rather than re-fetching it.
+  revalidatePath("/practitioner-dashboard", "layout");
+
+  redirect({ href: { pathname: "/practitioner-dashboard/bookings", query: { cancelled: "1" } }, locale });
 }

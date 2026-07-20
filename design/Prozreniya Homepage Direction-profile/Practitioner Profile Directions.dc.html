@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0;background:#e9e6df;font-family:var(--font-ui)}
+  .dv-turn{padding:44px 44px 36px;border-bottom:1px solid rgba(0,0,0,.08)}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;max-width:800px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.4 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:760px}
+  .dv-card{width:760px;max-width:760px;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.12), 0 12px 40px rgba(0,0,0,.10)}
+  .dv-row{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .dv-frame-label{font:600 10.5px ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);margin:0 0 6px}
+  .dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+  .ph{display:flex;align-items:center;justify-content:center;text-align:center;font:var(--text-caption)}
+  .edit-pencil{width:26px;height:26px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border-default);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);flex:none;box-shadow:var(--shadow-sm)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Practitioner public profile — 3 structural directions</span></div>
+  <div class="dv-opts">
+
+    <!-- ============ 1a ============ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Overlapping avatar, sticky book bar — marketplace-classic. Banner behind, avatar breaks the seam, one clear "see availability" CTA up top, per-service booking below, price-anchored sticky bar on mobile.</div>
+      <div class="dv-row">
+        <div>
+          <p class="dv-frame-label">DESKTOP — VIEW MODE</p>
+          <div class="dv-card" data-theme="light">
+            <div style="background:var(--bg-page);position:relative">
+              <!-- edit mode toggle -->
+              <div style="position:absolute;top:14px;right:14px;z-index:2;display:flex;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-pill);padding:3px;box-shadow:var(--shadow-sm)">
+                <span style="padding:5px 12px;border-radius:var(--radius-pill);background:var(--bg-sunken);font:var(--text-caption);color:var(--text-tertiary)">Преглед</span>
+                <span style="padding:5px 12px;border-radius:var(--radius-pill);background:var(--accent);color:var(--text-on-accent);font:600 12px var(--font-ui)">Редактиране</span>
+              </div>
+              <!-- banner -->
+              <div class="ph" style="height:180px;background:linear-gradient(135deg,var(--bg-sunken),var(--accent-glow));color:var(--text-tertiary);align-items:flex-start;justify-content:flex-start;padding:10px 0 0 24px;box-sizing:border-box">Банер (по избор, 1200×800, cover)</div>
+              <!-- identity -->
+              <div style="padding:0 28px 20px;position:relative">
+                <div style="display:flex;align-items:flex-end;gap:16px;margin-top:-44px">
+                  <div style="width:88px;height:88px;border-radius:50%;background:var(--accent);border:4px solid var(--bg-surface);display:flex;align-items:center;justify-content:center;font:700 30px var(--font-display);color:var(--text-on-accent);flex:none;box-shadow:var(--shadow-md)">И</div>
+                  <div style="display:flex;gap:6px;margin-bottom:6px">
+                    <span class="edit-pencil">✎</span>
+                  </div>
+                </div>
+                <div style="box-sizing: border-box; display: flex; justify-content: space-between"><div style="display: flex; flex-direction: column; gap: 6px; margin-top: 14px">
+                  <h1 style="margin:0;font:var(--text-display-sm);color:var(--text-primary)">Ивет Николова</h1>
+                  <span style="font:var(--text-body-md);color:var(--text-secondary)">Таро четения и астрологични консултации</span>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <a href="#reviews-1a" style="font:var(--text-label);color:var(--text-primary);text-decoration:none">★ 4.9 · 32 отзива</a>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">София · Онлайн сесии</span>
+                  </div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+                  
+                  <span style="font: 600 13px var(--font-ui); padding: 11px 18px; border-radius: 40px; border: 1px solid var(--border-default); color: var(--text-primary); white-space: nowrap; padding-top: 6px; padding-bottom: 6px">Астрология</span><span style="font: 600 13px var(--font-ui); padding: 11px 18px; border-radius: 40px; border: 1px solid var(--border-default); color: var(--text-primary); white-space: nowrap; padding-top: 6px; padding-bottom: 6px">Таро</span>
+                </div>
+                </div><div style="width: 250px; flex: none; border-left: 1px solid var(--border-subtle); padding: 26px 20px; position: sticky; align-self: flex-start; display: flex; flex-direction: column; gap: 14px; background: var(--bg-surface); border-radius: 20px">
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">от 50 лв / сесия</span>
+                <span style="font:600 13px var(--font-ui);padding:12px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center">Резервирай час</span>
+                <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border-subtle)">
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between;position:relative">
+                    <span class="edit-pencil" style="position:absolute;top:4px;right:4px;width:20px;height:20px;font-size:10px">✎</span>
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Таро четене</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">45м · 60лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between">
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Астро консултация</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">60м · 90лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between">
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Рейки сесия</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">30м · 50лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);text-align:center;border-top:1px dashed var(--border-default)">
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">+ Добави услуга</span>
+                  </div>
+                </div>
+              </div></div>
+                
+              </div>
+              <!-- about -->
+              <div style="padding:4px 28px 26px;position:relative">
+                <div style="position:absolute;top:2px;right:28px" class="edit-pencil">✎</div>
+                <h2 style="margin:0 0 8px;font:var(--text-heading-md);color:var(--text-primary)">Относно мен</h2>
+                <p style="margin:0 0 8px;font:var(--text-body-md);color:var(--text-secondary)">Работя с Таро и астрология от 9 години, като помагам на хората да видят по-ясно избора пред себе си — без предсказания, а с конкретни въпроси и наблюдения.</p>
+                <ul style="margin:0;padding-left:18px;font:var(--text-body-sm);color:var(--text-tertiary)">
+                  <li>Сертифициран Таро практик, Астро школа София</li>
+                  <li>Над 1200 проведени сесии</li>
+                </ul>
+              </div>
+              <!-- media -->
+              <div style="padding:0 28px 28px;display:flex;gap:14px">
+                <div class="ph" style="flex:1;height:200px;border-radius:var(--radius-lg);background:var(--bg-sunken);color:var(--text-tertiary)">Голямо изображение (до 1200px, max-height)</div>
+                <div style="flex:1;height:200px;border-radius:var(--radius-lg);background:var(--bg-inverse);position:relative;display:flex;align-items:center;justify-content:center">
+                  <span style="width:52px;height:52px;border-radius:50%;background:var(--text-on-inverse);color:var(--bg-inverse);display:flex;align-items:center;justify-content:center;font-size:16px">▶</span>
+                  <span style="position:absolute;bottom:10px;left:12px;font:var(--text-caption);color:var(--text-on-inverse)">YouTube embed</span>
+                </div>
+              </div>
+              <!-- services -->
+              <div style="padding:0 28px 28px">
+                <h2 style="margin:0 0 14px;font:var(--text-heading-md);color:var(--text-primary)">Услуги</h2>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+                  <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;background:var(--bg-surface);position:relative">
+                    <div class="edit-pencil" style="position:absolute;top:8px;right:8px;z-index:1">✎</div>
+                    <div class="ph" style="height:90px;background:var(--bg-sunken);color:var(--text-tertiary);font:var(--text-caption)">снимка</div>
+                    <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+                      <span style="font:var(--text-heading-sm);color:var(--text-primary)">Таро четене</span>
+                      <span style="font:var(--text-caption);color:var(--text-tertiary)">45 мин · 60 лв</span>
+                      <span style="font:var(--text-body-sm);color:var(--text-secondary)">Разглеждане на текущ въпрос чрез карти.</span>
+                      <div style="display:flex;gap:8px;margin-top:4px">
+                        <span style="font:var(--text-label);color:var(--text-primary);text-decoration:underline">Детайли</span>
+                        <span style="font:600 12px var(--font-ui);padding:7px 12px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);margin-left:auto">Резервирай</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;background:var(--bg-surface)">
+                    <div class="ph" style="height:90px;background:var(--bg-sunken);color:var(--text-tertiary);font:var(--text-caption)">снимка</div>
+                    <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+                      <span style="font:var(--text-heading-sm);color:var(--text-primary)">Астро консултация</span>
+                      <span style="font:var(--text-caption);color:var(--text-tertiary)">60 мин · 90 лв</span>
+                      <span style="font:var(--text-body-sm);color:var(--text-secondary)">Рождена карта, фокус кариера и връзки.</span>
+                      <div style="display:flex;gap:8px;margin-top:4px">
+                        <span style="font:var(--text-label);color:var(--text-primary);text-decoration:underline">Детайли</span>
+                        <span style="font:600 12px var(--font-ui);padding:7px 12px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);margin-left:auto">Резервирай</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="border:1.5px dashed var(--border-default);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;min-height:172px;color:var(--text-tertiary);font:var(--text-body-sm);text-align:center">+ Добави услуга</div>
+                </div>
+              </div>
+              <!-- reviews -->
+              <div id="reviews-1a" style="padding:0 28px 30px;border-top:1px solid var(--border-subtle)">
+                <h2 style="margin:18px 0 12px;font:var(--text-heading-md);color:var(--text-primary)">Отзиви (32)</h2>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="padding:12px 14px;background:var(--bg-surface-2);border-radius:var(--radius-md)">
+                    <span style="font:var(--text-label);color:var(--text-primary)">Мария К. · ★★★★★</span>
+                    <p style="margin:4px 0 0;font:var(--text-body-sm);color:var(--text-secondary)">Много спокойно и точно четене, усетих се разбрана.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">MOBILE — sticky book bar</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="light">
+            <div style="background:var(--bg-page);height:420px;position:relative;display:flex;flex-direction:column">
+              <div class="ph" style="height:90px;background:linear-gradient(135deg,var(--bg-sunken),var(--accent-glow))"></div>
+              <div style="padding:0 14px;margin-top:-30px;display:flex;flex-direction:column;gap:6px">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);border:3px solid var(--bg-surface);display:flex;align-items:center;justify-content:center;font:700 20px var(--font-display);color:var(--text-on-accent)">И</div>
+                <span style="font:var(--text-heading-sm);color:var(--text-primary)">Ивет Николова</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">★ 4.9 · 32 отзива</span>
+              </div>
+              <div style="flex:1"></div>
+              <div style="position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border-subtle);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md)">
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary)">от 60 лв</span>
+                <span style="font:600 12px var(--font-ui);padding:9px 14px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent)">Резервирай час</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">EDIT — service drawer</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="light">
+            <div style="background:var(--bg-surface);height:420px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:-8px 0 24px rgba(0,0,0,.12)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font:var(--text-heading-sm);color:var(--text-primary)">Редактиране на услуга</span>
+                <span style="font:14px var(--font-ui);color:var(--text-tertiary)">✕</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:var(--text-caption);color:var(--text-tertiary)">Име</span><div style="height:30px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:var(--text-caption);color:var(--text-tertiary)">Продължителност</span><div style="height:30px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:var(--text-caption);color:var(--text-tertiary)">Цена</span><div style="height:30px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font:var(--text-caption);color:var(--text-tertiary)">Описание</span><div style="flex:1;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              <span style="font:600 12px var(--font-ui);padding:9px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center">Запази</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1b ============ -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Centered identity, no banner, tabbed sections — editorial &amp; calm. Dark theme shown; avatar/name centered, single CTA, content organized under sticky tabs instead of one long scroll.</div>
+      <div class="dv-row">
+        <div>
+          <p class="dv-frame-label">DESKTOP — VIEW MODE (dark)</p>
+          <div class="dv-card" data-theme="dark">
+            <div style="background:var(--bg-page);position:relative">
+              <div style="position:absolute;top:14px;right:14px;z-index:2" class="edit-pencil">✎</div>
+              <div style="height:64px;background:radial-gradient(ellipse at 50% -20%,var(--accent-glow),transparent 70%)"></div>
+              <div style="padding:0 40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:-32px">
+                <div style="width:96px;height:96px;border-radius:50%;background:var(--accent);border:4px solid var(--bg-page);display:flex;align-items:center;justify-content:center;font:700 32px var(--font-display);color:var(--text-on-accent)">И</div>
+                <h1 style="margin:14px 0 4px;font:var(--text-display-sm);color:var(--text-primary)">Ивет Николова</h1>
+                <span style="font:var(--text-body-md);color:var(--text-secondary)">Таро четения и астрологични консултации · София</span>
+                <a href="#reviews-1b" style="margin-top:10px;font:var(--text-label);color:var(--accent);text-decoration:none;padding:5px 12px;border-radius:var(--radius-pill);background:var(--accent-subtle);color:var(--accent-subtle-text)">★ 4.9 · 32 отзива</a>
+                <span style="margin-top:16px;font:600 13px var(--font-ui);padding:12px 26px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent)">Запазете час</span>
+              </div>
+              <!-- tabs -->
+              <div style="display:flex;gap:24px;justify-content:center;border-bottom:1px solid var(--border-subtle);padding:0 28px">
+                <span style="padding:10px 2px;font:var(--text-label);color:var(--text-primary);border-bottom:2px solid var(--accent)">Относно</span>
+                <span style="padding:10px 2px;font:var(--text-label);color:var(--text-tertiary)">Услуги</span>
+                <span style="padding:10px 2px;font:var(--text-label);color:var(--text-tertiary)">Отзиви</span>
+              </div>
+              <!-- about w/ inline media -->
+              <div style="padding:24px 40px;display:flex;flex-direction:column;gap:16px">
+                <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary)">Работя с Таро и астрология от 9 години. Всяка сесия започва с конкретен въпрос — целта е яснота, не предсказание.</p>
+                <div class="ph" style="height:190px;border-radius:var(--radius-lg);background:var(--bg-sunken);color:var(--text-tertiary)">Голямо изображение, вплетено в текста</div>
+                <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary)">По-долу — кратко видео как протича една сесия:</p>
+                <div style="height:150px;border-radius:var(--radius-lg);background:var(--bg-inverse);position:relative;display:flex;align-items:center;justify-content:center">
+                  <span style="width:44px;height:44px;border-radius:50%;background:var(--text-on-inverse);color:var(--bg-inverse);display:flex;align-items:center;justify-content:center;font-size:14px">▶</span>
+                </div>
+              </div>
+              <!-- services preview -->
+              <div style="padding:0 40px 28px">
+                <h2 style="margin:0 0 14px;font:var(--text-heading-md);color:var(--text-primary)">Услуги</h2>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                  <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:12px;background:var(--bg-surface);display:flex;flex-direction:column;gap:6px">
+                    <span style="font:var(--text-heading-sm);color:var(--text-primary)">Таро четене</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">45 мин · 60 лв</span>
+                    <span style="font:600 12px var(--font-ui);padding:7px 0;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center;margin-top:4px">Резервирай</span>
+                  </div>
+                  <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:12px;background:var(--bg-surface);display:flex;flex-direction:column;gap:6px">
+                    <span style="font:var(--text-heading-sm);color:var(--text-primary)">Астро консултация</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">60 мин · 90 лв</span>
+                    <span style="font:600 12px var(--font-ui);padding:7px 0;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center;margin-top:4px">Резервирай</span>
+                  </div>
+                  <div style="border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:12px;background:var(--bg-surface);display:flex;flex-direction:column;gap:6px">
+                    <span style="font:var(--text-heading-sm);color:var(--text-primary)">Рейки сесия</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">30 мин · 50 лв</span>
+                    <span style="font:600 12px var(--font-ui);padding:7px 0;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center;margin-top:4px">Резервирай</span>
+                  </div>
+                </div>
+              </div>
+              <div id="reviews-1b" style="padding:0 40px 30px;border-top:1px solid var(--border-subtle)">
+                <h2 style="margin:18px 0 12px;font:var(--text-heading-md);color:var(--text-primary)">Отзиви (32)</h2>
+                <div style="padding:12px 14px;background:var(--bg-surface-2);border-radius:var(--radius-md)">
+                  <span style="font:var(--text-label);color:var(--text-primary)">Георги П. · ★★★★★</span>
+                  <p style="margin:4px 0 0;font:var(--text-body-sm);color:var(--text-secondary)">Консултацията ми помогна да взема важно решение.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">MOBILE — scrollable tab chips</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="dark">
+            <div style="background:var(--bg-page);height:420px;display:flex;flex-direction:column">
+              <div style="padding:20px 14px 0;display:flex;flex-direction:column;align-items:center;text-align:center">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font:700 20px var(--font-display);color:var(--text-on-accent)">И</div>
+                <span style="margin-top:8px;font:var(--text-heading-sm);color:var(--text-primary)">Ивет Николова</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">★ 4.9 · 32 отзива</span>
+                <span style="margin-top:10px;font:600 12px var(--font-ui);padding:9px 20px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent)">Запазете час</span>
+              </div>
+              <div style="display:flex;gap:14px;padding:14px;overflow:hidden;border-bottom:1px solid var(--border-subtle)">
+                <span style="font:var(--text-label);color:var(--text-primary)">Относно</span>
+                <span style="font:var(--text-label);color:var(--text-tertiary)">Услуги</span>
+                <span style="font:var(--text-label);color:var(--text-tertiary)">Отзиви</span>
+              </div>
+              <div style="flex:1"></div>
+              <div style="position:sticky;bottom:0;padding:10px 14px;background:var(--bg-surface);border-top:1px solid var(--border-subtle);text-align:center">
+                <span style="font:600 12px var(--font-ui);padding:9px 20px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent)">Запазете час</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">EDIT — inline rich-text toolbar</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="dark">
+            <div style="background:var(--bg-page);height:420px;padding:20px 16px;position:relative">
+              <div style="position:absolute;top:44px;left:16px;right:16px;background:var(--bg-inverse);border-radius:var(--radius-md);display:flex;gap:8px;padding:6px 10px;box-shadow:var(--shadow-md);z-index:2">
+                <span style="font:700 12px var(--font-ui);color:var(--text-on-inverse)">B</span>
+                <span style="font:italic 12px var(--font-ui);color:var(--text-on-inverse)">I</span>
+                <span style="font:12px var(--font-ui);color:var(--text-on-inverse)">🔗</span>
+              </div>
+              <p style="margin:70px 0 0;font:var(--text-body-md);color:var(--text-secondary);padding:8px;border:1.5px dashed var(--border-strong);border-radius:var(--radius-md)">Работя с Таро и <span style="background:var(--accent-subtle);color:var(--accent-subtle-text);border-radius:3px">астрология</span> от 9 години...</p>
+              <span style="position:absolute;bottom:20px;left:16px;font:var(--text-caption);color:var(--text-tertiary)">Селектирано → плаваща лента с форматиране</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1c ============ -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Split hero, sticky booking panel — service-led (Airbnb-style). No banner; a persistent right-hand panel doubles as the service list and stays visible while browsing About/media, so booking is always one click away.</div>
+      <div class="dv-row">
+        <div>
+          <p class="dv-frame-label">DESKTOP — VIEW MODE</p>
+          <div class="dv-card" data-theme="light">
+            <div style="background:var(--bg-page);display:flex;position:relative">
+              <div style="position:absolute;top:14px;right:14px;z-index:2" class="edit-pencil">✎</div>
+              <div style="flex:1;min-width:0;padding:26px 24px;display:flex;flex-direction:column;gap:18px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font:700 18px var(--font-display);color:var(--text-on-accent);flex:none">И</div>
+                  <div style="display:flex;flex-direction:column">
+                    <h1 style="margin:0;font:var(--text-heading-lg);color:var(--text-primary)">Ивет Николова</h1>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <a href="#reviews-1c" style="font:var(--text-label);color:var(--text-primary);text-decoration:none">★ 4.9 · 32 отзива</a>
+                      <span style="font:var(--text-caption);color:var(--text-tertiary)">София · Онлайн</span>
+                    </div>
+                  </div>
+                </div>
+                <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary)">Работя с Таро и астрология от 9 години, помагайки на хората да видят по-ясно избора пред себе си.</p>
+                <div class="ph" style="height:170px;border-radius:var(--radius-lg);background:var(--bg-sunken);color:var(--text-tertiary)">Голямо изображение</div>
+                <div style="height:130px;border-radius:var(--radius-lg);background:var(--bg-inverse);display:flex;align-items:center;justify-content:center">
+                  <span style="width:40px;height:40px;border-radius:50%;background:var(--text-on-inverse);color:var(--bg-inverse);display:flex;align-items:center;justify-content:center;font-size:13px">▶</span>
+                </div>
+                <div id="reviews-1c" style="border-top:1px solid var(--border-subtle);padding-top:14px">
+                  <h2 style="margin:0 0 10px;font:var(--text-heading-md);color:var(--text-primary)">Отзиви (32)</h2>
+                  <div style="padding:12px 14px;background:var(--bg-surface-2);border-radius:var(--radius-md)">
+                    <span style="font:var(--text-label);color:var(--text-primary)">Мария К. · ★★★★★</span>
+                    <p style="margin:4px 0 0;font:var(--text-body-sm);color:var(--text-secondary)">Много точно и спокойно четене.</p>
+                  </div>
+                </div>
+              </div>
+              <div style="width:250px;flex:none;border-left:1px solid var(--border-subtle);padding:26px 20px;position:sticky;top:0;align-self:flex-start;display:flex;flex-direction:column;gap:14px;background:var(--bg-surface)">
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">от 50 лв / сесия</span>
+                <span style="font:600 13px var(--font-ui);padding:12px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center">Резервирай час</span>
+                <div style="display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border-subtle)">
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between;position:relative">
+                    <span class="edit-pencil" style="position:absolute;top:4px;right:4px;width:20px;height:20px;font-size:10px">✎</span>
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Таро четене</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">45м · 60лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between">
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Астро консултация</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">60м · 90лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);display:flex;justify-content:space-between">
+                    <span style="font:var(--text-body-sm);color:var(--text-primary)">Рейки сесия</span>
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">30м · 50лв</span>
+                  </div>
+                  <div style="padding:10px 12px;background:var(--bg-page);text-align:center;border-top:1px dashed var(--border-default)">
+                    <span style="font:var(--text-caption);color:var(--text-tertiary)">+ Добави услуга</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">MOBILE — panel becomes bottom bar</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="light">
+            <div style="background:var(--bg-page);height:420px;display:flex;flex-direction:column">
+              <div style="padding:16px 14px;display:flex;gap:10px;align-items:center">
+                <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font:700 14px var(--font-display);color:var(--text-on-accent)">И</div>
+                <div><span style="font:var(--text-heading-sm);color:var(--text-primary);display:block">Ивет Николова</span><span style="font:var(--text-caption);color:var(--text-tertiary)">★ 4.9 · 32 отзива</span></div>
+              </div>
+              <div style="padding:0 14px;display:flex;flex-direction:column;gap:8px">
+                <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);display:flex;justify-content:space-between"><span style="font:var(--text-body-sm);color:var(--text-primary)">Таро четене</span><span style="font:var(--text-caption);color:var(--text-tertiary)">60лв</span></div>
+                <div style="padding:8px 10px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);display:flex;justify-content:space-between"><span style="font:var(--text-body-sm);color:var(--text-primary)">Астро консултация</span><span style="font:var(--text-caption);color:var(--text-tertiary)">90лв</span></div>
+              </div>
+              <div style="flex:1"></div>
+              <div style="position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border-subtle);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md)">
+                <span style="font:var(--text-body-sm);color:var(--text-tertiary)">от 50 лв</span>
+                <span style="font:600 12px var(--font-ui);padding:9px 14px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent)">Резервирай</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="dv-frame-label">EDIT — service drawer from panel row</p>
+          <div class="dv-card" style="width:230px;max-width:230px" data-theme="light">
+            <div style="background:var(--bg-surface);height:420px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:-8px 0 24px rgba(0,0,0,.12)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font:var(--text-heading-sm);color:var(--text-primary)">Таро четене</span>
+                <span style="font:14px var(--font-ui);color:var(--text-tertiary)">✕</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:var(--text-caption);color:var(--text-tertiary)">Цена</span><div style="height:30px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:var(--text-caption);color:var(--text-tertiary)">Продължителност</span><div style="height:30px;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1"><span style="font:var(--text-caption);color:var(--text-tertiary)">Описание</span><div style="flex:1;border:1px solid var(--border-default);border-radius:var(--radius-md);background:var(--bg-page)"></div></div>
+              <span style="font:600 12px var(--font-ui);padding:9px;border-radius:var(--radius-md);background:var(--accent);color:var(--text-on-accent);text-align:center">Запази</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "build <a class="dv-oid" href="#1a">1a</a> as the real component" · "combine <a class="dv-oid" href="#1c">1c</a>'s sticky panel with <a class="dv-oid" href="#1b">1b</a>'s tabs" · "show the edit-mode toolbar bigger"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

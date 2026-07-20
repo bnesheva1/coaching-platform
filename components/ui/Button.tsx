@@ -11,8 +11,8 @@ type SizeStyle = { padding: string; font: string; radius: string };
 
 const SIZES: Record<ButtonSize, SizeStyle> = {
   sm: { padding: "var(--button-padding-sm)", font: "var(--text-body-sm)", radius: "var(--radius-sm)" },
-  md: { padding: "var(--button-padding-md)", font: "600 14px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
-  lg: { padding: "var(--button-padding-lg)", font: "600 16px/1.2 var(--font-ui)", radius: "var(--radius-md)" },
+  md: { padding: "var(--button-padding-md)", font: "var(--text-button-md)", radius: "var(--radius-md)" },
+  lg: { padding: "var(--button-padding-lg)", font: "var(--text-button-lg)", radius: "var(--radius-md)" },
 };
 
 const VARIANTS: Record<ButtonVariant, CSSProperties> = {

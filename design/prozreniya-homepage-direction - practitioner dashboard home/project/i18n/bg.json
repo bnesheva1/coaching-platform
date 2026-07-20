@@ -1,0 +1,39 @@
+{
+  "nav": { "home": "Начало", "profile": "Профил", "services": "Услуги", "schedule": "График", "reviews": "Отзиви" },
+  "activation": {
+    "eyebrow": "Добре дошли",
+    "heading": "Здравейте, {{name}} — да ви подготвим за първата резервация",
+    "sub": "Три кратки стъпки и вашият профил става видим за търсещите.",
+    "progress": "{{done}} от {{total}} завършени",
+    "step1_title": "Профилът е попълнен",
+    "step1_desc": "Снимка, биография и специализации",
+    "step2_title": "Добавете първата си услуга",
+    "step2_desc": "Напр. „Таро четене · 45 мин · 60 лв“",
+    "step2_cta": "Добавете услуга",
+    "step3_title": "Задайте своя график",
+    "step3_desc": "Кога сте на разположение за резервации",
+    "step3_cta": "Задайте график",
+    "reassurance": "Профилът ви ще стане видим за търсещите веднага след третата стъпка."
+  },
+  "agenda": {
+    "greeting": "Добър ден, {{name}}",
+    "heading": "Какво предстои",
+    "attention_new_bookings": "{{count}} нови резервации",
+    "attention_since": "от вчера",
+    "attention_review": "Преглед",
+    "attention_cancelled": "Отменена сесия",
+    "attention_cancelled_desc": "{{name}} — {{time}}",
+    "attention_missing_link": "Липсва линк за среща",
+    "attention_missing_desc": "сесия в {{time}}",
+    "attention_add": "Добавете",
+    "next_session_label": "Следваща сесия",
+    "next_session_in": "след {{mins}} мин",
+    "join": "Влезте в срещата",
+    "upcoming_title": "Предстоящи тази седмица",
+    "empty_upcoming": "Няма предстоящи сесии тази седмица.",
+    "pulse_week": "Тази седмица",
+    "pulse_sessions": "{{count}} сесии",
+    "pulse_rating": "★ {{rating}} · {{reviews}} отзива"
+  },
+  "common": { "minutes": "мин" }
+}

@@ -82,7 +82,11 @@ export function Input({
               flex: "none",
               background: "var(--accent)",
               color: "var(--text-on-accent)",
-              fontSize: 18,
+              // Predates --text-icon (added later, for the dashboard's
+              // icon buttons) — same role (a single glyph in a small
+              // button), so it belongs on the same token now rather
+              // than its own unreviewed 18px.
+              font: "var(--text-icon)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",

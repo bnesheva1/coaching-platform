@@ -23,7 +23,7 @@ const STATUS_KEYS = {
 
 const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
 
-// Same useSyncExternalStore pattern as SlotList.tsx / ProfileForm.tsx —
+// Same useSyncExternalStore pattern as SlotList.tsx / ScheduleSettingsForm.tsx —
 // the browser's timezone can't be known during SSR, so the server and
 // client snapshots must differ safely rather than via useEffect+setState.
 function subscribeToNothing() {

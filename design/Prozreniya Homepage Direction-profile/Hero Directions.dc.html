@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#efece5;font-family:'Manrope',sans-serif}
+  .dv-turn{padding:44px 44px 36px;border-bottom:1px solid rgba(0,0,0,.08)}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:760px}
+  .dv-card{width:760px;max-width:760px;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.12), 0 12px 40px rgba(0,0,0,.10)}
+  .dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+
+  /* --- shared hero internals --- */
+  .hero{position:relative;width:100%;box-sizing:border-box;overflow:hidden}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:22px 40px;box-sizing:border-box}
+  .word{font-family:'PT Serif',serif;font-weight:700;font-size:21px;letter-spacing:.01em}
+  .navlinks{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:500;margin-left:40px;white-space:nowrap}
+  .navright{display:flex;align-items:center;gap:14px}
+  .langtoggle{font-size:13px;font-weight:600;letter-spacing:.02em;padding:6px 10px;border-radius:20px;cursor:default}
+  .btn{font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:default;white-space:nowrap}
+  .rotator{position:relative}
+  .rline{position:absolute;left:0;right:0;top:0;opacity:0;animation:rotate 15s infinite}
+  .rline:first-child{opacity:1}
+  @keyframes rotate{0%{opacity:1}3%{opacity:1}20%{opacity:1}24%{opacity:0}99%{opacity:0}100%{opacity:1}}
+  @media (prefers-reduced-motion: reduce){
+    .rline{animation:none;opacity:0;position:static;display:none}
+    .rline:first-child{opacity:1;display:block;position:static}
+  }
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .chip{font-size:13px;font-weight:600;padding:8px 15px;border-radius:99px;white-space:nowrap}
+  .search{display:flex;align-items:center;gap:12px;border-radius:14px;padding:6px 8px 6px 20px}
+  .searchtext{font-size:15px;flex:1}
+  .searchgo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Hero directions — Прозрения</span></div>
+  <div class="dv-opts">
+
+    <!-- 1a: Resend-strict dark, centered -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Resend-strict — deep black, centered, restrained</div>
+      <div class="dv-card">
+        <div class="hero" style="background:oklch(16% 0.006 95);color:oklch(96% 0.004 95)">
+          <nav class="nav" style="border-bottom:1px solid oklch(30% 0.006 95)">
+            <div class="word">Прозрения</div>
+            <div class="navlinks" style="color:oklch(78% 0.01 95)">
+              <span>За търсещи</span><span>За практици</span><span>Как работи</span>
+            </div>
+            <div class="navright">
+              <span class="langtoggle" style="border:1px solid oklch(35% 0.006 95);color:oklch(85% 0.01 95)">BG · EN</span>
+              <span class="btn" style="color:oklch(92% 0.004 95)">Вход</span>
+              <span class="btn" style="background:oklch(78% 0.13 85);color:oklch(18% 0.02 85)">Регистрация</span>
+            </div>
+          </nav>
+          <div style="padding:64px 60px 56px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:26px">
+            <div class="rotator" style="height:110px;width:100%;max-width:560px">
+              <h1 class="sr-only">Това ли е човекът за мен?</h1>
+              <div aria-hidden="true" class="rline" style="animation-delay:0s;font-family:'PT Serif',serif;font-size:38px;line-height:1.22;font-weight:400">Това ли е човекът за мен?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:3s;font-family:'PT Serif',serif;font-size:38px;line-height:1.22;font-weight:400">Да сменя ли работата, или да остана?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:6s;font-family:'PT Serif',serif;font-size:38px;line-height:1.22;font-weight:400">Каква е моята житейска мисия?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:9s;font-family:'PT Serif',serif;font-size:38px;line-height:1.22;font-weight:400">Как да изчистя негативната енергия?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:12s;font-family:'PT Serif',serif;font-size:38px;line-height:1.22;font-weight:400">Как да намеря вътрешен баланс?</div>
+            </div>
+            <p style="margin:0;max-width:480px;font-size:16px;line-height:1.55;color:oklch(72% 0.01 95)">Намерете таролог, астролог или практик по енергийни практики — проверени профили, реални отзиви, резервация онлайн.</p>
+            <div style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:8px">
+              <div class="search" style="background:oklch(21% 0.006 95);border:1px solid oklch(32% 0.006 95)">
+                <span class="searchtext" style="color:oklch(55% 0.008 95)">Търсете по име, направление или въпрос…</span>
+                <span class="searchgo" style="background:oklch(78% 0.13 85);color:oklch(18% 0.02 85)">→</span>
+              </div>
+              <span style="font-size:12px;color:oklch(50% 0.008 95)">напр. „таролог“, „business energy“, „раздяла“</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+              <span class="chip" style="background:oklch(24% 0.006 95);color:oklch(85% 0.008 95)">Любов и връзки</span>
+              <span class="chip" style="background:oklch(24% 0.006 95);color:oklch(85% 0.008 95)">Кариера и работа</span>
+              <span class="chip" style="background:oklch(24% 0.006 95);color:oklch(85% 0.008 95)">Енергия и защита</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1b: Light, warm humanist, off-center glow -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Warm humanist — light theme, asymmetric, soft gold glow</div>
+      <div class="dv-card">
+        <div class="hero" style="background:oklch(98% 0.006 90);color:oklch(20% 0.01 90)">
+          <div style="position:absolute;top:-120px;right:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,oklch(85% 0.10 85 / .55),transparent 70%);pointer-events:none"></div>
+          <nav class="nav" style="position:relative;border-bottom:1px solid oklch(88% 0.006 90)">
+            <div class="word">Прозрения</div>
+            <div class="navlinks" style="color:oklch(38% 0.01 90)">
+              <span>За търсещи</span><span>За практици</span><span>Как работи</span>
+            </div>
+            <div class="navright">
+              <span class="langtoggle" style="border:1px solid oklch(80% 0.01 90);color:oklch(30% 0.01 90)">BG · EN</span>
+              <span class="btn" style="color:oklch(22% 0.01 90)">Вход</span>
+              <span class="btn" style="background:oklch(55% 0.15 85);color:oklch(99% 0.01 85)">Регистрация</span>
+            </div>
+          </nav>
+          <div style="position:relative;padding:60px 64px 56px;display:flex;flex-direction:column;gap:24px;max-width:560px">
+            <span style="font-size:13px;font-weight:700;letter-spacing:.04em;color:oklch(50% 0.14 85);text-transform:uppercase">Хората питат</span>
+            <div class="rotator" style="height:130px;width:100%">
+              <h1 class="sr-only">Каква е моята житейска мисия?</h1>
+              <div aria-hidden="true" class="rline" style="animation-delay:0s;font-family:'PT Serif',serif;font-size:34px;line-height:1.28;font-weight:400">Каква е моята житейска мисия?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:3s;font-family:'PT Serif',serif;font-size:34px;line-height:1.28;font-weight:400">Това ли е човекът за мен?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:6s;font-family:'PT Serif',serif;font-size:34px;line-height:1.28;font-weight:400">Как да намеря вътрешен баланс?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:9s;font-family:'PT Serif',serif;font-size:34px;line-height:1.28;font-weight:400">Да сменя ли работата, или да остана?</div>
+              <div aria-hidden="true" class="rline" style="animation-delay:12s;font-family:'PT Serif',serif;font-size:34px;line-height:1.28;font-weight:400">Как да изчистя негативната енергия?</div>
+            </div>
+            <p style="margin:0;font-size:16px;line-height:1.6;color:oklch(42% 0.012 90)">Прозрения свързва хора, търсещи яснота, с проверени таролози, астролози и практици по енергийни и духовни практики в България.</p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="search" style="background:#fff;border:1px solid oklch(84% 0.008 90);box-shadow:0 2px 10px rgba(0,0,0,.05)">
+                <span class="searchtext" style="color:oklch(52% 0.01 90)">Търсете по име, направление или въпрос…</span>
+                <span class="searchgo" style="background:oklch(55% 0.15 85);color:#fff">→</span>
+              </div>
+              <span style="font-size:12px;color:oklch(50% 0.01 90)">Търсете по име, по направление или по вашия въпрос</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <span class="chip" style="background:oklch(93% 0.012 90);color:oklch(35% 0.01 90)">Любов и връзки</span>
+              <span class="chip" style="background:oklch(93% 0.012 90);color:oklch(35% 0.01 90)">Бизнес и финанси</span>
+              <span class="chip" style="background:oklch(93% 0.012 90);color:oklch(35% 0.01 90)">Житейски път</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1c: Editorial split, dark, doctolib-density -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Editorial split — dark, structured, search-forward like doctolib</div>
+      <div class="dv-card">
+        <div class="hero" style="background:oklch(14% 0.006 95);color:oklch(95% 0.004 95)">
+          <nav class="nav" style="border-bottom:1px solid oklch(28% 0.006 95)">
+            <div class="word">Прозрения</div>
+            <div class="navlinks" style="color:oklch(75% 0.01 95)">
+              <span>За търсещи</span><span>За практици</span><span>Цени</span>
+            </div>
+            <div class="navright">
+              <span class="langtoggle" style="border:1px solid oklch(33% 0.006 95);color:oklch(85% 0.01 95)">BG · EN</span>
+              <span class="btn" style="color:oklch(90% 0.004 95)">Вход</span>
+              <span class="btn" style="background:oklch(76% 0.13 85);color:oklch(16% 0.02 85)">Регистрация</span>
+            </div>
+          </nav>
+          <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:36px;padding:52px 48px 48px;align-items:end">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <span style="font-size:12.5px;font-weight:700;letter-spacing:.06em;color:oklch(76% 0.13 85);text-transform:uppercase">Bulgaria · онлайн и на живо</span>
+              <div class="rotator" style="height:150px;width:100%">
+                <h1 class="sr-only">Как да изчистя негативната енергия?</h1>
+                <div aria-hidden="true" class="rline" style="animation-delay:0s;font-family:'PT Serif',serif;font-size:32px;line-height:1.3;font-weight:400">Как да изчистя негативната енергия?</div>
+                <div aria-hidden="true" class="rline" style="animation-delay:3s;font-family:'PT Serif',serif;font-size:32px;line-height:1.3;font-weight:400">Каква е моята житейска мисия?</div>
+                <div aria-hidden="true" class="rline" style="animation-delay:6s;font-family:'PT Serif',serif;font-size:32px;line-height:1.3;font-weight:400">Това ли е човекът за мен?</div>
+                <div aria-hidden="true" class="rline" style="animation-delay:9s;font-family:'PT Serif',serif;font-size:32px;line-height:1.3;font-weight:400">Да сменя ли работата, или да остана?</div>
+                <div aria-hidden="true" class="rline" style="animation-delay:12s;font-family:'PT Serif',serif;font-size:32px;line-height:1.3;font-weight:400">Как да намеря вътрешен баланс?</div>
+              </div>
+              <p style="margin:0;font-size:15px;line-height:1.55;color:oklch(68% 0.01 95);max-width:380px">Резервирайте час при проверени таролози, астролози и практици по енергийни практики — по въпрос, направление или име.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="chip" style="background:oklch(22% 0.006 95);color:oklch(82% 0.008 95);border:1px solid oklch(32% 0.006 95)">Любов и връзки</span>
+                <span class="chip" style="background:oklch(22% 0.006 95);color:oklch(82% 0.008 95);border:1px solid oklch(32% 0.006 95)">Кариера и работа</span>
+                <span class="chip" style="background:oklch(22% 0.006 95);color:oklch(82% 0.008 95);border:1px solid oklch(32% 0.006 95)">Вътрешен баланс</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;background:oklch(19% 0.006 95);border:1px solid oklch(30% 0.006 95);border-radius:16px;padding:20px">
+              <span style="font-size:13px;font-weight:600;color:oklch(80% 0.01 95)">Намерете практик</span>
+              <div class="search" style="background:oklch(15% 0.006 95);border:1px solid oklch(32% 0.006 95);padding-left:16px">
+                <span class="searchtext" style="color:oklch(55% 0.008 95);font-size:14px">Име, направление или въпрос…</span>
+                <span class="searchgo" style="background:oklch(76% 0.13 85);color:oklch(16% 0.02 85);width:38px;height:38px">→</span>
+              </div>
+              <span style="font-size:11.5px;color:oklch(48% 0.008 95)">Търсете по име, направление или проблем</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "combine <a class="dv-oid" href="#1c">1c</a> layout with <a class="dv-oid" href="#1b">1b</a> palette" · "make <a class="dv-oid" href="#1a">1a</a> the direction, build full homepage" · "show light version of <a class="dv-oid" href="#1c">1c</a>"</p>
+</section>
+</x-dc>
+</body>
+</html>

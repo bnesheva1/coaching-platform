@@ -10,8 +10,9 @@ const INTL_LOCALES: Record<string, string> = {
   en: "en-US",
 };
 
-// Same useSyncExternalStore pattern as ProfileForm.tsx's timezone
-// detection (Epic 4) — the browser's timezone can't be known during SSR,
+// Same useSyncExternalStore pattern as ScheduleSettingsForm.tsx's
+// timezone detection (Epic 4) — the browser's timezone can't be known
+// during SSR,
 // so it must differ safely between the server snapshot and the client
 // one. useEffect+setState would trip the react-hooks/set-state-in-effect
 // rule and risk a hydration mismatch; this is the correct primitive.
@@ -48,7 +49,7 @@ export function SlotList({
 
   // Falls back to UTC only for the brief SSR/pre-hydration render — the
   // real browser zone takes over immediately after mount, same as
-  // ProfileForm's detection.
+  // ScheduleSettingsForm's detection.
   const clientTimezone = useSyncExternalStore(
     subscribeToNothing,
     getDetectedTimezone,
