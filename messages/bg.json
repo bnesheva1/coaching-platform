@@ -212,7 +212,6 @@
   "Services": {
     "title": "Моите услуги",
     "noServicesYet": "Не си добавил услуги все още.",
-    "addNewTitle": "Добави нова услуга",
     "nameLabel": "Наименование",
     "descriptionLabel": "Описание",
     "durationLabel": "Продължителност (минути)",
@@ -245,7 +244,12 @@
     "deliveryTypeRequired": "Избери как клиентите присъстват на тази услуга.",
     "deliveryInfoRequired": "Въведи как клиентите да присъстват — линк за среща, адрес, телефонен номер или други инструкции.",
     "deliveryInfoTooLong": "Това трябва да е до {max} символа.",
-    "deliveryInfoMissingNudge": "Клиентите няма да знаят как да се включат — добави информация за присъствие."
+    "deliveryInfoMissingNudge": "Клиентите няма да знаят как да се включат — добави информация за присъствие.",
+    "addAnotherService": "Добавете друга услуга",
+    "imageLabel": "Снимка на услугата",
+    "imageInvalidType": "Снимката е нужно да е PNG, JPEG, или WebP изображение.",
+    "imageTooLarge": "Снимката е нужно да е по-малка от 2MB.",
+    "imageUploadFailed": "Неуспешно качване на снимка: {message}"
   },
   "PublicProfile": {
     "editProfile": "Редактирай профила",

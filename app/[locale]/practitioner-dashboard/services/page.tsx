@@ -11,7 +11,7 @@ export default async function ServicesPage() {
 
   const { data: services } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type")
+    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type, image_url")
     .eq("practitioner_id", userId)
     .order("created_at", { ascending: true });
 
@@ -31,8 +31,11 @@ export default async function ServicesPage() {
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       {/* No ContentContainer — DashboardShell already bounds/pads the
-          sidebar+content row; see profile/page.tsx's identical note. */}
-      <div style={{ maxWidth: 500 }}>
+          sidebar+content row; see profile/page.tsx's identical note.
+          Wider than the usual 500px reading column — these are tiles
+          with a square image, same width budget as the profile page's
+          own service tiles (practitioner-dashboard/profile/page.tsx). */}
+      <div style={{ maxWidth: 800 }}>
         <ServicesSection services={servicesWithDeliveryInfo} />
       </div>
     </main>

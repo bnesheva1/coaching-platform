@@ -13,6 +13,45 @@ const MAX_DELIVERY_INFO_LENGTH = 500;
 const DELIVERY_TYPES = ["online", "in_person"] as const;
 type DeliveryType = (typeof DELIVERY_TYPES)[number];
 
+// Same bucket, same limits as the profile's avatar/banner upload
+// (uploadProfileImage in actions.ts) — services just get their own
+// path, "<user id>/service-<service id>", already permitted by that
+// bucket's existing policies (scoped to "own folder", not to a
+// specific filename).
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+async function uploadServiceImage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  serviceId: string,
+  imageFile: File,
+): Promise<{ url?: string; error?: string }> {
+  const t = await getTranslations("Services");
+  if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+    return { error: t("imageInvalidType") };
+  }
+  if (imageFile.size > MAX_IMAGE_BYTES) {
+    return { error: t("imageTooLarge") };
+  }
+
+  const path = `${userId}/service-${serviceId}`;
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, imageFile, {
+    upsert: true,
+    contentType: imageFile.type,
+  });
+  if (uploadError) {
+    return { error: t("imageUploadFailed", { message: uploadError.message }) };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+  // Cache-bust: the path never changes, so without this the browser
+  // (or a CDN) may keep showing the old image after it's replaced.
+  return { url: `${publicUrl}?t=${Date.now()}` };
+}
+
 // JavaScript represents decimals as IEEE754 floats, so e.g. 75.10 * 100
 // can come out as 7509.999999999999 rather than exactly 7510 — rounding
 // after multiplying corrects for that regardless of which way the error
@@ -114,20 +153,43 @@ export async function createService(
     return { error: parsed.error };
   }
 
-  const { error } = await supabase.from("services").insert({
-    practitioner_id: user.id,
-    name: parsed.name,
-    description: parsed.description,
-    duration_minutes: parsed.durationMinutes,
-    price_cents: parsed.priceCents,
-    currency: "EUR",
-    delivery_type: parsed.deliveryType,
-    delivery_info: parsed.deliveryInfo,
-  });
+  // .select("id") only — delivery_info is excluded from the column
+  // grant, and a bare .select() implicitly requests every
+  // granted-visible column via RETURNING (same reasoning already noted
+  // elsewhere for this table).
+  const { data: inserted, error } = await supabase
+    .from("services")
+    .insert({
+      practitioner_id: user.id,
+      name: parsed.name,
+      description: parsed.description,
+      duration_minutes: parsed.durationMinutes,
+      price_cents: parsed.priceCents,
+      currency: "EUR",
+      delivery_type: parsed.deliveryType,
+      delivery_info: parsed.deliveryInfo,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("createService failed:", error);
     return { error: t("saveFailed") };
+  }
+
+  // Image upload happens after the insert (the storage path needs the
+  // new row's id) — a failure here doesn't roll back the service
+  // itself, which is the right tradeoff: a service without a photo yet
+  // is still a real, usable service; losing the whole submission over a
+  // failed image upload would be worse.
+  const imageEntry = formData.get("image");
+  const imageFile = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
+  if (imageFile) {
+    const { url, error: imageError } = await uploadServiceImage(supabase, user.id, inserted.id, imageFile);
+    if (imageError) {
+      return { error: imageError };
+    }
+    await supabase.from("services").update({ image_url: url }).eq("id", inserted.id);
   }
 
   // "layout" — see availability-actions.ts's identical comment; the
@@ -155,19 +217,39 @@ export async function updateService(
     return { error: parsed.error };
   }
 
+  const updatePayload: {
+    name: string;
+    description: string | null;
+    duration_minutes: number;
+    price_cents: number;
+    delivery_type: DeliveryType;
+    delivery_info: string;
+    image_url?: string;
+  } = {
+    name: parsed.name,
+    description: parsed.description,
+    duration_minutes: parsed.durationMinutes,
+    price_cents: parsed.priceCents,
+    delivery_type: parsed.deliveryType,
+    delivery_info: parsed.deliveryInfo,
+  };
+
+  const imageEntry = formData.get("image");
+  const imageFile = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
+  if (imageFile) {
+    const { url, error: imageError } = await uploadServiceImage(supabase, user.id, serviceId, imageFile);
+    if (imageError) {
+      return { error: imageError };
+    }
+    updatePayload.image_url = url;
+  }
+
   // RLS already restricts updates to the caller's own rows — the
   // .eq("practitioner_id", ...) here is a belt-and-suspenders match to
   // the same rule, not the actual enforcement mechanism.
   const { error } = await supabase
     .from("services")
-    .update({
-      name: parsed.name,
-      description: parsed.description,
-      duration_minutes: parsed.durationMinutes,
-      price_cents: parsed.priceCents,
-      delivery_type: parsed.deliveryType,
-      delivery_info: parsed.deliveryInfo,
-    })
+    .update(updatePayload)
     .eq("id", serviceId)
     .eq("practitioner_id", user.id);
 

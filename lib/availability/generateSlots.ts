@@ -12,10 +12,12 @@ import { DateTime } from "luxon";
 // setting instead of a fixed platform-wide horizon (not built now).
 export const BOOKING_WINDOW_DAYS = 30;
 
-// Matches the grid practitioner_availability rows are already
-// constrained to (both app-side and DB-side, see Epic 4) — slot start
-// times land on the same 15-minute marks the underlying rules do.
-const SLOT_GRID_MINUTES = 15;
+// The search step used while scanning for open starting points. Kept
+// fine-grained (not serviceDurationMinutes) so a short existing
+// booking doesn't cause a genuinely open window right after it to be
+// skipped over — see the lastAcceptedEnd check below for what
+// actually prevents two offered slots from overlapping each other.
+const SLOT_SEARCH_GRID_MINUTES = 15;
 
 export type AvailabilityRule = {
   day_of_week: number; // 1=Monday..7=Sunday (ISO 8601), matches Luxon's DateTime.weekday exactly
@@ -141,6 +143,14 @@ export function generateSlots({
       }
 
       let candidateStart = periodStart;
+      // Tracks where the most recently *offered* slot in this period
+      // ends, so the next offered slot never overlaps it — without
+      // this, the fixed search grid below would independently pass
+      // each 15-minute mark against existingBookings/dayBlocks only,
+      // and happily offer several mutually-overlapping starts (e.g.
+      // 12:45 and 1:00 for a 45-min service) since neither conflicts
+      // with a *real* booking, only with each other.
+      let lastAcceptedEnd: DateTime | null = null;
       while (candidateStart.plus({ minutes: serviceDurationMinutes }) <= periodEnd) {
         const candidateEnd = candidateStart.plus({ minutes: serviceDurationMinutes });
 
@@ -149,12 +159,14 @@ export function generateSlots({
           overlaps(candidateStart, candidateEnd, booking),
         );
         const isBlocked = dayBlocks.some((block) => overlaps(candidateStart, candidateEnd, block));
+        const overlapsLastOffered = lastAcceptedEnd !== null && candidateStart < lastAcceptedEnd;
 
-        if (!isTooSoon && !isBooked && !isBlocked) {
+        if (!isTooSoon && !isBooked && !isBlocked && !overlapsLastOffered) {
           slots.push({ startUtc: candidateStart.toISO()! });
+          lastAcceptedEnd = candidateEnd;
         }
 
-        candidateStart = candidateStart.plus({ minutes: SLOT_GRID_MINUTES });
+        candidateStart = candidateStart.plus({ minutes: SLOT_SEARCH_GRID_MINUTES });
       }
     }
   }

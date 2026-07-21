@@ -212,7 +212,6 @@
   "Services": {
     "title": "My services",
     "noServicesYet": "You haven't added any services yet.",
-    "addNewTitle": "Add a new service",
     "nameLabel": "Name",
     "descriptionLabel": "Description",
     "durationLabel": "Duration (minutes)",
@@ -245,7 +244,12 @@
     "deliveryTypeRequired": "Select how clients attend this service.",
     "deliveryInfoRequired": "Enter how clients should attend — a meeting link, address, phone number, or other instructions.",
     "deliveryInfoTooLong": "This must be {max} characters or fewer.",
-    "deliveryInfoMissingNudge": "Clients won't know how to join — add delivery info."
+    "deliveryInfoMissingNudge": "Clients won't know how to join — add delivery info.",
+    "addAnotherService": "Add another service",
+    "imageLabel": "Service image",
+    "imageInvalidType": "Image must be a PNG, JPEG, or WebP file.",
+    "imageTooLarge": "Image must be smaller than 2MB.",
+    "imageUploadFailed": "Image upload failed: {message}"
   },
   "PublicProfile": {
     "editProfile": "Edit profile",

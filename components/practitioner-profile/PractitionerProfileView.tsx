@@ -299,120 +299,127 @@ export function PractitionerProfileView({
                     key={service.id}
                     style={{
                       display: "flex",
-                      // flex-start, not the flex default (stretch) — the
-                      // content column grows tall once expanded (full
-                      // description + the slot timetable), and stretch
-                      // would pull the image's height along with it,
-                      // fighting its own aspect-ratio and turning a
-                      // square thumbnail into a tall rectangle.
-                      alignItems: "flex-start",
-                      gap: "var(--space-4)",
+                      flexDirection: "column",
                       padding: "var(--space-4)",
                       borderRadius: "var(--radius-lg)",
                       border: "1px solid var(--border-subtle)",
                       background: "var(--bg-surface)",
                     }}
                   >
-                    {/* Square thumbnail, capped at a third of the tile's
-                        width — flex-basis (not a fixed px width) so it
-                        scales with the tile rather than overflowing on
-                        narrow screens. No upload UI exists yet for this
-                        (see the plan's note); shows a placeholder until
-                        one does, same treatment as the banner. */}
                     <div
                       style={{
-                        flex: "0 0 33%",
-                        maxWidth: "33%",
-                        aspectRatio: "1 / 1",
-                        borderRadius: "var(--radius-md)",
-                        overflow: "hidden",
-                        background: service.imageUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
+                        display: "flex",
+                        // flex-start, not the flex default (stretch) —
+                        // keeps the image square regardless of how tall
+                        // the text column next to it gets.
+                        alignItems: "flex-start",
+                        gap: "var(--space-4)",
                       }}
                     >
-                      {service.imageUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={service.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      )}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <strong>{service.name}</strong>
-                      <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-                        {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
-                        {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
-                      </p>
-                      {/* Always visible, not gated behind expand — only
-                          the timetable is deferred until you ask for it. */}
-                      {service.description && (
-                        <p style={{ margin: "0 0 var(--space-2)", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
-                      )}
-
-                      {/* Text + a small chevron that flips on expand,
-                          rather than a bordered button — reads as a
-                          disclosure toggle (the chevron communicates
-                          "this expands"), not an action button. A plain
-                          button + local state now, not a Link to
-                          `?service=` — that was a real navigation on
-                          every click (new RSC payload, scroll reset),
-                          which read as the page reloading/jumping. */}
-                      <button
-                        type="button"
-                        onClick={() => setExpandedServiceId(isSelected ? null : service.id)}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "var(--space-1)",
-                          font: "var(--text-label)",
-                          color: "var(--accent)",
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {isSelected ? t("hideDetails") : t("seeDetailsAndAvailability")}
-                        <span
-                          aria-hidden
-                          style={{
-                            display: "inline-block",
-                            // Smaller than the label text next to it,
-                            // same --text-caption token used for the
-                            // other small icon buttons on this page.
-                            font: "var(--text-caption)",
-                            transition: "transform var(--duration-fast) var(--ease-standard)",
-                            transform: isSelected ? "rotate(180deg)" : "none",
-                          }}
-                        >
-                          ⌄
-                        </span>
-                      </button>
-
-                      {/* max-height (not the content's real height,
-                          which isn't known up front) is the broadly-
-                          supported way to get a smooth CSS-only expand
-                          — the slot timetable can get tall, so this is
-                          generous enough that it never clips real
-                          content; the transition timing is tuned around
-                          that, not the actual height, which is the
-                          normal tradeoff of this technique. */}
+                      {/* Square thumbnail, capped at a third of the tile's
+                          width — flex-basis (not a fixed px width) so it
+                          scales with the tile rather than overflowing on
+                          narrow screens. No upload UI exists yet for this
+                          (see the plan's note); shows a placeholder until
+                          one does, same treatment as the banner. */}
                       <div
                         style={{
-                          display: "grid",
-                          maxHeight: isSelected ? 3000 : 0,
-                          opacity: isSelected ? 1 : 0,
+                          flex: "0 0 33%",
+                          maxWidth: "33%",
+                          aspectRatio: "1 / 1",
+                          borderRadius: "var(--radius-md)",
                           overflow: "hidden",
-                          transition: "max-height 0.4s var(--ease-standard), opacity 0.25s var(--ease-standard)",
+                          background: service.imageUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
                         }}
                       >
-                        <div style={{ marginTop: "var(--space-2)" }}>
-                          <SlotList
-                            slots={slotsByServiceId[service.id] ?? []}
-                            practitionerId={practitionerId}
-                            serviceId={service.id}
-                            username={username ?? ""}
-                            viewerRole={viewerRole}
-                          />
-                        </div>
+                        {service.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={service.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong>{service.name}</strong>
+                        <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                          {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
+                          {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
+                        </p>
+                        {/* Always visible, not gated behind expand — only
+                            the timetable is deferred until you ask for it. */}
+                        {service.description && (
+                          <p style={{ margin: "0 0 var(--space-2)", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
+                        )}
+
+                        {/* Text + a small chevron that flips on expand,
+                            rather than a bordered button — reads as a
+                            disclosure toggle (the chevron communicates
+                            "this expands"), not an action button. A plain
+                            button + local state now, not a Link to
+                            `?service=` — that was a real navigation on
+                            every click (new RSC payload, scroll reset),
+                            which read as the page reloading/jumping. */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedServiceId(isSelected ? null : service.id)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "var(--space-1)",
+                            font: "var(--text-label)",
+                            color: "var(--accent)",
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {isSelected ? t("hideDetails") : t("seeDetailsAndAvailability")}
+                          <span
+                            aria-hidden
+                            style={{
+                              display: "inline-block",
+                              // Smaller than the label text next to it,
+                              // same --text-caption token used for the
+                              // other small icon buttons on this page.
+                              font: "var(--text-caption)",
+                              transition: "transform var(--duration-fast) var(--ease-standard)",
+                              transform: isSelected ? "rotate(180deg)" : "none",
+                            }}
+                          >
+                            ⌄
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Sibling of the image+text row above, not nested
+                        inside the text column — spans the tile's full
+                        width instead of just the ~67% remaining next to
+                        the image. max-height (not the content's real
+                        height, which isn't known up front) is the
+                        broadly-supported way to get a smooth CSS-only
+                        expand — the slot timetable can get tall, so this
+                        is generous enough that it never clips real
+                        content; the transition timing is tuned around
+                        that, not the actual height, which is the normal
+                        tradeoff of this technique. */}
+                    <div
+                      style={{
+                        display: "grid",
+                        maxHeight: isSelected ? 3000 : 0,
+                        opacity: isSelected ? 1 : 0,
+                        overflow: "hidden",
+                        transition: "max-height 0.4s var(--ease-standard), opacity 0.25s var(--ease-standard)",
+                      }}
+                    >
+                      <div style={{ marginTop: "var(--space-3)" }}>
+                        <SlotList
+                          slots={slotsByServiceId[service.id] ?? []}
+                          practitionerId={practitionerId}
+                          serviceId={service.id}
+                          username={username ?? ""}
+                          viewerRole={viewerRole}
+                        />
                       </div>
                     </div>
                   </div>
