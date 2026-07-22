@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-import { SlotList } from "@/app/[locale]/p/[username]/SlotList";
+import { SlotPicker } from "@/components/booking/SlotPicker";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
@@ -48,10 +48,16 @@ export type PractitionerProfileViewProps = {
   // expand/collapse is local client state now, not a `?service=`
   // navigation, so every tile's slots need to already be on hand. Still
   // safe to wire up unconditionally even when isOwner is previewing,
-  // since SlotList already gates the actual booking action on
+  // since SlotPicker already gates the actual booking action on
   // viewerRole (a practitioner previewing their own profile just sees
   // "only clients can book", same as viewing anyone else's).
   slotsByServiceId: Record<string, { startUtc: string }[]>;
+  // The viewing client's own existing bookings with this practitioner
+  // (any service, not scoped per-service like slotsByServiceId — a
+  // booking is a fact about the practitioner's calendar). Always []
+  // for a non-client viewer.
+  ownBookings: { id: string; startUtc: string }[];
+  bookingWindowDays: number;
   viewerRole: "client" | "practitioner" | null;
   justBooked: boolean;
   bookingErrorCode: string | null;
@@ -78,6 +84,8 @@ export function PractitionerProfileView({
   reviews,
   averageRating,
   slotsByServiceId,
+  ownBookings,
+  bookingWindowDays,
   viewerRole,
   justBooked,
   bookingErrorCode,
@@ -279,8 +287,21 @@ export function PractitionerProfileView({
               </Link>
             )}
           </div>
-          {!expandedServiceId && services.length > 0 && (
-            <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{tBooking("selectService")}</p>
+          {/* visibility, not conditional unmount — expanding a tile
+              still hides the text (it's no longer relevant once a
+              service is picked), but keeps its line height reserved so
+              the services list above doesn't jump up when it
+              disappears and back down when it reappears. */}
+          {services.length > 0 && (
+            <p
+              style={{
+                font: "var(--text-body-sm)",
+                color: "var(--text-tertiary)",
+                visibility: expandedServiceId ? "hidden" : "visible",
+              }}
+            >
+              {tBooking("selectService")}
+            </p>
           )}
           {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
           {bookingErrorCode && (
@@ -349,48 +370,60 @@ export function PractitionerProfileView({
                         {service.description && (
                           <p style={{ margin: "0 0 var(--space-2)", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
                         )}
-
-                        {/* Text + a small chevron that flips on expand,
-                            rather than a bordered button — reads as a
-                            disclosure toggle (the chevron communicates
-                            "this expands"), not an action button. A plain
-                            button + local state now, not a Link to
-                            `?service=` — that was a real navigation on
-                            every click (new RSC payload, scroll reset),
-                            which read as the page reloading/jumping. */}
-                        <button
-                          type="button"
-                          onClick={() => setExpandedServiceId(isSelected ? null : service.id)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "var(--space-1)",
-                            font: "var(--text-label)",
-                            color: "var(--accent)",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            cursor: "pointer",
-                          }}
-                        >
-                          {isSelected ? t("hideDetails") : t("seeDetailsAndAvailability")}
-                          <span
-                            aria-hidden
-                            style={{
-                              display: "inline-block",
-                              // Smaller than the label text next to it,
-                              // same --text-caption token used for the
-                              // other small icon buttons on this page.
-                              font: "var(--text-caption)",
-                              transition: "transform var(--duration-fast) var(--ease-standard)",
-                              transform: isSelected ? "rotate(180deg)" : "none",
-                            }}
-                          >
-                            ⌄
-                          </span>
-                        </button>
                       </div>
                     </div>
+
+                    {/* Full tile width, sitting directly above the
+                        accordion it opens — not nested in the ~67% text
+                        column above, so it reads as the hinge between
+                        the collapsed summary and the expanded content
+                        rather than just another line of tile text. Text
+                        + a small chevron that flips on expand, rather
+                        than a bordered button — reads as a disclosure
+                        toggle (the chevron communicates "this expands"),
+                        not an action button. A plain button + local
+                        state, not a Link to `?service=` — that was a
+                        real navigation on every click (new RSC payload,
+                        scroll reset), which read as the page
+                        reloading/jumping. */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedServiceId(isSelected ? null : service.id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "var(--space-1)",
+                        width: "100%",
+                        marginTop: "var(--space-3)",
+                        paddingTop: "var(--space-3)",
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        paddingBottom: 0,
+                        font: "var(--text-label)",
+                        color: "var(--accent)",
+                        background: "none",
+                        border: "none",
+                        borderTop: "1px solid var(--border-subtle)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {isSelected ? t("hideDetails") : t("seeDetailsAndAvailability")}
+                      <span
+                        aria-hidden
+                        style={{
+                          display: "inline-block",
+                          // Smaller than the label text next to it,
+                          // same --text-caption token used for the
+                          // other small icon buttons on this page.
+                          font: "var(--text-caption)",
+                          transition: "transform var(--duration-fast) var(--ease-standard)",
+                          transform: isSelected ? "rotate(180deg)" : "none",
+                        }}
+                      >
+                        ⌄
+                      </span>
+                    </button>
 
                     {/* Sibling of the image+text row above, not nested
                         inside the text column — spans the tile's full
@@ -413,12 +446,14 @@ export function PractitionerProfileView({
                       }}
                     >
                       <div style={{ marginTop: "var(--space-3)" }}>
-                        <SlotList
+                        <SlotPicker
                           slots={slotsByServiceId[service.id] ?? []}
+                          ownBookings={ownBookings}
                           practitionerId={practitionerId}
                           serviceId={service.id}
                           username={username ?? ""}
                           viewerRole={viewerRole}
+                          windowDays={bookingWindowDays}
                         />
                       </div>
                     </div>

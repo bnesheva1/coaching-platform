@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
+import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
+import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 
@@ -60,7 +62,7 @@ export default async function PublicProfilePage({
       : null;
 
   // The VIEWER's own role (not the practitioner-being-viewed's) —
-  // determines whether SlotList shows real book buttons, an
+  // determines whether SlotPicker shows real book buttons, an
   // "only clients can book" note, or a log-in prompt. Can't be part of
   // the Promise.all above since it depends on that call's own result.
   const { data: viewerProfile } = authData.user
@@ -70,6 +72,16 @@ export default async function PublicProfilePage({
     viewerProfile?.role === "client" || viewerProfile?.role === "practitioner"
       ? viewerProfile.role
       : null;
+
+  // Only a client can structurally have "own bookings" with this
+  // practitioner to mark on the picker — RLS itself also scopes this to
+  // the caller's own rows (see getOwnBookingsWithPractitioner), but
+  // skipping the query entirely for every other viewerRole avoids a
+  // pointless round trip.
+  const ownBookings =
+    viewerRole === "client"
+      ? await getOwnBookingsWithPractitioner({ practitionerId: practitionerProfile.id })
+      : [];
 
   // One slot fetch per active service, up front — the expand/collapse
   // toggle on each tile is now purely local client state (no more
@@ -122,6 +134,8 @@ export default async function PublicProfilePage({
           }))}
           averageRating={averageRating}
           slotsByServiceId={slotsByServiceId}
+          ownBookings={ownBookings}
+          bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole={viewerRole}
           justBooked={justBooked}
           bookingErrorCode={bookingErrorCode}

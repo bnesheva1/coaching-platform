@@ -23,7 +23,7 @@ const STATUS_KEYS = {
 
 const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
 
-// Same useSyncExternalStore pattern as SlotList.tsx / ScheduleSettingsForm.tsx —
+// Same useSyncExternalStore pattern as SlotPicker.tsx / ScheduleSettingsForm.tsx —
 // the browser's timezone can't be known during SSR, so the server and
 // client snapshots must differ safely rather than via useEffect+setState.
 function subscribeToNothing() {
@@ -107,7 +107,7 @@ export function BookingsList({
     const isPastCutoff = isActive && isPastCancellationCutoff(booking.startUtc, booking.minNoticeHours);
 
     return (
-      <li key={booking.id} style={{ marginBottom: "var(--space-2)" }}>
+      <li id={`booking-${booking.id}`} key={booking.id} style={{ marginBottom: "var(--space-2)" }}>
         <strong>{formatter.format(new Date(booking.startUtc))}</strong>
         {" — "}
         {t("withPractitioner", { name: booking.practitionerName })}

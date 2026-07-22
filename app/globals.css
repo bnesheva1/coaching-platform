@@ -71,3 +71,77 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
+
+/* Generic keyboard-focus ring for interactive elements that aren't a
+   .form-field (buttons, chips, link-styled controls) — same box-shadow
+   recipe and --focus-ring token, opt in via className since inline
+   styles can't express :focus-visible. Deliberately :focus-visible, not
+   :focus, so it appears for keyboard/assistive-tech navigation but not
+   on a mouse/touch click — unlike .form-field:focus above, where any
+   focus method is worth showing since it's a text field. */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* Client-facing availability slot picker (components/booking/SlotPicker.tsx).
+   Hover is a real CSS pseudo-class here (not JS-tracked state like
+   Button.tsx's HOVER map) because these are plain style-only variants
+   with no per-instance computed color mixing — same "inline styles
+   can't express :hover" reasoning as .form-field above. */
+.slot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-decoration: none;
+  outline: none;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+/* Unselected/available: pale gold. Hovering previews the solid "selected"
+   look (reuses --accent/--text-on-accent rather than inventing a new
+   hover-only token) — an intuitive "this is what picking it looks like". */
+.slot-chip--available {
+  background: var(--accent-subtle);
+  color: var(--accent-subtle-text);
+}
+.slot-chip--available:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.slot-chip--selected {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.slot-chip--selected:hover {
+  background: var(--accent-hover);
+}
+
+/* The viewing client's own existing booking with this practitioner —
+   deliberately neutral, never gold/accent, so it reads as "already
+   yours, not something to pick" rather than another option in the same
+   family as the bookable chips next to it. */
+.slot-chip--own {
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+.slot-chip--own:hover {
+  background: var(--bg-sunken);
+}
+
+/* Same look as .slot-chip--available but rendered as a plain, non-focusable
+   <span> (viewer isn't an authenticated client, so the time isn't
+   actually clickable) — no hover-swap, since that would visually imply
+   interactivity that isn't there. */
+.slot-chip--available-readonly {
+  background: var(--accent-subtle);
+  color: var(--accent-subtle-text);
+  cursor: default;
+}

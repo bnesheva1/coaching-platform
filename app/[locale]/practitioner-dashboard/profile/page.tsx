@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
+import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 import { ProfileSettingsBox } from "@/components/practitioner-profile/ProfileSettingsBox";
 
@@ -89,6 +90,11 @@ export default async function ProfilePage() {
           }))}
           averageRating={averageRating}
           slotsByServiceId={slotsByServiceId}
+          // An owner never books their own profile, so there's no "own
+          // bookings with this practitioner" concept here — unlike
+          // p/[username]/page.tsx, which fetches real ones for a client.
+          ownBookings={[]}
+          bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole="practitioner"
           justBooked={false}
           bookingErrorCode={null}

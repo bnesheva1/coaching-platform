@@ -9,7 +9,7 @@ export type ThemeToggleProps = {
   switchToDarkLabel?: string;
 };
 
-// Same useSyncExternalStore pattern as BookingsList.tsx / SlotList.tsx /
+// Same useSyncExternalStore pattern as BookingsList.tsx / SlotPicker.tsx /
 // ScheduleSettingsForm.tsx — resolvedTheme is undefined until next-themes' own
 // client script runs, so server and client must render differently
 // here too, safely, rather than via useEffect+setState (which forces an
