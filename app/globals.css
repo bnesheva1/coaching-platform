@@ -145,3 +145,10 @@ body {
   color: var(--accent-subtle-text);
   cursor: default;
 }
+
+/* Native <dialog> backdrop (e.g. CancelSessionDialog.tsx) — only
+   reachable via the ::backdrop pseudo-element, which inline styles
+   can't target at all, unlike everything else in this app's dialogs. */
+dialog::backdrop {
+  background: var(--overlay-scrim);
+}

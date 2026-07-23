@@ -34,17 +34,27 @@ export default async function BookingsPage({
   const clientIds = [...new Set((bookings ?? []).map((b) => b.client_id))];
   const bookingServiceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
 
-  const [{ data: clients }, { data: bookingServices }] = await Promise.all([
+  // delivery_info is excluded from the general column grant entirely —
+  // even the owning practitioner can't read it via a plain select (see
+  // ServicesSection's identical note). This RPC is scoped to all of the
+  // caller's own services (not just active/booked ones), unlike the
+  // client-side get_my_active_booking_delivery_info, which is scoped to
+  // the client's own active bookings instead.
+  const [{ data: clients }, { data: bookingServices }, { data: deliveryInfoRows }] = await Promise.all([
     clientIds.length > 0
       ? supabase.from("profiles").select("id, display_name").in("id", clientIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
     bookingServiceIds.length > 0
-      ? supabase.from("services").select("id, name, duration_minutes").in("id", bookingServiceIds)
-      : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number }[] }),
+      ? supabase.from("services").select("id, name, duration_minutes, delivery_type").in("id", bookingServiceIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number; delivery_type: string | null }[] }),
+    supabase.rpc("get_my_services_delivery_info") as unknown as Promise<{
+      data: { service_id: string; delivery_info: string | null }[] | null;
+    }>,
   ]);
 
   const clientNameById = new Map((clients ?? []).map((c) => [c.id, c.display_name ?? ""]));
   const bookingServiceById = new Map((bookingServices ?? []).map((s) => [s.id, s]));
+  const deliveryInfoByServiceId = new Map((deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]));
 
   const mergedBookings: PractitionerBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
@@ -53,7 +63,11 @@ export default async function BookingsPage({
     durationMinutes: bookingServiceById.get(b.service_id)?.duration_minutes ?? 0,
     startUtc: b.start_utc,
     endUtc: b.end_utc,
+    // Real DB domain is 5 values (see bookings_status_check); no cast
+    // needed now that PractitionerBooking's own union matches it.
     status: b.status as PractitionerBooking["status"],
+    deliveryType: (bookingServiceById.get(b.service_id)?.delivery_type as "online" | "in_person" | null) ?? null,
+    deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
   }));
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);

@@ -9,10 +9,19 @@ export function CancellationNoticeEmail({
   heading,
   body,
   footer,
+  noteLabel,
+  note,
 }: {
   heading: string;
   body: string;
   footer: string;
+  // Optional free-text reason the cancelling party (currently only a
+  // practitioner — see cancel-booking-actions.ts) attached in the
+  // confirm dialog. A reason-line on this existing email, not a new
+  // messaging/thread feature — noteLabel is only ever passed alongside
+  // a non-empty note, never rendered on its own.
+  noteLabel?: string;
+  note?: string;
 }) {
   return (
     <Html>
@@ -24,6 +33,12 @@ export function CancellationNoticeEmail({
             {heading}
           </Heading>
           <Text>{body}</Text>
+          {note && (
+            <>
+              <Text style={{ fontWeight: "bold", marginBottom: 0 }}>{noteLabel}</Text>
+              <Text style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{note}</Text>
+            </>
+          )}
           <Text style={{ color: "#666", fontSize: "0.85rem", marginTop: "2rem" }}>{footer}</Text>
         </Container>
       </Body>

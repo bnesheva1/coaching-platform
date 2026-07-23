@@ -10,7 +10,7 @@ export type ThemeToggleProps = {
 };
 
 // Same useSyncExternalStore pattern as BookingsList.tsx / SlotPicker.tsx /
-// ScheduleSettingsForm.tsx — resolvedTheme is undefined until next-themes' own
+// TimezoneField.tsx — resolvedTheme is undefined until next-themes' own
 // client script runs, so server and client must render differently
 // here too, safely, rather than via useEffect+setState (which forces an
 // extra cascading render and is flagged by this project's lint config).

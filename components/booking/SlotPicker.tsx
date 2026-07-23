@@ -18,10 +18,9 @@ const DESKTOP_PAGE_SIZE = 3;
 const MOBILE_INITIAL_DAYS = 7;
 const MOBILE_SHOW_MORE_STEP = 7;
 
-// Same useSyncExternalStore pattern as the old SlotList.tsx / (Epic 4's)
-// ScheduleSettingsForm.tsx — the browser's timezone can't be known
-// during SSR, so the server and client snapshots must differ safely
-// rather than via useEffect+setState.
+// Same useSyncExternalStore pattern as TimezoneField.tsx / BookingsList.tsx —
+// the browser's timezone can't be known during SSR, so the server and
+// client snapshots must differ safely rather than via useEffect+setState.
 function subscribeToNothing() {
   return () => {};
 }

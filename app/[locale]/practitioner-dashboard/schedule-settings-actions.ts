@@ -24,13 +24,13 @@ function isValidTimezone(candidate: string): boolean {
   }
 }
 
-// Split out of the old single-form saveProfile — timezone and notice
-// window are booking mechanics, not profile identity, so they now live
-// on the Schedule tab next to availability rules instead of the
-// Profile tab. Touches only these two columns; safe alongside the
-// Profile tab's own column-scoped actions (see actions.ts's shared
-// comment on why splitting the old upsert this way is safe).
-export async function updateScheduleSettings(
+// Split from a single combined updateScheduleSettings action — timezone
+// now lives as its own plain top-of-page element and minimum notice as
+// its own card at the bottom (see the Schedule tab restructure), so
+// they're submitted independently and must not touch each other's
+// column. Same column-scoped-action precedent as actions.ts's
+// updateProfileText/updateSpecialties/updateUsername split.
+export async function updateTimezone(
   _prevState: ScheduleSettingsFormState,
   formData: FormData,
 ): Promise<ScheduleSettingsFormState> {
@@ -44,11 +44,34 @@ export async function updateScheduleSettings(
   }
 
   const timezone = (formData.get("timezone") as string)?.trim();
-  const minNoticeHours = Number(formData.get("minNoticeHours"));
-
   if (!timezone || !isValidTimezone(timezone)) {
     return { error: t("timezoneInvalid") };
   }
+
+  const { error } = await supabase.from("practitioner_profiles").update({ timezone }).eq("id", user.id);
+  if (error) {
+    console.error("updateTimezone failed:", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidatePath("/practitioner-dashboard", "layout");
+  return { success: true };
+}
+
+export async function updateMinNoticeHours(
+  _prevState: ScheduleSettingsFormState,
+  formData: FormData,
+): Promise<ScheduleSettingsFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const minNoticeHours = Number(formData.get("minNoticeHours"));
   if (
     !Number.isInteger(minNoticeHours) ||
     minNoticeHours < MIN_MIN_NOTICE_HOURS ||
@@ -61,11 +84,10 @@ export async function updateScheduleSettings(
 
   const { error } = await supabase
     .from("practitioner_profiles")
-    .update({ timezone, min_notice_hours: minNoticeHours })
+    .update({ min_notice_hours: minNoticeHours })
     .eq("id", user.id);
-
   if (error) {
-    console.error("updateScheduleSettings failed:", error);
+    console.error("updateMinNoticeHours failed:", error);
     return { error: t("saveFailed") };
   }
 

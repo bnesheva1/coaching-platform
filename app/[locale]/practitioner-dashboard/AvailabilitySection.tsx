@@ -77,6 +77,13 @@ const ALL_TIME_OPTIONS = Array.from({ length: (24 * 60) / MIN_DURATION_MINUTES }
 );
 const START_TIME_OPTIONS = ALL_TIME_OPTIONS.slice(0, -1);
 
+// Shared by every label in the "add hours" form below (and mirrored in
+// AvailabilityExceptionsSection.tsx's own form) so every field's input
+// starts at the same horizontal position, regardless of how long its
+// own label text happens to be in the active locale — a fixed label
+// column, not per-field auto-sizing.
+const FIELD_LABEL_WIDTH = "7.5rem";
+
 export function AvailabilitySection({
   rules,
   timezone,
@@ -85,7 +92,16 @@ export function AvailabilitySection({
   timezone: string;
 }) {
   const t = useTranslations("Availability");
+  const [isAdding, setIsAdding] = useState(false);
   const [state, formAction, pending] = useActionState(createAvailabilityRule, initialState);
+  // Same render-time-adjustment pattern as ServicesSection.tsx's
+  // isAdding toggle — auto-collapses back to the plain list once a rule
+  // is successfully added, rather than leaving the form sitting open.
+  const [prevState, setPrevState] = useState(state);
+  if (state !== prevState) {
+    setPrevState(state);
+    if (state?.success && isAdding) setIsAdding(false);
+  }
   // "09:00" is a sensible default starting point (falls back to the
   // first available option in the unlikely case the grid ever changes
   // and 09:00 stops being one) — not midnight, which START_TIME_OPTIONS[0]
@@ -134,107 +150,187 @@ export function AvailabilitySection({
     return null;
   }
 
-  const sortedRules = [...rules].sort((a, b) =>
-    a.day_of_week !== b.day_of_week
-      ? a.day_of_week - b.day_of_week
-      : a.start_time.localeCompare(b.start_time),
+  // One row per calendar day, always — index 0..6 = day_of_week 1..7,
+  // matching DAY_KEYS. Each day's own rules are pre-sorted by start
+  // time, so multi-range days (e.g. a split morning/evening schedule)
+  // display left-to-right in chronological order within their row.
+  const rulesByDay: AvailabilityRule[][] = Array.from({ length: 7 }, (_, index) =>
+    rules
+      .filter((rule) => rule.day_of_week === index + 1)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time)),
   );
 
   return (
-    <section style={{ marginTop: "var(--space-8)" }}>
-      <h2 style={{ font: "var(--text-heading-md)" }}>{t("title")}</h2>
+    // Flat — no card wrapper around the whole section. Each rule below
+    // is its own card instead; the heading/note just sit on the page's
+    // own background, same treatment as TimezoneField.tsx above it.
+    <section>
+      <h2 style={{ margin: 0, font: "var(--text-heading-md)" }}>{t("title")}</h2>
       <p style={{ font: "var(--text-body-sm)", color: "#666" }}>
         {t("timezoneNote", { timezone })}
       </p>
 
-      {sortedRules.length > 0 ? (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {sortedRules.map((rule) => (
-            <li key={rule.id} style={{ marginBottom: "var(--space-2)" }}>
-              <strong>{t(DAY_KEYS[rule.day_of_week - 1])}</strong>{" "}
-              {formatTime(rule.start_time)}–{formatTime(rule.end_time)}{" "}
-              <form
-                action={deleteAvailabilityRule.bind(null, rule.id)}
-                style={{ display: "inline" }}
-                onSubmit={(e) => {
-                  if (!confirm(t("deleteConfirm"))) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
-              </form>
+      {/* Glance-able list first — this is what a practitioner checks
+          most often. All 7 days always render, empty ones included, so
+          the complete weekly pattern is visible at once (not just the
+          days that happen to have hours). The add-form is tucked behind
+          a collapsed-by-default toggle below, not shown up front. */}
+      <ul style={{ listStyle: "none", padding: 0, marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+        {DAY_KEYS.map((dayKey, dayIndex) => {
+          const dayRules = rulesByDay[dayIndex];
+          const dayLabel = t(dayKey);
+          return (
+            <li
+              key={dayKey}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "var(--space-2)",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "var(--space-3) var(--space-4)",
+              }}
+            >
+              <strong style={{ flexShrink: 0 }}>{dayLabel}</strong>
+              {dayRules.length === 0 ? (
+                <span style={{ color: "var(--text-tertiary)" }}>{t("noHoursThisDay")}</span>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+                  {dayRules.map((rule) => {
+                    const range = `${formatTime(rule.start_time)}–${formatTime(rule.end_time)}`;
+                    return (
+                      <span
+                        key={rule.id}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "var(--space-1)",
+                          background: "var(--bg-surface-2)",
+                          borderRadius: "var(--radius-sm)",
+                          padding: "2px var(--space-1) 2px var(--space-2)",
+                        }}
+                      >
+                        {range}
+                        <form
+                          action={deleteAvailabilityRule.bind(null, rule.id)}
+                          onSubmit={(e) => {
+                            if (!confirm(t("deleteRangeConfirm", { range, day: dayLabel }))) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          <button
+                            type="submit"
+                            aria-label={t("deleteRangeAria", { range, day: dayLabel })}
+                            className="focus-ring"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 18,
+                              height: 18,
+                              borderRadius: "50%",
+                              border: "none",
+                              background: "transparent",
+                              color: "var(--text-tertiary)",
+                              font: "var(--text-caption)",
+                              lineHeight: 1,
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </form>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </li>
-          ))}
-        </ul>
-      ) : (
-        <p style={{ color: "#666" }}>{t("noRulesYet")}</p>
-      )}
+          );
+        })}
+      </ul>
 
-      <form
-        action={formAction}
-        onSubmit={(e) => {
-          const error = validateBeforeSubmit();
-          if (error) {
-            e.preventDefault();
-          }
-          setClientError(error);
-        }}
-        style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-4)" }}
-      >
-        <label>
-          {t("dayLabel")}
-          <select name="dayOfWeek" defaultValue="1" required className="form-field">
-            {DAY_KEYS.map((key, index) => (
-              <option key={key} value={index + 1}>
-                {t(key)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("startTimeLabel")}
-          <select
-            name="startTime"
-            required
-            value={startTime}
-            onChange={(e) => handleStartChange(e.target.value)}
-            className="form-field"
-          >
-            {START_TIME_OPTIONS.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("endTimeLabel")}
-          <select
-            name="endTime"
-            required
-            value={endTime}
-            onChange={(e) => {
-              setEndTime(e.target.value);
-              setClientError(null);
-            }}
-            className="form-field"
-          >
-            {endTimeOptions.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-        </label>
-        {(clientError ?? state?.error) && (
-          <p style={{ color: "crimson" }}>{clientError ?? state?.error}</p>
-        )}
-        {!clientError && state?.success && <p style={{ color: "green" }}>{t("addedMessage")}</p>}
-        <Button type="submit" disabled={pending}>
-          {pending ? t("addButtonPending") : t("addButton")}
-        </Button>
-      </form>
+      {!isAdding ? (
+        <div style={{ marginTop: "var(--space-4)" }}>
+          <Button type="button" variant="secondary" onClick={() => setIsAdding(true)}>
+            {t("addHoursToggle")}
+          </Button>
+        </div>
+      ) : (
+        <form
+          action={formAction}
+          onSubmit={(e) => {
+            const error = validateBeforeSubmit();
+            if (error) {
+              e.preventDefault();
+            }
+            setClientError(error);
+          }}
+          style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-4)" }}
+        >
+          <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+            <span style={{ width: FIELD_LABEL_WIDTH, flexShrink: 0 }}>{t("dayLabel")}</span>
+            <select name="dayOfWeek" defaultValue="1" required className="form-field">
+              {DAY_KEYS.map((key, index) => (
+                <option key={key} value={index + 1}>
+                  {t(key)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+            <span style={{ width: FIELD_LABEL_WIDTH, flexShrink: 0 }}>{t("startTimeLabel")}</span>
+            <select
+              name="startTime"
+              required
+              value={startTime}
+              onChange={(e) => handleStartChange(e.target.value)}
+              className="form-field"
+            >
+              {START_TIME_OPTIONS.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+            <span style={{ width: FIELD_LABEL_WIDTH, flexShrink: 0 }}>{t("endTimeLabel")}</span>
+            <select
+              name="endTime"
+              required
+              value={endTime}
+              onChange={(e) => {
+                setEndTime(e.target.value);
+                setClientError(null);
+              }}
+              className="form-field"
+            >
+              {endTimeOptions.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(clientError ?? state?.error) && (
+            <p style={{ color: "crimson" }}>{clientError ?? state?.error}</p>
+          )}
+          {!clientError && state?.success && <p style={{ color: "green" }}>{t("addedMessage")}</p>}
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <Button type="submit" disabled={pending}>
+              {pending ? t("addButtonPending") : t("addButton")}
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>
+              {t("cancelButton")}
+            </Button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

@@ -148,6 +148,11 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
 export async function sendCancellationNoticeEmail(
   bookingId: string,
   cancelledBy: "client" | "practitioner",
+  // Optional free-text reason typed into the cancel confirm dialog —
+  // currently only the practitioner-cancel flow ever passes one (see
+  // cancel-booking-actions.ts). A line on this existing email, not a
+  // new messaging system: no thread, no reply-to-it, just shown once.
+  note?: string,
 ): Promise<void> {
   const context = await fetchBookingEmailContext(bookingId);
   if (!context) return;
@@ -197,6 +202,8 @@ export async function sendCancellationNoticeEmail(
         sessionTime,
       }),
       footer: t("footer"),
+      noteLabel: note ? t("cancellationNoticeNoteLabel") : undefined,
+      note,
     }),
   });
   if (!result.success) {

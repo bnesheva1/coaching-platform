@@ -26,9 +26,10 @@ function revalidateDashboard() {
 
 // Was one big saveProfile() upserting every practitioner_profiles column
 // at once from a single form. Now split into column-scoped actions
-// (this file) plus updateScheduleSettings (schedule-settings-actions.ts)
-// because the fields live in different places now: inline pencils on
-// the profile view, a settings box, and the Schedule tab. Each action
+// (this file) plus updateTimezone/updateMinNoticeHours
+// (schedule-settings-actions.ts) because the fields live in different
+// places now: inline pencils on the profile view, a settings box, and
+// the Schedule tab. Each action
 // below only ever touches its own columns — safe to split because the
 // row already exists (created at signup), so every one of these hits
 // the update path, never insert, and Postgres upsert/update only
