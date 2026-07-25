@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Search &amp; Filter — Reference (2a Sidebar)</title>
+<link rel="stylesheet" href="../tokens/colors.css">
+<link rel="stylesheet" href="../tokens/spacing.css">
+<link rel="stylesheet" href="../tokens/typography.css">
+<link rel="stylesheet" href="../tokens/fonts.css">
+<style>
+  body{margin:0;background:#e9e6df;font-family:var(--font-ui);padding:40px}
+  *{box-sizing:border-box}
+  .sf-frame{border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.14),0 16px 44px rgba(0,0,0,.14);border:1px solid var(--border-subtle)}
+  .sf-chip{font:600 11.5px var(--font-ui);padding:5px 10px;border-radius:var(--radius-pill);white-space:nowrap}
+  .sf-avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 var(--font-display);color:var(--text-on-accent);flex:none}
+  .sf-card{border-radius:var(--radius-lg);background:var(--bg-surface);border:1px solid var(--border-subtle);padding:13px;display:flex;gap:13px;position:relative}
+</style>
+</head>
+<body>
+
+<p style="font:12px monospace;color:#666;margin:0 0 16px">DESKTOP — sidebar filters + results grid</p>
+<div class="sf-frame" style="width:640px">
+  <div style="background:var(--bg-page);padding:18px;display:flex;gap:18px">
+    <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font:700 13px var(--font-ui);color:var(--text-primary)">Филтри</span>
+        <a href="#" style="font:600 11px var(--font-ui);color:var(--accent);text-decoration:underline">Изчистете</a>
+      </div>
+      <div>
+        <div style="font:var(--text-label);color:var(--text-secondary);margin-bottom:8px">Практика</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-primary)"><input type="checkbox" checked style="accent-color:var(--accent);width:14px;height:14px">Таро <span style="color:var(--text-tertiary)">(2)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px">Астрология <span style="color:var(--text-tertiary)">(1)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px">Рейки <span style="color:var(--text-tertiary)">(1)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-tertiary)"><input type="checkbox" disabled style="width:14px;height:14px">Коучинг <span>(0)</span></label>
+        </div>
+      </div>
+      <div style="height:1px;background:var(--border-subtle)"></div>
+      <div>
+        <div style="font:var(--text-label);color:var(--text-secondary);margin-bottom:8px">Тема / въпрос</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-primary)"><input type="checkbox" checked style="accent-color:var(--accent);width:14px;height:14px">Любов <span style="color:var(--text-tertiary)">(2)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px">Кариера <span style="color:var(--text-tertiary)">(1)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px">Енергия <span style="color:var(--text-tertiary)">(1)</span></label>
+          <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent);width:14px;height:14px">Вътрешен баланс <span style="color:var(--text-tertiary)">(1)</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:10px 13px;font:12.5px var(--font-ui);color:var(--text-tertiary)">🔍 Търсете по име, практика или вашия въпрос</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="sf-chip" style="background:var(--accent-subtle);color:var(--accent-subtle-text);display:flex;align-items:center;gap:4px">Таро <span style="opacity:.7">✕</span></span>
+        <span class="sf-chip" style="background:var(--accent-subtle);color:var(--accent-subtle-text);display:flex;align-items:center;gap:4px">Любов <span style="opacity:.7">✕</span></span>
+        <span style="font:11px var(--font-ui);color:var(--text-tertiary)">1 практик намерен</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div class="sf-card" style="padding:11px">
+          <div class="sf-avatar" style="width:46px;height:46px;background:var(--accent);font-size:16px">В</div>
+          <div style="min-width:0;padding-right:44px"><div style="font:700 12.5px var(--font-ui);color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Виктория Илиева</div><div style="font:10px var(--font-ui);color:var(--text-tertiary)">Таро четец</div></div>
+          <span style="position:absolute;top:8px;right:8px;background:var(--accent);color:var(--text-on-accent);padding:2px 6px;border-radius:var(--radius-pill);font:700 9.5px var(--font-ui)">★ 4.9</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="font:12px monospace;color:#666;margin:28px 0 16px">MOBILE — collapsed, "Filters" button + active chips</p>
+<div class="sf-frame" style="width:280px">
+  <div style="background:var(--bg-page);padding:16px 14px 20px;display:flex;flex-direction:column;gap:10px">
+    <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:11px 13px;font:13px var(--font-ui);color:var(--text-tertiary)">🔍 Търсете по име, практика или вашия въпрос</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button style="flex:none;display:flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-pill);padding:8px 13px;font:600 12.5px var(--font-ui);color:var(--text-primary)">⚙ Филтри <span style="background:var(--accent);color:var(--text-on-accent);border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font:700 10px var(--font-ui)">2</span></button>
+      <div style="display:flex;gap:6px;overflow-x:auto;flex:1">
+        <span class="sf-chip" style="background:var(--accent-subtle);color:var(--accent-subtle-text);display:flex;align-items:center;gap:4px">Таро <span style="opacity:.7">✕</span></span>
+        <span class="sf-chip" style="background:var(--accent-subtle);color:var(--accent-subtle-text);display:flex;align-items:center;gap:4px">Любов <span style="opacity:.7">✕</span></span>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--border-subtle);margin:2px 0 4px"></div>
+    <div class="sf-card">
+      <div class="sf-avatar" style="width:64px;height:64px;background:var(--accent);font-size:22px">В</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-right:56px">
+        <span style="font:700 14px var(--font-ui);color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Виктория Илиева</span>
+        <div style="font:var(--text-caption);color:var(--text-tertiary)">Таро четец</div>
+      </div>
+      <span style="position:absolute;top:10px;right:10px;background:var(--accent);color:var(--text-on-accent);padding:2px 7px;border-radius:var(--radius-pill);font:700 10px var(--font-ui)">★ 4.9</span>
+    </div>
+  </div>
+</div>
+
+<p style="font:12px monospace;color:#666;margin:28px 0 16px">MOBILE — filter sheet expanded (sidebar content becomes sheet)</p>
+<div class="sf-frame" style="width:280px">
+  <div style="background:var(--bg-page);height:400px;display:flex;flex-direction:column">
+    <div style="flex:1;background:rgba(20,17,10,.4)"></div>
+    <div style="background:var(--bg-surface);border-radius:18px 18px 0 0;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.12)">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--border-default);align-self:center"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font:700 15px var(--font-display);color:var(--text-primary)">Филтри</span>
+        <a href="#" style="font:600 12px var(--font-ui);color:var(--accent);text-decoration:underline">Изчистете</a>
+      </div>
+      <div>
+        <div style="font:var(--text-label);color:var(--text-secondary);margin-bottom:6px">Практика</div>
+        <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-primary);padding:5px 0"><input type="checkbox" checked style="accent-color:var(--accent);width:15px;height:15px">Таро <span style="color:var(--text-tertiary)">(2)</span></label>
+        <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-secondary);padding:5px 0"><input type="checkbox" style="accent-color:var(--accent);width:15px;height:15px">Астрология <span style="color:var(--text-tertiary)">(1)</span></label>
+        <label style="display:flex;align-items:center;gap:7px;font:12.5px var(--font-ui);color:var(--text-tertiary);padding:5px 0"><input type="checkbox" disabled style="width:15px;height:15px">Коучинг <span>(0)</span></label>
+      </div>
+      <button style="background:var(--accent);color:var(--text-on-accent);border:none;border-radius:var(--radius-md);padding:12px;font:600 13.5px var(--font-ui)">Покажи 1 резултат</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

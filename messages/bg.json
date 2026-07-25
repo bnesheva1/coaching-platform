@@ -320,10 +320,18 @@
   },
   "Browse": {
     "title": "Открий специалист",
-    "specialtiesLabel": "Филтрирай по специалност",
-    "filterButton": "Филтрирай",
-    "clearFiltersLink": "Изчисти филтрите",
-    "noResults": "Няма открити резултати."
+    "searchPlaceholder": "Търсете по име, практика или вашия въпрос",
+    "searchAriaLabel": "Търсене на практици",
+    "modalityGroupLabel": "Практика",
+    "filtersHeading": "Филтри",
+    "clearFilters": "Изчисти филтрите",
+    "showResultsButton": "{count, plural, one {Покажи # резултат} other {Покажи # резултата}}",
+    "resultsCount": "{count, plural, one {# практик намерен} other {# практици намерени}}",
+    "emptyStateTitleWithQuery": "Нищо не открихме за „{query}“",
+    "emptyStateTitleNoQuery": "Нищо не открихме с тези филтри",
+    "emptyStateBody": "Опитайте по-общо търсене, или разгледайте всички практици — новите се присъединяват всяка седмица.",
+    "emptyStateCta": "Разгледайте всички практици",
+    "bookSessionCta": "Запази час"
   },
   "Reviews": {
     "reviewsTitle": "Отзиви",
@@ -348,9 +356,6 @@
     "notCompletedYet": "Тази среща все още не е завършена, затова не може да бъде оценена.",
     "alreadyReviewed": "Вече има оставен отзив за тази резервация.",
     "saveFailed": "Неуспешно запазване на отзива. Опитай отново."
-  },
-  "Search": {
-    "label": "Търсене"
   },
   "Email": {
     "bookingConfirmationClientSubject": "Резервацията ти с {counterpartyName} е потвърдена",

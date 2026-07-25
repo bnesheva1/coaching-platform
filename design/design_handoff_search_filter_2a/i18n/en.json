@@ -1,0 +1,39 @@
+{
+  "nav": { "home": "Home", "profile": "Profile", "services": "Services", "schedule": "Schedule", "reviews": "Reviews" },
+  "activation": {
+    "eyebrow": "Welcome",
+    "heading": "Hi {{name}} — let's get you ready for your first booking",
+    "sub": "Three short steps and your profile becomes visible to seekers.",
+    "progress": "{{done}} of {{total}} complete",
+    "step1_title": "Profile complete",
+    "step1_desc": "Photo, bio and specialties",
+    "step2_title": "Add your first service",
+    "step2_desc": "E.g. \"Tarot reading · 45 min · 60 BGN\"",
+    "step2_cta": "Add a service",
+    "step3_title": "Set your schedule",
+    "step3_desc": "When you're available for bookings",
+    "step3_cta": "Set schedule",
+    "reassurance": "Your profile becomes visible to seekers right after step 3."
+  },
+  "agenda": {
+    "greeting": "Hi {{name}}",
+    "heading": "What's on your plate",
+    "attention_new_bookings": "{{count}} new bookings",
+    "attention_since": "since yesterday",
+    "attention_review": "Review",
+    "attention_cancelled": "Cancelled session",
+    "attention_cancelled_desc": "{{name}} — {{time}}",
+    "attention_missing_link": "Missing meeting link",
+    "attention_missing_desc": "session at {{time}}",
+    "attention_add": "Add",
+    "next_session_label": "Next session",
+    "next_session_in": "in {{mins}} min",
+    "join": "Join session",
+    "upcoming_title": "Upcoming this week",
+    "empty_upcoming": "No upcoming sessions this week.",
+    "pulse_week": "This week",
+    "pulse_sessions": "{{count}} sessions",
+    "pulse_rating": "★ {{rating}} · {{reviews}} reviews"
+  },
+  "common": { "minutes": "min" }
+}

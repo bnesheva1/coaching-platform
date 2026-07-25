@@ -320,10 +320,18 @@
   },
   "Browse": {
     "title": "Find a practitioner",
-    "specialtiesLabel": "Filter by specialty",
-    "filterButton": "Filter",
-    "clearFiltersLink": "Clear filters",
-    "noResults": "No practitioners found."
+    "searchPlaceholder": "Search by name, practice, or your question",
+    "searchAriaLabel": "Search practitioners",
+    "modalityGroupLabel": "Practice",
+    "filtersHeading": "Filters",
+    "clearFilters": "Clear filters",
+    "showResultsButton": "{count, plural, one {Show # result} other {Show # results}}",
+    "resultsCount": "{count, plural, one {# practitioner found} other {# practitioners found}}",
+    "emptyStateTitleWithQuery": "We couldn't find anything for “{query}”",
+    "emptyStateTitleNoQuery": "We couldn't find anything with these filters",
+    "emptyStateBody": "Try a broader search, or browse all practitioners — new ones join every week.",
+    "emptyStateCta": "Browse all practitioners",
+    "bookSessionCta": "Book a session"
   },
   "Reviews": {
     "reviewsTitle": "Reviews",
@@ -348,9 +356,6 @@
     "notCompletedYet": "This session isn't completed yet, so it can't be reviewed.",
     "alreadyReviewed": "You've already reviewed this booking.",
     "saveFailed": "Unable to save your review right now. Please try again."
-  },
-  "Search": {
-    "label": "Search"
   },
   "Email": {
     "bookingConfirmationClientSubject": "Your booking with {counterpartyName} is confirmed",
