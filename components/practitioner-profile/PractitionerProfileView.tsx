@@ -64,6 +64,7 @@ export type PractitionerProfileViewProps = {
   viewerRole: "client" | "practitioner" | null;
   justBooked: boolean;
   bookingErrorCode: string | null;
+  paymentStatus: "processing" | "cancelled" | null;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -93,6 +94,7 @@ export function PractitionerProfileView({
   viewerRole,
   justBooked,
   bookingErrorCode,
+  paymentStatus,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
@@ -344,6 +346,8 @@ export function PractitionerProfileView({
               {tBooking.has(bookingErrorCode) ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0]) : tBooking("bookingFailed")}
             </p>
           )}
+          {paymentStatus === "processing" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentProcessing")}</p>}
+          {paymentStatus === "cancelled" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentCancelled")}</p>}
           {services.length === 0 ? (
             <p style={{ color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
           ) : (

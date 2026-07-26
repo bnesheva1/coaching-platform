@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendCancellationNoticeEmail } from "@/lib/email";
+import { refundBookingPayment } from "@/lib/payments";
 
 // Bound via .bind(null, bookingId, clientTimezone) from the cancel
 // button, not editable form fields — but binding isn't a security
@@ -93,6 +94,17 @@ export async function cancelBookingAsClient(
     .eq("id", user.id);
   if (timezoneError) {
     console.error("cancelBookingAsClient: failed to refresh profiles.timezone:", timezoneError);
+  }
+
+  // Reusing the exact eligibility this action already just enforced
+  // above (the notice-cutoff check) — no separate refund-eligibility
+  // logic exists or is needed. A software_provider booking has no
+  // payment to refund; refundBookingPayment already treats that as a
+  // plain no-op, not an error, so this call is unconditional. Never
+  // blocks the cancellation that already succeeded.
+  const refundResult = await refundBookingPayment(bookingId);
+  if (!refundResult.refunded && refundResult.reason !== "not_applicable") {
+    console.error("cancelBookingAsClient: refund failed", { bookingId, reason: refundResult.reason });
   }
 
   // Notifies the practitioner (the counterparty) — never fails or

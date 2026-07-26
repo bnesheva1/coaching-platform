@@ -293,6 +293,8 @@
     "logInToBookPrompt": "<login>Log in</login> to book a time.",
     "confirmBooking": "Book the {time} slot?",
     "bookingConfirmed": "Booked! You'll see it reflected in the times below.",
+    "paymentProcessing": "Payment received — a confirmation email is on its way, usually within a few minutes.",
+    "paymentCancelled": "Payment was cancelled. The slot wasn't booked.",
     "rateLimited": "Too many booking attempts. Please wait a few minutes and try again.",
     "slotNoLongerAvailable": "That time is no longer available. Please pick another.",
     "slotTaken": "Sorry, that time was just taken. Please pick another.",
@@ -396,6 +398,10 @@
     "reminderBodyPractitioner": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
     "deliveryLabelOnline": "How to join",
     "deliveryLabelInPerson": "Location",
+    "amountPaidLine": "Paid: {amount}",
+    "paymentRefundedSubject": "Your payment was refunded",
+    "paymentRefundedHeading": "Your payment was refunded",
+    "paymentRefundedBody": "Hi {recipientName}, the session with {counterpartyName} you paid for is no longer available. We've refunded the full {amount} — it should appear on your card within a few business days. Please pick another available time.",
     "footer": "This is an automated message from the coaching platform."
   }
 }

@@ -1,11 +1,27 @@
 "use server";
 
+import { headers } from "next/headers";
+import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
+import { initiateBookingPayment } from "@/lib/payments";
+
+// Derives the site's own origin from the incoming request's own Host
+// header rather than a NEXT_PUBLIC_SITE_URL env var — Stripe's
+// success_url/cancel_url must be absolute, and this way they're always
+// correct for whatever origin the client is actually on (localhost,
+// a preview deployment, the real domain) with nothing to keep in sync
+// if the domain ever changes.
+async function siteOrigin(): Promise<string> {
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
 
 // Bound via .bind() from the button, not editable form fields — but
 // binding isn't a security boundary, a direct API call can still send
@@ -17,6 +33,14 @@ import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
 // confirmation email displays the session time to this client — a
 // forged value there just makes their own email display wrong, not a
 // security concern.
+//
+// Epic 9: this no longer always inserts a booking. It hands off to
+// lib/payments' initiateBookingPayment, which decides — based on the
+// practitioner's own billing_model, never anything this function
+// knows about — whether to redirect to a Stripe Checkout page (nothing
+// booked yet; see lib/payments/stripe/webhook.ts for where the booking
+// actually gets created) or to book immediately, exactly like every
+// booking before this epic existed.
 export async function bookSlot(
   practitionerId: string,
   serviceId: string,
@@ -64,11 +88,13 @@ export async function bookSlot(
     return;
   }
 
-  // Real duration always comes from this row, scoped to the practitioner
-  // and active-only — never trusted from any client-supplied value.
+  // Real duration/name/price always come from this row, scoped to the
+  // practitioner and active-only — never trusted from any client-
+  // supplied value. price_cents/currency are new (Epic 9) — everything
+  // else here is unchanged from before payments existed.
   const { data: service } = await supabase
     .from("services")
-    .select("duration_minutes")
+    .select("name, duration_minutes, price_cents, currency")
     .eq("id", serviceId)
     .eq("practitioner_id", practitionerId)
     .eq("is_active", true)
@@ -90,6 +116,34 @@ export async function bookSlot(
     return;
   }
 
+  const origin = await siteOrigin();
+  const profilePath = `/${locale}/p/${username}`;
+
+  const paymentResult = await initiateBookingPayment({
+    practitionerId,
+    clientId: user.id,
+    serviceId,
+    startUtc,
+    serviceName: service.name,
+    priceCents: service.price_cents,
+    currency: service.currency,
+    successPath: `${origin}${profilePath}?service=${serviceId}&payment=processing`,
+    cancelPath: `${origin}${profilePath}?service=${serviceId}&payment=cancelled`,
+  });
+
+  if (paymentResult.type === "redirect") {
+    // Best-effort refresh of this client's saved timezone before
+    // leaving the app — same reasoning as below, just moved earlier
+    // since there's no "after the booking succeeds" moment on this path
+    // (the booking doesn't exist yet; it's created by the webhook once
+    // Stripe confirms payment).
+    await supabase.from("profiles").update({ timezone: clientTimezone }).eq("id", user.id);
+    redirectExternal(paymentResult.url);
+    return;
+  }
+
+  // software_provider: no payment gate for this practitioner — book
+  // immediately, exactly like every booking before this epic.
   const endUtc = new Date(
     new Date(startUtc).getTime() + service.duration_minutes * 60 * 1000,
   ).toISOString();

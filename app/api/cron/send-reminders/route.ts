@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendReminderBatch } from "@/lib/email/reminders";
 import { completePastBookings } from "@/lib/bookings/completePastBookings";
+import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
 // env var (locally AND in the Vercel project dashboard — Vercel's
@@ -21,13 +22,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Completion runs first: purely a bookkeeping ordering (it and the
-  // reminder batch touch disjoint booking sets — reminders only look at
-  // a future 12-36h window, completion only looks at already-past
-  // bookings — so there's no interaction risk either way), but it means
-  // a booking that just completed is reflected in state before anything
-  // else in this invocation runs.
+  // Reconciliation runs first, ahead of completion — it's the one step
+  // that can CREATE a booking row (a payment whose webhook never
+  // arrived), so running it first means a newly-recovered booking is
+  // already reflected in state for this same invocation's completion/
+  // reminder passes, not just next run. Completion then reminders is
+  // the existing ordering: disjoint booking sets (past vs. a future
+  // 12-36h window), no interaction risk either way, but keeps a
+  // booking that just completed visible to the rest of this run.
+  const reconciliationResult = await reconcilePaidCheckoutSessions();
   const completionResult = await completePastBookings();
   const reminderResult = await sendReminderBatch();
-  return NextResponse.json({ ...completionResult, ...reminderResult });
+  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult });
 }

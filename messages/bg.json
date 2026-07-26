@@ -291,6 +291,8 @@
     "logInToBookPrompt": "<login>Влез</login>, за да запишеш час.",
     "confirmBooking": "Запазваш часа {time}?",
     "bookingConfirmed": "Записано! Ще видиш промяната в часовете по-долу.",
+    "paymentProcessing": "Плащането е получено — потвърждението пристига по имейл до няколко минути.",
+    "paymentCancelled": "Плащането беше отказано. Часът не е запазен.",
     "rateLimited": "Твърде много опити за записване. Изчакай няколко минути и опитай отново.",
     "slotNoLongerAvailable": "Този час вече не е свободен. Моля, избери друг.",
     "slotTaken": "За съжаление часът току-що беше зает. Моля, избери друг.",
@@ -394,6 +396,10 @@
     "reminderBodyPractitioner": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
     "deliveryLabelOnline": "Как да се включиш",
     "deliveryLabelInPerson": "Локация",
+    "amountPaidLine": "Платено: {amount}",
+    "paymentRefundedSubject": "Плащането е възстановено",
+    "paymentRefundedHeading": "Плащането е възстановено",
+    "paymentRefundedBody": "Здравей, {recipientName}, часът със {counterpartyName}, за който плати, вече не е свободен. Възстановихме пълната сума от {amount} — очаквай я по картата си в рамките на няколко работни дни. Моля, избери друг свободен час.",
     "footer": "Това е автоматично съобщение от платформата за консултации."
   }
 }

@@ -54,3 +54,10 @@ export function formatSessionTime(
 
   return includeUtcBracket ? `${localFormatted} (${timezone}) — ${utcFormatted}` : `${localFormatted} (${timezone})`;
 }
+
+// cents -> a locale-formatted currency string (e.g. "60.00 €" / "€60.00"
+// depending on locale convention) — Intl.NumberFormat handles the
+// symbol placement/decimal convention per locale, not hardcoded here.
+export function formatMoney(amountCents: number, currency: string, locale: Locale): string {
+  return new Intl.NumberFormat(INTL_LOCALES[locale], { style: "currency", currency }).format(amountCents / 100);
+}

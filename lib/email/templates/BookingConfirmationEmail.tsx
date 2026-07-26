@@ -14,12 +14,19 @@ export function BookingConfirmationEmail({
   footer,
   deliveryLabel,
   deliveryInfo,
+  amountPaidLine,
 }: {
   heading: string;
   body: string;
   footer: string;
   deliveryLabel?: string;
   deliveryInfo?: string;
+  // Pre-composed and pre-translated by the caller (e.g. "Платено:
+  // €60.00"), same convention as body/footer — only ever set on the
+  // commission-model, paid-through-Checkout path (see
+  // lib/email/index.ts's sendPaidBookingConfirmationEmails); a
+  // software_provider booking has no payment record to describe.
+  amountPaidLine?: string;
 }) {
   return (
     <Html>
@@ -31,6 +38,7 @@ export function BookingConfirmationEmail({
             {heading}
           </Heading>
           <Text>{body}</Text>
+          {amountPaidLine && <Text style={{ fontWeight: "bold" }}>{amountPaidLine}</Text>}
           {deliveryLabel && deliveryInfo && <DeliveryInfoBlock label={deliveryLabel} info={deliveryInfo} />}
           <Text style={{ color: "#666", fontSize: "0.85rem", marginTop: "2rem" }}>{footer}</Text>
         </Container>

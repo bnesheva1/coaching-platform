@@ -41,7 +41,12 @@ begin
   select coalesce(string_agg(v.label, ' '), '')
   into tag_text
   from public.practitioner_profiles pp
-  cross join lateral unnest(pp.specialties || pp.topics) as tag_key
+  -- Explicit column alias u(tag_key) — not just "AS tag_key" on the
+  -- unnest itself — is what actually separates this column's name from
+  -- the VALUES clause's own tag_key column below. Without it, Postgres
+  -- can't tell the two apart in the ON clause ("column reference
+  -- tag_key is ambiguous", caught when this was first run).
+  cross join lateral unnest(pp.specialties || pp.topics) as u(tag_key)
   join (values
     ('tarot', 'Таро Tarot'),
     ('astrology', 'Астрология Astrology'),
@@ -55,7 +60,7 @@ begin
     ('trust', 'Доверие Trust'),
     ('energy_protection', 'Енергия и защита Energy protection'),
     ('inner_balance', 'Вътрешен баланс Inner balance')
-  ) as v(tag_key, label) on v.tag_key = tag_key
+  ) as v(tag_key, label) on v.tag_key = u.tag_key
   where pp.id = target_practitioner_id;
 
   insert into public.practitioner_search_documents (practitioner_id, search_text)

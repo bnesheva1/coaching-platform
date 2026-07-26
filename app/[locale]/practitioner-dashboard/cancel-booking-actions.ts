@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendCancellationNoticeEmail } from "@/lib/email";
+import { refundBookingPayment } from "@/lib/payments";
 
 // Mirrors the textarea's own maxLength in CancelSessionDialog.tsx — the
 // browser constraint is just UX, this is what actually bounds what ends
@@ -66,6 +67,16 @@ export async function cancelBookingAsPractitioner(bookingId: string, formData: F
     if (error) console.error("cancelBookingAsPractitioner failed:", error);
     await redirectWithError("cancellationFailed");
     return;
+  }
+
+  // Unlike the client-cancel path, there's no eligibility window to
+  // reuse here — a practitioner can cancel any upcoming booking, and
+  // the refund is always full and automatic: the client did nothing
+  // wrong. A software_provider booking has nothing to refund;
+  // refundBookingPayment already treats that as a no-op, not an error.
+  const refundResult = await refundBookingPayment(bookingId);
+  if (!refundResult.refunded && refundResult.reason !== "not_applicable") {
+    console.error("cancelBookingAsPractitioner: refund failed", { bookingId, reason: refundResult.reason });
   }
 
   // Notifies the client (the counterparty) — never fails or blocks the

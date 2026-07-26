@@ -99,6 +99,7 @@ export default async function ProfilePage() {
           viewerRole="practitioner"
           justBooked={false}
           bookingErrorCode={null}
+          paymentStatus={null}
         />
         <ProfileSettingsBox initialUsername={practitionerProfile?.username ?? null} />
       </div>

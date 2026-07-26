@@ -102,6 +102,15 @@ export default async function PublicProfilePage({
   const justBooked = resolvedSearchParams.booked === "1";
   const bookingErrorCode =
     typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
+  // Epic 9: the commission-model path redirects back here straight from
+  // Stripe, before the webhook has necessarily finished creating the
+  // booking — "processing" is deliberately non-committal (never "your
+  // booking is confirmed"), since that confirmation only ever comes
+  // from the email the webhook sends once it actually exists.
+  const paymentStatus =
+    resolvedSearchParams.payment === "processing" || resolvedSearchParams.payment === "cancelled"
+      ? resolvedSearchParams.payment
+      : null;
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -140,6 +149,7 @@ export default async function PublicProfilePage({
           viewerRole={viewerRole}
           justBooked={justBooked}
           bookingErrorCode={bookingErrorCode}
+          paymentStatus={paymentStatus}
         />
       </ContentContainer>
     </main>

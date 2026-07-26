@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { BookingConfirmationEmail } from "./templates/BookingConfirmationEmail";
 import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
-import { provider, translator, normalizeLocale, formatSessionTime, type Locale } from "./shared";
+import { provider, translator, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
 
 export type { Locale } from "./shared";
 export { normalizeLocale } from "./shared";
@@ -61,6 +62,14 @@ async function fetchBookingEmailContext(bookingId: string): Promise<BookingEmail
 // the only information available). Never throws; every failure is
 // logged and swallowed so a bad send can't affect the booking that
 // already succeeded.
+//
+// This is the software_provider path only (bookSlot's immediate-insert
+// case, still running inside the client's own live session) — the
+// commission path's confirmation is sendPaidBookingConfirmationEmails
+// below, a deliberate separate copy: it runs from the Stripe webhook,
+// which has no live session and no auth.uid() at all (same reasoning
+// lib/email/reminders.ts already established for the cron path, not
+// invented fresh here).
 export async function sendBookingConfirmationEmails(bookingId: string, clientLocale: Locale): Promise<void> {
   const context = await fetchBookingEmailContext(bookingId);
   if (!context) return;
@@ -213,5 +222,164 @@ export async function sendCancellationNoticeEmail(
       recipient: recipient.email,
       error: result.error,
     });
+  }
+}
+
+// The Stripe-webhook counterpart to sendBookingConfirmationEmails —
+// same emails, same templates, but fetched via the service-role client
+// and get_booking_payment_context (no auth.uid() check, since a webhook
+// has no session to check it against) rather than the ambient-session
+// get_booking_email_context. Both parties' locale/timezone come from
+// their stored profile — neither is "live" in a webhook request the
+// way a client booking their own session is.
+export async function sendPaidBookingConfirmationEmails(
+  bookingId: string,
+  amountPaidCents: number,
+  currency: string,
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: context, error } = await supabase
+    .rpc("get_booking_payment_context", { target_booking_id: bookingId })
+    .single<BookingEmailContext>();
+
+  if (error || !context) {
+    console.error("sendPaidBookingConfirmationEmails: get_booking_payment_context failed", { bookingId, error });
+    return;
+  }
+
+  if (!context.client_email) {
+    console.error("sendPaidBookingConfirmationEmails: client_email is null, skipping", { bookingId });
+  } else {
+    const clientLocale = normalizeLocale(context.client_locale);
+    const tClient = translator(clientLocale);
+    const clientTime = formatSessionTime(context.start_utc, context.client_timezone, clientLocale, true);
+    const clientResult = await provider.send({
+      to: context.client_email,
+      subject: tClient("bookingConfirmationClientSubject", {
+        counterpartyName: context.practitioner_display_name ?? "",
+      }),
+      react: BookingConfirmationEmail({
+        heading: tClient("bookingConfirmationClientHeading"),
+        body: tClient("bookingConfirmationClientBody", {
+          recipientName: context.client_display_name ?? "",
+          counterpartyName: context.practitioner_display_name ?? "",
+          serviceName: context.service_name,
+          sessionTime: clientTime,
+        }),
+        footer: tClient("footer"),
+        deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
+        deliveryInfo: context.service_delivery_info ?? undefined,
+        amountPaidLine: tClient("amountPaidLine", { amount: formatMoney(amountPaidCents, currency, clientLocale) }),
+      }),
+    });
+    if (!clientResult.success) {
+      console.error("sendPaidBookingConfirmationEmails: client email failed", {
+        bookingId,
+        recipient: context.client_email,
+        error: clientResult.error,
+      });
+    }
+  }
+
+  if (!context.practitioner_email) {
+    console.error("sendPaidBookingConfirmationEmails: practitioner_email is null, skipping", { bookingId });
+    return;
+  }
+
+  const practitionerLocale = normalizeLocale(context.practitioner_locale);
+  const tPractitioner = translator(practitionerLocale);
+  const practitionerTime = formatSessionTime(context.start_utc, context.practitioner_timezone, practitionerLocale, false);
+  const practitionerResult = await provider.send({
+    to: context.practitioner_email,
+    subject: tPractitioner("bookingConfirmationPractitionerSubject", {
+      counterpartyName: context.client_display_name ?? "",
+    }),
+    react: BookingConfirmationEmail({
+      heading: tPractitioner("bookingConfirmationPractitionerHeading"),
+      body: tPractitioner("bookingConfirmationPractitionerBody", {
+        recipientName: context.practitioner_display_name ?? "",
+        counterpartyName: context.client_display_name ?? "",
+        serviceName: context.service_name,
+        sessionTime: practitionerTime,
+      }),
+      footer: tPractitioner("footer"),
+      deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
+      deliveryInfo: context.service_delivery_info ?? undefined,
+      amountPaidLine: tPractitioner("amountPaidLine", {
+        amount: formatMoney(amountPaidCents, currency, practitionerLocale),
+      }),
+    }),
+  });
+  if (!practitionerResult.success) {
+    console.error("sendPaidBookingConfirmationEmails: practitioner email failed", {
+      bookingId,
+      recipient: context.practitioner_email,
+      error: practitionerResult.error,
+    });
+  }
+}
+
+// The "we charged you but couldn't actually create the booking" notice
+// — the one case in this whole module with no booking row to fetch
+// context through at all (get_profile_contact just reads a single
+// profile, no join). Reuses CancellationNoticeEmail's shape (heading/
+// body/footer) rather than a new template — conceptually the same kind
+// of "here's what happened to a session you expected" notice.
+export async function sendPaymentRefundedNotice({
+  clientId,
+  practitionerId,
+  amountCents,
+  currency,
+}: {
+  clientId: string;
+  practitionerId: string;
+  amountCents: number;
+  currency: string;
+}): Promise<void> {
+  type ProfileContact = { email: string | null; display_name: string | null; locale: string };
+
+  const supabase = createServiceRoleClient();
+  const [{ data: clientRaw, error: clientError }, { data: practitionerRaw, error: practitionerError }] =
+    await Promise.all([
+      supabase.rpc("get_profile_contact", { target_profile_id: clientId }).single(),
+      supabase.rpc("get_profile_contact", { target_profile_id: practitionerId }).single(),
+    ]);
+  const client = clientRaw as ProfileContact | null;
+  const practitioner = practitionerRaw as ProfileContact | null;
+
+  if (clientError || !client) {
+    console.error("sendPaymentRefundedNotice: get_profile_contact (client) failed", { clientId, error: clientError });
+    return;
+  }
+  if (!client.email) {
+    console.error("sendPaymentRefundedNotice: client email is null, skipping", { clientId });
+    return;
+  }
+  if (practitionerError || !practitioner) {
+    console.error("sendPaymentRefundedNotice: get_profile_contact (practitioner) failed", {
+      practitionerId,
+      error: practitionerError,
+    });
+  }
+
+  const locale = normalizeLocale(client.locale);
+  const t = translator(locale);
+  const amount = formatMoney(amountCents, currency, locale);
+
+  const result = await provider.send({
+    to: client.email,
+    subject: t("paymentRefundedSubject"),
+    react: CancellationNoticeEmail({
+      heading: t("paymentRefundedHeading"),
+      body: t("paymentRefundedBody", {
+        recipientName: client.display_name ?? "",
+        counterpartyName: practitioner?.display_name ?? "",
+        amount,
+      }),
+      footer: t("footer"),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendPaymentRefundedNotice: email failed", { clientId, recipient: client.email, error: result.error });
   }
 }
