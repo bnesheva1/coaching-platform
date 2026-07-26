@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUsernameFormat } from "@/lib/validation/username";
 import specialtiesData from "@/data/specialties.json";
+import topicsData from "@/data/topics.json";
 
 export type ProfileFormState = { error?: string; success?: boolean } | null;
 
@@ -15,6 +16,12 @@ const MAX_HEADLINE_LENGTH = 150;
 const MAX_LOCATION_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
+const KNOWN_TOPIC_KEYS = new Set(topicsData.map((topic) => topic.key));
+// A curated handful reads as focused — see EditableTopics.tsx's own
+// identical constant/comment. The UI already disables further chips at
+// this count; this is the authoritative check for a direct API call
+// that skips the UI entirely.
+const MAX_TOPICS = 3;
 
 // "layout" — the dashboard is a shared layout + six pages; this
 // invalidates the layout and every page beneath it, not just the
@@ -121,6 +128,37 @@ export async function updateSpecialties(
   const { error } = await supabase.from("practitioner_profiles").update({ specialties }).eq("id", user.id);
   if (error) {
     console.error("updateSpecialties failed:", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+export async function updateTopics(
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  // Same reasoning as updateSpecialties — checkboxes render from the
+  // known taxonomy, but a raw request could submit anything, so filter
+  // to it here rather than trusting the client.
+  const topics = (formData.getAll("topics") as string[]).filter((key) => KNOWN_TOPIC_KEYS.has(key));
+  if (topics.length > MAX_TOPICS) {
+    return { error: t("topicsMaxExceeded", { max: MAX_TOPICS }) };
+  }
+
+  const { error } = await supabase.from("practitioner_profiles").update({ topics }).eq("id", user.id);
+  if (error) {
+    console.error("updateTopics failed:", error);
     return { error: t("saveFailed") };
   }
 

@@ -11,13 +11,20 @@
   --text-display-md: 400 2rem/1.28 var(--font-display);        /* 32px */
   --text-display-sm: 400 1.625rem/1.32 var(--font-display);    /* 26px */
 
-  --text-heading-lg: 700 1.75rem/1.35 var(--font-display);     /* 28px */
-  --text-heading-md: 700 1.5rem/1.4 var(--font-ui);            /* 24px */
-  --text-heading-sm: 600 1.313rem/1.4 var(--font-ui);          /* 21px */
+  /* heading-lg/md/sm and body-lg/md/sm shrunk to match the Browse Card
+     2a handoff (design/design_handoff_browse_card_2a) — display sizes,
+     label/caption/overline/mono, and the project-only extension tokens
+     below are untouched; the handoff doesn't address them. See the
+     token-ripple review for the full before/after and affected-screens
+     list (body-md is the <body> default in globals.css, so this is the
+     single biggest lever — it touches nearly every screen). */
+  --text-heading-lg: 700 1.375rem/1.35 var(--font-display);    /* 22px, was 28px */
+  --text-heading-md: 700 1.125rem/1.4 var(--font-ui);          /* 18px, was 24px */
+  --text-heading-sm: 600 0.9375rem/1.4 var(--font-ui);         /* 15px, was 21px */
 
-  --text-body-lg: 400 1.313rem/1.6 var(--font-ui);             /* 21px */
-  --text-body-md: 400 1.125rem/1.6 var(--font-ui);             /* 18px */
-  --text-body-sm: 400 1rem/1.55 var(--font-ui);                /* 16px */
+  --text-body-lg: 400 1.0625rem/1.6 var(--font-ui);            /* 17px, was 21px */
+  --text-body-md: 400 0.9375rem/1.6 var(--font-ui);            /* 15px, was 18px */
+  --text-body-sm: 400 0.84375rem/1.55 var(--font-ui);          /* 13.5px, was 16px */
 
   --text-label: 600 0.8125rem/1.3 var(--font-ui);              /* 13px */
   --text-caption: 400 0.75rem/1.5 var(--font-ui);              /* 12px */
@@ -25,6 +32,25 @@
   --letter-overline: .06em;
 
   --text-mono-sm: 400 0.78125rem/1.5 var(--font-mono);         /* 12.5px */
+
+  /* Added for the Browse Card 2a handoff — two sub-caption sizes that
+     recur across the card/page spec and don't land near any existing
+     step: --text-micro (rating badge, and topic chips at a lighter
+     weight) and --text-body-xs (modality line, sort label, results
+     count, card bio, and the "Запази час" CTA at a heavier weight).
+     Each bundles ITS OWN default weight, but callers needing the other
+     weight at the same size set `fontWeight` as a separate style
+     property alongside `font: var(--text-micro)` — not a
+     `"700 var(--token)"` shorthand-prefix string. That pattern silently
+     fails: var() substitution inside the font shorthand can't add a
+     second weight component, so the browser drops the whole declaration
+     and falls back to the inherited weight. Six spots in the old
+     PractitionerCard/BrowseFilters did this and the override was
+     confirmed (via computed styles) to never have applied. A separate
+     `fontWeight` property, set after `font` in the same style object, is
+     a distinct longhand and overrides cleanly. */
+  --text-micro: 700 0.65625rem/1 var(--font-ui);               /* 10.5px, rating badge / topic chips */
+  --text-body-xs: 400 0.78125rem/1.5 var(--font-ui);           /* 12.5px, modality/sort/count/bio/CTA */
 
   /* Added for the practitioner-dashboard sidebar/NavBar work — values
      already in use in more than one place as hand-copied literals

@@ -20,7 +20,7 @@ export default async function ProfilePage() {
       supabase.from("profiles").select("display_name").eq("id", userId).single(),
       supabase
         .from("practitioner_profiles")
-        .select("bio, headline, location, specialties, avatar_url, banner_url, username")
+        .select("bio, headline, location, specialties, topics, avatar_url, banner_url, username")
         .eq("id", userId)
         .single(),
       // Active only — matches what the public page shows, since this
@@ -73,6 +73,7 @@ export default async function ProfilePage() {
           avatarUrl={practitionerProfile?.avatar_url ?? null}
           bannerUrl={practitionerProfile?.banner_url ?? null}
           specialties={practitionerProfile?.specialties ?? []}
+          topics={practitionerProfile?.topics ?? []}
           services={(services ?? []).map((s) => ({
             id: s.id,
             name: s.name,

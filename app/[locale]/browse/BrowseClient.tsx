@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { BrowseFilters, type FilterOption } from "@/components/browse/BrowseFilters";
+import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -15,8 +15,8 @@ const SEARCH_DEBOUNCE_MS = 300;
 // is an instant reveal, not a real fetch — no loading spinner needed.
 const PAGE_SIZE = 12;
 
-// Raw shape for this page's own data flow — specialtyKeys (not yet
-// mapped to display labels) is what filtering/counting operates on;
+// Raw shape for this page's own data flow — specialtyKeys/topicKeys (not
+// yet mapped to display labels) is what filtering/counting operates on;
 // PractitionerCard only ever receives the locale-mapped labels, built
 // per-item at render time below.
 export type BrowseResult = {
@@ -26,9 +26,19 @@ export type BrowseResult = {
   bio: string | null;
   avatarUrl: string | null;
   specialtyKeys: string[];
+  topicKeys: string[];
   averageRating: number | null;
   reviewCount: number;
+  createdAt: string;
 };
+
+// Simplified for now to just these two — Name/Newest are easy to bring
+// back later (the underlying data — displayName, createdAt — is already
+// on BrowseResult), just not exposed in the control right now.
+type SortBy = "default" | "rating";
+
+const SPECIALTY_GROUP = "specialty";
+const TOPIC_GROUP = "topic";
 
 // A useState lazy-initializer seed (an earlier version of this) still
 // causes a hydration mismatch: the initializer runs once on the SERVER
@@ -74,16 +84,24 @@ function useStableShuffle<T extends object>(items: T[]): T[] {
   return useSyncExternalStore(subscribeToNothing, getSnapshot, getServerSnapshot);
 }
 
+function matchesGroup(itemKeys: string[], selected: Set<string>): boolean {
+  return selected.size === 0 || itemKeys.some((k) => selected.has(k));
+}
+
 export function BrowseClient({
   results,
   query,
   initialSpecialties,
+  initialTopics,
   specialtyOptions,
+  topicOptions,
 }: {
   results: BrowseResult[];
   query: string;
   initialSpecialties: string[];
+  initialTopics: string[];
   specialtyOptions: { key: string; label: string }[];
+  topicOptions: { key: string; label: string }[];
 }) {
   const t = useTranslations("Browse");
   const router = useRouter();
@@ -91,6 +109,12 @@ export function BrowseClient({
 
   const [searchText, setSearchText] = useState(query);
   const [selectedModalities, setSelectedModalities] = useState<Set<string>>(new Set(initialSpecialties));
+  const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set(initialTopics));
+  // Default is randomized ("default"), not rating — re-sorting to
+  // "Рейтинг" is an explicit opt-in. Never refetches or drops the active
+  // search/filter state, since it only reorders the already-fetched
+  // `filteredResults` below.
+  const [sortBy, setSortBy] = useState<SortBy>("default");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Search text needs a real server round-trip (PGroonga runs in
@@ -101,29 +125,31 @@ export function BrowseClient({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       router.replace(
-        { pathname, query: buildQuery(value, selectedModalities) },
+        { pathname, query: buildQuery(value, selectedModalities, selectedTopics) },
         { scroll: false },
       );
     }, SEARCH_DEBOUNCE_MS);
   }
 
-  function buildQuery(q: string, modalities: Set<string>) {
+  function buildQuery(q: string, modalities: Set<string>, topics: Set<string>) {
     const query: Record<string, string | string[]> = {};
     if (q) query.q = q;
     if (modalities.size > 0) query.specialty = [...modalities];
+    if (topics.size > 0) query.topic = [...topics];
     return query;
   }
 
-  // Modality changes are entirely client-derived (see the counts/filter
-  // logic below) — no server data is needed, so this updates the
-  // visible URL directly via the History API rather than a Next.js
-  // navigation, which would otherwise re-run the server component and
-  // refetch for no reason on every checkbox click. Still shareable —
-  // the URL is correct — just doesn't trigger a round trip.
-  function applyModalities(next: Set<string>) {
-    setSelectedModalities(next);
+  // Filter changes (either group) are entirely client-derived (see the
+  // counts/filter logic below) — no server data is needed, so this
+  // updates the visible URL directly via the History API rather than a
+  // Next.js navigation, which would otherwise re-run the server
+  // component and refetch for no reason on every checkbox click. Still
+  // shareable — the URL is correct — just doesn't trigger a round trip.
+  function applyFilters(nextModalities: Set<string>, nextTopics: Set<string>) {
+    setSelectedModalities(nextModalities);
+    setSelectedTopics(nextTopics);
     const params = new URLSearchParams();
-    const q = buildQuery(searchText, next);
+    const q = buildQuery(searchText, nextModalities, nextTopics);
     for (const [key, value] of Object.entries(q)) {
       if (Array.isArray(value)) value.forEach((v) => params.append(key, v));
       else params.set(key, value);
@@ -132,68 +158,96 @@ export function BrowseClient({
     window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
   }
 
+  function handleFiltersApply(next: Record<string, Set<string>>) {
+    applyFilters(next[SPECIALTY_GROUP] ?? new Set(), next[TOPIC_GROUP] ?? new Set());
+  }
+
   function clearAll() {
     setSearchText("");
     setSelectedModalities(new Set());
+    setSelectedTopics(new Set());
     if (debounceRef.current) clearTimeout(debounceRef.current);
     router.replace({ pathname }, { scroll: false });
   }
 
-  // Per-option counts reflect the search-filtered candidate set
-  // (`results`, as fetched — specialty_keys is never sent to the RPC
-  // now, see page.tsx) independent of which OTHER modality boxes are
-  // currently checked, since options within this one group combine as
-  // OR: checking a second option should show what it would ADD, not a
-  // count already narrowed by the first.
-  const counts = useMemo(() => {
+  // Per-option counts within a group are independent of OTHER options in
+  // the SAME group (checking a second modality shows what it would ADD,
+  // not a count already narrowed by the first) but DO reflect the
+  // OTHER group's current selection — e.g. once "Любов" is checked,
+  // modality counts show how many love-tagged practitioners each
+  // modality has, not the raw unfiltered total. That's what makes
+  // combining groups as AND legible instead of just narrowing a list
+  // with no explanation.
+  const specialtyCounts = useMemo(() => {
+    const topicFiltered = results.filter((r) => matchesGroup(r.topicKeys, selectedTopics));
     const map = new Map<string, number>();
     for (const option of specialtyOptions) {
-      map.set(option.key, results.filter((r) => r.specialtyKeys.includes(option.key)).length);
+      map.set(option.key, topicFiltered.filter((r) => r.specialtyKeys.includes(option.key)).length);
     }
     return map;
-  }, [results, specialtyOptions]);
+  }, [results, specialtyOptions, selectedTopics]);
 
-  const options: FilterOption[] = specialtyOptions.map((o) => ({
+  const topicCounts = useMemo(() => {
+    const specialtyFiltered = results.filter((r) => matchesGroup(r.specialtyKeys, selectedModalities));
+    const map = new Map<string, number>();
+    for (const option of topicOptions) {
+      map.set(option.key, specialtyFiltered.filter((r) => r.topicKeys.includes(option.key)).length);
+    }
+    return map;
+  }, [results, topicOptions, selectedModalities]);
+
+  const specialtyFilterOptions: FilterOption[] = specialtyOptions.map((o) => ({
     key: o.key,
     label: o.label,
-    count: counts.get(o.key) ?? 0,
+    count: specialtyCounts.get(o.key) ?? 0,
+  }));
+  const topicFilterOptions: FilterOption[] = topicOptions.map((o) => ({
+    key: o.key,
+    label: o.label,
+    count: topicCounts.get(o.key) ?? 0,
   }));
 
-  function computeCountFor(modalities: Set<string>): number {
-    if (modalities.size === 0) return results.length;
-    return results.filter((r) => r.specialtyKeys.some((k) => modalities.has(k))).length;
+  const filterGroups: FilterGroup[] = [
+    { key: SPECIALTY_GROUP, groupLabel: t("modalityGroupLabel"), options: specialtyFilterOptions, selected: selectedModalities },
+    { key: TOPIC_GROUP, groupLabel: t("topicGroupLabel"), options: topicFilterOptions, selected: selectedTopics },
+  ];
+
+  function computeCountFor(draft: Record<string, Set<string>>): number {
+    const modalities = draft[SPECIALTY_GROUP] ?? new Set<string>();
+    const topics = draft[TOPIC_GROUP] ?? new Set<string>();
+    return results.filter((r) => matchesGroup(r.specialtyKeys, modalities) && matchesGroup(r.topicKeys, topics)).length;
   }
 
   const filteredResults = useMemo(
-    () =>
-      selectedModalities.size === 0
-        ? results
-        : results.filter((r) => r.specialtyKeys.some((k) => selectedModalities.has(k))),
-    [results, selectedModalities],
+    () => results.filter((r) => matchesGroup(r.specialtyKeys, selectedModalities) && matchesGroup(r.topicKeys, selectedTopics)),
+    [results, selectedModalities, selectedTopics],
   );
 
-  // Ordering: a real search query already comes back relevance-ordered
-  // from the RPC (pgroonga score) and filtering by modality client-side
-  // preserves that relative order. With no query: alphabetical once a
-  // filter is active (predictable, not arbitrary, once the seeker has
-  // taken a narrowing action), otherwise a stable-per-fetch shuffle —
-  // "rotating" across visits without reshuffling mid-session.
+  // Ordering: "default" is the stable-per-fetch shuffle (fair rotation
+  // across visits, same as the original pre-sort-control behavior) —
+  // "Рейтинг" is an explicit opt-in that sorts highest-first, keeping
+  // unrated practitioners in that same shuffle among themselves rather
+  // than a fixed tie order, so having no reviews yet doesn't bury
+  // someone in a fixed, unchanging last position.
   const shuffled = useStableShuffle(filteredResults);
-  const orderedResults =
-    query.trim() !== ""
-      ? filteredResults
-      : selectedModalities.size > 0
-        ? [...filteredResults].sort((a, b) => (a.displayName || a.username).localeCompare(b.displayName || b.username))
-        : shuffled;
+  const orderedResults = useMemo(() => {
+    if (sortBy === "rating") {
+      const rated = filteredResults.filter((r) => r.averageRating !== null);
+      const unrated = shuffled.filter((r) => r.averageRating === null);
+      return [...rated.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0)), ...unrated];
+    }
+    return shuffled;
+  }, [filteredResults, shuffled, sortBy]);
 
   const specialtyLabelByKey = new Map(specialtyOptions.map((o) => [o.key, o.label]));
+  const topicLabelByKey = new Map(topicOptions.map((o) => [o.key, o.label]));
 
   // Continuous-scroll reveal over the already-fetched result set — how
   // many of `orderedResults` are actually rendered right now.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Reset to one page whenever the underlying filtered set changes (a
-  // new search or a different modality selection) — adjusted during
+  // new search or a different filter selection) — adjusted during
   // render via a prevValue comparison, not a useEffect+setState, same
   // pattern this app already uses for "state that should reset when an
   // upstream value changes" (see EditableAbout.tsx and others) — this
@@ -228,9 +282,19 @@ export function BrowseClient({
     return () => observer.disconnect();
   }, [hasMore, orderedResults.length]);
 
+  // Active-filter chips span both groups — a plain [key, label, group]
+  // list so removing one only has to touch its own group's Set.
+  const activeChips = [
+    ...[...selectedModalities].map((key) => ({ group: SPECIALTY_GROUP, key, label: specialtyLabelByKey.get(key) ?? key })),
+    ...[...selectedTopics].map((key) => ({ group: TOPIC_GROUP, key, label: topicLabelByKey.get(key) ?? key })),
+  ];
+
   return (
     <>
-      <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-4)" }}>{t("title")}</h1>
+      {/* Page title is lighter/larger than the (now-bolder, smaller)
+          --text-heading-lg role — it's an exact match for the unchanged
+          --text-display-sm token (400 26px), not a new one. */}
+      <h1 style={{ font: "var(--text-display-sm)", color: "var(--text-primary)", margin: "0 0 var(--space-4)" }}>{t("title")}</h1>
 
       <div style={{ marginBottom: "var(--space-4)", position: "relative" }}>
         {/* Decorative only — the input already carries its accessible
@@ -257,55 +321,92 @@ export function BrowseClient({
           placeholder={t("searchPlaceholder")}
           aria-label={t("searchAriaLabel")}
           className="form-field"
-          style={{ width: "100%", paddingRight: "calc(var(--space-3) * 2 + 1em)" }}
+          style={{
+            width: "100%",
+            paddingRight: "calc(var(--space-3) * 2 + 1em)",
+            // Card 2a spec asks for --radius-lg (not .form-field's own
+            // --radius-md default) plus a very subtle lift — page-
+            // specific overrides on this one field, not a change to the
+            // shared .form-field recipe every input in the app uses.
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "0 1px 2px hsl(var(--shadow-color) / .03)",
+          }}
         />
       </div>
 
       <div style={{ display: "flex", gap: "var(--space-6)", alignItems: "flex-start" }}>
         <BrowseFilters
-          groupLabel={t("modalityGroupLabel")}
-          options={options}
-          selected={selectedModalities}
-          onApply={applyModalities}
+          groups={filterGroups}
+          onApply={handleFiltersApply}
           onClear={clearAll}
           computeCount={computeCountFor}
         />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
-            {[...selectedModalities].map((key) => (
-              <span
-                key={key}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
+              {activeChips.map(({ group, key, label }) => (
+                <span
+                  key={`${group}:${key}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "var(--space-1)",
+                    background: "var(--accent-subtle)",
+                    color: "var(--accent-subtle-text)",
+                    font: "var(--text-caption)",
+                    fontWeight: 600,
+                    padding: "4px var(--space-2)",
+                    borderRadius: "var(--radius-pill)",
+                  }}
+                >
+                  {label}
+                  <button
+                    type="button"
+                    className="focus-ring"
+                    aria-label={label}
+                    onClick={() => {
+                      if (group === SPECIALTY_GROUP) {
+                        const next = new Set(selectedModalities);
+                        next.delete(key);
+                        applyFilters(next, selectedTopics);
+                      } else {
+                        const next = new Set(selectedTopics);
+                        next.delete(key);
+                        applyFilters(selectedModalities, next);
+                      }
+                    }}
+                    style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0, font: "inherit", opacity: 0.7 }}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              <span style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)" }}>
+                {t("resultsCount", { count: orderedResults.length })}
+              </span>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", font: "var(--text-body-xs)", color: "var(--text-secondary)" }}>
+              {t("sortLabel")}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortBy)}
+                className="focus-ring"
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "var(--space-1)",
-                  background: "var(--accent-subtle)",
-                  color: "var(--accent-subtle-text)",
-                  font: "600 var(--text-caption)",
-                  padding: "4px var(--space-2)",
-                  borderRadius: "var(--radius-pill)",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "var(--space-2) var(--space-3)",
+                  font: "var(--text-caption)",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
                 }}
               >
-                {specialtyLabelByKey.get(key) ?? key}
-                <button
-                  type="button"
-                  className="focus-ring"
-                  aria-label={specialtyLabelByKey.get(key) ?? key}
-                  onClick={() => {
-                    const next = new Set(selectedModalities);
-                    next.delete(key);
-                    applyModalities(next);
-                  }}
-                  style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0, font: "inherit", opacity: 0.7 }}
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-            <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-              {t("resultsCount", { count: orderedResults.length })}
-            </span>
+                <option value="default">{t("sortDefault")}</option>
+                <option value="rating">{t("sortRating")}</option>
+              </select>
+            </label>
           </div>
 
           {orderedResults.length === 0 ? (
@@ -340,6 +441,7 @@ export function BrowseClient({
                       averageRating: practitioner.averageRating,
                       reviewCount: practitioner.reviewCount,
                       specialtyLabels: practitioner.specialtyKeys.map((key) => specialtyLabelByKey.get(key) ?? key),
+                      topicLabels: practitioner.topicKeys.map((key) => topicLabelByKey.get(key) ?? key),
                     }}
                   />
                 ))}

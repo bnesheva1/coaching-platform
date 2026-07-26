@@ -8,6 +8,7 @@ import { BookedWithGrid } from "./BookedWithGrid";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { splitUpcomingPast } from "@/lib/booking-time";
 import specialtiesData from "@/data/specialties.json";
+import topicsData from "@/data/topics.json";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -125,6 +126,7 @@ export default async function ClientHomePage({
     }
   }
   const specialtyLabelByKey = new Map(specialtiesData.map((s) => [s.key, s[locale] ?? s.en]));
+  const topicLabelByKey = new Map(topicsData.map((topic) => [topic.key, topic[locale] ?? topic.en]));
   const bookedWithPractitioners: PractitionerCardData[] = allPractitioners
     .filter((p) => practitionerIds.includes(p.id))
     .sort(
@@ -138,6 +140,7 @@ export default async function ClientHomePage({
       bio: p.bio,
       avatarUrl: p.avatarUrl,
       specialtyLabels: p.specialties.map((key) => specialtyLabelByKey.get(key) ?? key),
+      topicLabels: p.topics.map((key) => topicLabelByKey.get(key) ?? key),
       averageRating: p.averageRating,
       reviewCount: p.reviewCount,
     }));

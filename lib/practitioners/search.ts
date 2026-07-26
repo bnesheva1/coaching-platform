@@ -13,8 +13,10 @@ export type PractitionerSearchResult = {
   bio: string | null;
   avatarUrl: string | null;
   specialties: string[];
+  topics: string[];
   averageRating: number | null;
   reviewCount: number;
+  createdAt: string;
 };
 
 // Shape returned by the search_practitioners SQL function, before we
@@ -26,8 +28,10 @@ type SearchPractitionersRow = {
   bio: string | null;
   avatar_url: string | null;
   specialties: string[] | null;
+  topics: string[] | null;
   average_rating: number | string | null;
   review_count: number | string | null;
+  created_at: string;
 };
 
 // The single place that knows how to find practitioners — a page calls
@@ -68,7 +72,9 @@ export async function searchPractitioners({
     bio: row.bio,
     avatarUrl: row.avatar_url,
     specialties: row.specialties ?? [],
+    topics: row.topics ?? [],
     averageRating: row.average_rating === null ? null : Number(row.average_rating),
     reviewCount: row.review_count === null ? 0 : Number(row.review_count),
+    createdAt: row.created_at,
   }));
 }

@@ -1,0 +1,10 @@
+[
+  { "key": "love", "en": "Love", "bg": "Любов" },
+  { "key": "career", "en": "Career", "bg": "Кариера" },
+  { "key": "business", "en": "Business", "bg": "Бизнес" },
+  { "key": "life_path", "en": "Life path", "bg": "Житейски път" },
+  { "key": "decisions", "en": "Decisions", "bg": "Решения" },
+  { "key": "trust", "en": "Trust", "bg": "Доверие" },
+  { "key": "energy_protection", "en": "Energy & protection", "bg": "Енергия и защита" },
+  { "key": "inner_balance", "en": "Inner balance", "bg": "Вътрешен баланс" }
+]

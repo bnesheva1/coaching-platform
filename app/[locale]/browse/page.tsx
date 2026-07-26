@@ -3,6 +3,7 @@ import { searchPractitioners } from "@/lib/practitioners/search";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
+import topicsData from "@/data/topics.json";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -24,6 +25,8 @@ export default async function BrowsePage({
     : Array.isArray(specialtyParam)
       ? specialtyParam
       : [specialtyParam];
+  const topicParam = resolvedSearchParams.topic;
+  const initialTopics = !topicParam ? [] : Array.isArray(topicParam) ? topicParam : [topicParam];
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
 
   const practitioners = await searchPractitioners({ searchText: query });
@@ -35,13 +38,19 @@ export default async function BrowsePage({
     bio: p.bio,
     avatarUrl: p.avatarUrl,
     specialtyKeys: p.specialties,
+    topicKeys: p.topics,
     averageRating: p.averageRating,
     reviewCount: p.reviewCount,
+    createdAt: p.createdAt,
   }));
 
   const specialtyOptions = specialtiesData.map((s) => ({
     key: s.key,
     label: s[locale] ?? s.en,
+  }));
+  const topicOptions = topicsData.map((topic) => ({
+    key: topic.key,
+    label: topic[locale] ?? topic.en,
   }));
 
   return (
@@ -54,7 +63,9 @@ export default async function BrowsePage({
           results={results}
           query={query}
           initialSpecialties={initialSpecialties}
+          initialTopics={initialTopics}
           specialtyOptions={specialtyOptions}
+          topicOptions={topicOptions}
         />
       </ContentContainer>
     </main>

@@ -7,22 +7,31 @@ import { Button } from "@/components/ui/Button";
 
 export type FilterOption = { key: string; label: string; count: number };
 
-export type BrowseFiltersProps = {
+// One group per independent taxonomy (modality, topics, ...) — options
+// within a group combine as OR, groups combine with each other as AND
+// (checking "Таро" and "Любов" means tarot-OR-astrology-etc. among
+// selected modalities, AND love-OR-etc. among selected topics).
+export type FilterGroup = {
+  key: string;
   groupLabel: string;
   options: FilterOption[];
   selected: Set<string>;
-  // Desktop: called on every checkbox click (instant-apply — the
-  // sidebar sits beside the grid, not over it, so there's no reflow-
-  // while-open concern to guard against). Mobile: called once, when the
-  // sheet's sticky button is tapped — everything before that is a
+};
+
+export type BrowseFiltersProps = {
+  groups: FilterGroup[];
+  // Desktop: called with the full next state (every group, not just the
+  // one that changed) on every checkbox click — instant-apply, since the
+  // sidebar sits beside the grid, not over it. Mobile: called once, when
+  // the sheet's sticky button is tapped — everything before that is a
   // local draft, per the design source's own reasoning for why mobile
   // needs a confirm step and desktop doesn't.
-  onApply: (next: Set<string>) => void;
+  onApply: (next: Record<string, Set<string>>) => void;
   onClear: () => void;
   // Lets the sheet's sticky button show a live "Show N results" count
   // for the in-progress draft, without BrowseFilters needing to know
   // anything about practitioner data itself.
-  computeCount: (draft: Set<string>) => number;
+  computeCount: (draft: Record<string, Set<string>>) => number;
 };
 
 function toggleInSet(set: Set<string>, key: string): Set<string> {
@@ -30,6 +39,14 @@ function toggleInSet(set: Set<string>, key: string): Set<string> {
   if (next.has(key)) next.delete(key);
   else next.add(key);
   return next;
+}
+
+function groupsToMap(groups: FilterGroup[]): Record<string, Set<string>> {
+  return Object.fromEntries(groups.map((g) => [g.key, g.selected]));
+}
+
+function totalSelected(map: Record<string, Set<string>>): number {
+  return Object.values(map).reduce((sum, set) => sum + set.size, 0);
 }
 
 function OptionList({
@@ -61,6 +78,7 @@ function OptionList({
                 display: "flex",
                 alignItems: "center",
                 gap: "var(--space-2)",
+                font: "var(--text-body-xs)",
                 color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
                 cursor: disabled ? "default" : "pointer",
               }}
@@ -70,6 +88,7 @@ function OptionList({
                 checked={value.has(option.key)}
                 disabled={disabled}
                 onChange={() => onToggle(option.key)}
+                style={{ width: 14, height: 14, accentColor: "var(--accent)" }}
               />
               {option.label} ({option.count})
             </label>
@@ -80,37 +99,63 @@ function OptionList({
   );
 }
 
-export function BrowseFilters({ groupLabel, options, selected, onApply, onClear, computeCount }: BrowseFiltersProps) {
+export function BrowseFilters({ groups, onApply, onClear, computeCount }: BrowseFiltersProps) {
   const t = useTranslations("Browse");
   const isMobile = useIsMobile();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [draft, setDraft] = useState<Set<string>>(selected);
+  const [draft, setDraft] = useState<Record<string, Set<string>>>(groupsToMap(groups));
 
   // Re-seed the draft from the committed selection each time the sheet
   // opens (e.g. reopening after a previous confirm, or after "Clear"
   // ran elsewhere) — not on every parent render, only on open.
   function openSheet() {
-    setDraft(new Set(selected));
+    setDraft(groupsToMap(groups));
     dialogRef.current?.showModal();
   }
 
+  const committedMap = groupsToMap(groups);
+  const committedCount = totalSelected(committedMap);
+
   if (!isMobile) {
     return (
-      <div style={{ width: "170px", flexShrink: 0 }}>
-        <div style={{ marginBottom: "var(--space-4)" }}>
-          <span style={{ font: "var(--text-heading-sm)" }}>{t("filtersHeading")}</span>
-        </div>
-        <OptionList
-          groupLabel={groupLabel}
-          options={options}
-          value={selected}
-          onToggle={(key) => onApply(toggleInSet(selected, key))}
-        />
+      // Card 2a handoff: a bounded panel (surface-2 fill, its own
+      // radius/shadow), not bare checkboxes in empty space — width 190px
+      // (was 170px), padding rounds 18px→--space-5 (2px over, not worth
+      // its own token), gap rounds 14px→--space-4. The "Изчисти
+      // филтрите" link stays at the BOTTOM of the list rather than
+      // moving back into the header next to "Филтри" the way the
+      // reference shows it — that bottom placement and the fuller
+      // wording were both explicit asks earlier in this project, and the
+      // handoff doesn't call out overriding them, so the prior decision
+      // wins over the mockup's incidental default layout.
+      <div
+        style={{
+          width: "190px",
+          flexShrink: 0,
+          background: "var(--bg-surface-2)",
+          borderRadius: "var(--radius-xl)",
+          padding: "var(--space-5)",
+          boxShadow: "0 1px 2px hsl(var(--shadow-color) / .04)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-5)",
+        }}
+      >
+        <span style={{ font: "var(--text-label)", fontWeight: 700, color: "var(--text-primary)" }}>{t("filtersHeading")}</span>
+        {groups.map((group) => (
+          <OptionList
+            key={group.key}
+            groupLabel={group.groupLabel}
+            options={group.options}
+            value={group.selected}
+            onToggle={(key) => onApply({ ...committedMap, [group.key]: toggleInSet(group.selected, key) })}
+          />
+        ))}
         <button
           type="button"
           className="focus-ring"
           onClick={onClear}
-          style={{ display: "block", marginTop: "var(--space-4)", background: "none", border: "none", color: "var(--accent)", font: "var(--text-label)", cursor: "pointer", padding: 0 }}
+          style={{ display: "block", background: "none", border: "none", color: "var(--accent)", font: "var(--text-label)", cursor: "pointer", padding: 0, textAlign: "left" }}
         >
           {t("clearFilters")}
         </button>
@@ -123,7 +168,7 @@ export function BrowseFilters({ groupLabel, options, selected, onApply, onClear,
       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
         <Button type="button" variant="secondary" size="sm" onClick={openSheet}>
           {t("filtersHeading")}
-          {selected.size > 0 && (
+          {committedCount > 0 && (
             <span
               style={{
                 display: "inline-flex",
@@ -134,12 +179,13 @@ export function BrowseFilters({ groupLabel, options, selected, onApply, onClear,
                 borderRadius: "50%",
                 background: "var(--accent)",
                 color: "var(--text-on-accent)",
-                font: "700 var(--text-caption)",
+                font: "var(--text-caption)",
+                fontWeight: 700,
                 marginLeft: "var(--space-2)",
                 padding: "0 4px",
               }}
             >
-              {selected.size}
+              {committedCount}
             </span>
           )}
         </Button>
@@ -172,18 +218,23 @@ export function BrowseFilters({ groupLabel, options, selected, onApply, onClear,
             <span style={{ font: "var(--text-heading-sm)" }}>{t("filtersHeading")}</span>
           </div>
 
-          <div style={{ padding: "var(--space-4)", overflowY: "auto" }}>
-            <OptionList
-              groupLabel={groupLabel}
-              options={options}
-              value={draft}
-              onToggle={(key) => setDraft((prev) => toggleInSet(prev, key))}
-            />
+          <div style={{ padding: "var(--space-4)", overflowY: "auto", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+            {groups.map((group) => (
+              <OptionList
+                key={group.key}
+                groupLabel={group.groupLabel}
+                options={group.options}
+                value={draft[group.key] ?? new Set()}
+                onToggle={(key) =>
+                  setDraft((prev) => ({ ...prev, [group.key]: toggleInSet(prev[group.key] ?? new Set(), key) }))
+                }
+              />
+            ))}
             <button
               type="button"
               className="focus-ring"
-              onClick={() => setDraft(new Set())}
-              style={{ display: "block", marginTop: "var(--space-4)", background: "none", border: "none", color: "var(--accent)", font: "var(--text-label)", cursor: "pointer", padding: 0 }}
+              onClick={() => setDraft(Object.fromEntries(groups.map((g) => [g.key, new Set<string>()])))}
+              style={{ display: "block", background: "none", border: "none", color: "var(--accent)", font: "var(--text-label)", cursor: "pointer", padding: 0, textAlign: "left" }}
             >
               {t("clearFilters")}
             </button>

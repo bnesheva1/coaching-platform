@@ -26,7 +26,7 @@ export default async function PublicProfilePage({
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("id, bio, headline, location, specialties, avatar_url, banner_url, username, timezone")
+    .select("id, bio, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
     .eq("username", normalizedUsername)
     .single();
 
@@ -117,6 +117,7 @@ export default async function PublicProfilePage({
           avatarUrl={practitionerProfile.avatar_url}
           bannerUrl={practitionerProfile.banner_url}
           specialties={practitionerProfile.specialties ?? []}
+          topics={practitionerProfile.topics ?? []}
           services={(services ?? []).map((s) => ({
             id: s.id,
             name: s.name,

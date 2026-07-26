@@ -9,7 +9,9 @@ import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
 import { EditableSpecialties } from "./EditableSpecialties";
+import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
+import topicsData from "@/data/topics.json";
 
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 
@@ -41,6 +43,7 @@ export type PractitionerProfileViewProps = {
   avatarUrl: string | null;
   bannerUrl: string | null;
   specialties: string[];
+  topics: string[];
   services: ProfileService[];
   reviews: ProfileReview[];
   averageRating: number | null;
@@ -80,6 +83,7 @@ export function PractitionerProfileView({
   avatarUrl,
   bannerUrl,
   specialties,
+  topics,
   services,
   reviews,
   averageRating,
@@ -238,6 +242,37 @@ export function PractitionerProfileView({
                     }}
                   >
                     {specialtyLabelFor(key, locale)}
+                  </span>
+                ))}
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Topics: a second, independent tag dimension (what a session
+            helps with, not the modality/method above) — only shown at
+            all when there's something to show or the owner is editing,
+            same "isOwner sees a nudge, a visitor sees nothing" split as
+            headline/location above. */}
+        <div style={{ margin: "var(--space-3) 0" }}>
+          {isEditing ? (
+            <EditableTopics topics={topics} />
+          ) : (
+            topics.length > 0 && (
+              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+                {topics.map((key) => (
+                  <span
+                    key={key}
+                    style={{
+                      font: "var(--text-micro)",
+                      fontWeight: 600,
+                      padding: "var(--badge-padding-sm)",
+                      borderRadius: "var(--radius-pill)",
+                      background: "var(--accent-subtle)",
+                      color: "var(--accent-subtle-text)",
+                    }}
+                  >
+                    {topicLabelFor(key, locale)}
                   </span>
                 ))}
               </div>
@@ -519,4 +554,8 @@ function EditPencilButtonAsLink({ label }: { label: string }) {
 
 function specialtyLabelFor(key: string, locale: string): string {
   return specialtiesData.find((s) => s.key === key)?.[locale as "en" | "bg"] ?? key;
+}
+
+function topicLabelFor(key: string, locale: string): string {
+  return topicsData.find((topic) => topic.key === key)?.[locale as "en" | "bg"] ?? key;
 }
