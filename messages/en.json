@@ -100,6 +100,16 @@
       "noUpcomingThisWeek": "No upcoming sessions this week.",
       "messagesFromClient": "{count, plural, one {# message from client} other {# messages from client}}",
       "showAllSessions": "Show all booked sessions"
+    },
+    "clientEmptyState": {
+      "title": "You haven't booked a session yet",
+      "body": "Browse the practitioners on the platform and book your first session.",
+      "cta": "Find a practitioner"
+    },
+    "bookedWith": {
+      "heading": "Practitioners you've worked with",
+      "seeAll": "See all ({count})",
+      "seeFewer": "Show fewer"
     }
   },
   "Profile": {
@@ -314,6 +324,7 @@
     "noCompletedSessions": "No completed sessions.",
     "noCancelledSessions": "No cancelled sessions.",
     "cancelDialogTitle": "Cancel {client}'s session on {time}?",
+    "cancelDialogTitleClient": "Cancel your session with {practitioner} on {time}?",
     "cancelNoteLabel": "Message to the client (optional)",
     "cancelDialogConfirm": "Cancel session",
     "cancelDialogDismiss": "Back"

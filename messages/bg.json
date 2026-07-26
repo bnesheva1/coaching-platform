@@ -100,6 +100,16 @@
       "noUpcomingThisWeek": "Няма предстоящи сесии тази седмица.",
       "messagesFromClient": "{count, plural, one {# съобщение от клиента} other {# съобщения от клиента}}",
       "showAllSessions": "Покажи всички резервирани сесии"
+    },
+    "clientEmptyState": {
+      "title": "Все още нямаш запазена консултация",
+      "body": "Разгледай практикуващите в платформата и запази своя първи час.",
+      "cta": "Открий специалист"
+    },
+    "bookedWith": {
+      "heading": "Практикуващи, с които си работил/а",
+      "seeAll": "Виж всички ({count})",
+      "seeFewer": "Покажи по-малко"
     }
   },
   "Profile": {
@@ -314,6 +324,7 @@
     "noCompletedSessions": "Няма завършени сесии.",
     "noCancelledSessions": "Няма отказани сесии.",
     "cancelDialogTitle": "Отказваш сесията на {client} на {time}?",
+    "cancelDialogTitleClient": "Отказваш сесията си с {practitioner} на {time}?",
     "cancelNoteLabel": "Съобщение към клиента (по избор)",
     "cancelDialogConfirm": "Отмени сесията",
     "cancelDialogDismiss": "Назад"

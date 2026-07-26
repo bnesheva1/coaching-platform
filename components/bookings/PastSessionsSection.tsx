@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { STATUS_KEYS, CANCELLED_STATUSES, type PractitionerBooking } from "./BookingsList";
+import {
+  CANCELLED_STATUSES,
+  COUNTERPART_LABEL_KEY,
+  STATUS_KEYS,
+  type BookingPerspective,
+  type SessionBooking,
+} from "./BookingsList";
+import { LeaveReviewForm } from "./LeaveReviewForm";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -25,11 +32,14 @@ const FILTERS: { value: Filter; labelKey: "filterAll" | "filterCompleted" | "fil
 export function PastSessionsSection({
   bookings,
   timezone,
+  perspective,
 }: {
-  bookings: PractitionerBooking[];
+  bookings: SessionBooking[];
   timezone: string;
+  perspective: BookingPerspective;
 }) {
   const t = useTranslations("Booking");
+  const tReviews = useTranslations("Reviews");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [filter, setFilter] = useState<Filter>("all");
@@ -53,6 +63,9 @@ export function PastSessionsSection({
 
   const emptyMessageKey =
     filter === "completed" ? "noCompletedSessions" : filter === "cancelled" ? "noCancelledSessions" : "noPastBookings";
+
+  const counterpartLabelKey = COUNTERPART_LABEL_KEY[perspective];
+  const statusKeys = STATUS_KEYS[perspective];
 
   return (
     <details style={{ marginTop: "var(--space-4)" }}>
@@ -94,11 +107,18 @@ export function PastSessionsSection({
         </div>
 
         {filteredBookings.length === 0 ? (
-          <p style={{ color: "#666", marginTop: "var(--space-3)" }}>{t(emptyMessageKey)}</p>
+          <p style={{ color: "var(--text-secondary)", marginTop: "var(--space-3)" }}>{t(emptyMessageKey)}</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             {filteredBookings.map((booking) => {
               const isCancelled = CANCELLED_STATUSES.has(booking.status);
+              // Client-only: a completed session either already has a
+              // review (a quiet note, matching the cancelled rows'
+              // muted tone) or gets the review form inline — practitioner
+              // rows never show either, there's nothing for them to do
+              // with a past session.
+              const showReviewSlot = perspective === "client" && booking.status === "completed";
+
               return (
                 <li
                   key={booking.id}
@@ -113,12 +133,20 @@ export function PastSessionsSection({
                   <span style={{ textDecoration: isCancelled ? "line-through" : "none" }}>
                     <strong>{formatter.format(new Date(booking.startUtc))}</strong>
                     {" — "}
-                    {t("withClient", { name: booking.clientName })}
+                    {t(counterpartLabelKey, { name: booking.counterpartName })}
                     {" · "}
                     {booking.serviceName}
                   </span>
                   {" · "}
-                  {t(STATUS_KEYS[booking.status])}
+                  {t(statusKeys[booking.status])}
+                  {showReviewSlot &&
+                    (booking.hasReview ? (
+                      <p style={{ margin: "var(--space-1) 0 0", color: "var(--text-tertiary)", font: "var(--text-body-sm)" }}>
+                        {tReviews("alreadyReviewedNote")}
+                      </p>
+                    ) : (
+                      <LeaveReviewForm bookingId={booking.id} />
+                    ))}
                 </li>
               );
             })}

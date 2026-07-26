@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { BookingsList, type PractitionerBooking } from "../BookingsList";
+import { BookingsList, type SessionBooking } from "@/components/bookings/BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 
 // Auth/role guard already ran in the shared layout.tsx. Full history
@@ -56,16 +56,16 @@ export default async function BookingsPage({
   const bookingServiceById = new Map((bookingServices ?? []).map((s) => [s.id, s]));
   const deliveryInfoByServiceId = new Map((deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]));
 
-  const mergedBookings: PractitionerBooking[] = (bookings ?? []).map((b) => ({
+  const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
-    clientName: clientNameById.get(b.client_id) ?? "",
+    counterpartName: clientNameById.get(b.client_id) ?? "",
     serviceName: bookingServiceById.get(b.service_id)?.name ?? "",
     durationMinutes: bookingServiceById.get(b.service_id)?.duration_minutes ?? 0,
     startUtc: b.start_utc,
     endUtc: b.end_utc,
     // Real DB domain is 5 values (see bookings_status_check); no cast
-    // needed now that PractitionerBooking's own union matches it.
-    status: b.status as PractitionerBooking["status"],
+    // needed now that SessionBooking's own union matches it.
+    status: b.status as SessionBooking["status"],
     deliveryType: (bookingServiceById.get(b.service_id)?.delivery_type as "online" | "in_person" | null) ?? null,
     deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
   }));
@@ -89,6 +89,7 @@ export default async function BookingsPage({
         <BookingsList
           upcoming={upcomingBookings}
           past={pastBookings}
+          perspective="practitioner"
           timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
         />
       </div>

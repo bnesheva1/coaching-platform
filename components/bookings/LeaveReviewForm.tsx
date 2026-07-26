@@ -25,7 +25,7 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
           text. Scoped to the fieldset only, so Enter still inserts a
           newline in the textarea as normal. */}
       <fieldset
-        style={{ border: "1px solid #ddd", padding: "var(--space-2)" }}
+        style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "var(--space-2)" }}
         onKeyDown={(e) => {
           if (e.key === "Enter") e.preventDefault();
         }}
