@@ -30,3 +30,14 @@ export function isPastCancellationCutoff(startUtc: string, minNoticeHours: numbe
   const cutoff = Date.now() + minNoticeHours * 60 * 60 * 1000;
   return new Date(startUtc).getTime() < cutoff;
 }
+
+// Lives here rather than in BookingsList.tsx (which re-exports both,
+// unchanged, for its existing "use client" importers) because a plain
+// const exported from a "use client" module still gets replaced with a
+// client reference at the server/client boundary — a Server Component
+// importing it directly fails at runtime ("X.has is not a function"),
+// even though it's just a Set with no browser dependency. This file has
+// no directive, so both server pages and client components can import
+// it safely.
+export const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
+export const CANCELLED_STATUSES = new Set(["cancelled_by_client", "cancelled_by_practitioner"]);

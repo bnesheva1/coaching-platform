@@ -2,11 +2,11 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { BookingsList, type SessionBooking } from "@/components/bookings/BookingsList";
+import { BookingsList, CounterpartAvatar, type SessionBooking } from "@/components/bookings/BookingsList";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
 import { searchPractitioners } from "@/lib/practitioners/search";
-import { splitUpcomingPast } from "@/lib/booking-time";
+import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -70,10 +70,13 @@ export default async function ClientHomePage({
   const practitionerIds = [...new Set((bookings ?? []).map((b) => b.practitioner_id))];
   const serviceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
 
-  const [{ data: practitioners }, { data: practitionerNoticeSettings }, { data: services }, allPractitioners] =
+  const [{ data: practitioners }, { data: practitionerSettings }, { data: services }, allPractitioners] =
     await Promise.all([
       supabase.from("profiles").select("id, display_name").in("id", practitionerIds),
-      supabase.from("practitioner_profiles").select("id, min_notice_hours").in("id", practitionerIds),
+      // avatar_url lives on practitioner_profiles, not profiles — same
+      // query already fetching min_notice_hours, just widened rather
+      // than adding a third round-trip for one more column.
+      supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url").in("id", practitionerIds),
       supabase.from("services").select("id, name, duration_minutes, delivery_type").in("id", serviceIds),
       // Full reuse of the same search this client would hit on /browse —
       // filtered down to just the practitioners they've booked, below.
@@ -93,7 +96,8 @@ export default async function ClientHomePage({
   const reviewedBookingIds = new Set((reviewedBookingRows ?? []).map((row) => row.booking_id));
 
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
-  const minNoticeHoursById = new Map((practitionerNoticeSettings ?? []).map((p) => [p.id, p.min_notice_hours]));
+  const practitionerAvatarById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.avatar_url ?? null]));
+  const minNoticeHoursById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.min_notice_hours]));
   const serviceById = new Map((services ?? []).map((s) => [s.id, s]));
 
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
@@ -108,10 +112,17 @@ export default async function ClientHomePage({
     deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
     hasReview: reviewedBookingIds.has(b.id),
+    counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);
-  const nextBooking = upcoming[0] ?? null;
+  // upcoming[0] alone isn't safe: it's ordered purely by start_utc, so a
+  // cancelled booking that happens to share its slot's original time
+  // with an active one (routine once a slot gets rebooked after a
+  // cancellation) could sort first and get shown as "next" even though
+  // there's nothing to attend. The hero must be the earliest booking
+  // that's actually still happening.
+  const nextBooking = upcoming.find((b) => ACTIVE_STATUSES.has(b.status)) ?? null;
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short" });
 
@@ -166,17 +177,45 @@ export default async function ClientHomePage({
 
       {nextBooking && (
         <div style={{ marginBottom: "var(--space-6)" }}>
-          <Card
-            eyebrow={t("agenda.nextSessionEyebrow")}
-            title={`${nextBooking.serviceName} — ${tBooking("withPractitioner", { name: nextBooking.counterpartName })}`}
-            description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
-            footer={
-              nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
+          {/* Hand-rolled rather than <Card>: Card's title/description
+              props are plain strings, and this needs a leading avatar
+              beside them — a client's next session is with a person,
+              so their face leads here too, not just on the list below.
+              Same visual recipe as Card (border-subtle/radius-xl/
+              shadow-md/space-8) so it stays the page's most prominent
+              surface, just restructured internally. */}
+          <div
+            style={{
+              display: "flex",
+              gap: "var(--space-5)",
+              alignItems: "flex-start",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-xl)",
+              boxShadow: "var(--shadow-md)",
+              padding: "var(--space-8)",
+            }}
+          >
+            <CounterpartAvatar name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} size={72} />
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+              <span style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--accent)" }}>
+                {t("agenda.nextSessionEyebrow")}
+              </span>
+              <h3 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
+                {nextBooking.serviceName} — {tBooking("withPractitioner", { name: nextBooking.counterpartName })}
+              </h3>
+              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+                {formatter.format(new Date(nextBooking.startUtc))} ·{" "}
+                {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
+              </p>
+              {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
                 <a
                   href={nextBooking.deliveryInfo}
                   target="_blank"
                   rel="noreferrer"
                   style={{
+                    alignSelf: "flex-start",
+                    marginTop: "var(--space-2)",
                     display: "inline-block",
                     padding: "var(--button-padding-md)",
                     borderRadius: "var(--radius-md)",
@@ -189,16 +228,22 @@ export default async function ClientHomePage({
                   {t("agenda.joinSession")}
                 </a>
               ) : nextBooking.deliveryInfo ? (
-                <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                <p style={{ margin: "var(--space-2) 0 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                   {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
                 </p>
-              ) : null
-            }
-          />
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
 
-      <BookingsList upcoming={upcoming} past={past} perspective="client" />
+      <BookingsList
+        upcoming={nextBooking ? upcoming.filter((b) => b.id !== nextBooking.id) : upcoming}
+        past={past}
+        perspective="client"
+        premium
+        nextSessionShownSeparately={nextBooking !== null}
+      />
 
       {bookedWithPractitioners.length > 0 && (
         <section style={{ marginTop: "var(--space-8)" }}>
