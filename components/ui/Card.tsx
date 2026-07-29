@@ -3,7 +3,11 @@ import type { ReactNode } from "react";
 export type CardTone = "surface" | "inverse";
 
 export type CardProps = {
-  eyebrow?: string;
+  // ReactNode, not just string — lets callers pass a small client
+  // component (e.g. the dashboards' time-of-day GreetingText) here,
+  // not just static text. Every existing caller already passes a plain
+  // string, which is itself valid ReactNode, so this is additive.
+  eyebrow?: ReactNode;
   title?: string;
   description?: string;
   footer?: ReactNode;

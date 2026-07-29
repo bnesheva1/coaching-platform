@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
@@ -9,6 +10,7 @@ import { ProfileSettingsBox } from "@/components/practitioner-profile/ProfileSet
 // practitioner viewing their own profile, unlike the public
 // p/[username] route which always renders isOwner={false}.
 export default async function ProfilePage() {
+  const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,6 +64,7 @@ export default async function ProfilePage() {
           note. Wider than their 500px reading column on purpose — this
           is a visual profile layout (banner/avatar/grid), not a form. */}
       <div style={{ maxWidth: 800, display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+        <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("nav.profile")}</h1>
         <PractitionerProfileView
           isOwner
           practitionerId={userId}

@@ -2,13 +2,6 @@
   "HomePage": {
     "title": "Платформа за консултации",
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
-    "signOut": "Изход",
-    "dashboardLink": "Табло",
-    "navLogin": "Вход",
-    "navSignup": "Регистрация",
-    "navForClients": "За търсещи",
-    "navForPractitioners": "За практици",
-    "navHowItWorks": "Как работи",
     "heroEyebrow": "Хората питат",
     "heroQuestion1": "Каква е моята житейска мисия?",
     "heroQuestion2": "Това ли е човекът за мен?",
@@ -21,6 +14,17 @@
     "heroChipLoveRelationships": "Любов и връзки",
     "heroChipBusinessFinance": "Бизнес и финанси",
     "heroChipLifePath": "Житейски път"
+  },
+  "Header": {
+    "browseLinkPractitioner": "Виж другите практици",
+    "dashboardLink": "Табло",
+    "login": "Вход",
+    "register": "Регистрация",
+    "signOut": "Изход",
+    "mobileMenuOpen": "Отваряне на основното меню",
+    "mobileMenuClose": "Затваряне на основното меню",
+    "switchToLight": "Превключване на светла тема",
+    "switchToDark": "Превключване на тъмна тема"
   },
   "Auth": {
     "loginTitle": "Вход",
@@ -48,10 +52,7 @@
   "Dashboard": {
     "practitionerTitle": "Табло за управление на специалиста",
     "clientTitle": "Табло за управление на клиента",
-    "signOut": "Изход",
     "viewPublicProfile": "Виж своя публичен профил",
-    "mobileMenuOpen": "Отваряне на основното меню",
-    "mobileMenuClose": "Затваряне на основното меню",
     "sidebarOpen": "Отваряне на менюто на таблото",
     "sidebarClose": "Затваряне на менюто на таблото",
     "sidebarExpand": "Разгъване на менюто",
@@ -90,6 +91,9 @@
     },
     "agenda": {
       "greeting": "Добър ден, {name}",
+      "greetingMorning": "Добро утро, {name}",
+      "greetingAfternoon": "Добър ден, {name}",
+      "greetingEvening": "Добър вечер, {name}",
       "heading": "Какво предстои",
       "upcomingCount": "{count, plural, one {# предстояща консултация} other {# предстоящи консултации}}",
       "viewAll": "Виж всички",

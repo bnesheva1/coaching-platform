@@ -1,6 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { GreetingText } from "@/components/dashboard/GreetingText";
 import { PractitionerCard, type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import specialtiesData from "@/data/specialties.json";
@@ -44,7 +45,7 @@ export async function ClientActivationState({ displayName }: { displayName: stri
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <Card
-        eyebrow={t("agenda.greeting", { name: displayName })}
+        eyebrow={<GreetingText name={displayName} />}
         title={t("clientEmptyState.title")}
         description={t("clientEmptyState.body")}
         footer={

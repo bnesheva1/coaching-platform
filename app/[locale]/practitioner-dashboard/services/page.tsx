@@ -1,8 +1,10 @@
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ServicesSection } from "../ServicesSection";
 
 // Auth/role guard already ran in the shared layout.tsx.
 export default async function ServicesPage() {
+  const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
     data: { user },
@@ -36,6 +38,7 @@ export default async function ServicesPage() {
           with a square image, same width budget as the profile page's
           own service tiles (practitioner-dashboard/profile/page.tsx). */}
       <div style={{ maxWidth: 800 }}>
+        <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{t("nav.services")}</h1>
         <ServicesSection services={servicesWithDeliveryInfo} />
       </div>
     </main>

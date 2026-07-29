@@ -48,6 +48,7 @@ export default async function ReviewsPage() {
       {/* No ContentContainer — DashboardShell already bounds/pads the
           sidebar+content row; see profile/page.tsx's identical note. */}
       <div style={{ maxWidth: 500 }}>
+        <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{tDashboard("nav.reviews")}</h1>
         {!reviews || reviews.length === 0 ? (
           <Card title={t("reviewsEmptyTitle")} description={t("reviewsEmptyBody")} footer={publicProfileLink} />
         ) : (

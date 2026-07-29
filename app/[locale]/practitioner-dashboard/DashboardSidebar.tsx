@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { NavItem } from "@/components/dashboard/NavItem";
 import { useDashboardNavigate } from "@/components/dashboard/DashboardShell";
+import { Button } from "@/components/ui/Button";
+import { signOut } from "@/app/actions";
 
 export type DashboardPulse = {
   sessionCount: number;
@@ -25,6 +27,7 @@ const NAV_ITEMS = [
 // this). Sidebar owns only the dashboard's internal tabs.
 export function DashboardSidebar({ pulse }: { pulse: DashboardPulse }) {
   const t = useTranslations("Dashboard");
+  const tHeader = useTranslations("Header");
   const pathname = usePathname();
   const onNavigate = useDashboardNavigate();
 
@@ -53,6 +56,16 @@ export function DashboardSidebar({ pulse }: { pulse: DashboardPulse }) {
           {t("pulseUpcomingTotal", { count: pulse.totalUpcoming })}
         </p>
       </div>
+
+      {/* The only place to sign out now — the header's own account menu
+          was removed (just the plain "Табло" link stays there); this is
+          the more familiar, expected place to look for it while already
+          inside a dashboard. */}
+      <form action={signOut} style={{ marginTop: "var(--space-4)" }}>
+        <Button variant="ghost" size="sm" type="submit">
+          {tHeader("signOut")}
+        </Button>
+      </form>
     </div>
   );
 }

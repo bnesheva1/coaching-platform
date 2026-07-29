@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { GreetingText } from "@/components/dashboard/GreetingText";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -281,7 +282,7 @@ export default async function PractitionerHomePage() {
     <main style={{ padding: "var(--space-8) 0" }}>
       <div>
         <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-          {t("agenda.greeting", { name: profile?.display_name ?? "" })}
+          <GreetingText name={profile?.display_name ?? ""} />
         </p>
         <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-4)" }}>{t("agenda.heading")}</h1>
 

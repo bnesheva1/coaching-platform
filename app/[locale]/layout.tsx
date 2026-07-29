@@ -3,7 +3,7 @@ import { PT_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SiteHeader } from "@/components/header/SiteHeader";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import "../globals.css";
 
@@ -65,9 +65,12 @@ export default async function LocaleLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <NextIntlClientProvider>
-            <div style={{ position: "fixed", top: "1rem", right: "1rem" }}>
-              <LanguageSwitcher />
-            </div>
+            {/* Mounted once, here — not per-page — so every route gets
+                the same header by construction; no page can forget it.
+                Replaces both the old fixed-corner LanguageSwitcher and
+                the three hand-copied NavBar wiring blocks (homepage,
+                client-dashboard layout, practitioner-dashboard layout). */}
+            <SiteHeader />
             {children}
           </NextIntlClientProvider>
         </ThemeProvider>

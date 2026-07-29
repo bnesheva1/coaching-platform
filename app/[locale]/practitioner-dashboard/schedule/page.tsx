@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilitySection } from "../AvailabilitySection";
 import { AvailabilityExceptionsSection } from "../AvailabilityExceptionsSection";
@@ -9,6 +10,7 @@ import { MinNoticeHoursForm } from "../MinNoticeHoursForm";
 // one nav item ("График") since both sections are schedule-related —
 // same grouping the finalized design implies with a single nav entry.
 export default async function SchedulePage() {
+  const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
     data: { user },
@@ -55,6 +57,7 @@ export default async function SchedulePage() {
           the main task and gets the prominent middle position; blocked
           dates next; minimum notice — set once, rarely revisited — last. */}
       <div style={{ maxWidth: 500, display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+        <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("nav.schedule")}</h1>
         <TimezoneField initialTimezone={timezone} />
         <AvailabilitySection rules={availabilityRules ?? []} timezone={timezone} />
         <AvailabilityExceptionsSection exceptions={upcomingExceptions} />

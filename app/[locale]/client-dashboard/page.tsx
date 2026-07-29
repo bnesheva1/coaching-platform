@@ -1,6 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
+import { GreetingText } from "@/components/dashboard/GreetingText";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 
@@ -100,7 +101,7 @@ export default async function ClientUpcomingPage({
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-        {t("agenda.greeting", { name: profile?.display_name ?? "" })}
+        <GreetingText name={profile?.display_name ?? ""} />
       </p>
       <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-6)" }}>{t("agenda.heading")}</h1>
 

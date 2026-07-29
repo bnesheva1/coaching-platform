@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Input } from "@/components/ui/Input";
+import { ContentContainer } from "@/components/ui/ContentContainer";
 import { HeroTopicChips } from "./HeroTopicChips";
 import styles from "./Hero.module.css";
 
@@ -21,6 +22,15 @@ export async function Hero() {
   const topics = [t("heroChipLoveRelationships"), t("heroChipBusinessFinance"), t("heroChipLifePath")];
 
   return (
+    // Background (the page's own bg + the decorative glow) stays
+    // full-width on the outer div; only the actual content goes through
+    // ContentContainer, same "full-bleed bar, constrained content" split
+    // every other section of chrome in this app already uses (see
+    // ContentContainer's own doc comment) — this hero was the one
+    // holdout still hand-rolling its own fixed 64px horizontal padding,
+    // which was also just too narrow on mobile (390px viewport - 128px
+    // of padding left only ~260px for the search field, clipping its
+    // own placeholder text).
     <div style={{ position: "relative", overflow: "hidden" }}>
       <div
         aria-hidden
@@ -35,10 +45,11 @@ export async function Hero() {
           pointerEvents: "none",
         }}
       />
+      <ContentContainer>
       <div
         style={{
           position: "relative",
-          padding: "60px 64px 56px",
+          padding: "60px 0 56px",
           display: "flex",
           flexDirection: "column",
           gap: "var(--space-6)",
@@ -89,6 +100,7 @@ export async function Hero() {
 
         <HeroTopicChips topics={topics} />
       </div>
+      </ContentContainer>
     </div>
   );
 }

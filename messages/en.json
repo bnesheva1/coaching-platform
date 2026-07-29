@@ -2,13 +2,6 @@
   "HomePage": {
     "title": "Coaching Platform",
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
-    "signOut": "Sign out",
-    "dashboardLink": "Dashboard",
-    "navLogin": "Log in",
-    "navSignup": "Sign up",
-    "navForClients": "For clients",
-    "navForPractitioners": "For practitioners",
-    "navHowItWorks": "How it works",
     "heroEyebrow": "People are asking",
     "heroQuestion1": "What is my life purpose?",
     "heroQuestion2": "Is this the right person for me?",
@@ -21,6 +14,17 @@
     "heroChipLoveRelationships": "Love & relationships",
     "heroChipBusinessFinance": "Business & finance",
     "heroChipLifePath": "Life path"
+  },
+  "Header": {
+    "browseLinkPractitioner": "Browse other practitioners",
+    "dashboardLink": "Dashboard",
+    "login": "Log in",
+    "register": "Sign up",
+    "signOut": "Sign out",
+    "mobileMenuOpen": "Open main menu",
+    "mobileMenuClose": "Close main menu",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -50,10 +54,7 @@
   "Dashboard": {
     "practitionerTitle": "Practitioner Dashboard",
     "clientTitle": "Client Dashboard",
-    "signOut": "Sign out",
     "viewPublicProfile": "View your public profile",
-    "mobileMenuOpen": "Open main menu",
-    "mobileMenuClose": "Close main menu",
     "sidebarOpen": "Open dashboard menu",
     "sidebarClose": "Close dashboard menu",
     "sidebarExpand": "Expand menu",
@@ -92,6 +93,9 @@
     },
     "agenda": {
       "greeting": "Good day, {name}",
+      "greetingMorning": "Good morning, {name}",
+      "greetingAfternoon": "Good afternoon, {name}",
+      "greetingEvening": "Good evening, {name}",
       "heading": "What's coming up",
       "upcomingCount": "{count, plural, one {# upcoming consultation} other {# upcoming consultations}}",
       "viewAll": "View all",

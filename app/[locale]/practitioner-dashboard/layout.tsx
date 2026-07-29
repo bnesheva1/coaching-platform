@@ -1,11 +1,7 @@
 import type { ReactNode } from "react";
-import { getTranslations, getLocale } from "next-intl/server";
-import { redirect, Link } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/actions";
-import { NavBar } from "@/components/ui/NavBar";
-import { Button } from "@/components/ui/Button";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { DashboardSidebar } from "./DashboardSidebar";
 
@@ -23,12 +19,11 @@ function startOfCurrentUtcWeek(): Date {
 
 // Auth + role guard, hoisted out of the old single page.tsx so it runs
 // once for all six dashboard routes instead of being duplicated in each.
-// Also owns the top NavBar and the pulse-card aggregate — both are
-// chrome shared by every tab, not any one tab's concern.
+// Owns the pulse-card aggregate — shared by every tab, not any one
+// tab's concern. The top header itself now comes from the root locale
+// layout's SiteHeader (mounted once, sitewide) — this layout no longer
+// renders its own NavBar.
 export default async function PractitionerDashboardLayout({ children }: { children: ReactNode }) {
-  const t = await getTranslations("Dashboard");
-  const tHome = await getTranslations("HomePage");
-  const tBrowse = await getTranslations("Browse");
   const locale = await getLocale();
   const supabase = await createClient();
   const {
@@ -72,48 +67,11 @@ export default async function PractitionerDashboardLayout({ children }: { childr
       .gte("start_utc", now),
   ]);
 
-  const otherLocale = routing.locales.find((l) => l !== locale) ?? locale;
-  const langToggleText = locale === "bg" ? "BG · EN" : "EN · BG";
-
   return (
-    <div>
-      <NavBar
-        wordmark={tHome("title")}
-        links={[{ label: tBrowse("title"), href: "/browse" }]}
-        mobileMenuLabel={{ open: t("mobileMenuOpen"), close: t("mobileMenuClose") }}
-        langToggle={
-          // Same mechanism as the homepage's own langToggle
-          // (components/LanguageSwitcher.tsx is suppressed there for
-          // the identical reason) — same page, other locale.
-          <Link
-            href="/practitioner-dashboard"
-            locale={otherLocale}
-            style={{
-              font: "var(--text-label)",
-              letterSpacing: "var(--letter-pill)",
-              padding: "6px 12px",
-              borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--border-strong)",
-              color: "var(--text-primary)",
-              textDecoration: "none",
-            }}
-          >
-            {langToggleText}
-          </Link>
-        }
-        actions={
-          <form action={signOut}>
-            <Button variant="ghost" size="sm" type="submit">
-              {t("signOut")}
-            </Button>
-          </form>
-        }
-      />
-      <DashboardShell
-        sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
-      >
-        {children}
-      </DashboardShell>
-    </div>
+    <DashboardShell
+      sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
+    >
+      {children}
+    </DashboardShell>
   );
 }
