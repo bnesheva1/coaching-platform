@@ -114,7 +114,7 @@ export default async function PublicProfilePage({
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
-      <ContentContainer maxWidth={700}>
+      <ContentContainer maxWidth={"var(--content-max-width)"}>
         <PractitionerProfileView
           isOwner={false}
           practitionerId={practitionerProfile.id}

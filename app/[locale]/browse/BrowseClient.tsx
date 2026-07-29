@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const SEARCH_DEBOUNCE_MS = 300;
 // How many cards reveal per scroll batch. Every matching result is
@@ -106,6 +107,7 @@ export function BrowseClient({
   const t = useTranslations("Browse");
   const router = useRouter();
   const pathname = usePathname();
+  const isMobile = useIsMobile();
 
   const [searchText, setSearchText] = useState(query);
   const [selectedModalities, setSelectedModalities] = useState<Set<string>>(new Set(initialSpecialties));
@@ -334,7 +336,13 @@ export function BrowseClient({
         />
       </div>
 
-      <div style={{ display: "flex", gap: "var(--space-6)", alignItems: "flex-start" }}>
+      {/* Row on desktop (190px filter sidebar beside the results grid) —
+          BrowseFilters instead renders as a compact "Filters" button on
+          mobile (its own isMobile branch, opening a bottom sheet), so
+          without this the two still sat side by side there too,
+          squeezing the results grid into a narrow leftover column
+          rather than stacking full-width beneath the button. */}
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "var(--space-6)", alignItems: isMobile ? "stretch" : "flex-start" }}>
         <BrowseFilters
           groups={filterGroups}
           onApply={handleFiltersApply}

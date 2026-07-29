@@ -151,7 +151,7 @@ export function PractitionerProfileView({
       )}
 
       {/* Banner */}
-      <div style={{ position: "relative", height: 180, borderRadius: "var(--radius-xl)", overflow: "hidden", background: bannerUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))" }}>
+      <div style={{ position: "relative", height: "18vw", borderRadius: "var(--radius-xl)", overflow: "hidden", background: bannerUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))" }}>
         {bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -166,14 +166,14 @@ export function PractitionerProfileView({
       </div>
 
       {/* Identity block — avatar overlaps the banner seam */}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-4)", marginTop: -48, marginLeft: "var(--space-4)" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-4)", marginTop: "-7vw", marginLeft: "var(--space-4)" }}>
         <div style={{ position: "relative" }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
               alt={displayName}
-              style={{ width: 96, height: 96, borderRadius: "50%", objectFit: "cover", border: "4px solid var(--bg-page)" }}
+              style={{ width: "14vw", height: "14vw", borderRadius: "50%", objectFit: "cover", border: "4px solid var(--bg-page)" }}
             />
           ) : (
             <div
