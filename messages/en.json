@@ -69,7 +69,10 @@
       "services": "Services",
       "schedule": "Schedule",
       "bookings": "Sessions",
-      "reviews": "Reviews"
+      "reviews": "Reviews",
+      "clientUpcoming": "Upcoming",
+      "clientPast": "Past",
+      "clientPractitioners": "My practitioners"
     },
     "activation": {
       "eyebrow": "Welcome",
@@ -99,12 +102,14 @@
       "upcomingWeekHeading": "Upcoming this week",
       "noUpcomingThisWeek": "No upcoming sessions this week.",
       "messagesFromClient": "{count, plural, one {# message from client} other {# messages from client}}",
+      "messagesFromPractitioner": "{count, plural, one {# message from practitioner} other {# messages from practitioner}}",
       "showAllSessions": "Show all booked sessions"
     },
     "clientEmptyState": {
       "title": "You haven't booked a session yet",
       "body": "Browse the practitioners on the platform and book your first session.",
-      "cta": "Find a practitioner"
+      "cta": "Find a practitioner",
+      "suggestedHeading": "Suggested practitioners"
     },
     "bookedWith": {
       "heading": "Practitioners you've worked with",
@@ -312,6 +317,7 @@
     "statusCancelledByYou": "Cancelled by you",
     "withPractitioner": "With {name}",
     "withClient": "Client: {name}",
+    "withInline": "with",
     "cancelButton": "Cancel booking",
     "cancelConfirm": "Cancel this booking? This can't be undone.",
     "cancelledMessage": "Booking cancelled.",

@@ -8,6 +8,7 @@ import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboa
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
 import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@/lib/booking-time";
 import { splitTextAndUrls } from "@/lib/linkify";
+import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -79,6 +80,10 @@ export type SessionBooking = {
   // practitioner path — a client's own avatar isn't fetched there today,
   // and the compact (non-premium) card doesn't render one anyway.
   counterpartAvatarUrl?: string | null;
+  // Client path only, same reasoning as counterpartAvatarUrl — currently
+  // only consumed by the client dashboard's own next-session hero
+  // (hand-rolled in that page, not by BookingsList's own card markup).
+  serviceImageUrl?: string | null;
 };
 
 // Same useSyncExternalStore pattern as SlotPicker.tsx/TimezoneField.tsx —
@@ -167,6 +172,59 @@ export function CounterpartAvatar({
   );
 }
 
+// Same square-thumbnail recipe as the service tiles on the practitioner
+// profile page (aspect-ratio 1/1, radius-lg, gradient fallback) —
+// reused, not reinvented. Shared by the client dashboard's next-session
+// hero (size 140) and BookingsList's own premium cards (size 96) so the
+// two surfaces stay visually identical, not two hand-copied variants
+// that can drift.
+export function ServiceImageSquare({ imageUrl, size }: { imageUrl?: string | null; size: number }) {
+  return (
+    <div
+      className={rowStyles.tile}
+      style={
+        {
+          "--tile-size": `${size}px`,
+          aspectRatio: "1 / 1",
+          borderRadius: "var(--radius-lg)",
+          overflow: "hidden",
+          background: imageUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
+        } as React.CSSProperties
+      }
+    >
+      {imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      )}
+    </div>
+  );
+}
+
+// The small bordered avatar+name card used wherever a practitioner's
+// identity needs to read as a distinct fact from the surrounding
+// service/time text, not folded into a heading. Same fixed 32px avatar
+// in both the hero and the list cards — this is always a secondary
+// identity marker, never the card's own focal image.
+export function PractitionerChip({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
+  return (
+    <div
+      className={rowStyles.tile}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "var(--space-3)",
+        background: "var(--bg-surface-2)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-md)",
+        padding: "var(--space-2) var(--space-4) var(--space-2) var(--space-2)",
+      }}
+    >
+      <CounterpartAvatar name={name} avatarUrl={avatarUrl} size={32} />
+      <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{name}</span>
+    </div>
+  );
+}
+
 export function BookingsList({
   upcoming,
   past,
@@ -190,6 +248,19 @@ export function BookingsList({
   // wrong here, since there IS one — it's just shown above, not in
   // this list.
   nextSessionShownSeparately = false,
+  // Client dashboard only: its Upcoming/Past sidebar sections each
+  // render this component for just one half — the practitioner
+  // dashboard's own combined "Сесии" tab (and the client dashboard
+  // before this sidebar existed) always wants both, so both default to
+  // true, unchanged for every other existing caller.
+  showUpcomingSection = true,
+  showPastSection = true,
+  // The client dashboard's dedicated Past page starts this expanded —
+  // there's no reason to require an extra click to see past sessions on
+  // a page you navigated to specifically to see them. The practitioner
+  // dashboard's combined tab (past sessions are secondary there) keeps
+  // the default collapsed state.
+  pastStartsExpanded = false,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -197,6 +268,9 @@ export function BookingsList({
   timezone?: string;
   premium?: boolean;
   nextSessionShownSeparately?: boolean;
+  showUpcomingSection?: boolean;
+  showPastSection?: boolean;
+  pastStartsExpanded?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -216,13 +290,15 @@ export function BookingsList({
 
   return (
     <section style={{ marginTop: "var(--space-6)" }}>
-      <h2 style={{ font: "var(--text-heading-md)" }}>{t("bookingsTitle")}</h2>
-      <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+      <h2 style={{ margin: "0 0 var(--space-2)", font: "var(--text-heading-md)" }}>{t("bookingsTitle")}</h2>
+      <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
         {t("timesShownIn", { timezone: effectiveTimezone })}
       </p>
 
-      <h3 style={{ font: "var(--text-heading-sm)" }}>{t("upcomingHeading")}</h3>
-      {upcoming.length === 0 ? (
+      {showUpcomingSection && (
+        <>
+          <h3 style={{ margin: "var(--space-6) 0 var(--space-3)", font: "var(--text-heading-sm)" }}>{t("upcomingHeading")}</h3>
+          {upcoming.length === 0 ? (
         nextSessionShownSeparately ? null : (
           <p style={{ color: "var(--text-secondary)" }}>{t("noUpcomingBookings")}</p>
         )
@@ -234,27 +310,35 @@ export function BookingsList({
               perspective === "client" &&
               isPastCancellationCutoff(booking.startUtc, booking.minNoticeHours ?? 24);
 
-            const cancelSlot = ACTIVE_STATUSES.has(booking.status) && (
+            // Unwrapped — the compact card wraps this in its own trailing
+            // full-width row (cancelSlot, below); the premium card
+            // instead places it directly on the practitioner chip's own
+            // row, reserving that row's trailing space for it whether
+            // or not a session actually turns out to be cancellable.
+            const cancelAction = ACTIVE_STATUSES.has(booking.status) && (
+              perspective === "practitioner" ? (
+                <CancelSessionDialog
+                  counterpartName={booking.counterpartName}
+                  sessionTimeLabel={sessionTimeLabel}
+                  perspective="practitioner"
+                  action={cancelBookingAsPractitioner.bind(null, booking.id)}
+                />
+              ) : isPastCutoff ? (
+                <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                  {t("cancelWindowNote", { hours: booking.minNoticeHours ?? 24 })}
+                </span>
+              ) : (
+                <CancelSessionDialog
+                  counterpartName={booking.counterpartName}
+                  sessionTimeLabel={sessionTimeLabel}
+                  perspective="client"
+                  action={cancelBookingAsClient.bind(null, booking.id, effectiveTimezone)}
+                />
+              )
+            );
+            const cancelSlot = cancelAction && (
               <div style={{ marginTop: "var(--space-3)", display: "flex", justifyContent: "flex-end" }}>
-                {perspective === "practitioner" ? (
-                  <CancelSessionDialog
-                    counterpartName={booking.counterpartName}
-                    sessionTimeLabel={sessionTimeLabel}
-                    perspective="practitioner"
-                    action={cancelBookingAsPractitioner.bind(null, booking.id)}
-                  />
-                ) : isPastCutoff ? (
-                  <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-                    {t("cancelWindowNote", { hours: booking.minNoticeHours ?? 24 })}
-                  </span>
-                ) : (
-                  <CancelSessionDialog
-                    counterpartName={booking.counterpartName}
-                    sessionTimeLabel={sessionTimeLabel}
-                    perspective="client"
-                    action={cancelBookingAsClient.bind(null, booking.id, effectiveTimezone)}
-                  />
-                )}
+                {cancelAction}
               </div>
             );
 
@@ -279,28 +363,49 @@ export function BookingsList({
             );
 
             if (premium) {
+              // Same structural pattern as the client dashboard's next-
+              // session hero (image, then time/name/identity stacked) —
+              // just without its "next session" eyebrow, which only
+              // makes sense once per page, and at the smaller type
+              // scale this list already used before the hero existed.
               return (
                 <div
                   key={booking.id}
+                  className={rowStyles.row}
                   style={{
-                    display: "flex",
                     gap: "var(--space-4)",
-                    alignItems: "flex-start",
                     background: "var(--bg-surface)",
+                    border: "1px solid var(--border-subtle)",
                     borderRadius: "var(--radius-2xl)",
-                    boxShadow: "var(--shadow-card)",
                     padding: "var(--space-6)",
                   }}
                 >
-                  <CounterpartAvatar name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <strong style={{ font: "var(--text-body-md)" }}>{sessionTimeLabel}</strong>
-                    <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-heading-sm)", color: "var(--text-primary)" }}>
-                      {t(counterpartLabelKey, { name: booking.counterpartName })}
-                    </p>
-                    <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-                      {booking.serviceName} · {t(statusKeys[booking.status])}
-                    </p>
+                  <ServiceImageSquare imageUrl={booking.serviceImageUrl} size={96} />
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                    {/* Same row-on-desktop/stack-on-mobile breakpoint as
+                        the image+content split above, reused here for
+                        the date/status pairing — the middot separator
+                        only renders when they're actually on one line. */}
+                    <div className={rowStyles.row} style={{ gap: "var(--space-2)", alignItems: "baseline" }}>
+                      <strong style={{ font: "var(--text-body-md)" }}>{sessionTimeLabel}</strong>
+                      <span className={rowStyles.inlineSeparator} style={{ color: "var(--text-tertiary)" }} aria-hidden="true">
+                        ·
+                      </span>
+                      <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                        {t(statusKeys[booking.status])}
+                      </p>
+                    </div>
+                    {/* Same service-name+chip row as the hero ("[service]
+                        with [chip]"), just at this list's existing
+                        smaller heading-sm size — not the hero's bigger
+                        heading-lg. Stacks (chip full width) on mobile. */}
+                    <div className={rowStyles.stackRow} style={{ gap: "var(--space-2)" }}>
+                      <p style={{ margin: 0, font: "var(--text-heading-sm)", color: "var(--text-primary)" }}>
+                        {booking.serviceName} {t("withInline")}
+                      </p>
+                      <PractitionerChip name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} />
+                    </div>
+                    {/* Join link/location sits directly under that row. */}
                     {deliverySlot}
                     {cancelSlot}
                   </div>
@@ -331,9 +436,18 @@ export function BookingsList({
             );
           })}
         </div>
+          )}
+        </>
       )}
 
-      <PastSessionsSection bookings={past} timezone={effectiveTimezone} perspective={perspective} />
+      {showPastSection && (
+        <PastSessionsSection
+          bookings={past}
+          timezone={effectiveTimezone}
+          perspective={perspective}
+          defaultOpen={pastStartsExpanded}
+        />
+      )}
     </section>
   );
 }

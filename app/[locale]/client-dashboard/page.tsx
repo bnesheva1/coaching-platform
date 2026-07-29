@@ -1,23 +1,19 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { BookingsList, CounterpartAvatar, type SessionBooking } from "@/components/bookings/BookingsList";
-import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
-import { BookedWithGrid } from "./BookedWithGrid";
-import { searchPractitioners } from "@/lib/practitioners/search";
+import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
-import specialtiesData from "@/data/specialties.json";
-import topicsData from "@/data/topics.json";
+import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
   en: "en-US",
 };
 
-// Auth/role guard already ran in layout.tsx — this page can assume
-// `user` is a signed-in client.
-export default async function ClientHomePage({
+// Auth/role guard, and the "no bookings yet" activation branch, already
+// ran in layout.tsx — this page (the sidebar's "Предстоящи"/Upcoming
+// section, and the dashboard's index route) can assume `user` is a
+// signed-in client with at least one booking ever made.
+export default async function ClientUpcomingPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -44,46 +40,17 @@ export default async function ClientHomePage({
       .order("start_utc", { ascending: true }),
   ]);
 
-  const hasAnyBookingHistory = (bookings ?? []).length > 0;
-
-  // Activation moment for a brand-new client — a welcoming CTA to
-  // browse, not an empty sessions list dressed up to look intentional.
-  // Matches Browse's own empty-state pattern (Card + single CTA), not
-  // the practitioner dashboard's multi-step activation checklist, which
-  // is specific to setting up a bookable profile and has no client
-  // equivalent.
-  if (!hasAnyBookingHistory) {
-    return (
-      <Card
-        eyebrow={t("agenda.greeting", { name: profile?.display_name ?? "" })}
-        title={t("clientEmptyState.title")}
-        description={t("clientEmptyState.body")}
-        footer={
-          <Button href="/browse" size="md">
-            {t("clientEmptyState.cta")}
-          </Button>
-        }
-      />
-    );
-  }
-
   const practitionerIds = [...new Set((bookings ?? []).map((b) => b.practitioner_id))];
   const serviceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
 
-  const [{ data: practitioners }, { data: practitionerSettings }, { data: services }, allPractitioners] =
-    await Promise.all([
-      supabase.from("profiles").select("id, display_name").in("id", practitionerIds),
-      // avatar_url lives on practitioner_profiles, not profiles — same
-      // query already fetching min_notice_hours, just widened rather
-      // than adding a third round-trip for one more column.
-      supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url").in("id", practitionerIds),
-      supabase.from("services").select("id, name, duration_minutes, delivery_type").in("id", serviceIds),
-      // Full reuse of the same search this client would hit on /browse —
-      // filtered down to just the practitioners they've booked, below.
-      // No new query/RPC: average_rating/review_count are already
-      // computed inside search_practitioners.
-      searchPractitioners({}),
-    ]);
+  const [{ data: practitioners }, { data: practitionerSettings }, { data: services }] = await Promise.all([
+    supabase.from("profiles").select("id, display_name").in("id", practitionerIds),
+    // avatar_url lives on practitioner_profiles, not profiles — same
+    // query already fetching min_notice_hours, just widened rather
+    // than adding a third round-trip for one more column.
+    supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url").in("id", practitionerIds),
+    supabase.from("services").select("id, name, duration_minutes, delivery_type, image_url").in("id", serviceIds),
+  ]);
 
   const { data: deliveryInfoRows } = (await supabase.rpc("get_my_active_booking_delivery_info")) as {
     data: { service_id: string; delivery_info: string | null }[] | null;
@@ -113,6 +80,7 @@ export default async function ClientHomePage({
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
     hasReview: reviewedBookingIds.has(b.id),
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
+    serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);
@@ -125,36 +93,6 @@ export default async function ClientHomePage({
   const nextBooking = upcoming.find((b) => ACTIVE_STATUSES.has(b.status)) ?? null;
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short" });
-
-  // "Booked with" — most-recently-booked practitioner first (most
-  // relevant for rebooking), derived entirely from the bookings already
-  // fetched above, no separate tracking system.
-  const lastBookedAtByPractitioner = new Map<string, string>();
-  for (const b of bookings ?? []) {
-    const existing = lastBookedAtByPractitioner.get(b.practitioner_id);
-    if (!existing || b.start_utc > existing) {
-      lastBookedAtByPractitioner.set(b.practitioner_id, b.start_utc);
-    }
-  }
-  const specialtyLabelByKey = new Map(specialtiesData.map((s) => [s.key, s[locale] ?? s.en]));
-  const topicLabelByKey = new Map(topicsData.map((topic) => [topic.key, topic[locale] ?? topic.en]));
-  const bookedWithPractitioners: PractitionerCardData[] = allPractitioners
-    .filter((p) => practitionerIds.includes(p.id))
-    .sort(
-      (a, b) =>
-        (lastBookedAtByPractitioner.get(b.id) ?? "").localeCompare(lastBookedAtByPractitioner.get(a.id) ?? ""),
-    )
-    .map((p) => ({
-      id: p.id,
-      username: p.username,
-      displayName: p.displayName,
-      bio: p.bio,
-      avatarUrl: p.avatarUrl,
-      specialtyLabels: p.specialties.map((key) => specialtyLabelByKey.get(key) ?? key),
-      topicLabels: p.topics.map((key) => topicLabelByKey.get(key) ?? key),
-      averageRating: p.averageRating,
-      reviewCount: p.reviewCount,
-    }));
 
   const justCancelled = resolvedSearchParams.cancelled === "1";
   const cancelErrorCode = typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
@@ -178,17 +116,16 @@ export default async function ClientHomePage({
       {nextBooking && (
         <div style={{ marginBottom: "var(--space-6)" }}>
           {/* Hand-rolled rather than <Card>: Card's title/description
-              props are plain strings, and this needs a leading avatar
-              beside them — a client's next session is with a person,
-              so their face leads here too, not just on the list below.
-              Same visual recipe as Card (border-subtle/radius-xl/
-              shadow-md/space-8) so it stays the page's most prominent
-              surface, just restructured internally. */}
+              props are plain strings, and this needs a leading service
+              image beside a multi-row column. Same visual recipe as
+              Card (border-subtle/radius-xl/shadow-md/space-8) so it
+              stays the page's most prominent surface, just restructured
+              internally. */}
           <div
             style={{
               display: "flex",
+              flexDirection: "column",
               gap: "var(--space-5)",
-              alignItems: "flex-start",
               background: "var(--bg-surface)",
               border: "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-xl)",
@@ -196,67 +133,96 @@ export default async function ClientHomePage({
               padding: "var(--space-8)",
             }}
           >
-            <CounterpartAvatar name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} size={72} />
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-              <span style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--accent)" }}>
-                {t("agenda.nextSessionEyebrow")}
-              </span>
-              <h3 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
-                {nextBooking.serviceName} — {tBooking("withPractitioner", { name: nextBooking.counterpartName })}
-              </h3>
-              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                {formatter.format(new Date(nextBooking.startUtc))} ·{" "}
-                {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
-              </p>
-              {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
-                <a
-                  href={nextBooking.deliveryInfo}
-                  target="_blank"
-                  rel="noreferrer"
+            {/* Headline sits above the image+content row (not tucked
+                beside it in the content column) — it labels the whole
+                card, image included, not just the text half. */}
+            <span style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--accent)" }}>
+              {t("agenda.nextSessionEyebrow")}
+            </span>
+
+            <div className={rowStyles.row} style={{ gap: "var(--space-5)" }}>
+              <ServiceImageSquare imageUrl={nextBooking.serviceImageUrl} size={140} />
+
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+                {/* Matches the practitioner dashboard's own next-session
+                    card structure (plain date/duration, message-count
+                    placeholder) — the client's preferred, simpler read —
+                    but keeps the practitioner mini-tile next to the
+                    service name rather than a plain name string. Stacks
+                    (chip full width) on mobile, same as the upcoming
+                    list cards. */}
+                <div className={rowStyles.stackRow} style={{ gap: "var(--space-2)" }}>
+                  <h3 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
+                    {nextBooking.serviceName} {tBooking("withInline")}
+                  </h3>
+                  <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} />
+                </div>
+                <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+                  {formatter.format(new Date(nextBooking.startUtc))} ·{" "}
+                  {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
+                </p>
+
+                {/* Placeholder — no messaging feature exists anywhere in
+                    this app yet, same reasoning as the identical spot on
+                    the practitioner dashboard; always 0 for now. */}
+                <span
+                  aria-label={t("agenda.messagesFromPractitioner", { count: 0 })}
                   style={{
-                    alignSelf: "flex-start",
-                    marginTop: "var(--space-2)",
-                    display: "inline-block",
-                    padding: "var(--button-padding-md)",
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--accent)",
-                    color: "var(--text-on-accent)",
-                    font: "var(--text-button-md)",
-                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "var(--space-1)",
+                    font: "var(--text-body-sm)",
+                    color: "var(--text-tertiary)",
                   }}
                 >
-                  {t("agenda.joinSession")}
-                </a>
-              ) : nextBooking.deliveryInfo ? (
-                <p style={{ margin: "var(--space-2) 0 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-                  {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
-                </p>
-              ) : null}
+                  <span aria-hidden style={{ font: "var(--text-icon)" }}>💬</span>
+                  0
+                </span>
+
+                {/* Join button/location sits directly under the message
+                    line. Full width on mobile via .tile, content-sized
+                    on desktop. */}
+                {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
+                  <a
+                    href={nextBooking.deliveryInfo}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={rowStyles.tile}
+                    style={{
+                      alignSelf: "flex-start",
+                      display: "inline-block",
+                      textAlign: "center",
+                      padding: "var(--button-padding-md)",
+                      borderRadius: "var(--radius-md)",
+                      background: "var(--accent)",
+                      color: "var(--text-on-accent)",
+                      font: "var(--text-button-md)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {t("agenda.joinSession")}
+                  </a>
+                ) : nextBooking.deliveryInfo ? (
+                  <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                    {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Past sessions live on their own sidebar page now
+          (/client-dashboard/past) — this page shows Upcoming only. */}
       <BookingsList
         upcoming={nextBooking ? upcoming.filter((b) => b.id !== nextBooking.id) : upcoming}
         past={past}
         perspective="client"
         premium
         nextSessionShownSeparately={nextBooking !== null}
+        showPastSection={false}
       />
-
-      {bookedWithPractitioners.length > 0 && (
-        <section style={{ marginTop: "var(--space-8)" }}>
-          <h2 style={{ font: "var(--text-heading-md)", margin: "0 0 var(--space-4)" }}>{t("bookedWith.heading")}</h2>
-          <BookedWithGrid practitioners={bookedWithPractitioners} />
-        </section>
-      )}
-
-      <div style={{ marginTop: "var(--space-8)", display: "flex", justifyContent: "center" }}>
-        <Button href="/browse" variant="secondary">
-          {t("clientEmptyState.cta")}
-        </Button>
-      </div>
     </main>
   );
 }

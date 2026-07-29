@@ -6,15 +6,19 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { NavBar } from "@/components/ui/NavBar";
 import { Button } from "@/components/ui/Button";
-import { ContentContainer } from "@/components/ui/ContentContainer";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { ClientDashboardSidebar } from "./ClientDashboardSidebar";
+import { ClientActivationState } from "./ClientActivationState";
 
-// Auth + role guard, mirroring practitioner-dashboard/layout.tsx — hoisted
-// here so it's ready for any future client-dashboard route, even though
-// there's only the one page today. No DashboardShell/sidebar: unlike the
-// practitioner side's six tabs, this is a single page with sections, so
-// there's nothing to navigate between — just the top NavBar, reused as-is
-// (it already takes wordmark/links/langToggle/actions with no role baked
-// in, so no changes were needed to make it work here).
+// Auth + role guard, mirroring practitioner-dashboard/layout.tsx —
+// hoisted here so it runs once for all three client-dashboard routes
+// instead of being duplicated in each. Now also owns the sidebar (same
+// DashboardShell/NavItem pattern as the practitioner dashboard, reused
+// rather than hand-rolled a second time) and the "no bookings yet"
+// activation check: a brand-new client sees the same welcome state no
+// matter which of the three sidebar links they land on or click,
+// instead of each of the three pages separately reimplementing (and
+// duplicating a bookings-existence query for) the identical empty case.
 export default async function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations("Dashboard");
   const tHome = await getTranslations("HomePage");
@@ -30,12 +34,18 @@ export default async function ClientDashboardLayout({ children }: { children: Re
     return null;
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role, display_name").eq("id", user.id).single();
 
   if (profile?.role !== "client") {
     redirect({ href: "/practitioner-dashboard", locale });
     return null;
   }
+
+  const { count: bookingCount } = await supabase
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", user.id);
+  const hasAnyBookingHistory = (bookingCount ?? 0) > 0;
 
   const otherLocale = routing.locales.find((l) => l !== locale) ?? locale;
   const langToggleText = locale === "bg" ? "BG · EN" : "EN · BG";
@@ -73,11 +83,9 @@ export default async function ClientDashboardLayout({ children }: { children: Re
           </form>
         }
       />
-      {/* No <main> here — each page supplies its own landmark, same
-          convention as every other route in this app (including the
-          practitioner dashboard's own DashboardShell, which avoids <main>
-          for the identical reason). */}
-      <ContentContainer>{children}</ContentContainer>
+      <DashboardShell sidebar={<ClientDashboardSidebar />}>
+        {hasAnyBookingHistory ? children : <ClientActivationState displayName={profile?.display_name ?? ""} />}
+      </DashboardShell>
     </div>
   );
 }

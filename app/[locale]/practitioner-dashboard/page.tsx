@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -355,8 +356,10 @@ export default async function PractitionerHomePage() {
                       href={nextBooking.deliveryInfo}
                       target="_blank"
                       rel="noreferrer"
+                      className={rowStyles.tile}
                       style={{
                         display: "inline-block",
+                        textAlign: "center",
                         padding: "var(--button-padding-md)",
                         borderRadius: "var(--radius-md)",
                         background: "var(--accent)",

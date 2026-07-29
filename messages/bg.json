@@ -67,7 +67,10 @@
       "services": "Услуги",
       "schedule": "График",
       "bookings": "Сесии",
-      "reviews": "Отзиви"
+      "reviews": "Отзиви",
+      "clientUpcoming": "Предстоящи",
+      "clientPast": "Минали",
+      "clientPractitioners": "Моите практикуващи"
     },
     "activation": {
       "eyebrow": "Добре дошли",
@@ -97,12 +100,14 @@
       "upcomingWeekHeading": "Предстоящи тази седмица",
       "noUpcomingThisWeek": "Няма предстоящи сесии тази седмица.",
       "messagesFromClient": "{count, plural, one {# съобщение от клиента} other {# съобщения от клиента}}",
+      "messagesFromPractitioner": "{count, plural, one {# съобщение от специалиста} other {# съобщения от специалиста}}",
       "showAllSessions": "Покажи всички резервирани сесии"
     },
     "clientEmptyState": {
       "title": "Все още нямаш запазена консултация",
       "body": "Разгледай практикуващите в платформата и запази своя първи час.",
-      "cta": "Открий специалист"
+      "cta": "Открий специалист",
+      "suggestedHeading": "Препоръчани практикуващи"
     },
     "bookedWith": {
       "heading": "Практикуващи, с които си работил/а",
@@ -310,6 +315,7 @@
     "statusCancelledByYou": "Отказана от теб",
     "withPractitioner": "Със: {name}",
     "withClient": "Клиент: {name}",
+    "withInline": "с",
     "cancelButton": "Откажи резервацията",
     "cancelConfirm": "Отказваш тази резервация? Това действие не може да се отмени.",
     "cancelledMessage": "Резервацията е отказана.",

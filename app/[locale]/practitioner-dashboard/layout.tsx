@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { NavBar } from "@/components/ui/NavBar";
 import { Button } from "@/components/ui/Button";
-import { DashboardShell } from "./DashboardShell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { DashboardSidebar } from "./DashboardSidebar";
 
 // UTC calendar week (Monday 00:00 through the following Monday), not the
 // practitioner's own timezone — an approximation, not a bug: this only
@@ -109,10 +110,7 @@ export default async function PractitionerDashboardLayout({ children }: { childr
         }
       />
       <DashboardShell
-        pulse={{
-          sessionCount: sessionCount ?? 0,
-          totalUpcoming: totalUpcoming ?? 0,
-        }}
+        sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
       >
         {children}
       </DashboardShell>

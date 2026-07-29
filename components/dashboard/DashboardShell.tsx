@@ -1,13 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { ContentContainer } from "@/components/ui/ContentContainer";
-import { DashboardSidebar, type DashboardPulse } from "./DashboardSidebar";
 
 const SIDEBAR_WIDTH = 220;
+
+// The mobile-drawer-close callback lives in DashboardShell's own client
+// state, but the layout files that pass `sidebar` in are Server
+// Components — a plain function prop can't cross that boundary (only
+// Server Actions can). Context sidesteps this: `sidebar` is passed as
+// an ordinary ReactNode (a Server Component rendering a "use client"
+// sidebar is fine, same as any other children slot), and that sidebar
+// pulls the current onNavigate callback itself via useDashboardNavigate.
+const DashboardNavigateContext = createContext<(() => void) | undefined>(undefined);
+
+// Called by each dashboard's own sidebar component (DashboardSidebar,
+// ClientDashboardSidebar, ...) to close the mobile drawer when a nav
+// link is clicked. undefined on desktop, where there's no drawer to
+// close — matches the original prop's own optionality.
+export function useDashboardNavigate(): (() => void) | undefined {
+  return useContext(DashboardNavigateContext);
+}
 
 // Desktop starts open, mobile starts closed — the drawer pushes content
 // on desktop (a plain flex sibling whose width animates) and overlays it
@@ -16,11 +32,16 @@ const SIDEBAR_WIDTH = 220;
 // to NavBar — it sits just below the top bar, always at the same
 // position, only its icon/behavior differs per breakpoint (gear +
 // overlay-open on mobile, circle-arrow + fold/unfold on desktop).
+//
+// Originated on the practitioner dashboard; generalized so the client
+// dashboard can reuse this exact shell/collapse/mobile-drawer mechanics
+// with its own sidebar content, rather than either dashboard hand-
+// copying the shell itself.
 export function DashboardShell({
-  pulse,
+  sidebar,
   children,
 }: {
-  pulse: DashboardPulse;
+  sidebar: ReactNode;
   children: ReactNode;
 }) {
   const t = useTranslations("Dashboard");
@@ -149,7 +170,9 @@ export function DashboardShell({
             }}
           >
             <div style={{ width: isMobile ? "min(260px, 80vw)" : SIDEBAR_WIDTH }}>
-              <DashboardSidebar pulse={pulse} onNavigate={isMobile ? closeMobile : undefined} />
+              <DashboardNavigateContext.Provider value={isMobile ? closeMobile : undefined}>
+                {sidebar}
+              </DashboardNavigateContext.Provider>
             </div>
           </div>
 

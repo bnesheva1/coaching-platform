@@ -1,0 +1,68 @@
+/* The one property inline style objects can't express: a breakpoint.
+   Everything else about this row (colors, spacing, radii) stays as
+   inline styles in the caller, consistent with the rest of this
+   project — this file exists purely for the row→column flip, same
+   reasoning as Hero.module.css being this codebase's only other CSS
+   Module (a real @media query, not expressible via var()-based inline
+   styles). Shared by the client dashboard's next-session hero and
+   BookingsList's premium cards — both put a square image beside a text
+   column on desktop and stack image-on-top on mobile. */
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column;
+  }
+}
+
+/* Same breakpoint, reused for the date/status pairing on premium
+   BookingsList cards: inline on desktop (with a middot separator, this
+   codebase's standing convention for pairing two short facts on one
+   line), stacked with no separator on mobile. */
+.inlineSeparator {
+  display: inline;
+}
+
+@media (max-width: 640px) {
+  .inlineSeparator {
+    display: none;
+  }
+}
+
+/* Sized via --tile-size (set per caller, e.g. the service image's
+   140px/96px) on desktop; stretches to the card's full width on
+   mobile. Left unset, --tile-size falls back to the element's own
+   natural sizing (e.g. the practitioner chip's content width, or the
+   hero's join button's inline-block width) — same class either way,
+   just with or without an explicit desktop size. */
+.tile {
+  flex: 0 0 var(--tile-size, auto);
+  width: var(--tile-size, auto);
+}
+
+@media (max-width: 640px) {
+  .tile {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+}
+
+/* Two things that sit side by side on desktop and stack (each at full
+   card width) on mobile — the service name paired with the
+   practitioner chip. */
+.stackRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .stackRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
