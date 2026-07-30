@@ -576,8 +576,12 @@ export function SlotPicker({
               onClick={() => loginPromptRef.current?.close()}
               style={{
                 position: "absolute",
-                top: 0,
-                right: 0,
+                // Halfway between the title row and the dialog's outer
+                // edge (the dialog's own padding is --space-6, so
+                // offsetting by half of that — --space-3 — splits the
+                // difference) rather than flush with either.
+                top: "calc(var(--space-3) * -1)",
+                right: "calc(var(--space-3) * -1)",
                 width: 32,
                 height: 32,
                 display: "flex",
@@ -593,7 +597,10 @@ export function SlotPicker({
             >
               ✕
             </button>
-            <p style={{ margin: "0 var(--space-6) 0 0", font: "var(--text-heading-sm)" }}>{t("loginPromptTitle")}</p>
+            {/* marginTop clears the close button's footprint (it sits
+                above this row, straddling the content's top edge) so
+                the title starts below it instead of sharing its row. */}
+            <p style={{ margin: "var(--space-6) 0 0", font: "var(--text-heading-sm)" }}>{t("loginPromptTitle")}</p>
             <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
               {t("loginPromptBody")}
             </p>
