@@ -206,6 +206,17 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
         onClick={(e) => {
           if (e.target === dialogRef.current) dialogRef.current?.close();
         }}
+        // The dialog's native `close` event fires no matter how it was
+        // dismissed — the explicit button below, tapping the backdrop,
+        // or pressing Escape — so applying the draft here (instead of
+        // only in the button's own onClick) means any selection made
+        // before closing sticks, not just the one confirmed via the
+        // button. Whatever the draft is at close time — including
+        // "unchanged" or "cleared" — is what gets applied; there's no
+        // separate "cancel without applying" affordance, matching how
+        // the desktop sidebar's checkboxes apply instantly with no
+        // confirm step either.
+        onClose={() => onApply(draft)}
         style={{
           border: "none",
           borderRadius: "18px 18px 0 0",
@@ -273,10 +284,7 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
             <button
               type="button"
               className="focus-ring"
-              onClick={() => {
-                onApply(draft);
-                dialogRef.current?.close();
-              }}
+              onClick={() => dialogRef.current?.close()}
               style={{
                 width: "100%",
                 background: "var(--accent)",
