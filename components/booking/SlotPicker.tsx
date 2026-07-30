@@ -557,12 +557,43 @@ export function SlotPicker({
             padding: "var(--space-6)",
             maxWidth: "26rem",
             width: "90vw",
+            // The browser's own `dialog:modal { margin: auto }` (what
+            // normally centers a modal <dialog>) loses to this app's
+            // Tailwind preflight, which resets margin to 0 on every
+            // element via a `*` selector — author CSS always beats the
+            // UA stylesheet regardless of specificity. Setting it back
+            // explicitly is what actually centers the dialog.
+            margin: "auto",
             background: "var(--bg-surface)",
             color: "var(--text-primary)",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-            <p style={{ margin: 0, font: "var(--text-heading-sm)" }}>{t("loginPromptTitle")}</p>
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            <button
+              type="button"
+              className="focus-ring"
+              aria-label={t("loginPromptClose")}
+              onClick={() => loginPromptRef.current?.close()}
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "none",
+                border: "none",
+                borderRadius: "50%",
+                color: "var(--text-tertiary)",
+                font: "var(--text-icon)",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+            <p style={{ margin: "0 var(--space-6) 0 0", font: "var(--text-heading-sm)" }}>{t("loginPromptTitle")}</p>
             <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
               {t("loginPromptBody")}
             </p>
