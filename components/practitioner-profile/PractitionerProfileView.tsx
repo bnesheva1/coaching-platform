@@ -62,6 +62,12 @@ export type PractitionerProfileViewProps = {
   ownBookings: { id: string; startUtc: string }[];
   bookingWindowDays: number;
   viewerRole: "client" | "practitioner" | null;
+  // Distinct from isOwner above: isOwner is pinned false on the public
+  // route by design (edit mode only ever lives on the dashboard tab),
+  // but a practitioner can still be looking at their OWN public link
+  // there. This is the real "is the viewer the profile owner" signal,
+  // used only to word SlotPicker's practitioner-viewer dialog correctly.
+  isOwnProfile: boolean;
   justBooked: boolean;
   bookingErrorCode: string | null;
   paymentStatus: "processing" | "cancelled" | null;
@@ -92,6 +98,7 @@ export function PractitionerProfileView({
   ownBookings,
   bookingWindowDays,
   viewerRole,
+  isOwnProfile,
   justBooked,
   bookingErrorCode,
   paymentStatus,
@@ -492,6 +499,7 @@ export function PractitionerProfileView({
                           serviceId={service.id}
                           username={username ?? ""}
                           viewerRole={viewerRole}
+                          isOwnProfile={isOwnProfile}
                           windowDays={bookingWindowDays}
                         />
                       </div>

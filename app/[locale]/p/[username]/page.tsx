@@ -72,6 +72,11 @@ export default async function PublicProfilePage({
     viewerProfile?.role === "client" || viewerProfile?.role === "practitioner"
       ? viewerProfile.role
       : null;
+  // Separate from the isOwner prop below (always false here, by design —
+  // see its own comment) — this is whether the practitioner viewing this
+  // page IS the practitioner it belongs to, used only to word SlotPicker's
+  // practitioner-viewer dialog ("preview" vs "only clients can book").
+  const isOwnProfile = authData.user?.id === practitionerProfile.id;
 
   // Only a client can structurally have "own bookings" with this
   // practitioner to mark on the picker — RLS itself also scopes this to
@@ -147,6 +152,7 @@ export default async function PublicProfilePage({
           ownBookings={ownBookings}
           bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole={viewerRole}
+          isOwnProfile={isOwnProfile}
           justBooked={justBooked}
           bookingErrorCode={bookingErrorCode}
           paymentStatus={paymentStatus}

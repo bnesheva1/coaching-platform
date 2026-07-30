@@ -100,6 +100,7 @@ export default async function ProfilePage() {
           ownBookings={[]}
           bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole="practitioner"
+          isOwnProfile
           justBooked={false}
           bookingErrorCode={null}
           paymentStatus={null}

@@ -49,6 +49,12 @@ export type SlotPickerProps = {
   serviceId: string;
   username: string;
   viewerRole: "client" | "practitioner" | null;
+  // Only meaningful when viewerRole is "practitioner" — distinguishes a
+  // practitioner previewing their OWN profile (sees "this is how
+  // clients see it") from one browsing a colleague's public page (sees
+  // "only clients can book"). Ignored entirely for a client/guest
+  // viewer, so callers on those paths don't need to compute it.
+  isOwnProfile: boolean;
   // lib/availability/generateSlots.ts's BOOKING_WINDOW_DAYS, passed
   // through as a prop rather than imported directly here — that module
   // pulls in luxon at the top level, and every other client component
@@ -84,6 +90,7 @@ export function SlotPicker({
   serviceId,
   username,
   viewerRole,
+  isOwnProfile,
   windowDays,
 }: SlotPickerProps) {
   const t = useTranslations("Booking");
@@ -104,6 +111,10 @@ export function SlotPicker({
   // showModal() pattern as CancelSessionDialog.tsx elsewhere in this
   // app, not a bespoke modal implementation.
   const loginPromptRef = useRef<HTMLDialogElement>(null);
+  // Same pattern, for a practitioner viewer tapping a slot — the message
+  // differs by isOwnProfile (see the branch in renderChip below), but
+  // it's one dialog either way, not one per slot.
+  const practitionerNoteRef = useRef<HTMLDialogElement>(null);
 
   // en-CA gives a stable, sortable YYYY-MM-DD string directly — used
   // only as an internal grouping/lookup key, never shown to the user
@@ -222,7 +233,11 @@ export function SlotPicker({
       );
     }
 
-    if (viewerRole !== "client") {
+    // A practitioner previewing their OWN profile — unchanged from
+    // before: a plain, non-interactive chip, with the static footnote
+    // below explaining it's a preview. Left exactly as it was; only the
+    // other-practitioner case below changed.
+    if (viewerRole === "practitioner" && isOwnProfile) {
       return (
         <span
           key={chip.startUtc}
@@ -231,6 +246,23 @@ export function SlotPicker({
         >
           {time}
         </span>
+      );
+    }
+
+    // A practitioner browsing a DIFFERENT practitioner's profile — the
+    // slot is clickable, opening a dialog explaining only clients can
+    // book, rather than a plain read-only chip with no feedback at all.
+    if (viewerRole !== "client") {
+      return (
+        <button
+          key={chip.startUtc}
+          type="button"
+          className="slot-chip focus-ring slot-chip--available"
+          style={{ font: chipFont, padding: chipPadding }}
+          onClick={() => practitionerNoteRef.current?.showModal()}
+        >
+          {time}
+        </button>
       );
     }
 
@@ -530,13 +562,11 @@ export function SlotPicker({
         </div>
       )}
 
-      {/* De-emphasized preview-mode footnote, at the very bottom — not
-          a prominent line above the times. Covers both a practitioner
-          previewing their own profile and a different practitioner
-          browsing someone else's public page; viewerRole doesn't
-          distinguish the two today, and both get the same "you're
-          seeing this as a non-client" framing either way. */}
-      {viewerRole === "practitioner" && (
+      {/* Own-profile preview footnote — unchanged from before this
+          session's guest-dialog work: a de-emphasized static note, not
+          a dialog. Only the other-practitioner case (below) got moved
+          into a click-triggered modal. */}
+      {viewerRole === "practitioner" && isOwnProfile && (
         <p style={{ font: "var(--text-caption)", color: "var(--text-tertiary)", margin: "var(--space-3) 0 0" }}>
           *{t("practitionerPreviewNote")}
         </p>
@@ -612,6 +642,60 @@ export function SlotPicker({
                 {tHeader("register")}
               </Button>
             </div>
+          </div>
+        </dialog>
+      )}
+
+      {/* Only reachable from the other-practitioner chip above (the
+          own-profile case renders a plain, non-interactive span instead
+          and never opens this). No CTAs: unlike the guest dialog above,
+          there's nothing actionable to offer here, just an explanation
+          for why the slot didn't book. */}
+      {viewerRole === "practitioner" && !isOwnProfile && (
+        <dialog
+          ref={practitionerNoteRef}
+          onClick={(e) => {
+            if (e.target === practitionerNoteRef.current) practitionerNoteRef.current?.close();
+          }}
+          style={{
+            border: "none",
+            borderRadius: "var(--radius-lg)",
+            padding: "var(--space-6)",
+            maxWidth: "26rem",
+            width: "90vw",
+            margin: "auto",
+            background: "var(--bg-surface)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            <button
+              type="button"
+              className="focus-ring"
+              aria-label={t("loginPromptClose")}
+              onClick={() => practitionerNoteRef.current?.close()}
+              style={{
+                position: "absolute",
+                top: "calc(var(--space-3) * -1)",
+                right: "calc(var(--space-3) * -1)",
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "none",
+                border: "none",
+                borderRadius: "50%",
+                color: "var(--text-tertiary)",
+                font: "var(--text-icon)",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+            <p style={{ margin: "var(--space-6) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+              {t("onlyClientsCanBook")}
+            </p>
           </div>
         </dialog>
       )}
