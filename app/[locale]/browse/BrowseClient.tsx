@@ -354,8 +354,26 @@ export function BrowseClient({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
               {activeChips.map(({ group, key, label }) => (
-                <span
+                // The whole pill is the button now, not just the ✕ —
+                // a bigger, more reliable tap target (and simpler than
+                // a button nested in a separately-styled wrapper). The
+                // ✕ stays as plain decorative text inside it.
+                <button
                   key={`${group}:${key}`}
+                  type="button"
+                  className="focus-ring"
+                  aria-label={label}
+                  onClick={() => {
+                    if (group === SPECIALTY_GROUP) {
+                      const next = new Set(selectedModalities);
+                      next.delete(key);
+                      applyFilters(next, selectedTopics);
+                    } else {
+                      const next = new Set(selectedTopics);
+                      next.delete(key);
+                      applyFilters(selectedModalities, next);
+                    }
+                  }}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -366,45 +384,23 @@ export function BrowseClient({
                     fontWeight: 600,
                     padding: "4px var(--space-2)",
                     borderRadius: "var(--radius-pill)",
+                    border: "none",
+                    cursor: "pointer",
+                    // Same fix as the mobile filter sheet's checkbox
+                    // rows (BrowseFilters.tsx) — without this, mobile
+                    // browsers spend the first tap on a small target
+                    // like this deciding whether it's a tap or the
+                    // start of a scroll (this whole row can scroll
+                    // horizontally-ish as chips wrap), swallowing it;
+                    // manipulation lets the browser commit immediately.
+                    touchAction: "manipulation",
                   }}
                 >
                   {label}
-                  <button
-                    type="button"
-                    className="focus-ring"
-                    aria-label={label}
-                    onClick={() => {
-                      if (group === SPECIALTY_GROUP) {
-                        const next = new Set(selectedModalities);
-                        next.delete(key);
-                        applyFilters(next, selectedTopics);
-                      } else {
-                        const next = new Set(selectedTopics);
-                        next.delete(key);
-                        applyFilters(selectedModalities, next);
-                      }
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "inherit",
-                      cursor: "pointer",
-                      padding: 0,
-                      font: "inherit",
-                      opacity: 0.7,
-                      // Same fix as the mobile filter sheet's checkbox
-                      // rows (BrowseFilters.tsx) — without this, mobile
-                      // browsers spend the first tap on a small target
-                      // like this deciding whether it's a tap or the
-                      // start of a scroll (this whole row can scroll
-                      // horizontally-ish as chips wrap), swallowing it;
-                      // manipulation lets the browser commit immediately.
-                      touchAction: "manipulation",
-                    }}
-                  >
+                  <span aria-hidden="true" style={{ opacity: 0.7 }}>
                     ✕
-                  </button>
-                </span>
+                  </span>
+                </button>
               ))}
               <span style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)" }}>
                 {t("resultsCount", { count: orderedResults.length })}
