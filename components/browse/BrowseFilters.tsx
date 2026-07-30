@@ -81,6 +81,16 @@ function OptionList({
                 font: "var(--text-body-xs)",
                 color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
                 cursor: disabled ? "default" : "pointer",
+                // Without this, mobile browsers can spend the first tap
+                // on a row inside the scrollable sheet below deciding
+                // whether it's a tap or the start of a scroll (any tiny
+                // finger movement reads as "maybe scrolling") — the tap
+                // gets swallowed, the checkbox doesn't toggle, and only
+                // a second, now-unambiguous tap actually registers.
+                // manipulation tells the browser this row is only ever
+                // panned/tapped, never pinch-zoomed, so it can commit to
+                // the tap immediately instead of waiting.
+                touchAction: "manipulation",
               }}
             >
               <input
@@ -88,7 +98,7 @@ function OptionList({
                 checked={value.has(option.key)}
                 disabled={disabled}
                 onChange={() => onToggle(option.key)}
-                style={{ width: 14, height: 14, accentColor: "var(--accent)" }}
+                style={{ width: 14, height: 14, accentColor: "var(--accent)", touchAction: "manipulation" }}
               />
               {option.label} ({option.count})
             </label>
@@ -218,7 +228,13 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
             <span style={{ font: "var(--text-heading-sm)" }}>{t("filtersHeading")}</span>
           </div>
 
-          <div style={{ padding: "var(--space-4)", overflowY: "auto", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+          {/* pan-y (not the default auto/none) — tells mobile browsers
+              this area only ever scrolls vertically, so a tap on a row
+              inside it can commit immediately instead of first waiting
+              to see if the touch turns into a scroll (see the identical
+              touchAction note on each checkbox row below — same root
+              cause, the container-level half of the same fix). */}
+          <div style={{ padding: "var(--space-4)", overflowY: "auto", touchAction: "pan-y", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
             {groups.map((group) => (
               <OptionList
                 key={group.key}

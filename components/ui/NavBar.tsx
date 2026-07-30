@@ -203,9 +203,19 @@ export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobi
               </div>
             )}
 
-            {/* Login/Register, or Табло + account menu — right under the
-                nav links, not tucked at the very end. */}
-            <div style={{ marginTop: "var(--space-5)", display: "flex", flexDirection: "column", gap: "var(--space-2)", alignItems: "flex-start" }}>
+            {/* Login/Register, or the dashboard link — right under the
+                nav links, not tucked at the very end. `actions` arrives
+                as opaque, already-rendered content (real navigation
+                Links/Buttons under the hood) — this component has no
+                way to attach an individual onClick to each one, so it
+                closes the menu on any click that bubbles up from inside
+                this wrapper instead. Every current use of `actions` is
+                a real navigation, so "any click here means the page is
+                about to change, close the menu" holds. */}
+            <div
+              onClick={() => setMenuOpen(false)}
+              style={{ marginTop: "var(--space-5)", display: "flex", flexDirection: "column", gap: "var(--space-2)", alignItems: "flex-start" }}
+            >
               {actions}
             </div>
 
