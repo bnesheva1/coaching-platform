@@ -384,7 +384,23 @@ export function BrowseClient({
                         applyFilters(selectedModalities, next);
                       }
                     }}
-                    style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0, font: "inherit", opacity: 0.7 }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "inherit",
+                      cursor: "pointer",
+                      padding: 0,
+                      font: "inherit",
+                      opacity: 0.7,
+                      // Same fix as the mobile filter sheet's checkbox
+                      // rows (BrowseFilters.tsx) — without this, mobile
+                      // browsers spend the first tap on a small target
+                      // like this deciding whether it's a tap or the
+                      // start of a scroll (this whole row can scroll
+                      // horizontally-ish as chips wrap), swallowing it;
+                      // manipulation lets the browser commit immediately.
+                      touchAction: "manipulation",
+                    }}
                   >
                     ✕
                   </button>
