@@ -213,12 +213,21 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
           margin: "auto 0 0",
           width: "100%",
           maxWidth: "100%",
-          maxHeight: "80vh",
+          // dvh, not vh — vh is pinned to the browser's LARGEST possible
+          // viewport (as if the address bar were already hidden), but
+          // iOS Safari renders with it visible, then auto-collapses it
+          // on the first touch interaction. That collapse grows the
+          // real viewport out from under an 80vh sheet, so everything
+          // inside visibly jumps mid-tap and swallows the touch instead
+          // of registering it as a click. dvh tracks the actual current
+          // viewport instead of the toolbar-hidden maximum, so nothing
+          // resizes out from under the tap.
+          maxHeight: "80dvh",
           background: "var(--bg-surface)",
           color: "var(--text-primary)",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", maxHeight: "80vh" }}>
+        <div style={{ display: "flex", flexDirection: "column", maxHeight: "80dvh" }}>
           <div
             style={{
               padding: "var(--space-4)",
