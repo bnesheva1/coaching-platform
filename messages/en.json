@@ -300,6 +300,8 @@
     "practitionerPreviewNote": "Preview — clients will see these times as bookable.",
     "onlyClientsCanBook": "Only clients can book appointments.",
     "logInToBookPrompt": "<login>Log in</login> to book a time.",
+    "loginPromptTitle": "Log in to book this time",
+    "loginPromptBody": "You'll need an account to book a session. It only takes a moment.",
     "confirmBooking": "Book the {time} slot?",
     "bookingConfirmed": "Booked! You'll see it reflected in the times below.",
     "paymentProcessing": "Payment received — a confirmation email is on its way, usually within a few minutes.",

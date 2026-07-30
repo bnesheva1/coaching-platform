@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { Button } from "@/components/ui/Button";
 import { bookSlot } from "@/app/[locale]/p/[username]/booking-actions";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -86,6 +87,7 @@ export function SlotPicker({
   windowDays,
 }: SlotPickerProps) {
   const t = useTranslations("Booking");
+  const tHeader = useTranslations("Header");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const isMobile = useIsMobile();
@@ -97,6 +99,11 @@ export function SlotPicker({
   const [desktopPageStart, setDesktopPageStart] = useState(0);
   const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_INITIAL_DAYS);
   const [jumpDateOpen, setJumpDateOpen] = useState(false);
+  // A guest tapping an available slot — one shared dialog for the whole
+  // picker (the message isn't slot-specific), same native <dialog>/
+  // showModal() pattern as CancelSessionDialog.tsx elsewhere in this
+  // app, not a bespoke modal implementation.
+  const loginPromptRef = useRef<HTMLDialogElement>(null);
 
   // en-CA gives a stable, sortable YYYY-MM-DD string directly — used
   // only as an internal grouping/lookup key, never shown to the user
@@ -192,6 +199,26 @@ export function SlotPicker({
           <span aria-hidden="true">✓</span>
           {time}
         </Link>
+      );
+    }
+
+    // A guest — the slot is real and clickable (unlike the practitioner-
+    // preview case below), but clicking it can't go straight to booking
+    // since there's no client account yet. Opens the login/register
+    // prompt instead of doing nothing (a plain read-only chip, like a
+    // practitioner previewing their own page gets) or silently bouncing
+    // to /login with no explanation.
+    if (viewerRole === null) {
+      return (
+        <button
+          key={chip.startUtc}
+          type="button"
+          className="slot-chip focus-ring slot-chip--available"
+          style={{ font: chipFont, padding: chipPadding }}
+          onClick={() => loginPromptRef.current?.showModal()}
+        >
+          {time}
+        </button>
       );
     }
 
@@ -513,6 +540,42 @@ export function SlotPicker({
         <p style={{ font: "var(--text-caption)", color: "var(--text-tertiary)", margin: "var(--space-3) 0 0" }}>
           *{t("practitionerPreviewNote")}
         </p>
+      )}
+
+      {/* Same native <dialog>/showModal() pattern as CancelSessionDialog —
+          one shared dialog for the whole picker, not one per slot, since
+          the message doesn't depend on which chip was tapped. */}
+      {viewerRole === null && (
+        <dialog
+          ref={loginPromptRef}
+          onClick={(e) => {
+            if (e.target === loginPromptRef.current) loginPromptRef.current?.close();
+          }}
+          style={{
+            border: "none",
+            borderRadius: "var(--radius-lg)",
+            padding: "var(--space-6)",
+            maxWidth: "26rem",
+            width: "90vw",
+            background: "var(--bg-surface)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            <p style={{ margin: 0, font: "var(--text-heading-sm)" }}>{t("loginPromptTitle")}</p>
+            <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+              {t("loginPromptBody")}
+            </p>
+            <div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end", marginTop: "var(--space-2)" }}>
+              <Button variant="ghost" size="sm" href="/login">
+                {tHeader("login")}
+              </Button>
+              <Button variant="primary" size="sm" href="/signup">
+                {tHeader("register")}
+              </Button>
+            </div>
+          </div>
+        </dialog>
       )}
     </>
   );
