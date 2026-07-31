@@ -51,14 +51,22 @@ export default function DesignSystemPage() {
     <div>
       <NavBar
         wordmark="Coaching Platform"
-        links={["For clients", "For practitioners", "How it works"]}
+        browseLink={{ label: "Find a practitioner", href: "/browse" }}
+        infoDropdownLabel="Info"
+        infoLinks={[
+          { label: "How it works", href: "/how-it-works" },
+          { label: "Become a practitioner", href: "/become-a-practitioner" },
+          { label: "About", href: "/about" },
+          { label: "FAQ", href: "/faq" },
+          { label: "Contact", href: "/contact" },
+        ]}
+        dashboardLink={null}
+        greetingText={null}
+        authLinks={[
+          { label: "Log in", href: "/login", variant: "ghost" },
+          { label: "Sign up", href: "/signup", variant: "primary" },
+        ]}
         langToggle={<span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>BG · EN</span>}
-        actions={
-          <>
-            <Button variant="ghost" size="sm">Log in</Button>
-            <Button variant="primary" size="sm">Sign up</Button>
-          </>
-        }
       />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "var(--space-10) var(--space-6)" }}>

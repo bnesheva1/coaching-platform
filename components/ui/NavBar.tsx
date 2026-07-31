@@ -5,52 +5,139 @@ import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useClickOutsideAndEscape } from "@/lib/useClickOutsideAndEscape";
+import { Button } from "./Button";
 import { ContentContainer } from "./ContentContainer";
 
-// A plain string keeps the original, not-yet-real homepage links (marketing
-// sections with no route yet) rendering exactly as before — a mode this
-// component still supports rather than forcing every existing caller to
-// invent a destination. A {label, href} entry is a real, clickable,
-// locale-aware Link, used wherever a genuine destination already exists.
-export type NavLink = string | { label: string; href: string };
+export type NavLink = { label: string; href: string };
+export type AuthLink = NavLink & { variant: "ghost" | "primary" };
 
 export type NavBarProps = {
-  // Brand-agnostic by design — this slice keeps current naming, not the
-  // design bundle's hardcoded "Прозрения" wordmark. The caller supplies
-  // the real product name/i18n string. Doubles as the home link now
-  // (see the doc comment below on why there's no separate text link
-  // for it).
   wordmark: string;
-  links: NavLink[];
-  // Real content, not a plain label — the caller renders whatever's
-  // appropriate (a locale-switch control, Login/Signup buttons-as-
-  // links, a Dashboard link + account menu, etc.). Keeps auth/
-  // navigation/theme logic out of this shared primitive entirely.
-  langToggle: ReactNode;
+  browseLink: NavLink;
+  // "Информация"/"Info" — the desktop dropdown trigger label. Its
+  // contents (infoLinks) are the same 5 marketing pages regardless of
+  // viewer role; only browseLink/dashboardLink/authLinks vary by role.
+  infoDropdownLabel: string;
+  infoLinks: NavLink[];
+  // Signed-in state. Mutually exclusive with authLinks — exactly one of
+  // the two is non-null for any given viewer. label is the plain
+  // "Табло"/"Dashboard" text: used verbatim as mobile's flat list item,
+  // and as desktop's tooltip/aria-label on the greeting link (whose
+  // VISIBLE text is greetingText instead — two different strings for
+  // the same destination, which is why both travel separately rather
+  // than one prop trying to serve both layouts).
+  dashboardLink: NavLink | null;
+  // "Привет, {name}" — desktop-only visible text for the signed-in
+  // far-right link. Null exactly when dashboardLink is null.
+  greetingText: string | null;
+  // Login (ghost) + Register (primary), null when signed in.
+  authLinks: AuthLink[] | null;
+  // Both optional and rendered independently — dropping either one (or
+  // both) from what the caller passes is the whole removal mechanism;
+  // nothing else in this component needs to change.
+  langToggle?: ReactNode;
   themeToggle?: ReactNode;
-  actions: ReactNode;
   mobileMenuLabel?: { open: string; close: string };
 };
 
-// "use client" — collapsing everything but the wordmark into a mobile
-// menu needs local open/close state and the useIsMobile hook.
-// langToggle/themeToggle/actions still arrive as already-rendered
-// ReactNode from the caller, which may itself be a Server Component —
-// passing rendered Server Component output as children/props into a
-// Client Component is standard composition and doesn't turn the caller
-// itself into a Client Component.
-//
-// Mobile layout is a deliberate departure from "shrink everything into
-// the top row": the top bar stays down to just the wordmark and the
-// menu toggle, and EVERYTHING else (nav links, language toggle, theme
-// toggle, account actions) lives in one polished dropdown panel below
-// it — a client-facing, mostly-mobile surface deserves a real menu, not
-// a cramped row of icon buttons squeezed in next to the hamburger.
-export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobileMenuLabel }: NavBarProps) {
+const navLinkStyle = {
+  color: "inherit",
+  textDecoration: "none",
+  font: "var(--text-nav)",
+} as const;
+
+const dropdownItemStyle = {
+  display: "block",
+  padding: "var(--space-2) var(--space-3)",
+  borderRadius: "var(--radius-sm)",
+  color: "var(--text-primary)",
+  textDecoration: "none",
+  font: "var(--text-nav)",
+  whiteSpace: "nowrap",
+} as const;
+
+// The desktop "Информация" dropdown — a plain absolute-positioned panel
+// under its trigger, same weight/pattern as SlotPicker's jump-to-date
+// popover elsewhere in this app (not a full ARIA menu widget with
+// roving tabindex/arrow-key navigation — nothing else in this app goes
+// that far for a handful of static links, and this is desktop-only).
+function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutsideAndEscape(ref, open, () => setOpen(false));
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="focus-ring"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+          color: "inherit",
+          font: "var(--text-nav)",
+        }}
+      >
+        {label}
+        <span aria-hidden="true" style={{ fontSize: "10px", transform: open ? "rotate(180deg)" : "none" }}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute",
+            top: "calc(100% + var(--space-2))",
+            left: 0,
+            minWidth: 200,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-md)",
+            padding: "var(--space-2)",
+            zIndex: 45,
+          }}
+        >
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} style={dropdownItemStyle}>
+              {l.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// "use client" — the mobile drawer needs local open/close state and
+// useIsMobile; the desktop info dropdown needs its own local state too.
+// langToggle/themeToggle arrive as already-rendered ReactNode from the
+// caller (possibly itself a Server Component) — standard composition,
+// doesn't turn the caller into a Client Component.
+export function NavBar({
+  wordmark,
+  browseLink,
+  infoDropdownLabel,
+  infoLinks,
+  dashboardLink,
+  greetingText,
+  authLinks,
+  langToggle,
+  themeToggle,
+  mobileMenuLabel,
+}: NavBarProps) {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
-  const hasRealLinks = links.some((l) => typeof l !== "string");
 
   useClickOutsideAndEscape(navRef, isMobile && menuOpen, () => setMenuOpen(false));
 
@@ -64,61 +151,46 @@ export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobi
         background: "var(--bg-page)",
       }}
     >
-      {/* The bar's background/border stay full-bleed on <nav> above;
-          only the content row is capped at --content-max-width and
-          centered — the standard "full-bleed bar, constrained content"
-          split (see ContentContainer's own doc comment). */}
       <ContentContainer>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* The wordmark is the home link, rather than a separate
-                "Home" text entry in `links` — on the practitioner
-                dashboard, the sidebar already has its own "Начало"
-                (home) tab for the dashboard's own home screen; a
-                second, differently-scoped link in the top bar with the
-                same label would read as the same destination when it
-                isn't. Making the logo itself the home link (a standard,
-                unambiguous convention) avoids that collision. */}
-            <Link
-              href="/"
-              style={{
-                font: "var(--text-wordmark)",
-                color: "var(--text-primary)",
-                textDecoration: "none",
-              }}
-            >
-              {wordmark}
-            </Link>
-          </div>
+          {/* Far left — the wordmark doubles as the home link (see the
+              site-wide convention: no separate "Home" nav entry). */}
+          <Link
+            href="/"
+            style={{ font: "var(--text-wordmark)", color: "var(--text-primary)", textDecoration: "none" }}
+          >
+            {wordmark}
+          </Link>
 
           {!isMobile && (
             <>
-              {hasRealLinks && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 28,
-                    font: "var(--text-nav)",
-                    color: "var(--text-secondary)",
-                    marginLeft: 40,
-                  }}
-                >
-                  {links.map((l) =>
-                    typeof l === "string" ? (
-                      <span key={l}>{l}</span>
-                    ) : (
-                      <Link key={l.href} href={l.href} style={{ color: "inherit", textDecoration: "none" }}>
-                        {l.label}
-                      </Link>
-                    ),
-                  )}
-                </div>
-              )}
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {/* Center-left: browse + the info dropdown. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 28, color: "var(--text-secondary)", marginLeft: 40 }}>
+                <Link href={browseLink.href} style={navLinkStyle}>
+                  {browseLink.label}
+                </Link>
+                <InfoDropdown label={infoDropdownLabel} links={infoLinks} />
+              </div>
+
+              {/* Far right: greeting-or-auth, then lang, then theme. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginLeft: "auto" }}>
+                {dashboardLink && (
+                  <Link
+                    href={dashboardLink.href}
+                    title={dashboardLink.label}
+                    aria-label={dashboardLink.label}
+                    style={{ font: "var(--text-nav)", color: "var(--text-primary)", textDecoration: "none" }}
+                  >
+                    {greetingText}
+                  </Link>
+                )}
+                {authLinks?.map((l) => (
+                  <Button key={l.href} variant={l.variant} size="sm" href={l.href}>
+                    {l.label}
+                  </Button>
+                ))}
                 {langToggle}
                 {themeToggle}
-                {actions}
               </div>
             </>
           )}
@@ -145,12 +217,10 @@ export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobi
         </div>
       </ContentContainer>
 
-      {/* A real off-canvas drawer — same pattern as DashboardShell's
+      {/* A real off-canvas drawer, same mechanism as DashboardShell's
           mobile sidebar (fixed, full height, left-anchored, width-
-          animated, --shadow-lg over a dimmed --overlay-scrim) — not a
-          dropdown card. Always mounted once mobile (width animates
-          0 → open), so it slides rather than just appearing; the scrim
-          itself stays conditionally rendered, same as DashboardShell's. */}
+          animated). Always mounted once mobile (width animates 0 →
+          open) so it slides rather than just appearing. */}
       {isMobile && (
         <div
           style={{
@@ -174,67 +244,72 @@ export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobi
               flexDirection: "column",
               padding: "var(--space-6) var(--space-5)",
               overflowY: "auto",
+              gap: "var(--space-1)",
             }}
           >
-            {hasRealLinks && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-                {links.map((l) =>
-                  typeof l === "string" ? (
-                    <span key={l} style={{ font: "var(--text-nav)", color: "var(--text-secondary)", padding: "var(--space-2) 0" }}>
-                      {l}
-                    </span>
-                  ) : (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      onClick={() => setMenuOpen(false)}
-                      style={{
-                        font: "var(--text-nav)",
-                        fontWeight: 600,
-                        color: "var(--text-primary)",
-                        textDecoration: "none",
-                        padding: "var(--space-2) 0",
-                      }}
-                    >
-                      {l.label}
-                    </Link>
-                  ),
-                )}
+            {/* Flat list, no dropdown — the hamburger IS the
+                consolidation on mobile. Exact order: dashboard (if
+                signed in) → browse → the 5 info links → lang → theme →
+                auth links (if signed out). */}
+            {dashboardLink && (
+              <Link
+                href={dashboardLink.href}
+                onClick={() => setMenuOpen(false)}
+                style={{ font: "var(--text-nav)", fontWeight: 600, color: "var(--text-primary)", textDecoration: "none", padding: "var(--space-2) 0" }}
+              >
+                {dashboardLink.label}
+              </Link>
+            )}
+            <Link
+              href={browseLink.href}
+              onClick={() => setMenuOpen(false)}
+              style={{ font: "var(--text-nav)", fontWeight: 600, color: "var(--text-primary)", textDecoration: "none", padding: "var(--space-2) 0" }}
+            >
+              {browseLink.label}
+            </Link>
+            {infoLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+                style={{ font: "var(--text-nav)", color: "var(--text-secondary)", textDecoration: "none", padding: "var(--space-2) 0" }}
+              >
+                {l.label}
+              </Link>
+            ))}
+
+            {(langToggle || themeToggle) && (
+              <div
+                style={{
+                  marginTop: "var(--space-4)",
+                  paddingTop: "var(--space-4)",
+                  borderTop: "1px solid var(--border-subtle)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--space-3)",
+                }}
+              >
+                {langToggle}
+                {themeToggle}
               </div>
             )}
 
-            {/* Login/Register, or the dashboard link — right under the
-                nav links, not tucked at the very end. `actions` arrives
-                as opaque, already-rendered content (real navigation
-                Links/Buttons under the hood) — this component has no
-                way to attach an individual onClick to each one, so it
-                closes the menu on any click that bubbles up from inside
-                this wrapper instead. Every current use of `actions` is
-                a real navigation, so "any click here means the page is
-                about to change, close the menu" holds. */}
-            <div
-              onClick={() => setMenuOpen(false)}
-              style={{ marginTop: "var(--space-5)", display: "flex", flexDirection: "column", gap: "var(--space-2)", alignItems: "flex-start" }}
-            >
-              {actions}
-            </div>
-
-            {/* Settings (language, theme) pinned to the bottom of the
-                drawer via marginTop: auto — the least-frequently-needed
-                controls, out of the way of the actual navigation above. */}
-            <div
-              style={{
-                marginTop: "auto",
-                paddingTop: "var(--space-5)",
-                borderTop: "1px solid var(--border-subtle)",
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-3)",
-              }}
-            >
-              {langToggle}
-              {themeToggle}
-            </div>
+            {authLinks && (
+              // onClick on the wrapper (not each Button individually):
+              // Buttons arrive as opaque pre-rendered content, no way to
+              // wire a per-item close — any click here means real
+              // navigation is about to happen, so close the drawer.
+              <div
+                onClick={() => setMenuOpen(false)}
+                style={{ marginTop: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-2)", alignItems: "flex-start" }}
+              >
+                {authLinks.map((l) => (
+                  <Button key={l.href} variant={l.variant} size="sm" href={l.href}>
+                    {l.label}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -242,12 +317,7 @@ export function NavBar({ wordmark, links, langToggle, themeToggle, actions, mobi
       {isMobile && menuOpen && (
         <div
           onClick={() => setMenuOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--overlay-scrim)",
-            zIndex: 40,
-          }}
+          style={{ position: "fixed", inset: 0, background: "var(--overlay-scrim)", zIndex: 40 }}
         />
       )}
     </nav>
