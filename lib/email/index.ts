@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { BookingConfirmationEmail } from "./templates/BookingConfirmationEmail";
 import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
+import { ContactMessageEmail } from "./templates/ContactMessageEmail";
 import { provider, translator, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
+import type { SendEmailResult } from "./types";
 
 export type { Locale } from "./shared";
 export { normalizeLocale } from "./shared";
@@ -382,4 +384,42 @@ export async function sendPaymentRefundedNotice({
   if (!result.success) {
     console.error("sendPaymentRefundedNotice: email failed", { clientId, recipient: client.email, error: result.error });
   }
+}
+
+// Unlike every other function in this file, the send IS the point of
+// the caller's action (the /contact form), not a side effect of one
+// that already succeeded — so this returns the real SendEmailResult
+// instead of swallowing failure into a console.error + void, letting
+// the Server Action tell the visitor their message didn't go through
+// instead of showing a false "sent" confirmation.
+//
+// `to` is CONTACT_SUPPORT_EMAIL — fixed, read server-side, never derived
+// from the form's own fields. The category/name/email/message args
+// below are content, not the destination.
+export async function sendContactMessage({
+  categoryLabel,
+  name,
+  email,
+  message,
+}: {
+  categoryLabel: string;
+  name: string;
+  email: string;
+  message: string;
+}): Promise<SendEmailResult> {
+  const supportEmail = process.env.CONTACT_SUPPORT_EMAIL;
+  if (!supportEmail) {
+    console.error("sendContactMessage: CONTACT_SUPPORT_EMAIL is not configured");
+    return { success: false, error: "CONTACT_SUPPORT_EMAIL is not configured" };
+  }
+
+  const result = await provider.send({
+    to: supportEmail,
+    subject: `${categoryLabel}: ${name}`,
+    react: ContactMessageEmail({ categoryLabel, name, email, message }),
+  });
+  if (!result.success) {
+    console.error("sendContactMessage: email failed", { error: result.error });
+  }
+  return result;
 }

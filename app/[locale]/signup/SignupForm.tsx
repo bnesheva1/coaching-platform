@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Script from "next/script";
 import { Turnstile, SCRIPT_URL, DEFAULT_SCRIPT_ID } from "@marsidev/react-turnstile";
@@ -14,6 +15,13 @@ const initialState: AuthFormState = null;
 export function SignupForm() {
   const t = useTranslations("Auth");
   const [state, formAction, pending] = useActionState(signup, initialState);
+  // Pre-selects the practitioner radio when arriving from the
+  // "Become a practitioner" page's CTA (/signup?role=practitioner) —
+  // otherwise the default-checked "client" radio would silently be the
+  // wrong choice for someone who just read a whole page about becoming
+  // a practitioner and clicked "Create your profile."
+  const roleParam = useSearchParams().get("role");
+  const practitionerPreselected = roleParam === "practitioner";
 
   return (
     <main style={{ padding: "var(--space-16) 0" }}>
@@ -49,12 +57,12 @@ export function SignupForm() {
             <fieldset>
               <legend>{t("roleLegend")}</legend>
               <label>
-                <input type="radio" name="role" value="client" defaultChecked />{" "}
+                <input type="radio" name="role" value="client" defaultChecked={!practitionerPreselected} />{" "}
                 {t("roleClient")}
               </label>
               <br />
               <label>
-                <input type="radio" name="role" value="practitioner" />{" "}
+                <input type="radio" name="role" value="practitioner" defaultChecked={practitionerPreselected} />{" "}
                 {t("rolePractitioner")}
               </label>
             </fieldset>

@@ -40,6 +40,11 @@ export const signupLimiter = createLimiter("rl:signup", 5, "10 m", 10 * 60 * 100
 export const loginLimiter = createLimiter("rl:login", 10, "5 m", 5 * 60 * 1000);
 export const searchLimiter = createLimiter("rl:search", 30, "1 m", 60 * 1000);
 export const authCallbackLimiter = createLimiter("rl:callback", 20, "10 m", 10 * 60 * 1000);
+// IP-keyed, same reasoning as signupLimiter — the contact form has no
+// auth to key off of, and is a public, unauthenticated endpoint (the
+// exact kind of surface spam/abuse targets). A real visitor has no
+// reason to submit more than a couple of times in ten minutes.
+export const contactLimiter = createLimiter("rl:contact", 3, "10 m", 10 * 60 * 1000);
 // Keyed by the authenticated user's own id (not IP) — booking already
 // requires auth, so the user id is a more precise identifier than IP for
 // bounding one account spam-booking a practitioner's calendar. Generous
