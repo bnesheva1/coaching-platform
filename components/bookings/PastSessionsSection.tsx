@@ -33,20 +33,23 @@ export function PastSessionsSection({
   bookings,
   timezone,
   perspective,
-  // The client dashboard's dedicated Past page passes true — starting
-  // collapsed makes sense on a combined page where past sessions are
-  // secondary to upcoming ones (the practitioner dashboard's tab, and
-  // the client dashboard before its sidebar existed), but requiring an
-  // extra click on a page you navigated to specifically for past
-  // sessions would be pointless friction. Uncontrolled (just the
-  // <details> element's own initial `open` attribute) — the user can
-  // still collapse it afterward like any other <details>.
+  // Starts collapsed everywhere — past sessions are secondary to
+  // upcoming ones on both dashboards' single combined bookings screen.
+  // Uncontrolled (just the <details> element's own initial `open`
+  // attribute) — the user can still expand/collapse it afterward like
+  // any other <details>.
   defaultOpen = false,
+  id,
 }: {
   bookings: SessionBooking[];
   timezone: string;
   perspective: BookingPerspective;
   defaultOpen?: boolean;
+  // Anchor target for the client dashboard sidebar's "Минали" link, now
+  // that Past is a section on one scrollable page rather than its own
+  // route — undefined on the practitioner dashboard, which has no such
+  // link.
+  id?: string;
 }) {
   const t = useTranslations("Booking");
   const tReviews = useTranslations("Reviews");
@@ -78,7 +81,7 @@ export function PastSessionsSection({
   const statusKeys = STATUS_KEYS[perspective];
 
   return (
-    <details style={{ marginTop: "var(--space-4)" }} open={defaultOpen || undefined}>
+    <details id={id} style={{ marginTop: "var(--space-4)" }} open={defaultOpen || undefined}>
       <summary
         style={{
           cursor: "pointer",

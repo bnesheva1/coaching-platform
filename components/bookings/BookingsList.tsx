@@ -261,6 +261,10 @@ export function BookingsList({
   // dashboard's combined tab (past sessions are secondary there) keeps
   // the default collapsed state.
   pastStartsExpanded = false,
+  // Anchor target for the client dashboard sidebar's "Минали" link, now
+  // that Past is a section on one scrollable page rather than its own
+  // route. Passed straight through to PastSessionsSection.
+  pastSectionId,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -271,6 +275,7 @@ export function BookingsList({
   showUpcomingSection?: boolean;
   showPastSection?: boolean;
   pastStartsExpanded?: boolean;
+  pastSectionId?: string;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -446,6 +451,7 @@ export function BookingsList({
           timezone={effectiveTimezone}
           perspective={perspective}
           defaultOpen={pastStartsExpanded}
+          id={pastSectionId}
         />
       )}
     </section>

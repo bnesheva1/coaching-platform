@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { MouseEvent } from "react";
 import { Link } from "@/i18n/navigation";
 
 // Colors/shape ported directly from the approved design source
@@ -19,30 +20,65 @@ export function NavItem({
   label,
   isActive,
   onNavigate,
+  // Plain <a>, not next-intl's <Link> — for a same-page hash target
+  // (the client dashboard's "Минали"/"Моите практикуващи", now in-page
+  // sections rather than routes). Unused (false) for every other
+  // caller, which are all real cross-route links.
+  nativeAnchor = false,
+  // Custom click handling for the nativeAnchor case — the client
+  // dashboard's own smooth-scroll-to-section (and, for "Минали",
+  // auto-expanding the past-sessions accordion) lives here, called
+  // with the raw event so it can preventDefault() the browser's own
+  // (confirmed unreliable — see ClientDashboardSidebar's own comment)
+  // native hash-jump and drive the scroll itself instead.
+  onClick,
 }: {
   href: string;
   label: string;
   isActive: boolean;
   onNavigate?: () => void;
+  nativeAnchor?: boolean;
+  onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const [hover, setHover] = useState(false);
+  const style = {
+    display: "block",
+    padding: "10px 14px",
+    borderRadius: "var(--radius-md)",
+    font: "var(--text-body-sm)",
+    fontWeight: isActive ? 600 : 400,
+    color: isActive ? "var(--accent-subtle-text)" : "var(--text-secondary)",
+    background: isActive ? "var(--accent-subtle)" : hover ? "var(--bg-surface-2)" : "transparent",
+    textDecoration: "none",
+  } as const;
+
+  function handleClick(e: MouseEvent<HTMLAnchorElement>) {
+    onClick?.(e);
+    onNavigate?.();
+  }
+
+  if (nativeAnchor) {
+    return (
+      <a
+        href={href}
+        onClick={handleClick}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={style}
+      >
+        {label}
+      </a>
+    );
+  }
+
   return (
     <Link
       href={href}
-      onClick={onNavigate}
+      onClick={handleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       aria-current={isActive ? "page" : undefined}
-      style={{
-        display: "block",
-        padding: "10px 14px",
-        borderRadius: "var(--radius-md)",
-        font: "var(--text-body-sm)",
-        fontWeight: isActive ? 600 : 400,
-        color: isActive ? "var(--accent-subtle-text)" : "var(--text-secondary)",
-        background: isActive ? "var(--accent-subtle)" : hover ? "var(--bg-surface-2)" : "transparent",
-        textDecoration: "none",
-      }}
+      style={style}
     >
       {label}
     </Link>

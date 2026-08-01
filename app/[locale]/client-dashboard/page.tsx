@@ -4,6 +4,12 @@ import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking
 import { GreetingText } from "@/components/dashboard/GreetingText";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import { Button } from "@/components/ui/Button";
+import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
+import { BookedWithGrid } from "./BookedWithGrid";
+import { searchPractitioners } from "@/lib/practitioners/search";
+import specialtiesData from "@/data/specialties.json";
+import topicsData from "@/data/topics.json";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -97,6 +103,40 @@ export default async function ClientUpcomingPage({
 
   const justCancelled = resolvedSearchParams.cancelled === "1";
   const cancelErrorCode = typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
+
+  // "Моите практикуващи" — now a section on this same page rather than
+  // its own route. Full reuse of the same search a client would hit on
+  // /browse, filtered down to just who they've booked — no new query
+  // for the practitioner-id list either, `bookings` above already has
+  // practitioner_id/start_utc for every booking this client has ever
+  // made.
+  const allPractitioners = await searchPractitioners({});
+  const lastBookedAtByPractitioner = new Map<string, string>();
+  for (const b of bookings ?? []) {
+    const existing = lastBookedAtByPractitioner.get(b.practitioner_id);
+    if (!existing || b.start_utc > existing) {
+      lastBookedAtByPractitioner.set(b.practitioner_id, b.start_utc);
+    }
+  }
+  const specialtyLabelByKey = new Map(specialtiesData.map((s) => [s.key, s[locale] ?? s.en]));
+  const topicLabelByKey = new Map(topicsData.map((topic) => [topic.key, topic[locale] ?? topic.en]));
+  const bookedWithPractitioners: PractitionerCardData[] = allPractitioners
+    .filter((p) => practitionerIds.includes(p.id))
+    .sort(
+      (a, b) =>
+        (lastBookedAtByPractitioner.get(b.id) ?? "").localeCompare(lastBookedAtByPractitioner.get(a.id) ?? ""),
+    )
+    .map((p) => ({
+      id: p.id,
+      username: p.username,
+      displayName: p.displayName,
+      bio: p.bio,
+      avatarUrl: p.avatarUrl,
+      specialtyLabels: p.specialties.map((key) => specialtyLabelByKey.get(key) ?? key),
+      topicLabels: p.topics.map((key) => topicLabelByKey.get(key) ?? key),
+      averageRating: p.averageRating,
+      reviewCount: p.reviewCount,
+    }));
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -214,16 +254,31 @@ export default async function ClientUpcomingPage({
         </div>
       )}
 
-      {/* Past sessions live on their own sidebar page now
-          (/client-dashboard/past) — this page shows Upcoming only. */}
+      {/* One scrollable screen — Upcoming, Past (collapsed), and My
+          practitioners all live here now; the sidebar's "Минали"/
+          "Моите практикуващи" links just scroll to #past/#practitioners
+          rather than navigating to their own routes. Unlike the
+          practitioner dashboard (many distinct settings screens, a real
+          fit for tabs), the client side only has bookings-related
+          content today — one page is the simpler, more honest shape. */}
       <BookingsList
         upcoming={nextBooking ? upcoming.filter((b) => b.id !== nextBooking.id) : upcoming}
         past={past}
         perspective="client"
         premium
         nextSessionShownSeparately={nextBooking !== null}
-        showPastSection={false}
+        pastSectionId="past"
       />
+
+      <section style={{ marginTop: "var(--space-8)" }} id="practitioners">
+        <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{t("nav.clientPractitioners")}</h2>
+        <BookedWithGrid practitioners={bookedWithPractitioners} />
+        <div style={{ marginTop: "var(--space-6)", display: "flex", justifyContent: "center" }}>
+          <Button href="/browse" variant="secondary">
+            {t("clientEmptyState.cta")}
+          </Button>
+        </div>
+      </section>
     </main>
   );
 }
