@@ -45,6 +45,14 @@ export const authCallbackLimiter = createLimiter("rl:callback", 20, "10 m", 10 *
 // exact kind of surface spam/abuse targets). A real visitor has no
 // reason to submit more than a couple of times in ten minutes.
 export const contactLimiter = createLimiter("rl:contact", 3, "10 m", 10 * 60 * 1000);
+// Two separate limiters for the same endpoint, both checked — password
+// reset has two distinct abuse shapes an IP-only limit doesn't cover
+// alone: one attacker probing many emails from one IP (caught by the IP
+// limiter, same as signup), and one victim's inbox flooded from many
+// different IPs/proxies (caught only by keying on the normalized email
+// itself, regardless of who's asking).
+export const passwordResetLimiter = createLimiter("rl:pwreset-ip", 5, "10 m", 10 * 60 * 1000);
+export const passwordResetEmailLimiter = createLimiter("rl:pwreset-email", 3, "10 m", 10 * 60 * 1000);
 // Keyed by the authenticated user's own id (not IP) — booking already
 // requires auth, so the user id is a more precise identifier than IP for
 // bounding one account spam-booking a practitioner's calendar. Generous

@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { BookingConfirmationEmail } from "./templates/BookingConfirmationEmail";
 import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
 import { ContactMessageEmail } from "./templates/ContactMessageEmail";
+import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { provider, translator, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
 import type { SendEmailResult } from "./types";
 
@@ -420,6 +421,47 @@ export async function sendContactMessage({
   });
   if (!result.success) {
     console.error("sendContactMessage: email failed", { error: result.error });
+  }
+  return result;
+}
+
+// Same "return the real result" reasoning as sendContactMessage — the
+// caller (app/[locale]/forgot-password/actions.ts) only calls this on
+// the branch where the account genuinely exists, and never surfaces
+// success/failure of the SEND itself back to the visitor either way
+// (that would reopen the exact enumeration hole the generic response is
+// there to close) — but it still needs the real result for its own
+// server-side logging.
+//
+// actionLink is Supabase's own admin.generateLink() output, relayed
+// as-is — never logged here, never logged by the caller, and never
+// anything this function constructs or inspects itself.
+export async function sendPasswordResetEmail({
+  to,
+  actionLink,
+  locale,
+}: {
+  to: string;
+  actionLink: string;
+  locale: Locale;
+}): Promise<SendEmailResult> {
+  const t = translator(locale);
+  const result = await provider.send({
+    to,
+    subject: t("passwordResetSubject"),
+    react: PasswordResetEmail({
+      heading: t("passwordResetHeading"),
+      body: t("passwordResetBody"),
+      buttonLabel: t("passwordResetButton"),
+      actionLink,
+      ignoreNote: t("passwordResetIgnoreNote"),
+      footer: t("footer"),
+    }),
+  });
+  if (!result.success) {
+    // Deliberately no actionLink/token in this log line — see the
+    // module comment above.
+    console.error("sendPasswordResetEmail: email failed", { error: result.error });
   }
   return result;
 }

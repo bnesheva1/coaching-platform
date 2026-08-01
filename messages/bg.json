@@ -51,7 +51,24 @@
     "tooManyAttempts": "Твърде много опити. Изчакай няколко минути и опитай отново.",
     "captchaFailed": "Неуспешна проверка на CAPTCHA. Опитай отново.",
     "checkEmailTitle": "Провери своя имейл",
-    "checkEmailBody": "Изпратихме имейл за потвърждение на твоя имейл. Натисни лика в съобщението, за да активираш своя профил."
+    "checkEmailBody": "Изпратихме имейл за потвърждение на твоя имейл. Натисни лика в съобщението, за да активираш своя профил.",
+    "forgotPasswordLink": "Забравена парола?",
+    "forgotPasswordTitle": "Възстановяване на паролата",
+    "forgotPasswordIntro": "Въведи имейла си и ще ти изпратим линк за смяна на паролата.",
+    "sendResetLinkButton": "Изпрати линк",
+    "sendResetLinkButtonPending": "Изпращане…",
+    "resetCheckEmailBody": "Ако съществува акаунт с този имейл, изпратихме линк за възстановяване. Провери пощата си.",
+    "resetPasswordTitle": "Задай нова парола",
+    "verifyingResetLink": "Проверка на линка…",
+    "newPasswordLabel": "Нова парола",
+    "confirmPasswordLabel": "Потвърди паролата",
+    "passwordMismatch": "Паролите не съвпадат.",
+    "resetPasswordButton": "Смени паролата",
+    "resetPasswordButtonPending": "Сменяне…",
+    "resetLinkExpiredTitle": "Линкът е изтекъл",
+    "resetLinkExpiredBody": "Линковете за смяна на парола важат само за кратко. Заяви нов по-долу.",
+    "requestNewLinkButton": "Заяви нов линк",
+    "passwordResetSuccessBanner": "Паролата е сменена успешно — влез отново."
   },
   "Dashboard": {
     "practitionerTitle": "Табло за управление на специалиста",
@@ -417,6 +434,11 @@
     "paymentRefundedSubject": "Плащането е възстановено",
     "paymentRefundedHeading": "Плащането е възстановено",
     "paymentRefundedBody": "Здравей, {recipientName}, часът със {counterpartyName}, за който плати, вече не е свободен. Възстановихме пълната сума от {amount} — очаквай я по картата си в рамките на няколко работни дни. Моля, избери друг свободен час.",
+    "passwordResetSubject": "Смяна на паролата",
+    "passwordResetHeading": "Смяна на паролата",
+    "passwordResetBody": "Получихме заявка за смяна на паролата ти. Натисни бутона по-долу, за да зададеш нова. Линкът важи за кратко.",
+    "passwordResetButton": "Смени паролата",
+    "passwordResetIgnoreNote": "Ако не си заявявал/а това, можеш спокойно да игнорираш този имейл — паролата ти няма да бъде променена.",
     "footer": "Това е автоматично съобщение от платформата за консултации."
   },
   "HowItWorks": {

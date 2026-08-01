@@ -53,7 +53,24 @@
     "captchaFailed": "CAPTCHA verification failed. Please try again.",
 
     "checkEmailTitle": "Check your email",
-    "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in."
+    "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in.",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotPasswordTitle": "Reset your password",
+    "forgotPasswordIntro": "Enter your email and we'll send you a link to reset your password.",
+    "sendResetLinkButton": "Send reset link",
+    "sendResetLinkButtonPending": "Sending…",
+    "resetCheckEmailBody": "If an account exists for this email, we've sent a reset link. Check your inbox.",
+    "resetPasswordTitle": "Set a new password",
+    "verifyingResetLink": "Verifying your link…",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordMismatch": "Passwords don't match.",
+    "resetPasswordButton": "Reset password",
+    "resetPasswordButtonPending": "Resetting…",
+    "resetLinkExpiredTitle": "This link has expired",
+    "resetLinkExpiredBody": "Password reset links are only valid for a short time. Request a new one below.",
+    "requestNewLinkButton": "Request a new link",
+    "passwordResetSuccessBanner": "Password reset successfully — please log in."
   },
   "Dashboard": {
     "practitionerTitle": "Practitioner Dashboard",
@@ -419,6 +436,11 @@
     "paymentRefundedSubject": "Your payment was refunded",
     "paymentRefundedHeading": "Your payment was refunded",
     "paymentRefundedBody": "Hi {recipientName}, the session with {counterpartyName} you paid for is no longer available. We've refunded the full {amount} — it should appear on your card within a few business days. Please pick another available time.",
+    "passwordResetSubject": "Reset your password",
+    "passwordResetHeading": "Reset your password",
+    "passwordResetBody": "We received a request to reset your password. Click the button below to choose a new one. This link will expire soon.",
+    "passwordResetButton": "Reset password",
+    "passwordResetIgnoreNote": "If you didn't request this, you can safely ignore this email — your password won't be changed.",
     "footer": "This is an automated message from the coaching platform."
   },
   "HowItWorks": {
