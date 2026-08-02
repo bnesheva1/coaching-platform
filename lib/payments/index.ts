@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { createBookingCheckoutSession } from "./stripe/checkout";
 import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
@@ -13,10 +13,17 @@ export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, Refund
 // not touching booking-actions.ts or the cancel actions.
 
 export async function initiateBookingPayment(request: BookingPaymentRequest): Promise<InitiatePaymentResult> {
-  const supabase = await createClient();
+  // Service-role, not the caller's own session — this reads an
+  // ARBITRARY practitioner's row (whoever's being booked, not the
+  // caller's own), and practitioner_profiles' column grants deliberately
+  // exclude stripe_connected_account_id/stripe_connect_transfers_active
+  // from client-session access (see the grants migration). Same pattern
+  // bookSlot's software_provider path already uses for services.
+  // phone_number/meeting_link.
+  const supabase = createServiceRoleClient();
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("billing_model, stripe_connected_account_id")
+    .select("billing_model, stripe_connected_account_id, stripe_connect_transfers_active")
     .eq("id", request.practitionerId)
     .single();
 
@@ -29,17 +36,14 @@ export async function initiateBookingPayment(request: BookingPaymentRequest): Pr
     return { type: "no_payment_required" };
   }
 
-  if (!practitionerProfile?.stripe_connected_account_id) {
-    // A commission-model practitioner with no connected account is a
-    // configuration error (should never happen outside a broken seed/
-    // onboarding step) — logged loudly for follow-up, but still handed
-    // back as a clean result rather than an uncaught throw, so a client
-    // mid-booking sees this app's own "couldn't book" message instead
-    // of a raw crash page.
-    console.error(
-      `initiateBookingPayment: practitioner ${request.practitionerId} has billing_model="commission" but no stripe_connected_account_id`,
-    );
-    return { type: "error" };
+  if (!practitionerProfile?.stripe_connected_account_id || !practitionerProfile.stripe_connect_transfers_active) {
+    // A commission-model practitioner who hasn't connected Stripe yet,
+    // or whose account can't yet receive transfers (set from the v2
+    // Connect webhook once Stripe's own capability check clears) — the
+    // normal state for anyone mid-onboarding, not a configuration error.
+    // Distinct from "error" below so the caller can show a specific,
+    // honest message rather than a generic "couldn't book" one.
+    return { type: "practitioner_not_ready" };
   }
 
   try {

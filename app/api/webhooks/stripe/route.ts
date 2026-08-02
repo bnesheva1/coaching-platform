@@ -1,5 +1,11 @@
 import { NextResponse, after } from "next/server";
-import { verifyStripeWebhookEvent, handleCheckoutSessionCompleted } from "@/lib/payments/stripe/webhook";
+import {
+  verifyStripeWebhookEvent,
+  verifyStripeThinEvent,
+  isThinEventPayload,
+  handleCheckoutSessionCompleted,
+} from "@/lib/payments/stripe/webhook";
+import { handleAccountUpdated } from "@/lib/payments/stripe/connect";
 
 // Deliberately thin — every decision lives in lib/payments/stripe/
 // webhook.ts, this file only does the two things that genuinely belong
@@ -20,12 +26,43 @@ import { verifyStripeWebhookEvent, handleCheckoutSessionCompleted } from "@/lib/
 // 200 immediately after the signature check, and a slow or failing
 // downstream call (DB, email) can never turn into a Stripe-visible
 // non-2xx or a delivery timeout.
+//
+// This endpoint receives two genuinely different payload shapes: v1
+// events (checkout.session.completed) and v2 "thin" events (Connect
+// account capability updates) — confirmed live that Stripe's SDK
+// rejects each shape when passed to the other's verify function.
+// isThinEventPayload peeks at the body's own `object` field to route to
+// the correct one; this grants no bypass, since whichever verifier
+// actually runs still does the real cryptographic check.
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
     return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+  }
+
+  const isThin = isThinEventPayload(rawBody);
+
+  if (isThin) {
+    let accountId: string;
+    try {
+      const notification = verifyStripeThinEvent(rawBody, signature);
+      accountId = (notification as unknown as { related_object: { id: string } }).related_object.id;
+    } catch (err) {
+      console.error("Stripe thin-event signature verification failed", err);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    after(async () => {
+      try {
+        await handleAccountUpdated(accountId);
+      } catch (err) {
+        console.error("Stripe webhook handler failed", { accountId, err });
+      }
+    });
+
+    return NextResponse.json({ received: true });
   }
 
   let event;

@@ -33,13 +33,17 @@ export type InitiatePaymentResult =
   // practitioner — the caller should book immediately, exactly like
   // every booking before this epic.
   | { type: "no_payment_required" }
-  // The provider call itself failed (network, misconfigured/restricted
-  // connected account, missing API key) or the practitioner's own
-  // commission-model setup is broken (no connected account at all).
-  // Logged loudly by the seam before returning this — callers only need
-  // to show a clean "couldn't start checkout" message, never a raw
-  // crash.
-  | { type: "error" };
+  // The provider call itself failed (network, missing API key, or Stripe
+  // rejecting an otherwise-connected account). Logged loudly by the seam
+  // before returning this — callers only need to show a clean "couldn't
+  // start checkout" message, never a raw crash.
+  | { type: "error" }
+  // commission model, but the practitioner hasn't connected Stripe yet
+  // or their account hasn't finished onboarding (charges_enabled is
+  // false) — the normal state mid-onboarding, not a configuration error.
+  // Distinct from "error" so the caller can show a specific, honest
+  // message instead of a generic one.
+  | { type: "practitioner_not_ready" };
 
 export type RefundResult =
   | { refunded: true }

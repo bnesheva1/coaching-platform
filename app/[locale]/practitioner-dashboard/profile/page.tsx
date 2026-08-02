@@ -4,12 +4,21 @@ import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 import { ProfileSettingsBox } from "@/components/practitioner-profile/ProfileSettingsBox";
+import { StripeConnectSection } from "@/components/practitioner-profile/StripeConnectSection";
 
 // Auth/role guard already ran in the shared layout.tsx. isOwner is
 // always true here — this route only ever renders for the signed-in
 // practitioner viewing their own profile, unlike the public
 // p/[username] route which always renders isOwner={false}.
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const connectErrorParam = resolvedSearchParams.connectError;
+  const connectError = typeof connectErrorParam === "string" ? connectErrorParam : null;
+
   const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
@@ -17,7 +26,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }] =
+  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }, { data: connectStatusRaw }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", userId).single(),
       supabase
@@ -40,7 +49,10 @@ export default async function ProfilePage() {
         .select("id, rating, review_text, created_at")
         .eq("practitioner_id", userId)
         .order("created_at", { ascending: false }),
+      supabase.rpc("get_my_connect_status").single(),
     ]);
+
+  const connectStatus = connectStatusRaw as { is_connected: boolean; transfers_active: boolean } | null;
 
   const averageRating =
     reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null;
@@ -105,6 +117,11 @@ export default async function ProfilePage() {
           justBooked={false}
           bookingErrorCode={null}
           paymentStatus={null}
+        />
+        <StripeConnectSection
+          isConnected={connectStatus?.is_connected ?? false}
+          transfersActive={connectStatus?.transfers_active ?? false}
+          errorCode={connectError}
         />
         <ProfileSettingsBox initialUsername={practitionerProfile?.username ?? null} />
       </div>

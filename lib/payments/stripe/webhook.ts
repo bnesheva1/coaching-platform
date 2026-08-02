@@ -18,6 +18,32 @@ export function verifyStripeWebhookEvent(rawBody: string, signatureHeader: strin
   return getStripeClient().webhooks.constructEvent(rawBody, signatureHeader, webhookSecret);
 }
 
+// v2 "thin" events (Connect account capability updates) are a genuinely
+// different payload shape from v1 events, not just a different `type` —
+// Stripe's own SDK rejects a v2 payload passed to constructEvent above
+// ("Use stripe.parseEventNotification instead", confirmed live) and
+// vice versa. Both still carry the same stripe-signature header scheme,
+// so the actual cryptographic verification happens in whichever of
+// these two functions is called — peeking at the raw body's own
+// `object` field first (see isThinEventPayload) only decides which
+// verifier to run, it grants no bypass: a forged `object` field just
+// routes to a verifier that then correctly fails on that payload.
+export function isThinEventPayload(rawBody: string): boolean {
+  try {
+    return JSON.parse(rawBody)?.object === "v2.core.event";
+  } catch {
+    return false;
+  }
+}
+
+export function verifyStripeThinEvent(rawBody: string, signatureHeader: string) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
+  }
+  return getStripeClient().parseEventNotification(rawBody, signatureHeader, webhookSecret);
+}
+
 type CheckoutMetadata = {
   practitioner_id: string;
   client_id: string;

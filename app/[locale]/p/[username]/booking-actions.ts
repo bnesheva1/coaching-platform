@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
@@ -10,19 +9,7 @@ import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
 import { initiateBookingPayment } from "@/lib/payments";
-
-// Derives the site's own origin from the incoming request's own Host
-// header rather than a NEXT_PUBLIC_SITE_URL env var — Stripe's
-// success_url/cancel_url must be absolute, and this way they're always
-// correct for whatever origin the client is actually on (localhost,
-// a preview deployment, the real domain) with nothing to keep in sync
-// if the domain ever changes.
-async function siteOrigin(): Promise<string> {
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "localhost:3000";
-  const protocol = host.startsWith("localhost") ? "http" : "https";
-  return `${protocol}://${host}`;
-}
+import { siteOrigin } from "@/lib/siteOrigin";
 
 // Bound via .bind() from the button, not editable form fields — but
 // binding isn't a security boundary, a direct API call can still send
@@ -155,6 +142,15 @@ export async function bookSlot(
     // the software_provider path below and insert a booking with no
     // payment ever collected for a commission-model practitioner.
     await redirectWithError("bookingFailed");
+    return;
+  }
+
+  if (paymentResult.type === "practitioner_not_ready") {
+    // Distinct from "error" — a commission-model practitioner who hasn't
+    // finished Stripe Connect onboarding yet, not a Stripe-side failure.
+    // Own message so the client sees something honest rather than a
+    // generic "couldn't book".
+    await redirectWithError("practitionerNotReady");
     return;
   }
 

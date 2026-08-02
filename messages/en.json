@@ -345,6 +345,7 @@
     "rateLimited": "Too many booking attempts. Please wait a few minutes and try again.",
     "slotNoLongerAvailable": "That time is no longer available. Please pick another.",
     "slotTaken": "Sorry, that time was just taken. Please pick another.",
+    "practitionerNotReady": "This practitioner hasn't finished setting up payments yet. Please check back soon.",
     "bookingFailed": "Unable to complete the booking right now. Please try again.",
     "bookingsTitle": "Bookings",
     "upcomingHeading": "Upcoming",
@@ -382,6 +383,22 @@
     "cancelNoteLabel": "Message to the client (optional)",
     "cancelDialogConfirm": "Cancel session",
     "cancelDialogDismiss": "Back"
+  },
+  "StripeConnect": {
+    "title": "Payments",
+    "description": {
+      "notConnected": "Connect your Stripe account to receive payments from bookings.",
+      "incomplete": "Your Stripe account is connected, but setup isn't finished yet — you won't be able to receive payments until it's complete.",
+      "active": "Your Stripe account is connected and ready to receive payments."
+    },
+    "badge": {
+      "notConnected": "Not connected",
+      "incomplete": "Setup incomplete",
+      "active": "Active"
+    },
+    "connectButton": "Connect Stripe",
+    "continueSetupButton": "Continue setup",
+    "connectError": "Something went wrong starting Stripe setup. Please try again."
   },
   "Browse": {
     "title": "Find a practitioner",
