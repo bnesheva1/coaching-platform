@@ -1,6 +1,7 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
+import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancelAction";
 import { GreetingText } from "@/components/dashboard/GreetingText";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
@@ -248,6 +249,20 @@ export default async function ClientUpcomingPage({
                     {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
                   </p>
                 ) : null}
+
+                {/* This card is the only place a client with exactly one
+                    upcoming booking ever sees it — BookingsList's own
+                    upcoming list deliberately excludes whichever booking
+                    is shown here, to avoid showing it twice. Without this,
+                    that common case had no way to cancel at all. */}
+                <div style={{ alignSelf: "flex-start" }}>
+                  <NextSessionCancelAction
+                    bookingId={nextBooking.id}
+                    counterpartName={nextBooking.counterpartName}
+                    startUtc={nextBooking.startUtc}
+                    minNoticeHours={nextBooking.minNoticeHours ?? 24}
+                  />
+                </div>
               </div>
             </div>
           </div>

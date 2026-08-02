@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { GreetingText } from "@/components/dashboard/GreetingText";
+import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
+import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -377,6 +379,22 @@ export default async function PractitionerHomePage() {
                       {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
                     </p>
                   ) : null}
+
+                  {/* This card is the only place a practitioner with
+                      exactly one upcoming booking ever sees it — the
+                      upcoming-this-week list below deliberately excludes
+                      whichever booking is shown here (buildAgendaView's
+                      own [nextBooking, ...restUpcoming] split), to avoid
+                      showing it twice. Without this, that common case had
+                      no way to cancel at all. */}
+                  <div style={{ alignSelf: "flex-start" }}>
+                    <CancelSessionDialog
+                      counterpartName={nextBooking.clientName}
+                      sessionTimeLabel={formatter.format(new Date(nextBooking.startUtc))}
+                      perspective="practitioner"
+                      action={cancelBookingAsPractitioner.bind(null, nextBooking.id)}
+                    />
+                  </div>
                 </div>
               }
             />
