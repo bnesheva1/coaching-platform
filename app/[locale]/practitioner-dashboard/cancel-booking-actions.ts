@@ -56,12 +56,18 @@ export async function cancelBookingAsPractitioner(bookingId: string, formData: F
     return;
   }
 
+  // .select("id"), not a bare .select() — bookings' column grant
+  // excludes phone_number/meeting_link (see the delivery-snapshot
+  // migration), and a bare select() means select(*), which fails
+  // permission checks on a RETURNING clause exactly like it would on a
+  // plain read. Only the row count is ever used below, so "id" is all
+  // this needs.
   const { data: updated, error } = await supabase
     .from("bookings")
     .update({ status: "cancelled_by_practitioner" })
     .eq("id", bookingId)
     .eq("practitioner_id", user.id)
-    .select();
+    .select("id");
 
   if (error || !updated || updated.length === 0) {
     if (error) console.error("cancelBookingAsPractitioner failed:", error);

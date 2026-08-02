@@ -32,7 +32,14 @@ export type InitiatePaymentResult =
   // software_provider model: no payment gate exists for this
   // practitioner — the caller should book immediately, exactly like
   // every booking before this epic.
-  | { type: "no_payment_required" };
+  | { type: "no_payment_required" }
+  // The provider call itself failed (network, misconfigured/restricted
+  // connected account, missing API key) or the practitioner's own
+  // commission-model setup is broken (no connected account at all).
+  // Logged loudly by the seam before returning this — callers only need
+  // to show a clean "couldn't start checkout" message, never a raw
+  // crash.
+  | { type: "error" };
 
 export type RefundResult =
   | { refunded: true }

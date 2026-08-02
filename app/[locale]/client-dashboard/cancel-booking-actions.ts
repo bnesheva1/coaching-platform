@@ -71,12 +71,18 @@ export async function cancelBookingAsClient(
     return;
   }
 
+  // .select("id"), not a bare .select() — bookings' column grant
+  // excludes phone_number/meeting_link (see the delivery-snapshot
+  // migration), and a bare select() means select(*), which fails
+  // permission checks on a RETURNING clause exactly like it would on a
+  // plain read. Only the row count is ever used below, so "id" is all
+  // this needs.
   const { data: updated, error } = await supabase
     .from("bookings")
     .update({ status: "cancelled_by_client" })
     .eq("id", bookingId)
     .eq("client_id", user.id)
-    .select();
+    .select("id");
 
   // A zero-row result despite a clean pre-check above means the RLS
   // policy's own (redundant, authoritative) cutoff check rejected it —

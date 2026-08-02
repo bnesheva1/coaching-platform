@@ -148,6 +148,16 @@ export async function bookSlot(
     return;
   }
 
+  if (paymentResult.type === "error") {
+    // Already logged inside initiateBookingPayment — this is purely the
+    // client-facing side of that failure. Explicit, not a fallthrough:
+    // without this branch, an error result would silently continue into
+    // the software_provider path below and insert a booking with no
+    // payment ever collected for a commission-model practitioner.
+    await redirectWithError("bookingFailed");
+    return;
+  }
+
   // software_provider: no payment gate for this practitioner — book
   // immediately, exactly like every booking before this epic.
   const endUtc = new Date(

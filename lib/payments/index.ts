@@ -32,16 +32,31 @@ export async function initiateBookingPayment(request: BookingPaymentRequest): Pr
   if (!practitionerProfile?.stripe_connected_account_id) {
     // A commission-model practitioner with no connected account is a
     // configuration error (should never happen outside a broken seed/
-    // onboarding step), not a client-facing one — thrown rather than
-    // silently degrading to no_payment_required, which would let a
-    // booking through with no way to ever collect payment for it.
-    throw new Error(
-      `Practitioner ${request.practitionerId} has billing_model="commission" but no stripe_connected_account_id`,
+    // onboarding step) — logged loudly for follow-up, but still handed
+    // back as a clean result rather than an uncaught throw, so a client
+    // mid-booking sees this app's own "couldn't book" message instead
+    // of a raw crash page.
+    console.error(
+      `initiateBookingPayment: practitioner ${request.practitionerId} has billing_model="commission" but no stripe_connected_account_id`,
     );
+    return { type: "error" };
   }
 
-  const { url } = await createBookingCheckoutSession(request, practitionerProfile.stripe_connected_account_id);
-  return { type: "redirect", url };
+  try {
+    const { url } = await createBookingCheckoutSession(request, practitionerProfile.stripe_connected_account_id);
+    return { type: "redirect", url };
+  } catch (err) {
+    // Network failure, missing/invalid STRIPE_SECRET_KEY, or Stripe
+    // rejecting the connected account (restricted, incomplete
+    // onboarding) — all surface here rather than as an uncaught
+    // exception in the calling Server Action.
+    console.error("initiateBookingPayment: createBookingCheckoutSession failed", {
+      practitionerId: request.practitionerId,
+      serviceId: request.serviceId,
+      err,
+    });
+    return { type: "error" };
+  }
 }
 
 export async function refundBookingPayment(bookingId: string): Promise<RefundResult> {
@@ -50,7 +65,22 @@ export async function refundBookingPayment(bookingId: string): Promise<RefundRes
   // software_provider booking (nothing was ever paid through us),
   // which is already exactly "not_applicable", not an error to branch
   // around.
-  const result = await refundViaStripe(bookingId);
+  let result;
+  try {
+    result = await refundViaStripe(bookingId);
+  } catch (err) {
+    // stripe.refunds.create() itself failed (network, the connected
+    // account can't accept the reverse_transfer, an already-refunded
+    // intent, etc.) — caught here rather than left to propagate, since
+    // by the time either cancel action calls this, the booking's own
+    // cancellation has already committed. A thrown error here must
+    // never turn an already-successful cancellation into a crash for
+    // the caller; it becomes exactly the same "not refunded, logged for
+    // follow-up" outcome the non-throwing failure branch below already
+    // produces.
+    console.error("refundBookingPayment: Stripe refund call threw", { bookingId, err });
+    return { refunded: false, reason: "stripe_error" };
+  }
   if (!result.refunded) {
     return {
       refunded: false,
