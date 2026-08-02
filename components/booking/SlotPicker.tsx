@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import { bookSlot } from "@/app/[locale]/p/[username]/booking-actions";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -115,6 +116,11 @@ export function SlotPicker({
   // differs by isOwnProfile (see the branch in renderChip below), but
   // it's one dialog either way, not one per slot.
   const practitionerNoteRef = useRef<HTMLDialogElement>(null);
+  // A client confirming a booking — same shared-dialog reasoning as the
+  // two above, retargeted per click via pendingConfirmSlot rather than
+  // rendering one dialog per chip.
+  const [pendingConfirmSlot, setPendingConfirmSlot] = useState<string | null>(null);
+  const bookingConfirmRef = useRef<ConfirmDialogHandle>(null);
 
   // en-CA gives a stable, sortable YYYY-MM-DD string directly — used
   // only as an internal grouping/lookup key, never shown to the user
@@ -268,26 +274,20 @@ export function SlotPicker({
 
     const isSelected = selectedStartUtc === chip.startUtc;
     return (
-      <form
+      <button
         key={chip.startUtc}
-        action={bookSlot.bind(null, practitionerId, serviceId, username, chip.startUtc, clientTimezone)}
-        onSubmit={(e) => {
-          if (!confirm(t("confirmBooking", { time }))) {
-            e.preventDefault();
-            setSelectedStartUtc(null);
-          }
+        type="button"
+        className={`slot-chip focus-ring ${isSelected ? "slot-chip--selected" : "slot-chip--available"}`}
+        aria-pressed={isSelected}
+        onClick={() => {
+          setSelectedStartUtc(chip.startUtc);
+          setPendingConfirmSlot(chip.startUtc);
+          bookingConfirmRef.current?.open();
         }}
+        style={{ font: chipFont, padding: chipPadding }}
       >
-        <button
-          type="submit"
-          className={`slot-chip focus-ring ${isSelected ? "slot-chip--selected" : "slot-chip--available"}`}
-          aria-pressed={isSelected}
-          onClick={() => setSelectedStartUtc(chip.startUtc)}
-          style={{ font: chipFont, padding: chipPadding }}
-        >
-          {time}
-        </button>
-      </form>
+        {time}
+      </button>
     );
   }
 
@@ -587,13 +587,6 @@ export function SlotPicker({
             padding: "var(--space-6)",
             maxWidth: "26rem",
             width: "90vw",
-            // The browser's own `dialog:modal { margin: auto }` (what
-            // normally centers a modal <dialog>) loses to this app's
-            // Tailwind preflight, which resets margin to 0 on every
-            // element via a `*` selector — author CSS always beats the
-            // UA stylesheet regardless of specificity. Setting it back
-            // explicitly is what actually centers the dialog.
-            margin: "auto",
             background: "var(--bg-surface)",
             color: "var(--text-primary)",
           }}
@@ -663,7 +656,6 @@ export function SlotPicker({
             padding: "var(--space-6)",
             maxWidth: "26rem",
             width: "90vw",
-            margin: "auto",
             background: "var(--bg-surface)",
             color: "var(--text-primary)",
           }}
@@ -699,6 +691,14 @@ export function SlotPicker({
           </div>
         </dialog>
       )}
+      <ConfirmDialog
+        ref={bookingConfirmRef}
+        message={pendingConfirmSlot ? t("confirmBooking", { time: timeFormatter.format(new Date(pendingConfirmSlot)) }) : ""}
+        confirmLabel={t("confirmBookingDialogConfirm")}
+        cancelLabel={t("confirmBookingDialogDismiss")}
+        action={bookSlot.bind(null, practitionerId, serviceId, username, pendingConfirmSlot ?? "", clientTimezone)}
+        onCancel={() => setSelectedStartUtc(null)}
+      />
     </>
   );
 }

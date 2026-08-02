@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import {
   createAvailabilityException,
   deleteAvailabilityException,
@@ -106,6 +107,9 @@ export function AvailabilityExceptionsSection({
     }
   }
 
+  const [pendingDelete, setPendingDelete] = useState<{ exceptionId: string; label: string } | null>(null);
+  const deleteDialogRef = useRef<ConfirmDialogHandle>(null);
+
   const sortedExceptions = [...exceptions].sort((a, b) =>
     a.exception_date === b.exception_date
       ? (a.start_time ?? "").localeCompare(b.start_time ?? "")
@@ -145,16 +149,17 @@ export function AvailabilityExceptionsSection({
                 }}
               >
                 <span>{label}</span>
-                <form
-                  action={deleteAvailabilityException.bind(null, exception.id)}
-                  onSubmit={(e) => {
-                    if (!confirm(t("deleteConfirm", { date: label }))) {
-                      e.preventDefault();
-                    }
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setPendingDelete({ exceptionId: exception.id, label });
+                    deleteDialogRef.current?.open();
                   }}
                 >
-                  <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
-                </form>
+                  {t("deleteButton")}
+                </Button>
               </li>
             );
           })}
@@ -162,6 +167,14 @@ export function AvailabilityExceptionsSection({
       ) : (
         <p style={{ color: "#666" }}>{t("noExceptionsYet")}</p>
       )}
+
+      <ConfirmDialog
+        ref={deleteDialogRef}
+        message={pendingDelete ? t("deleteConfirm", { date: pendingDelete.label }) : ""}
+        confirmLabel={t("deleteDialogConfirm")}
+        cancelLabel={t("deleteDialogDismiss")}
+        action={deleteAvailabilityException.bind(null, pendingDelete?.exceptionId ?? "")}
+      />
 
       {!isAdding ? (
         <div style={{ marginTop: "var(--space-4)" }}>

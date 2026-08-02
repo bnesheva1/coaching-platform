@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useActionState, useState } from "react";
+import { Fragment, useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import {
   createService,
   updateService,
@@ -228,6 +229,7 @@ function ServiceRow({ service }: { service: Service }) {
   }
 
   const locked = service.upcoming_booking_count > 0;
+  const deleteDialogRef = useRef<ConfirmDialogHandle>(null);
 
   if (isEditing) {
     return (
@@ -380,19 +382,19 @@ function ServiceRow({ service }: { service: Service }) {
             <form action={setServiceActive.bind(null, service.id, !service.is_active)}>
               <Button type="submit" variant="secondary" size="sm">{service.is_active ? t("hideButton") : t("showButton")}</Button>
             </form>
-            <form
-              action={deleteService.bind(null, service.id)}
-              onSubmit={(e) => {
-                if (!confirm(t("deleteConfirm", { name: service.name }))) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <Button type="submit" variant="secondary" size="sm">{t("deleteButton")}</Button>
-            </form>
+            <Button type="button" variant="secondary" size="sm" onClick={() => deleteDialogRef.current?.open()}>
+              {t("deleteButton")}
+            </Button>
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        ref={deleteDialogRef}
+        message={t("deleteConfirm", { name: service.name })}
+        confirmLabel={t("deleteDialogConfirm")}
+        cancelLabel={t("deleteDialogDismiss")}
+        action={deleteService.bind(null, service.id)}
+      />
     </li>
   );
 }

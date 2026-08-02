@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import {
   createAvailabilityRule,
   deleteAvailabilityRule,
@@ -113,6 +114,12 @@ export function AvailabilitySection({
   );
   const [clientError, setClientError] = useState<string | null>(null);
 
+  // A single shared dialog for the whole list, retargeted per click —
+  // cheaper than a dialog per chip, and hooks can't be called inside
+  // the rules.map() loop below anyway.
+  const [pendingDelete, setPendingDelete] = useState<{ ruleId: string; range: string; day: string } | null>(null);
+  const deleteDialogRef = useRef<ConfirmDialogHandle>(null);
+
   // Only times that are actually valid given the current start
   // selection — the dropdown itself can never offer an invalid choice,
   // so there's no "off-grid" or "before start" state to even validate
@@ -213,37 +220,32 @@ export function AvailabilitySection({
                         }}
                       >
                         {range}
-                        <form
-                          action={deleteAvailabilityRule.bind(null, rule.id)}
-                          onSubmit={(e) => {
-                            if (!confirm(t("deleteRangeConfirm", { range, day: dayLabel }))) {
-                              e.preventDefault();
-                            }
+                        <button
+                          type="button"
+                          aria-label={t("deleteRangeAria", { range, day: dayLabel })}
+                          className="focus-ring"
+                          onClick={() => {
+                            setPendingDelete({ ruleId: rule.id, range, day: dayLabel });
+                            deleteDialogRef.current?.open();
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 18,
+                            height: 18,
+                            borderRadius: "50%",
+                            border: "none",
+                            background: "transparent",
+                            color: "var(--text-tertiary)",
+                            font: "var(--text-caption)",
+                            lineHeight: 1,
+                            cursor: "pointer",
+                            padding: 0,
                           }}
                         >
-                          <button
-                            type="submit"
-                            aria-label={t("deleteRangeAria", { range, day: dayLabel })}
-                            className="focus-ring"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 18,
-                              height: 18,
-                              borderRadius: "50%",
-                              border: "none",
-                              background: "transparent",
-                              color: "var(--text-tertiary)",
-                              font: "var(--text-caption)",
-                              lineHeight: 1,
-                              cursor: "pointer",
-                              padding: 0,
-                            }}
-                          >
-                            ×
-                          </button>
-                        </form>
+                          ×
+                        </button>
                       </span>
                     );
                   })}
@@ -253,6 +255,14 @@ export function AvailabilitySection({
           );
         })}
       </ul>
+
+      <ConfirmDialog
+        ref={deleteDialogRef}
+        message={pendingDelete ? t("deleteRangeConfirm", { range: pendingDelete.range, day: pendingDelete.day }) : ""}
+        confirmLabel={t("deleteRangeDialogConfirm")}
+        cancelLabel={t("deleteRangeDialogDismiss")}
+        action={deleteAvailabilityRule.bind(null, pendingDelete?.ruleId ?? "")}
+      />
 
       {!isAdding ? (
         <div style={{ marginTop: "var(--space-4)" }}>

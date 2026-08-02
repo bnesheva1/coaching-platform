@@ -152,3 +152,18 @@ body {
 dialog::backdrop {
   background: var(--overlay-scrim);
 }
+
+/* Tailwind's preflight resets margin to 0 on every element, including
+   <dialog> — which overrides the browser's own default
+   `dialog:modal { margin: auto }` centering rule, silently pinning
+   every showModal() dialog to the top of the viewport instead of
+   centering it. Restored once, globally, rather than requiring every
+   dialog to carry its own inline margin: "auto" workaround.
+   !important is required here, not just higher specificity: Tailwind's
+   `@import "tailwindcss"` wraps preflight in a named CSS layer, and
+   this rule is unlayered — confirmed via computed styles that even
+   `dialog:modal` (higher specificity than preflight's plain `dialog`
+   selector) still lost outright. */
+dialog:modal {
+  margin: auto !important;
+}
