@@ -31,6 +31,8 @@ export type BrowseResult = {
   averageRating: number | null;
   reviewCount: number;
   createdAt: string;
+  deliveryTypeKeys: string[];
+  location: string | null;
 };
 
 // Simplified for now to just these two — Name/Newest are easy to bring
@@ -40,6 +42,7 @@ type SortBy = "default" | "rating";
 
 const SPECIALTY_GROUP = "specialty";
 const TOPIC_GROUP = "topic";
+const DELIVERY_TYPE_GROUP = "deliveryType";
 
 // A useState lazy-initializer seed (an earlier version of this) still
 // causes a hydration mismatch: the initializer runs once on the SERVER
@@ -94,15 +97,19 @@ export function BrowseClient({
   query,
   initialSpecialties,
   initialTopics,
+  initialDeliveryTypes,
   specialtyOptions,
   topicOptions,
+  deliveryTypeOptions,
 }: {
   results: BrowseResult[];
   query: string;
   initialSpecialties: string[];
   initialTopics: string[];
+  initialDeliveryTypes: string[];
   specialtyOptions: { key: string; label: string }[];
   topicOptions: { key: string; label: string }[];
+  deliveryTypeOptions: { key: string; label: string }[];
 }) {
   const t = useTranslations("Browse");
   const router = useRouter();
@@ -112,6 +119,7 @@ export function BrowseClient({
   const [searchText, setSearchText] = useState(query);
   const [selectedModalities, setSelectedModalities] = useState<Set<string>>(new Set(initialSpecialties));
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set(initialTopics));
+  const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState<Set<string>>(new Set(initialDeliveryTypes));
   // Default is randomized ("default"), not rating — re-sorting to
   // "Рейтинг" is an explicit opt-in. Never refetches or drops the active
   // search/filter state, since it only reorders the already-fetched
@@ -127,31 +135,33 @@ export function BrowseClient({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       router.replace(
-        { pathname, query: buildQuery(value, selectedModalities, selectedTopics) },
+        { pathname, query: buildQuery(value, selectedModalities, selectedTopics, selectedDeliveryTypes) },
         { scroll: false },
       );
     }, SEARCH_DEBOUNCE_MS);
   }
 
-  function buildQuery(q: string, modalities: Set<string>, topics: Set<string>) {
+  function buildQuery(q: string, modalities: Set<string>, topics: Set<string>, deliveryTypes: Set<string>) {
     const query: Record<string, string | string[]> = {};
     if (q) query.q = q;
     if (modalities.size > 0) query.specialty = [...modalities];
     if (topics.size > 0) query.topic = [...topics];
+    if (deliveryTypes.size > 0) query.deliveryType = [...deliveryTypes];
     return query;
   }
 
-  // Filter changes (either group) are entirely client-derived (see the
+  // Filter changes (any group) are entirely client-derived (see the
   // counts/filter logic below) — no server data is needed, so this
   // updates the visible URL directly via the History API rather than a
   // Next.js navigation, which would otherwise re-run the server
   // component and refetch for no reason on every checkbox click. Still
   // shareable — the URL is correct — just doesn't trigger a round trip.
-  function applyFilters(nextModalities: Set<string>, nextTopics: Set<string>) {
+  function applyFilters(nextModalities: Set<string>, nextTopics: Set<string>, nextDeliveryTypes: Set<string>) {
     setSelectedModalities(nextModalities);
     setSelectedTopics(nextTopics);
+    setSelectedDeliveryTypes(nextDeliveryTypes);
     const params = new URLSearchParams();
-    const q = buildQuery(searchText, nextModalities, nextTopics);
+    const q = buildQuery(searchText, nextModalities, nextTopics, nextDeliveryTypes);
     for (const [key, value] of Object.entries(q)) {
       if (Array.isArray(value)) value.forEach((v) => params.append(key, v));
       else params.set(key, value);
@@ -161,13 +171,14 @@ export function BrowseClient({
   }
 
   function handleFiltersApply(next: Record<string, Set<string>>) {
-    applyFilters(next[SPECIALTY_GROUP] ?? new Set(), next[TOPIC_GROUP] ?? new Set());
+    applyFilters(next[SPECIALTY_GROUP] ?? new Set(), next[TOPIC_GROUP] ?? new Set(), next[DELIVERY_TYPE_GROUP] ?? new Set());
   }
 
   function clearAll() {
     setSearchText("");
     setSelectedModalities(new Set());
     setSelectedTopics(new Set());
+    setSelectedDeliveryTypes(new Set());
     if (debounceRef.current) clearTimeout(debounceRef.current);
     router.replace({ pathname }, { scroll: false });
   }
@@ -181,22 +192,37 @@ export function BrowseClient({
   // combining groups as AND legible instead of just narrowing a list
   // with no explanation.
   const specialtyCounts = useMemo(() => {
-    const topicFiltered = results.filter((r) => matchesGroup(r.topicKeys, selectedTopics));
+    const topicFiltered = results.filter(
+      (r) => matchesGroup(r.topicKeys, selectedTopics) && matchesGroup(r.deliveryTypeKeys, selectedDeliveryTypes),
+    );
     const map = new Map<string, number>();
     for (const option of specialtyOptions) {
       map.set(option.key, topicFiltered.filter((r) => r.specialtyKeys.includes(option.key)).length);
     }
     return map;
-  }, [results, specialtyOptions, selectedTopics]);
+  }, [results, specialtyOptions, selectedTopics, selectedDeliveryTypes]);
 
   const topicCounts = useMemo(() => {
-    const specialtyFiltered = results.filter((r) => matchesGroup(r.specialtyKeys, selectedModalities));
+    const specialtyFiltered = results.filter(
+      (r) => matchesGroup(r.specialtyKeys, selectedModalities) && matchesGroup(r.deliveryTypeKeys, selectedDeliveryTypes),
+    );
     const map = new Map<string, number>();
     for (const option of topicOptions) {
       map.set(option.key, specialtyFiltered.filter((r) => r.topicKeys.includes(option.key)).length);
     }
     return map;
-  }, [results, topicOptions, selectedModalities]);
+  }, [results, topicOptions, selectedModalities, selectedDeliveryTypes]);
+
+  const deliveryTypeCounts = useMemo(() => {
+    const otherFiltered = results.filter(
+      (r) => matchesGroup(r.specialtyKeys, selectedModalities) && matchesGroup(r.topicKeys, selectedTopics),
+    );
+    const map = new Map<string, number>();
+    for (const option of deliveryTypeOptions) {
+      map.set(option.key, otherFiltered.filter((r) => r.deliveryTypeKeys.includes(option.key)).length);
+    }
+    return map;
+  }, [results, deliveryTypeOptions, selectedModalities, selectedTopics]);
 
   const specialtyFilterOptions: FilterOption[] = specialtyOptions.map((o) => ({
     key: o.key,
@@ -208,21 +234,36 @@ export function BrowseClient({
     label: o.label,
     count: topicCounts.get(o.key) ?? 0,
   }));
+  const deliveryTypeFilterOptions: FilterOption[] = deliveryTypeOptions.map((o) => ({
+    key: o.key,
+    label: o.label,
+    count: deliveryTypeCounts.get(o.key) ?? 0,
+  }));
 
   const filterGroups: FilterGroup[] = [
     { key: SPECIALTY_GROUP, groupLabel: t("modalityGroupLabel"), options: specialtyFilterOptions, selected: selectedModalities },
     { key: TOPIC_GROUP, groupLabel: t("topicGroupLabel"), options: topicFilterOptions, selected: selectedTopics },
+    { key: DELIVERY_TYPE_GROUP, groupLabel: t("deliveryTypeGroupLabel"), options: deliveryTypeFilterOptions, selected: selectedDeliveryTypes },
   ];
 
   function computeCountFor(draft: Record<string, Set<string>>): number {
     const modalities = draft[SPECIALTY_GROUP] ?? new Set<string>();
     const topics = draft[TOPIC_GROUP] ?? new Set<string>();
-    return results.filter((r) => matchesGroup(r.specialtyKeys, modalities) && matchesGroup(r.topicKeys, topics)).length;
+    const deliveryTypes = draft[DELIVERY_TYPE_GROUP] ?? new Set<string>();
+    return results.filter(
+      (r) => matchesGroup(r.specialtyKeys, modalities) && matchesGroup(r.topicKeys, topics) && matchesGroup(r.deliveryTypeKeys, deliveryTypes),
+    ).length;
   }
 
   const filteredResults = useMemo(
-    () => results.filter((r) => matchesGroup(r.specialtyKeys, selectedModalities) && matchesGroup(r.topicKeys, selectedTopics)),
-    [results, selectedModalities, selectedTopics],
+    () =>
+      results.filter(
+        (r) =>
+          matchesGroup(r.specialtyKeys, selectedModalities) &&
+          matchesGroup(r.topicKeys, selectedTopics) &&
+          matchesGroup(r.deliveryTypeKeys, selectedDeliveryTypes),
+      ),
+    [results, selectedModalities, selectedTopics, selectedDeliveryTypes],
   );
 
   // Ordering: "default" is the stable-per-fetch shuffle (fair rotation
@@ -243,6 +284,7 @@ export function BrowseClient({
 
   const specialtyLabelByKey = new Map(specialtyOptions.map((o) => [o.key, o.label]));
   const topicLabelByKey = new Map(topicOptions.map((o) => [o.key, o.label]));
+  const deliveryTypeLabelByKey = new Map(deliveryTypeOptions.map((o) => [o.key, o.label]));
 
   // Continuous-scroll reveal over the already-fetched result set — how
   // many of `orderedResults` are actually rendered right now.
@@ -284,11 +326,12 @@ export function BrowseClient({
     return () => observer.disconnect();
   }, [hasMore, orderedResults.length]);
 
-  // Active-filter chips span both groups — a plain [key, label, group]
-  // list so removing one only has to touch its own group's Set.
+  // Active-filter chips span all three groups — a plain [key, label,
+  // group] list so removing one only has to touch its own group's Set.
   const activeChips = [
     ...[...selectedModalities].map((key) => ({ group: SPECIALTY_GROUP, key, label: specialtyLabelByKey.get(key) ?? key })),
     ...[...selectedTopics].map((key) => ({ group: TOPIC_GROUP, key, label: topicLabelByKey.get(key) ?? key })),
+    ...[...selectedDeliveryTypes].map((key) => ({ group: DELIVERY_TYPE_GROUP, key, label: deliveryTypeLabelByKey.get(key) ?? key })),
   ];
 
   return (
@@ -367,11 +410,15 @@ export function BrowseClient({
                     if (group === SPECIALTY_GROUP) {
                       const next = new Set(selectedModalities);
                       next.delete(key);
-                      applyFilters(next, selectedTopics);
-                    } else {
+                      applyFilters(next, selectedTopics, selectedDeliveryTypes);
+                    } else if (group === TOPIC_GROUP) {
                       const next = new Set(selectedTopics);
                       next.delete(key);
-                      applyFilters(selectedModalities, next);
+                      applyFilters(selectedModalities, next, selectedDeliveryTypes);
+                    } else {
+                      const next = new Set(selectedDeliveryTypes);
+                      next.delete(key);
+                      applyFilters(selectedModalities, selectedTopics, next);
                     }
                   }}
                   style={{
@@ -462,6 +509,8 @@ export function BrowseClient({
                       reviewCount: practitioner.reviewCount,
                       specialtyLabels: practitioner.specialtyKeys.map((key) => specialtyLabelByKey.get(key) ?? key),
                       topicLabels: practitioner.topicKeys.map((key) => topicLabelByKey.get(key) ?? key),
+                      deliveryTypeLabels: practitioner.deliveryTypeKeys.map((key) => deliveryTypeLabelByKey.get(key) ?? key),
+                      location: practitioner.location,
                     }}
                   />
                 ))}

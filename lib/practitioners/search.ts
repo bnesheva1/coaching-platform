@@ -17,6 +17,14 @@ export type PractitionerSearchResult = {
   averageRating: number | null;
   reviewCount: number;
   createdAt: string;
+  // Distinct delivery types across this practitioner's ACTIVE services
+  // — [] for one with none, possibly more than one entry for a
+  // practitioner offering a mix (e.g. both online and in-person).
+  deliveryTypes: ("online" | "in_person" | "phone")[];
+  // Reused from practitioner_profiles.location (existing free-text
+  // field, already public) — not a new structured "city" column; null
+  // whenever a practitioner hasn't filled it in.
+  location: string | null;
 };
 
 // Shape returned by the search_practitioners SQL function, before we
@@ -32,6 +40,8 @@ type SearchPractitionersRow = {
   average_rating: number | string | null;
   review_count: number | string | null;
   created_at: string;
+  delivery_types: ("online" | "in_person" | "phone")[] | null;
+  location: string | null;
 };
 
 // The single place that knows how to find practitioners — a page calls
@@ -76,5 +86,7 @@ export async function searchPractitioners({
     averageRating: row.average_rating === null ? null : Number(row.average_rating),
     reviewCount: row.review_count === null ? 0 : Number(row.review_count),
     createdAt: row.created_at,
+    deliveryTypes: row.delivery_types ?? [],
+    location: row.location,
   }));
 }

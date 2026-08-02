@@ -23,6 +23,7 @@ export type ProfileService = {
   priceCents: number;
   currency: string;
   imageUrl: string | null;
+  deliveryType: "online" | "in_person" | "phone";
 };
 
 export type ProfileReview = {
@@ -107,6 +108,10 @@ export function PractitionerProfileView({
   const tPublic = useTranslations("PublicProfile");
   const tBooking = useTranslations("Booking");
   const tReviews = useTranslations("Reviews");
+  // Reused, not duplicated — the dashboard's service-editing form
+  // (ServicesSection.tsx) already has the exact "Онлайн"/"Присъствено"/
+  // "По телефон" labels this needs.
+  const tServices = useTranslations("Services");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -410,6 +415,12 @@ export function PractitionerProfileView({
                         <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                           {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
                           {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
+                          {" · "}
+                          {service.deliveryType === "online"
+                            ? tServices("deliveryTypeOnline")
+                            : service.deliveryType === "in_person"
+                              ? tServices("deliveryTypeInPerson")
+                              : tServices("deliveryTypePhone")}
                         </p>
                         {/* Always visible, not gated behind expand — only
                             the timetable is deferred until you ask for it. */}

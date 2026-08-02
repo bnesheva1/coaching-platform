@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUpcomingBookingCount } from "@/lib/services/bookingLock";
+import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
 
 export type ServiceFormState = { error?: string; success?: boolean } | null;
 
@@ -10,8 +12,15 @@ const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_DURATION_MINUTES = 240; // 4 hours
 const MAX_DELIVERY_INFO_LENGTH = 500;
-const DELIVERY_TYPES = ["online", "in_person"] as const;
-type DeliveryType = (typeof DELIVERY_TYPES)[number];
+const MAX_PHONE_LENGTH = 30;
+type DeliveryType = "online" | "in_person" | "phone";
+// "phone" always exists as a schema-level option regardless of the flag
+// (see lib/serviceDelivery.ts's own comment) — this is what actually
+// gates the server accepting it, not just the UI hiding the radio, so
+// hiding the option really does hide it end to end.
+const DELIVERY_TYPES: readonly DeliveryType[] = SHOW_PHONE_DELIVERY_OPTION
+  ? ["online", "in_person", "phone"]
+  : ["online", "in_person"];
 
 // Same bucket, same limits as the profile's avatar/banner upload
 // (uploadProfileImage in actions.ts) — services just get their own
@@ -72,7 +81,8 @@ type ParsedServiceForm =
       durationMinutes: number;
       priceCents: number;
       deliveryType: DeliveryType;
-      deliveryInfo: string;
+      deliveryInfo: string | null;
+      phoneNumber: string | null;
     }
   | { ok: false; error: string };
 
@@ -88,6 +98,7 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
   const rawPrice = formData.get("price") as string;
   const rawDeliveryType = (formData.get("deliveryType") as string)?.trim();
   const deliveryInfo = (formData.get("deliveryInfo") as string)?.trim();
+  const phoneNumber = (formData.get("phoneNumber") as string)?.trim();
 
   if (!name) {
     return { ok: false, error: t("nameRequired") };
@@ -117,11 +128,24 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
   if (!rawDeliveryType || !isDeliveryType(rawDeliveryType)) {
     return { ok: false, error: t("deliveryTypeRequired") };
   }
-  if (!deliveryInfo) {
-    return { ok: false, error: t("deliveryInfoRequired") };
-  }
-  if (deliveryInfo.length > MAX_DELIVERY_INFO_LENGTH) {
-    return { ok: false, error: t("deliveryInfoTooLong", { max: MAX_DELIVERY_INFO_LENGTH }) };
+
+  // phone_number REPLACES delivery_info for this type — the existing
+  // free-text field is meant for a meeting link (online) or an address
+  // (in_person), neither of which applies to "call this number."
+  if (rawDeliveryType === "phone") {
+    if (!phoneNumber) {
+      return { ok: false, error: t("phoneNumberRequired") };
+    }
+    if (phoneNumber.length > MAX_PHONE_LENGTH) {
+      return { ok: false, error: t("phoneNumberTooLong", { max: MAX_PHONE_LENGTH }) };
+    }
+  } else {
+    if (!deliveryInfo) {
+      return { ok: false, error: t("deliveryInfoRequired") };
+    }
+    if (deliveryInfo.length > MAX_DELIVERY_INFO_LENGTH) {
+      return { ok: false, error: t("deliveryInfoTooLong", { max: MAX_DELIVERY_INFO_LENGTH }) };
+    }
   }
 
   return {
@@ -131,7 +155,8 @@ async function parseServiceForm(formData: FormData): Promise<ParsedServiceForm> 
     durationMinutes,
     priceCents,
     deliveryType: rawDeliveryType,
-    deliveryInfo,
+    deliveryInfo: rawDeliveryType === "phone" ? null : deliveryInfo,
+    phoneNumber: rawDeliveryType === "phone" ? phoneNumber : null,
   };
 }
 
@@ -168,6 +193,7 @@ export async function createService(
       currency: "EUR",
       delivery_type: parsed.deliveryType,
       delivery_info: parsed.deliveryInfo,
+      phone_number: parsed.phoneNumber,
     })
     .select("id")
     .single();
@@ -217,13 +243,42 @@ export async function updateService(
     return { error: parsed.error };
   }
 
+  // Lock re-verification — the actual enforcement. The UI disables
+  // these 3 inputs once a service has active/upcoming bookings, but a
+  // disabled attribute is a courtesy, not a boundary: this independently
+  // re-checks against the CURRENT stored values regardless of what the
+  // client submitted, so a hand-crafted request bypassing the disabled
+  // inputs still can't change a locked field.
+  const { data: currentService } = await supabase
+    .from("services")
+    .select("price_cents, duration_minutes, delivery_type")
+    .eq("id", serviceId)
+    .eq("practitioner_id", user.id)
+    .single();
+
+  if (!currentService) {
+    return { error: t("saveFailed") };
+  }
+
+  const upcomingBookingCount = await getUpcomingBookingCount(supabase, serviceId);
+  if (upcomingBookingCount > 0) {
+    const structuralFieldsChanged =
+      parsed.priceCents !== currentService.price_cents ||
+      parsed.durationMinutes !== currentService.duration_minutes ||
+      parsed.deliveryType !== currentService.delivery_type;
+    if (structuralFieldsChanged) {
+      return { error: t("fieldsLockedError", { count: upcomingBookingCount }) };
+    }
+  }
+
   const updatePayload: {
     name: string;
     description: string | null;
     duration_minutes: number;
     price_cents: number;
     delivery_type: DeliveryType;
-    delivery_info: string;
+    delivery_info: string | null;
+    phone_number: string | null;
     image_url?: string;
   } = {
     name: parsed.name,
@@ -232,6 +287,7 @@ export async function updateService(
     price_cents: parsed.priceCents,
     delivery_type: parsed.deliveryType,
     delivery_info: parsed.deliveryInfo,
+    phone_number: parsed.phoneNumber,
   };
 
   const imageEntry = formData.get("image");

@@ -13,6 +13,14 @@ export type PractitionerCardData = {
   averageRating: number | null;
   reviewCount: number;
   topicLabels?: string[]; // already mapped to the viewer's locale by the caller
+  // [] for a practitioner with no active services yet — renders nothing,
+  // not a placeholder. Already mapped to the viewer's locale.
+  deliveryTypeLabels?: string[];
+  // Reused from practitioner_profiles.location (free text, e.g. "Sofia")
+  // — null whenever a practitioner hasn't filled it in; renders nothing
+  // rather than a placeholder, same as bio/avatar's existing null
+  // handling on this card.
+  location?: string | null;
 };
 
 const AVATAR_SIZE = 138; // Card 2a spec — a fixed decorative dimension, not a spacing value
@@ -125,6 +133,15 @@ export function PractitionerCard({ practitioner }: { practitioner: PractitionerC
           {practitioner.specialtyLabels.length > 0 && (
             <div style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)", letterSpacing: "0.02em", marginTop: "var(--space-1)" }}>
               {practitioner.specialtyLabels.join(" · ")}
+            </div>
+          )}
+          {/* City + delivery type as one quiet line — both are "quick
+              facts" in the same register as the specialty line above,
+              not worth two separate rows. Renders nothing at all when
+              neither is present, rather than an empty line. */}
+          {(practitioner.location || (practitioner.deliveryTypeLabels && practitioner.deliveryTypeLabels.length > 0)) && (
+            <div style={{ font: "var(--text-micro)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+              {[practitioner.location, ...(practitioner.deliveryTypeLabels ?? [])].filter(Boolean).join(" · ")}
             </div>
           )}
         </div>

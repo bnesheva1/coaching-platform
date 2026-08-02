@@ -31,7 +31,7 @@ export default async function ProfilePage() {
       // Услуги tab, unchanged).
       supabase
         .from("services")
-        .select("id, name, description, duration_minutes, price_cents, currency, image_url")
+        .select("id, name, description, duration_minutes, price_cents, currency, image_url, delivery_type")
         .eq("practitioner_id", userId)
         .eq("is_active", true)
         .order("created_at", { ascending: true }),
@@ -85,6 +85,7 @@ export default async function ProfilePage() {
             priceCents: s.price_cents,
             currency: s.currency,
             imageUrl: s.image_url,
+            deliveryType: s.delivery_type,
           }))}
           reviews={(reviews ?? []).map((r) => ({
             id: r.id,

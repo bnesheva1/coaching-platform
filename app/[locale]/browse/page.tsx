@@ -1,9 +1,10 @@
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
+import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -18,6 +19,7 @@ export default async function BrowsePage({
 }) {
   const resolvedSearchParams = await searchParams;
   const locale = (await getLocale()) as "en" | "bg";
+  const tServices = await getTranslations("Services");
 
   const specialtyParam = resolvedSearchParams.specialty;
   const initialSpecialties = !specialtyParam
@@ -27,6 +29,12 @@ export default async function BrowsePage({
       : [specialtyParam];
   const topicParam = resolvedSearchParams.topic;
   const initialTopics = !topicParam ? [] : Array.isArray(topicParam) ? topicParam : [topicParam];
+  const deliveryTypeParam = resolvedSearchParams.deliveryType;
+  const initialDeliveryTypes = !deliveryTypeParam
+    ? []
+    : Array.isArray(deliveryTypeParam)
+      ? deliveryTypeParam
+      : [deliveryTypeParam];
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
 
   const practitioners = await searchPractitioners({ searchText: query });
@@ -42,6 +50,8 @@ export default async function BrowsePage({
     averageRating: p.averageRating,
     reviewCount: p.reviewCount,
     createdAt: p.createdAt,
+    deliveryTypeKeys: p.deliveryTypes,
+    location: p.location,
   }));
 
   const specialtyOptions = specialtiesData.map((s) => ({
@@ -51,6 +61,18 @@ export default async function BrowsePage({
   const topicOptions = topicsData.map((topic) => ({
     key: topic.key,
     label: topic[locale] ?? topic.en,
+  }));
+  // Fixed 3-value enum, not a JSON taxonomy file like specialty/topic —
+  // filtered by the same flag as the service-editing radio, so a hidden
+  // phone option disappears from Browse too, not just the dashboard.
+  const deliveryTypeOptions = (
+    SHOW_PHONE_DELIVERY_OPTION
+      ? (["online", "in_person", "phone"] as const)
+      : (["online", "in_person"] as const)
+  ).map((key) => ({
+    key,
+    label:
+      key === "online" ? tServices("deliveryTypeOnline") : key === "in_person" ? tServices("deliveryTypeInPerson") : tServices("deliveryTypePhone"),
   }));
 
   return (
@@ -64,8 +86,10 @@ export default async function BrowsePage({
           query={query}
           initialSpecialties={initialSpecialties}
           initialTopics={initialTopics}
+          initialDeliveryTypes={initialDeliveryTypes}
           specialtyOptions={specialtyOptions}
           topicOptions={topicOptions}
+          deliveryTypeOptions={deliveryTypeOptions}
         />
       </ContentContainer>
     </main>

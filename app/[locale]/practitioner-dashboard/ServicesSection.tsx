@@ -11,6 +11,9 @@ import {
   type ServiceFormState,
 } from "./services-actions";
 import { splitTextAndUrls } from "@/lib/linkify";
+import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
+
+type DeliveryType = "online" | "in_person" | "phone";
 
 type Service = {
   id: string;
@@ -20,22 +23,29 @@ type Service = {
   price_cents: number;
   currency: string;
   is_active: boolean;
-  delivery_type: "online" | "in_person" | null;
+  delivery_type: DeliveryType | null;
   delivery_info: string | null;
+  phone_number: string | null;
   image_url: string | null;
+  // Active/upcoming bookings for THIS service — > 0 locks price/
+  // duration/deliveryType in the edit form (Option B: structural fields
+  // become read-only once someone has already booked under the current
+  // terms; name/description/image/phone_number stay editable always).
+  upcoming_booking_count: number;
 };
 
 const initialState: ServiceFormState = null;
 
-// Mirrors MAX_NAME_LENGTH/MAX_DESCRIPTION_LENGTH/MAX_DELIVERY_INFO_LENGTH
-// in services-actions.ts — duplicated, not imported, same
-// client/server-boundary reasoning as AvailabilitySection.tsx's
+// Mirrors MAX_NAME_LENGTH/MAX_DESCRIPTION_LENGTH/MAX_DELIVERY_INFO_LENGTH/
+// MAX_PHONE_LENGTH in services-actions.ts — duplicated, not imported,
+// same client/server-boundary reasoning as AvailabilitySection.tsx's
 // MIN_DURATION_MINUTES. The server action re-validates from scratch
 // regardless; this just stops you from typing past the limit instead
 // of only failing on submit.
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_DELIVERY_INFO_LENGTH = 500;
+const MAX_PHONE_LENGTH = 30;
 
 function formatPrice(priceCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -108,42 +118,87 @@ function StatusBadge({ isActive, label }: { isActive: boolean; label: string }) 
 function DeliveryFields({
   defaultType,
   defaultInfo,
+  defaultPhoneNumber,
+  locked,
 }: {
   defaultType: Service["delivery_type"];
   defaultInfo: string;
+  defaultPhoneNumber: string;
+  // Only the TYPE choice locks — a practitioner can still update the
+  // meeting link/address text or their phone number after bookings
+  // exist (contact info can legitimately change), per the request's own
+  // explicit "still editable at any time: ...phone_number" list. Only
+  // price/duration/deliveryType are structural enough to lock.
+  locked: boolean;
 }) {
   const t = useTranslations("Services");
-  const [deliveryType, setDeliveryType] = useState<"online" | "in_person">(defaultType ?? "online");
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>(defaultType ?? "online");
+  const deliveryTypeLabel =
+    deliveryType === "online" ? t("deliveryTypeOnline") : deliveryType === "in_person" ? t("deliveryTypeInPerson") : t("deliveryTypePhone");
 
   return (
     <>
-      <fieldset style={{ border: "none", padding: 0 }}>
-        <legend style={{ padding: 0 }}>{t("deliveryTypeLegend")}</legend>
-        <label style={{ display: "block" }}>
-          <input
-            type="radio"
-            name="deliveryType"
-            value="online"
-            checked={deliveryType === "online"}
-            onChange={() => setDeliveryType("online")}
-          />{" "}
-          {t("deliveryTypeOnline")}
+      {locked ? (
+        // A disabled radio input is excluded from form submission
+        // entirely (browsers never include disabled controls in
+        // FormData) — using `disabled` here would silently drop
+        // deliveryType from the submit and break saving ANY change to a
+        // locked service, since it's a required field. A hidden input
+        // guarantees the current value is still submitted; the visible
+        // radios only render when actually editable.
+        <div>
+          <span style={{ display: "block", font: "var(--text-label)", marginBottom: "var(--space-1)" }}>{t("deliveryTypeLegend")}</span>
+          <p style={{ margin: 0, color: "var(--text-secondary)" }}>{deliveryTypeLabel}</p>
+          <input type="hidden" name="deliveryType" value={deliveryType} />
+        </div>
+      ) : (
+        <fieldset style={{ border: "none", padding: 0 }}>
+          <legend style={{ padding: 0 }}>{t("deliveryTypeLegend")}</legend>
+          <label style={{ display: "block" }}>
+            <input
+              type="radio"
+              name="deliveryType"
+              value="online"
+              checked={deliveryType === "online"}
+              onChange={() => setDeliveryType("online")}
+            />{" "}
+            {t("deliveryTypeOnline")}
+          </label>
+          <label style={{ display: "block" }}>
+            <input
+              type="radio"
+              name="deliveryType"
+              value="in_person"
+              checked={deliveryType === "in_person"}
+              onChange={() => setDeliveryType("in_person")}
+            />{" "}
+            {t("deliveryTypeInPerson")}
+          </label>
+          {SHOW_PHONE_DELIVERY_OPTION && (
+            <label style={{ display: "block" }}>
+              <input
+                type="radio"
+                name="deliveryType"
+                value="phone"
+                checked={deliveryType === "phone"}
+                onChange={() => setDeliveryType("phone")}
+              />{" "}
+              {t("deliveryTypePhone")}
+            </label>
+          )}
+        </fieldset>
+      )}
+      {deliveryType === "phone" ? (
+        <label>
+          {t("phoneNumberLabel")}
+          <input name="phoneNumber" type="tel" required defaultValue={defaultPhoneNumber} maxLength={MAX_PHONE_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
-        <label style={{ display: "block" }}>
-          <input
-            type="radio"
-            name="deliveryType"
-            value="in_person"
-            checked={deliveryType === "in_person"}
-            onChange={() => setDeliveryType("in_person")}
-          />{" "}
-          {t("deliveryTypeInPerson")}
+      ) : (
+        <label>
+          {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
+          <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} maxLength={MAX_DELIVERY_INFO_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
-      </fieldset>
-      <label>
-        {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
-        <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} maxLength={MAX_DELIVERY_INFO_LENGTH} className="form-field" style={{ width: "100%" }} />
-      </label>
+      )}
     </>
   );
 }
@@ -172,6 +227,8 @@ function ServiceRow({ service }: { service: Service }) {
     if (state?.success && isEditing) setIsEditing(false);
   }
 
+  const locked = service.upcoming_booking_count > 0;
+
   if (isEditing) {
     return (
       <li style={{ marginBottom: "var(--space-4)" }}>
@@ -190,6 +247,18 @@ function ServiceRow({ service }: { service: Service }) {
               {t("descriptionLabel")}
               <textarea name="description" rows={2} defaultValue={service.description ?? ""} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
+            {locked && (
+              // Practitioner-facing only — this whole page is already
+              // scoped to the owning practitioner, never rendered for a
+              // client. readOnly (not disabled) on the two inputs below
+              // for the same reason DeliveryFields uses a hidden input
+              // instead of a disabled radio: a disabled control is
+              // dropped from form submission entirely, which would
+              // break saving name/description/phone_number changes too.
+              <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                {t("structuralFieldsLockedNote", { count: service.upcoming_booking_count })}
+              </p>
+            )}
             <label>
               {t("durationLabel")}
               <input
@@ -199,9 +268,10 @@ function ServiceRow({ service }: { service: Service }) {
                 max={240}
                 step={15}
                 required
+                readOnly={locked}
                 defaultValue={service.duration_minutes}
                 className="form-field"
-                style={{ width: "100%" }}
+                style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
               />
             </label>
             <label>
@@ -212,12 +282,18 @@ function ServiceRow({ service }: { service: Service }) {
                 min={0}
                 step={0.01}
                 required
+                readOnly={locked}
                 defaultValue={(service.price_cents / 100).toFixed(2)}
                 className="form-field"
-                style={{ width: "100%" }}
+                style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
               />
             </label>
-            <DeliveryFields defaultType={service.delivery_type} defaultInfo={service.delivery_info ?? ""} />
+            <DeliveryFields
+              defaultType={service.delivery_type}
+              defaultInfo={service.delivery_info ?? ""}
+              defaultPhoneNumber={service.phone_number ?? ""}
+              locked={locked}
+            />
             <label>
               {t("imageLabel")}
               <input type="file" name="image" accept="image/png,image/jpeg,image/webp" className="form-field" style={{ width: "100%" }} />
@@ -252,7 +328,28 @@ function ServiceRow({ service }: { service: Service }) {
           {service.description && (
             <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
           )}
-          {service.delivery_info ? (
+          {service.delivery_type === "phone" ? (
+            service.phone_number ? (
+              <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                <strong>{t("deliveryTypePhone")}: </strong>
+                {service.phone_number}
+              </p>
+            ) : (
+              <p
+                style={{
+                  display: "inline-block",
+                  margin: "var(--space-1) 0",
+                  padding: "2px 10px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--accent-subtle)",
+                  color: "var(--accent-subtle-text)",
+                  font: "var(--text-caption)",
+                }}
+              >
+                {t("deliveryInfoMissingNudge")}
+              </p>
+            )
+          ) : service.delivery_info ? (
             <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
               {service.delivery_type && (
                 <strong>
@@ -350,7 +447,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
               {t("priceLabel")}
               <input name="price" type="number" min={0} step={0.01} required className="form-field" style={{ width: "100%" }} />
             </label>
-            <DeliveryFields defaultType={null} defaultInfo="" />
+            <DeliveryFields defaultType={null} defaultInfo="" defaultPhoneNumber="" locked={false} />
             <label>
               {t("imageLabel")}
               <input type="file" name="image" accept="image/png,image/jpeg,image/webp" className="form-field" style={{ width: "100%" }} />

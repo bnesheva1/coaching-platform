@@ -5,6 +5,7 @@ import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
@@ -88,13 +89,18 @@ export async function bookSlot(
     return;
   }
 
-  // Real duration/name/price always come from this row, scoped to the
-  // practitioner and active-only — never trusted from any client-
-  // supplied value. price_cents/currency are new (Epic 9) — everything
-  // else here is unchanged from before payments existed.
-  const { data: service } = await supabase
+  // Service-role, not the client's own session — phone_number/
+  // meeting_link are excluded from the general column grant (same
+  // sensitivity as delivery_info), so a client's own RLS-scoped select
+  // can't read them directly. This fetch never returns raw to the
+  // client though: it's read once, server-side, purely to snapshot
+  // those 3 fields onto the new booking row below — the same trusted-
+  // internal-read pattern confirm_paid_booking already uses for the
+  // Stripe path. .eq() filters here are ordinary query scoping, not an
+  // access-control boundary (service-role bypasses RLS entirely).
+  const { data: service } = await createServiceRoleClient()
     .from("services")
-    .select("name, duration_minutes, price_cents, currency")
+    .select("name, duration_minutes, price_cents, currency, delivery_type, phone_number, meeting_link")
     .eq("id", serviceId)
     .eq("practitioner_id", practitionerId)
     .eq("is_active", true)
@@ -156,6 +162,9 @@ export async function bookSlot(
       service_id: serviceId,
       start_utc: startUtc,
       end_utc: endUtc,
+      delivery_type: service.delivery_type,
+      phone_number: service.phone_number,
+      meeting_link: service.meeting_link,
     })
     .select("id")
     .single();

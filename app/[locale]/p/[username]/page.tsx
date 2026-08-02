@@ -40,7 +40,7 @@ export default async function PublicProfilePage({
     supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
     supabase
       .from("services")
-      .select("id, name, description, duration_minutes, price_cents, currency, image_url")
+      .select("id, name, description, duration_minutes, price_cents, currency, image_url, delivery_type")
       .eq("practitioner_id", practitionerProfile.id)
       .eq("is_active", true)
       .order("created_at", { ascending: true }),
@@ -140,6 +140,7 @@ export default async function PublicProfilePage({
             priceCents: s.price_cents,
             currency: s.currency,
             imageUrl: s.image_url,
+            deliveryType: s.delivery_type,
           }))}
           reviews={(reviews ?? []).map((r) => ({
             id: r.id,
