@@ -353,8 +353,20 @@ export function PractitionerProfileView({
             </p>
           )}
           {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
+          {/* Generously spaced + a filled banner (not bare crimson text)
+              so it reads as a warning sitting above the service tiles'
+              buttons below, not an easy-to-miss caption line. */}
           {bookingErrorCode && (
-            <p style={{ color: "crimson" }}>
+            <p
+              style={{
+                margin: "var(--space-3) 0 var(--space-5)",
+                padding: "var(--space-3) var(--space-4)",
+                borderRadius: "var(--radius-md)",
+                background: "rgba(220, 20, 60, 0.08)",
+                border: "1px solid rgba(220, 20, 60, 0.3)",
+                color: "crimson",
+              }}
+            >
               {tBooking.has(bookingErrorCode) ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0]) : tBooking("bookingFailed")}
             </p>
           )}
