@@ -26,48 +26,51 @@ export default async function BookingsPage({
     supabase.from("practitioner_profiles").select("timezone").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, client_id, service_id, start_utc, end_utc, status")
+      .select("id, client_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at")
       .eq("practitioner_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
 
   const clientIds = [...new Set((bookings ?? []).map((b) => b.client_id))];
-  const bookingServiceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];
 
-  // delivery_info is excluded from the general column grant entirely —
-  // even the owning practitioner can't read it via a plain select (see
-  // ServicesSection's identical note). This RPC is scoped to all of the
-  // caller's own services (not just active/booked ones), unlike the
-  // client-side get_my_active_booking_delivery_info, which is scoped to
-  // the client's own active bookings instead.
-  const [{ data: clients }, { data: bookingServices }, { data: deliveryInfoRows }] = await Promise.all([
+  // No services join at all anymore — name/duration/delivery_type are
+  // booking-time snapshots now, read straight off `bookings` above (see
+  // SessionBooking's own comment on why a live join would be wrong
+  // here). Contact info (delivery_info/phone_number) is still excluded
+  // from the general column grant, same as before — this RPC is the
+  // only way to read it, now keyed by booking_id and no longer status-
+  // scoped, so it also covers this page's past-bookings list.
+  const [{ data: clients }, { data: contactInfoRows }] = await Promise.all([
     clientIds.length > 0
       ? supabase.from("profiles").select("id, display_name").in("id", clientIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
-    bookingServiceIds.length > 0
-      ? supabase.from("services").select("id, name, duration_minutes, delivery_type").in("id", bookingServiceIds)
-      : Promise.resolve({ data: [] as { id: string; name: string; duration_minutes: number; delivery_type: string | null }[] }),
-    supabase.rpc("get_my_services_delivery_info") as unknown as Promise<{
-      data: { service_id: string; delivery_info: string | null }[] | null;
+    supabase.rpc("get_my_confirmed_bookings_contact_info") as unknown as Promise<{
+      data: { booking_id: string; phone_number: string | null; meeting_link: string | null; delivery_info: string | null }[] | null;
     }>,
   ]);
 
   const clientNameById = new Map((clients ?? []).map((c) => [c.id, c.display_name ?? ""]));
-  const bookingServiceById = new Map((bookingServices ?? []).map((s) => [s.id, s]));
-  const deliveryInfoByServiceId = new Map((deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]));
+  const contactInfoByBookingId = new Map((contactInfoRows ?? []).map((row) => [row.booking_id, row]));
 
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
     counterpartName: clientNameById.get(b.client_id) ?? "",
-    serviceName: bookingServiceById.get(b.service_id)?.name ?? "",
-    durationMinutes: bookingServiceById.get(b.service_id)?.duration_minutes ?? 0,
+    serviceName: b.service_name,
+    // Derived from the booking's own immutable start/end, not the
+    // service's current duration_minutes — see client-dashboard/page.tsx's
+    // identical comment.
+    durationMinutes: Math.round((new Date(b.end_utc).getTime() - new Date(b.start_utc).getTime()) / 60000),
     startUtc: b.start_utc,
     endUtc: b.end_utc,
     // Real DB domain is 5 values (see bookings_status_check); no cast
     // needed now that SessionBooking's own union matches it.
     status: b.status as SessionBooking["status"],
-    deliveryType: (bookingServiceById.get(b.service_id)?.delivery_type as "online" | "in_person" | null) ?? null,
-    deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
+    deliveryType: b.delivery_type as SessionBooking["deliveryType"],
+    deliveryInfo: contactInfoByBookingId.get(b.id)?.delivery_info ?? null,
+    phoneNumber: contactInfoByBookingId.get(b.id)?.phone_number ?? null,
+    priceCents: b.price_cents,
+    currency: b.currency,
+    createdAt: b.created_at,
   }));
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);

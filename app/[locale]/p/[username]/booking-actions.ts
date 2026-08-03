@@ -87,7 +87,7 @@ export async function bookSlot(
   // access-control boundary (service-role bypasses RLS entirely).
   const { data: service } = await createServiceRoleClient()
     .from("services")
-    .select("name, duration_minutes, price_cents, currency, delivery_type, phone_number, meeting_link")
+    .select("name, duration_minutes, price_cents, currency, delivery_type, phone_number, meeting_link, delivery_info")
     .eq("id", serviceId)
     .eq("practitioner_id", practitionerId)
     .eq("is_active", true)
@@ -171,6 +171,10 @@ export async function bookSlot(
       delivery_type: service.delivery_type,
       phone_number: service.phone_number,
       meeting_link: service.meeting_link,
+      service_name: service.name,
+      price_cents: service.price_cents,
+      currency: service.currency,
+      delivery_info: service.delivery_info,
     })
     .select("id")
     .single();

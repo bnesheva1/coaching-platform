@@ -43,7 +43,7 @@ export default async function ClientUpcomingPage({
     supabase.from("profiles").select("display_name").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, practitioner_id, service_id, start_utc, end_utc, status")
+      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at")
       .eq("client_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -57,13 +57,22 @@ export default async function ClientUpcomingPage({
     // query already fetching min_notice_hours, just widened rather
     // than adding a third round-trip for one more column.
     supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url").in("id", practitionerIds),
-    supabase.from("services").select("id, name, duration_minutes, delivery_type, image_url").in("id", serviceIds),
+    // Only image_url comes from a live services join now — name/
+    // duration/delivery_type are booking-time snapshots (see
+    // SessionBooking's own comment on why), read straight off `bookings`
+    // above instead. image_url has no snapshot equivalent and isn't
+    // part of "what was agreed", so a live join is the right call for it.
+    supabase.from("services").select("id, image_url").in("id", serviceIds),
   ]);
 
-  const { data: deliveryInfoRows } = (await supabase.rpc("get_my_active_booking_delivery_info")) as {
-    data: { service_id: string; delivery_info: string | null }[] | null;
+  // Booking-time snapshot, not a live join — same RPC now also backs the
+  // practitioner Sessions screen. Keyed by booking_id (not service_id
+  // like the old get_my_active_booking_delivery_info this replaces),
+  // and no longer status-scoped, so it works for past bookings too.
+  const { data: contactInfoRows } = (await supabase.rpc("get_my_confirmed_bookings_contact_info")) as {
+    data: { booking_id: string; phone_number: string | null; meeting_link: string | null; delivery_info: string | null }[] | null;
   };
-  const deliveryInfoByServiceId = new Map((deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]));
+  const contactInfoByBookingId = new Map((contactInfoRows ?? []).map((row) => [row.booking_id, row]));
 
   const { data: reviewedBookingRows } = (await supabase.rpc("get_my_reviewed_booking_ids")) as {
     data: { booking_id: string }[] | null;
@@ -78,13 +87,20 @@ export default async function ClientUpcomingPage({
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
     counterpartName: practitionerNameById.get(b.practitioner_id) ?? "",
-    serviceName: serviceById.get(b.service_id)?.name ?? "",
-    durationMinutes: serviceById.get(b.service_id)?.duration_minutes ?? 0,
+    serviceName: b.service_name,
+    // Derived from the booking's own immutable start/end, not the
+    // service's current duration_minutes — a service's duration can be
+    // edited after this booking was made; its own start/end never can.
+    durationMinutes: Math.round((new Date(b.end_utc).getTime() - new Date(b.start_utc).getTime()) / 60000),
     startUtc: b.start_utc,
     endUtc: b.end_utc,
     status: b.status as SessionBooking["status"],
-    deliveryType: (serviceById.get(b.service_id)?.delivery_type as "online" | "in_person" | null) ?? null,
-    deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
+    deliveryType: b.delivery_type as SessionBooking["deliveryType"],
+    deliveryInfo: contactInfoByBookingId.get(b.id)?.delivery_info ?? null,
+    phoneNumber: contactInfoByBookingId.get(b.id)?.phone_number ?? null,
+    priceCents: b.price_cents,
+    currency: b.currency,
+    createdAt: b.created_at,
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
     hasReview: reviewedBookingIds.has(b.id),
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,

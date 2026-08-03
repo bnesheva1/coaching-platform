@@ -66,13 +66,27 @@ export const COUNTERPART_LABEL_KEY = {
 export type SessionBooking = {
   id: string;
   counterpartName: string;
+  // serviceName/durationMinutes/deliveryType/deliveryInfo are all booking-
+  // time snapshots now (bookings.service_name, end_utc-start_utc,
+  // bookings.delivery_type, the get_my_confirmed_bookings_contact_info
+  // RPC) — never a live join to the current services row. That's the
+  // whole point of the expandable details section below: editing or
+  // hiding a service later must not change what an already-booked
+  // session shows.
   serviceName: string;
   durationMinutes: number;
   startUtc: string;
   endUtc: string;
   status: "pending" | "confirmed" | "completed" | "cancelled_by_client" | "cancelled_by_practitioner";
-  deliveryType: "online" | "in_person" | null;
+  deliveryType: "online" | "in_person" | "phone" | null;
   deliveryInfo: string | null;
+  // Phone-type bookings carry their contact number here instead of
+  // deliveryInfo (mirrors services' own online/in_person vs phone
+  // split) — only ever populated when deliveryType === "phone".
+  phoneNumber?: string | null;
+  priceCents: number;
+  currency: string;
+  createdAt: string;
   minNoticeHours?: number;
   hasReview?: boolean;
   // Only ever populated on the client path (a client's counterpart is a
@@ -222,6 +236,100 @@ export function PractitionerChip({ name, avatarUrl }: { name: string; avatarUrl?
       <CounterpartAvatar name={name} avatarUrl={avatarUrl} size={32} />
       <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{name}</span>
     </div>
+  );
+}
+
+// Native <details>/<summary>, same idiom PastSessionsSection.tsx already
+// established for its own collapse — free keyboard operability and an
+// expanded/collapsed announcement to screen readers with no extra aria
+// wiring, and consistent with the one other disclosure pattern already
+// in this app rather than a second, custom one. Collapsed by default
+// everywhere it's used (no defaultOpen) — this is deliberately the
+// "agreed terms" record, not primary card content, so it stays out of
+// the way until asked for.
+//
+// Every field here is a booking-time snapshot — never a live join to
+// the current services row — which is the entire point: a practitioner
+// editing or hiding a service after the fact must not change what an
+// already-booked session appears to have been. serviceName/
+// durationMinutes/deliveryType/deliveryInfo/priceCents/currency/
+// createdAt all come straight through from the SessionBooking passed
+// in, which each page maps from bookings' own snapshot columns (or, for
+// duration, from the booking's own immutable start/end) — never from a
+// second services query.
+export function BookingDetailsDisclosure({ booking, timezone }: { booking: SessionBooking; timezone: string }) {
+  const t = useTranslations("Booking");
+  const locale = useLocale();
+  const intlLocale = INTL_LOCALES[locale] ?? "en-US";
+
+  const priceFormatter = new Intl.NumberFormat(intlLocale, { style: "currency", currency: booking.currency });
+  const createdAtFormatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
+
+  const deliveryTypeLabel =
+    booking.deliveryType === "online"
+      ? t("deliveryTypeOnline")
+      : booking.deliveryType === "in_person"
+        ? t("deliveryTypeInPerson")
+        : booking.deliveryType === "phone"
+          ? t("deliveryTypePhone")
+          : null;
+
+  const deliveryDetailsLabel =
+    booking.deliveryType === "online"
+      ? t("deliveryLabelOnline")
+      : booking.deliveryType === "in_person"
+        ? t("deliveryLabelInPerson")
+        : booking.deliveryType === "phone"
+          ? t("deliveryLabelPhone")
+          : null;
+
+  const deliveryDetailsValue = booking.deliveryType === "phone" ? booking.phoneNumber : booking.deliveryInfo;
+
+  const rowStyle = { display: "flex", gap: "var(--space-3)" } as const;
+  const labelStyle = { margin: 0, minWidth: 140, flexShrink: 0, color: "var(--text-tertiary)" } as const;
+  const valueStyle = { margin: 0, color: "var(--text-secondary)" } as const;
+
+  return (
+    <details style={{ marginTop: "var(--space-2)" }}>
+      <summary
+        className="focus-ring"
+        style={{ cursor: "pointer", font: "var(--text-body-sm)", color: "var(--accent)", padding: "var(--space-1) 0" }}
+      >
+        {t("detailsToggle")}
+      </summary>
+      <dl style={{ margin: "var(--space-2) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-1)", font: "var(--text-body-sm)" }}>
+        <div style={rowStyle}>
+          <dt style={labelStyle}>{t("detailsServiceLabel")}</dt>
+          <dd style={valueStyle}>{booking.serviceName}</dd>
+        </div>
+        <div style={rowStyle}>
+          <dt style={labelStyle}>{t("detailsPriceLabel")}</dt>
+          <dd style={valueStyle}>{priceFormatter.format(booking.priceCents / 100)}</dd>
+        </div>
+        <div style={rowStyle}>
+          <dt style={labelStyle}>{t("detailsDurationLabel")}</dt>
+          <dd style={valueStyle}>{t("detailsDurationValue", { minutes: booking.durationMinutes })}</dd>
+        </div>
+        {deliveryTypeLabel && (
+          <div style={rowStyle}>
+            <dt style={labelStyle}>{t("detailsDeliveryTypeLabel")}</dt>
+            <dd style={valueStyle}>{deliveryTypeLabel}</dd>
+          </div>
+        )}
+        {deliveryDetailsValue && (
+          <div style={rowStyle}>
+            <dt style={labelStyle}>{deliveryDetailsLabel}</dt>
+            <dd style={valueStyle}>
+              <LinkifiedText text={deliveryDetailsValue} />
+            </dd>
+          </div>
+        )}
+        <div style={rowStyle}>
+          <dt style={labelStyle}>{t("detailsBookedAtLabel")}</dt>
+          <dd style={valueStyle}>{createdAtFormatter.format(new Date(booking.createdAt))}</dd>
+        </div>
+      </dl>
+    </details>
   );
 }
 
@@ -412,6 +520,7 @@ export function BookingsList({
                     </div>
                     {/* Join link/location sits directly under that row. */}
                     {deliverySlot}
+                    <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                     {cancelSlot}
                   </div>
                 </div>
@@ -436,6 +545,7 @@ export function BookingsList({
                   {booking.serviceName} · {t(statusKeys[booking.status])}
                 </p>
                 {deliverySlot}
+                <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                 {cancelSlot}
               </div>
             );

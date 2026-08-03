@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import {
+  BookingDetailsDisclosure,
   CANCELLED_STATUSES,
   COUNTERPART_LABEL_KEY,
   STATUS_KEYS,
@@ -152,6 +153,7 @@ export function PastSessionsSection({
                   </span>
                   {" · "}
                   {t(statusKeys[booking.status])}
+                  <BookingDetailsDisclosure booking={booking} timezone={timezone} />
                   {showReviewSlot &&
                     (booking.hasReview ? (
                       <p style={{ margin: "var(--space-1) 0 0", color: "var(--text-tertiary)", font: "var(--text-body-sm)" }}>
