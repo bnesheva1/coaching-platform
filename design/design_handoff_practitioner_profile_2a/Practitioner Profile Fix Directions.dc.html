@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body{margin:0;background:oklch(94% 0.005 90);font-family:var(--font-ui)}
+  *{box-sizing:border-box}
+  a{color:var(--accent)}
+  a:hover{color:var(--accent-hover)}
+  .dv-turn{padding:40px 44px 60px}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 14px/1.2 system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:10px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.4 system-ui,sans-serif;color:rgba(0,0,0,.6);max-width:520px}
+  .dv-frame{border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.1),0 16px 40px rgba(0,0,0,.09);overflow:hidden;background:var(--bg-page)}
+  .dv-next{margin:24px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+  .ph{background:linear-gradient(135deg,oklch(88% 0.03 85),oklch(78% 0.05 60));display:flex;align-items:center;justify-content:center;font:600 10px var(--font-ui);color:oklch(35% 0.05 70);text-align:center}
+  .chip{font:600 11.5px var(--font-ui);padding:5px 12px;border-radius:var(--radius-pill);background:var(--accent-subtle);color:var(--accent-subtle-text)}
+  .pill-spec{font:600 12px var(--font-ui);padding:6px 14px;border-radius:999px;background:var(--accent);color:var(--text-on-accent)}
+  .pill-topic{font:500 12px var(--font-ui);padding:6px 14px;border-radius:999px;background:var(--bg-surface-2);color:var(--text-secondary);box-shadow:var(--shadow-sm)}
+  .mode-badge{display:inline-flex;align-items:center;gap:6px;font:600 11.5px var(--font-ui);padding:5px 11px;border-radius:var(--radius-pill);background:var(--accent-subtle);color:var(--accent-subtle-text)}
+  .slot{font:600 12px var(--font-ui);padding:6px 12px;border-radius:999px;background:var(--accent-subtle);color:var(--accent-subtle-text);cursor:pointer;border:none}
+  .slot:hover{background:var(--accent);color:var(--text-on-accent)}
+  .arrow{width:26px;height:26px;border-radius:50%;background:var(--bg-surface);box-shadow:var(--shadow-sm);border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .goldbtn{font:600 13px var(--font-ui);padding:13px 22px;border-radius:10px;background:var(--accent);color:var(--text-on-accent);text-decoration:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;box-shadow:var(--shadow-sm)}
+  .ghostbtn{font:600 13px var(--font-ui);padding:13px 20px;border-radius:10px;background:var(--bg-surface);color:var(--text-primary);text-decoration:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;box-shadow:var(--shadow-sm)}
+  .infrow{display:flex;align-items:flex-start;gap:10px;font:var(--text-body-sm);color:var(--text-secondary)}
+  .infico{width:26px;height:26px;border-radius:50%;background:var(--bg-surface-2);display:flex;align-items:center;justify-content:center;flex:none;color:var(--text-tertiary)}
+  .rule{height:1px;background:var(--border-subtle);flex:1}
+  .sechd{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+  .sectitle{margin:0;font:var(--text-heading-lg);color:var(--text-primary)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">1a, another pass — cover-style header, quote out of the banner, split pill types, mode/location badges, no rules</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Cover header (avatar overlapping bottom-left like the built version), quote as its own pulled-out line, specialties vs. topics as distinct pill styles, "Онлайн · На място — София" badges, separators replaced with breathing room.</div>
+<div class="dv-frame" style="width:820px" data-theme="light">
+  <div style="background:var(--bg-page)">
+    <div style="padding:0 0 0">
+      <div style="margin:30px;height:176px;border-radius:var(--radius-xl);background:linear-gradient(105deg,oklch(94% 0.03 82),oklch(88% 0.065 72));position:relative;overflow:hidden">
+        <div style="position:absolute;right:0;top:0;bottom:0;width:220px;opacity:.45;background:linear-gradient(160deg,oklch(90% 0.05 80),oklch(78% 0.075 66));pointer-events:none" aria-hidden="true"></div>
+      </div>
+      <div style="padding:0 40px;display:flex;align-items:flex-end;gap:22px;margin-top:-62px;position:relative">
+        <div class="ph" style="width:140px;height:140px;border-radius:50%;border:6px solid var(--bg-page);box-shadow:var(--shadow-md);flex:none">портрет</div>
+        <div style="padding-bottom:12px;display:flex;flex-direction:column;gap:3px">
+          <h1 style="margin:0;font:var(--text-display-sm);color:var(--text-primary)">Виктория Илиева</h1>
+          <span style="font:600 14px var(--font-ui);color:var(--accent)">Таро, осъзнаване, подкрепа</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:26px 40px 34px;display:flex;gap:34px;align-items:flex-start">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:22px">
+        <p style="margin:0;font:italic 400 20px/1.5 var(--font-display);color:var(--text-primary);max-width:440px;text-wrap:pretty">“Помагам ви да видите ясно следващата стъпка, когато пътят изглежда неясен.”</p>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--text-tertiary);width:82px;flex:none;padding-top:7px">Практики</span>
+            <div style="flex:1;min-width:0;display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{specialties}}" as="sp" hint-placeholder-count="2"><span class="pill-spec">{{sp}}</span></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--text-tertiary);width:82px;flex:none;padding-top:7px">Теми</span>
+            <div style="flex:1;min-width:0;display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{topics}}" as="tp" hint-placeholder-count="3"><span class="pill-topic">{{tp}}</span></sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="#save" class="ghostbtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z"></path></svg>
+            Запази практикуващ
+          </a>
+        </div>
+      </div>
+
+      <div style="width:248px;flex:none;background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:20px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="color:var(--accent);letter-spacing:1px;font-size:13px">★★★★★</span>
+          <span style="font:700 18px var(--font-ui);color:var(--text-primary)">4.9</span>
+          <a href="#reviews2" style="font:var(--text-caption);text-decoration:none">{{reviewCountLabel}}</a>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="mode-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"></rect><path d="M8 21h8"></path></svg>
+            Онлайн
+          </span>
+          <span class="mode-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+            На място — София
+          </span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--text-tertiary)">Следващ свободен час</span>
+          <span style="display:flex;align-items:center;gap:8px;font:400 19px/1.3 var(--font-display);color:var(--text-primary)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="flex:none"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>
+            {{nextSlotLabel}}
+          </span>
+          <span style="font:var(--text-caption);color:var(--text-tertiary)">Europe/Sofia</span>
+        </div>
+        <a href="#svc3" class="goldbtn" style="justify-content:center">Виж свободни часове</a>
+      </div>
+    </div>
+
+    <div style="padding:8px 40px 42px;display:flex;flex-direction:column;gap:44px">
+      <div>
+        <h2 style="margin:0 0 12px;font:var(--text-heading-lg);color:var(--text-primary)">Относно мен</h2>
+        <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary);max-width:600px;text-wrap:pretty">Правя таро разклади вече над осем години, като съм работила с клиенти от цяла България. Всяка сесия започва с разговор — искам да разбера какво наистина ви вълнува, преди да отворя картите. Вярвам, че таро не дава готови отговори, а помага да чуете собствената си интуиция по-ясно.</p>
+      </div>
+
+      <div id="svc3">
+        <h2 style="margin:0 0 16px;font:var(--text-heading-lg);color:var(--text-primary)">Услуги</h2>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:20px">
+            <div style="display:flex;gap:20px;align-items:flex-start">
+              <div class="ph" style="width:152px;height:114px;border-radius:12px;flex:none">снимка на<br>услугата</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                <span style="font:var(--text-heading-lg);color:var(--text-primary)">Таро разклад — общ поглед</span>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">45 мин. · 60,00 €</span>
+                  <span class="mode-badge" style="font-size:10.5px;padding:3px 8px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"></rect><path d="M8 21h8"></path></svg>
+                    Онлайн
+                  </span>
+                </div>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary)">Разглеждам настоящата ви ситуация и ви давам яснота и насоки за следващите стъпки.</span>
+              </div>
+            </div>
+            <div style="margin-top:20px;background:var(--bg-surface);border-radius:var(--radius-lg);padding:18px 0 0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
+                <div style="display:flex;flex-direction:column">
+                  <span style="font:var(--text-heading-sm);color:var(--text-primary)">Избери свободен час</span>
+                  <span style="font:var(--text-caption);color:var(--text-tertiary)">Часовете са показани в Europe/Sofia</span>
+                </div>
+                <a href="#collapse" style="font:600 12px var(--font-ui);text-decoration:none">Скрий свободните часове ⌃</a>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button type="button" class="arrow" aria-label="Предишни дни"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg></button>
+                <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                  <sc-for list="{{days}}" as="d" hint-placeholder-count="3">
+                    <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                      <div style="display:flex;flex-direction:column">
+                        <span style="font:var(--text-caption);color:var(--text-tertiary)">{{d.dow}}</span>
+                        <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{d.date}}</span>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:6px">
+                        <sc-for list="{{d.slots}}" as="slot" hint-placeholder-count="4"><button type="button" class="slot">{{slot}}</button></sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <button type="button" class="arrow" aria-label="Следващи дни"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></button>
+              </div>
+              <div style="display:flex;justify-content:flex-end;margin-top:12px"><a href="#date" style="font:600 12px var(--font-ui);text-decoration:none">Отиди на дата</a></div>
+            </div>
+          </div>
+
+          <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:20px">
+            <div style="display:flex;gap:20px;align-items:flex-start">
+              <div class="ph" style="width:152px;height:114px;border-radius:12px;flex:none">снимка на<br>услугата</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                <span style="font:var(--text-heading-lg);color:var(--text-primary)">Таро разклад — конкретен въпрос</span>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">30 мин. · 40,00 €</span>
+                  <span class="mode-badge" style="font-size:10.5px;padding:3px 8px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                    На място — София
+                  </span>
+                </div>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary)">Фокусираме се върху конкретен въпрос или дилема и търсим най-доброто решение.</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:14px">
+              <a href="#expand" style="display:inline-flex;align-items:center;gap:7px;font:600 12px var(--font-ui);text-decoration:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>
+                Виж свободни часове ⌄
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="reviews2">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+          <h2 style="margin:0;font:var(--text-heading-lg);color:var(--text-primary)">Отзиви</h2>
+          <span style="font:var(--text-body-sm);color:var(--text-tertiary)"><b style="font:700 15px var(--font-ui);color:var(--text-primary)">4.9</b> ({{reviewCountLabel}})</span>
+        </div>
+        <sc-if value="{{!reviewsExpanded}}" hint-placeholder-val="{{true}}">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <sc-for list="{{latestReviews}}" as="r" hint-placeholder-count="6">
+              <div style="background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+                <span style="color:var(--accent);letter-spacing:1px;font-size:12px">★★★★★</span>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary);flex:1">{{r.text}}</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">Потвърден потребител · {{r.date}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:center;margin-top:18px">
+            <button type="button" onClick="{{expandReviews}}" class="ghostbtn" style="border:none;cursor:pointer;font-family:var(--font-ui)">{{expandLabel}}</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{reviewsExpanded}}" hint-placeholder-val="{{false}}">
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{reviews}}" as="r" hint-placeholder-count="6">
+              <div style="padding:14px 0;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:5px">
+                <span style="font:var(--text-caption);color:var(--text-tertiary)"><span style="color:var(--accent);letter-spacing:1px">★★★★★</span> — Потвърден потребител · {{r.date}}</span>
+                <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{r.text}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:center;margin-top:18px">
+            <button type="button" onClick="{{collapseReviews}}" class="ghostbtn" style="border:none;cursor:pointer;font-family:var(--font-ui)">Покажи по-малко</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make <a class="dv-oid" href="#2a">2a</a> the real page" · "show <a class="dv-oid" href="#2a">2a</a> dark / mobile" · "add the sticky booking rail from <a class="dv-oid" href="#1b">1b</a>"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Practitioner profile — fixing the built version against the reference mockup</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Closest to the reference: narrow editorial column, quote banner with avatar breaking out, gold CTA pair, info card, service rows with inline slot picker.</div>
+<div class="dv-frame" style="width:760px" data-theme="light">
+  <div style="background:var(--bg-page)">
+    <div style="position:relative;padding:0 0 0">
+      <div style="height:190px;margin:0;background:linear-gradient(105deg,oklch(93% 0.035 80),oklch(89% 0.06 75));display:flex;align-items:center;justify-content:flex-end;padding:0 40px 0 260px;position:relative;overflow:hidden">
+        <div style="position:absolute;right:0;top:0;bottom:0;width:180px;opacity:.5;background:linear-gradient(160deg,oklch(90% 0.05 80),oklch(80% 0.07 70));pointer-events:none" aria-hidden="true"></div>
+        <p style="margin:0;position:relative;margin-right:196px;font:italic 400 19px/1.55 var(--font-display);color:oklch(30% 0.03 70);max-width:330px">“Помагам ви да видите ясно следващата стъпка, когато пътят изглежда неясен.”</p>
+      </div>
+      <div class="ph" style="position:absolute;left:34px;top:44px;width:132px;height:132px;border-radius:50%;border:5px solid var(--bg-page);box-shadow:var(--shadow-md)">портрет<br>132px</div>
+    </div>
+
+    <div style="padding:30px 34px 26px;display:flex;gap:28px;align-items:flex-start">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <h1 style="margin:0;font:var(--text-display-sm);color:var(--text-primary)">Виктория Илиева</h1>
+          <span style="font:600 14px var(--font-ui);color:var(--accent)">Таро, осъзнаване, подкрепа</span>
+        </div>
+        <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary);max-width:400px;text-wrap:pretty">Помагам ви да видите ясно следващата стъпка, когато пътят изглежда неясен.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{chips}}" as="chip" hint-placeholder-count="4"><span class="chip">{{chip}}</span></sc-for>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <a href="#svc" class="goldbtn">Виж свободни часове</a>
+          <a href="#save" class="ghostbtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z"></path></svg>
+            Запази практикуващ
+          </a>
+        </div>
+      </div>
+      <div style="width:212px;flex:none;background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:16px;display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+          <div class="infrow">
+            <span class="infico">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="{{f.path}}"></path></svg>
+            </span>
+            <span>{{f.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="height:10px;background:var(--bg-surface-2)"></div>
+
+    <div style="padding:26px 34px 4px">
+      <div class="sechd"><h2 class="sectitle">Относно мен</h2><div class="rule"></div></div>
+      <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary);text-wrap:pretty">Правя таро разклади вече над осем години, като съм работила с клиенти от цяла България. Всяка сесия започва с разговор — искам да разбера какво наистина ви вълнува, преди да отворя картите. Вярвам, че таро не дава готови отговори, а помага да чуете собствената си интуиция по-ясно.</p>
+    </div>
+
+    <div id="svc" style="padding:26px 34px 34px">
+      <div class="sechd"><h2 class="sectitle">Услуги</h2><div class="rule"></div></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:18px">
+          <div style="display:flex;gap:18px;align-items:flex-start">
+            <div class="ph" style="width:148px;height:112px;border-radius:12px;flex:none">снимка на<br>услугата</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+              <span style="font:var(--text-heading-lg);color:var(--text-primary)">Таро разклад — общ поглед</span>
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary)">45 мин. · 60,00 €</span>
+              <span style="font:var(--text-body-sm);color:var(--text-secondary)">Разглеждам настоящата ви ситуация и ви давам яснота и насоки за следващите стъпки.</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;background:var(--bg-page);border-radius:var(--radius-lg);padding:16px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
+              <div style="display:flex;flex-direction:column">
+                <span style="font:var(--text-heading-sm);color:var(--text-primary)">Избери свободен час</span>
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">Часовете са показани в Europe/Sofia</span>
+              </div>
+              <a href="#collapse" style="font:600 12px var(--font-ui);text-decoration:none">Скрий свободните часове ⌃</a>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button type="button" class="arrow" aria-label="Предишни дни"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"></path></svg></button>
+              <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <sc-for list="{{days}}" as="d" hint-placeholder-count="3">
+                  <div style="background:var(--bg-surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-sm)">
+                    <div style="display:flex;flex-direction:column">
+                      <span style="font:var(--text-caption);color:var(--text-tertiary)">{{d.dow}}</span>
+                      <span style="font:var(--text-heading-sm);color:var(--text-primary)">{{d.date}}</span>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px">
+                      <sc-for list="{{d.slots}}" as="slot" hint-placeholder-count="4"><button type="button" class="slot">{{slot}}</button></sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <button type="button" class="arrow" aria-label="Следващи дни"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></button>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px"><a href="#date" style="font:600 12px var(--font-ui);text-decoration:none">Отиди на дата</a></div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:18px">
+          <div style="display:flex;gap:18px;align-items:flex-start">
+            <div class="ph" style="width:148px;height:112px;border-radius:12px;flex:none">снимка на<br>услугата</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+              <span style="font:var(--text-heading-lg);color:var(--text-primary)">Таро разклад — конкретен въпрос</span>
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary)">30 мин. · 40,00 €</span>
+              <span style="font:var(--text-body-sm);color:var(--text-secondary)">Фокусираме се върху конкретен въпрос или дилема и търсим най-доброто решение.</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px"><a href="#expand" style="font:600 12px var(--font-ui);text-decoration:none">Виж свободни часове ⌄</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 34px 40px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+        <h2 class="sectitle">Отзиви</h2>
+        <span style="font:var(--text-body-sm);color:var(--text-tertiary)"><b style="font:700 15px var(--font-ui);color:var(--text-primary)">4.9</b> (26 отзива)</span>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{reviews}}" as="r" hint-placeholder-count="5">
+          <div style="padding:14px 0;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:5px">
+            <span style="font:var(--text-caption);color:var(--text-tertiary)"><span style="color:var(--accent);letter-spacing:1px">★★★★★</span> — Потвърден потребител · {{r.date}}</span>
+            <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{r.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Desktop two-column: same warmth, but booking moves into a sticky right rail so availability is always reachable. Content column stays narrow and readable.</div>
+<div class="dv-frame" style="width:1040px" data-theme="light">
+  <div style="background:var(--bg-page)">
+    <div style="position:relative">
+      <div style="height:210px;background:linear-gradient(105deg,oklch(93% 0.035 80),oklch(88% 0.065 72));display:flex;align-items:center;padding:0 44px 0 250px">
+        <p style="margin:0;font:italic 400 21px/1.55 var(--font-display);color:oklch(30% 0.03 70);max-width:420px">“Помагам ви да видите ясно следващата стъпка, когато пътят изглежда неясен.”</p>
+      </div>
+      <div class="ph" style="position:absolute;left:40px;top:56px;width:150px;height:150px;border-radius:50%;border:5px solid var(--bg-page);box-shadow:var(--shadow-md)">портрет</div>
+    </div>
+    <div style="display:flex;gap:32px;padding:28px 44px 44px">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:30px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <h1 style="margin:0;font:var(--text-display-md);color:var(--text-primary)">Виктория Илиева</h1>
+          <span style="font:600 14px var(--font-ui);color:var(--accent)">Таро, осъзнаване, подкрепа</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+            <sc-for list="{{chips}}" as="chip" hint-placeholder-count="4"><span class="chip">{{chip}}</span></sc-for>
+          </div>
+        </div>
+        <div>
+          <div class="sechd"><h2 class="sectitle">Относно мен</h2><div class="rule"></div></div>
+          <p style="margin:0;font:var(--text-body-md);color:var(--text-secondary);text-wrap:pretty">Правя таро разклади вече над осем години, като съм работила с клиенти от цяла България. Всяка сесия започва с разговор — искам да разбера какво наистина ви вълнува, преди да отворя картите. Вярвам, че таро не дава готови отговори, а помага да чуете собствената си интуиция по-ясно.</p>
+        </div>
+        <div>
+          <div class="sechd"><h2 class="sectitle">Услуги</h2><div class="rule"></div></div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{services}}" as="s" hint-placeholder-count="2">
+              <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:16px;display:flex;gap:16px;align-items:flex-start">
+                <div class="ph" style="width:120px;height:96px;border-radius:12px;flex:none">снимка</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                  <span style="font:var(--text-heading-lg);color:var(--text-primary)">{{s.name}}</span>
+                  <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{s.meta}}</span>
+                  <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{s.excerpt}}</span>
+                </div>
+                <a href="#pick" style="font:600 12px var(--font-ui);text-decoration:none;white-space:nowrap;align-self:center">Избери час ⌄</a>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+            <h2 class="sectitle">Отзиви</h2>
+            <span style="font:var(--text-body-sm);color:var(--text-tertiary)"><b style="font:700 15px var(--font-ui);color:var(--text-primary)">4.9</b> (26 отзива)</span>
+          </div>
+          <sc-for list="{{reviews}}" as="r" hint-placeholder-count="4">
+            <div style="padding:14px 0;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:5px">
+              <span style="font:var(--text-caption);color:var(--text-tertiary)"><span style="color:var(--accent);letter-spacing:1px">★★★★★</span> — Потвърден потребител · {{r.date}}</span>
+              <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{r.text}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:14px">
+        <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font:var(--text-heading-sm);color:var(--text-primary)">Таро разклад — общ поглед</span>
+            <span style="font:var(--text-caption);color:var(--text-tertiary)">45 мин · 60,00 € · Europe/Sofia</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{days}}" as="d" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font:var(--text-caption);color:var(--text-tertiary)">{{d.dow}} {{d.date}}</span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{d.slots}}" as="slot" hint-placeholder-count="4"><button type="button" class="slot">{{slot}}</button></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <a href="#book" class="goldbtn" style="justify-content:center">Продължи с резервацията</a>
+          <a href="#date" style="font:600 12px var(--font-ui);text-decoration:none;text-align:center">Отиди на дата</a>
+        </div>
+        <div style="background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:16px;display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+            <div class="infrow">
+              <span class="infico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="{{f.path}}"></path></svg></span>
+              <span>{{f.label}}</span>
+            </div>
+          </sc-for>
+          <a href="#save" class="ghostbtn" style="justify-content:center;box-shadow:none;border:1px solid var(--border-default)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z"></path></svg>
+            Запази практикуващ
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Editorial hero: portrait full-bleed left, quote as display type, services as image-forward cards. Most premium, furthest from the reference.</div>
+<div class="dv-frame" style="width:900px" data-theme="light">
+  <div style="background:var(--bg-page)">
+    <div style="display:flex;min-height:340px">
+      <div class="ph" style="width:44%;flex:none;background:linear-gradient(150deg,oklch(86% 0.05 80),oklch(72% 0.07 60))">портрет — вертикален кадър</div>
+      <div style="flex:1;padding:44px 40px;display:flex;flex-direction:column;gap:18px;justify-content:center;background:linear-gradient(160deg,oklch(97% 0.012 85),oklch(94% 0.03 78))">
+        <span style="font:var(--text-overline);letter-spacing:var(--letter-overline);text-transform:uppercase;color:var(--accent)">Таро, осъзнаване, подкрепа</span>
+        <h1 style="margin:0;font:var(--text-display-lg);color:var(--text-primary)">Виктория Илиева</h1>
+        <p style="margin:0;font:italic 400 19px/1.5 var(--font-display);color:var(--text-secondary);max-width:360px">“Помагам ви да видите ясно следващата стъпка, когато пътят изглежда неясен.”</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{chips}}" as="chip" hint-placeholder-count="4"><span class="chip">{{chip}}</span></sc-for>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+          <a href="#svc2" class="goldbtn">Виж свободни часове</a>
+          <a href="#save" class="ghostbtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z"></path></svg>
+            Запази
+          </a>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px">
+          <sc-for list="{{facts}}" as="f" hint-placeholder-count="3">
+            <span style="font:var(--text-caption);color:var(--text-tertiary)">{{f.label}}</span>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="padding:34px 40px 8px;max-width:620px">
+      <div class="sechd"><h2 class="sectitle">Относно мен</h2><div class="rule"></div></div>
+      <p style="margin:0;font:var(--text-body-lg);color:var(--text-secondary);text-wrap:pretty">Правя таро разклади вече над осем години, като съм работила с клиенти от цяла България. Всяка сесия започва с разговор — искам да разбера какво наистина ви вълнува, преди да отворя картите.</p>
+    </div>
+    <div id="svc2" style="padding:30px 40px 34px">
+      <div class="sechd"><h2 class="sectitle">Услуги</h2><div class="rule"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <sc-for list="{{services}}" as="s" hint-placeholder-count="2">
+          <div style="background:var(--bg-surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);overflow:hidden;display:flex;flex-direction:column">
+            <div class="ph" style="height:130px">снимка на услугата</div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:5px;flex:1">
+              <span style="font:var(--text-heading-lg);color:var(--text-primary)">{{s.name}}</span>
+              <span style="font:var(--text-body-sm);color:var(--text-tertiary)">{{s.meta}}</span>
+              <span style="font:var(--text-body-sm);color:var(--text-secondary);flex:1">{{s.excerpt}}</span>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                <sc-for list="{{s.nextSlots}}" as="slot" hint-placeholder-count="3"><button type="button" class="slot">{{slot}}</button></sc-for>
+                <a href="#more" style="font:600 12px var(--font-ui);text-decoration:none;align-self:center">още</a>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="padding:0 40px 44px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+        <h2 class="sectitle">Отзиви</h2>
+        <span style="font:var(--text-body-sm);color:var(--text-tertiary)"><b style="font:700 15px var(--font-ui);color:var(--text-primary)">4.9</b> (26 отзива)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <sc-for list="{{reviews}}" as="r" hint-placeholder-count="4">
+          <div style="background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:16px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:var(--text-caption);color:var(--text-tertiary)"><span style="color:var(--accent);letter-spacing:1px">★★★★★</span> · {{r.date}}</span>
+            <span style="font:var(--text-body-sm);color:var(--text-secondary)">{{r.text}}</span>
+            <span style="font:var(--text-caption);color:var(--text-tertiary)">Потвърден потребител</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "build <a class="dv-oid" href="#1a">1a</a> as the real page" · "show <a class="dv-oid" href="#1a">1a</a> in dark theme / mobile" · "put 1b's sticky booking rail into 1a"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { reviewsExpanded: false };
+  expandReviews = () => this.setState({ reviewsExpanded: true });
+  collapseReviews = () => this.setState({ reviewsExpanded: false });
+
+  renderVals() {
+    const reviews = [
+      { date: '26.07.2026 г.', text: 'Професионално отношение и реални, приложими съвети.' },
+      { date: '24.07.2026 г.', text: 'Препоръчвам горещо, ще се върна отново.' },
+      { date: '21.07.2026 г.', text: 'Директен и честен подход — оценявам го много.' },
+      { date: '18.07.2026 г.', text: 'Усетих се спокойна и разбрана през цялото време.' },
+      { date: '15.07.2026 г.', text: 'Много ясна и топла сесия, точно от каквото имах нужда в момента.' },
+      { date: '11.07.2026 г.', text: 'Зададе точните въпроси и излязох с ясен план за следващите седмици.' },
+      { date: '04.07.2026 г.', text: 'Много внимателно отношение, без нито един момент на натиск.' },
+      { date: '28.06.2026 г.', text: 'Втора сесия при нея — отново си тръгнах олекнала.' },
+      { date: '19.06.2026 г.', text: 'Обясни ми картите спокойно и разбираемо, харесa ми подходът.' },
+    ];
+    return {
+      reviewsExpanded: this.state.reviewsExpanded,
+      expandReviews: this.expandReviews,
+      collapseReviews: this.collapseReviews,
+      reviewCountLabel: `${reviews.length} отзива`,
+      nextSlotLabel: 'Чт, 6 август · 9:00',
+      latestReviews: reviews.slice(0, 6),
+      allReviews: reviews,
+      expandLabel: `Виж всички отзиви (${reviews.length})`,
+      chips: ['Таро', 'Любов', 'Решения', 'Житейски път'],
+      specialties: ['Таро', 'Астрология'],
+      topics: ['Любов', 'Решения', 'Житейски път', 'Спокойствие'],
+      facts: [
+        { label: 'Работи онлайн', path: 'M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18' },
+        { label: 'Часовете са показани в Europe/Sofia', path: 'M12 7v5l3 2' },
+        { label: 'Отговаря обикновено до 24 ч.', path: 'M8 12h8' },
+      ],
+      days: [
+        { dow: 'Чт', date: '6 август', slots: ['9:00', '9:45', '10:30', '11:15', '12:00'] },
+        { dow: 'Пт', date: '7 август', slots: ['9:00', '9:45', '10:30', '11:15', '12:00'] },
+        { dow: 'Сб', date: '8 август', slots: ['10:00', '10:45', '11:30', '12:15', '13:00'] },
+      ],
+      services: [
+        { name: 'Таро разклад — общ поглед', meta: '45 мин. · 60,00 €', excerpt: 'Разглеждам настоящата ви ситуация и ви давам яснота за следващите стъпки.', nextSlots: ['Чт 9:00', 'Чт 9:45', 'Пт 10:30'] },
+        { name: 'Таро разклад — конкретен въпрос', meta: '30 мин. · 40,00 €', excerpt: 'Фокусираме се върху конкретен въпрос или дилема и търсим решение.', nextSlots: ['Чт 12:00', 'Сб 10:00', 'Сб 13:00'] },
+      ],
+      reviews,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

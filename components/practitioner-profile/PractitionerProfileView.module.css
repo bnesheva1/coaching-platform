@@ -1,0 +1,137 @@
+/* Cover-style header + intro layout for the public practitioner profile,
+   direction 2a (design/design_handoff_practitioner_profile_2a). Pixel
+   values below are taken directly from that approved spec and mostly
+   don't land on the app's --space-N grid — kept literal, same
+   precedent as --field-padding/--button-padding-* in
+   tokens/spacing.css. Breakpoint is the app's usual 640px cutoff (see
+   components/bookings/ResponsiveImageRow.module.css). */
+
+.banner {
+  margin: 30px;
+  height: 176px;
+}
+
+@media (max-width: 640px) {
+  .banner {
+    margin: 16px;
+    height: 120px;
+  }
+}
+
+/* Decorative right-edge panel inside the banner — aria-hidden, purely
+   textural. Narrowed on mobile so it doesn't dominate a much shorter,
+   narrower banner. */
+.bannerAccent {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 220px;
+  opacity: 0.45;
+  background: linear-gradient(160deg, oklch(90% 0.05 80), oklch(78% 0.075 66));
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .bannerAccent {
+    width: 40%;
+  }
+}
+
+/* Cover-photo overlap: portrait beside name/specialty on desktop; on
+   mobile the row becomes a column (no overlap row — the portrait
+   shrinks and the name stacks beneath it instead of beside it). */
+.identityRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  margin-top: -62px;
+}
+
+@media (max-width: 640px) {
+  .identityRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-top: -48px;
+  }
+}
+
+.portrait {
+  width: 140px;
+  height: 140px;
+}
+
+@media (max-width: 640px) {
+  .portrait {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* Intro block: quote/pills/save button beside the facts card on
+   desktop; facts card becomes a full-width block below on mobile. */
+.introRow {
+  display: flex;
+  gap: 34px;
+  align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+  .introRow {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+}
+
+.factsCard {
+  width: 248px;
+  flex: none;
+}
+
+@media (max-width: 640px) {
+  .factsCard {
+    width: 100%;
+  }
+}
+
+/* Labelled pill row (Практики / Теми): label sits in a fixed-width
+   column beside the pills on desktop; on mobile the label moves above
+   the pills instead (no fixed-width column). */
+.pillRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .pillRow {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+}
+
+.pillLabel {
+  width: 82px;
+  flex: none;
+  padding-top: 7px;
+}
+
+@media (max-width: 640px) {
+  .pillLabel {
+    width: auto;
+    padding-top: 0;
+  }
+}
+
+.reviewsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .reviewsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,7 +4,11 @@ import { useState } from "react";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+// "surface" added for the practitioner-profile 2a handoff's .ghostbtn
+// recipe (save/favourite CTA, "see all reviews", "show less") — a
+// distinct fill+shadow combo (bg-surface + shadow-sm, no border) that
+// neither existing ghost (transparent) nor secondary (bordered) covers.
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "surface";
 export type ButtonSize = "sm" | "md" | "lg";
 
 type SizeStyle = { padding: string; font: string; radius: string };
@@ -19,12 +23,14 @@ const VARIANTS: Record<ButtonVariant, CSSProperties> = {
   primary: { background: "var(--accent)", color: "var(--text-on-accent)", border: "1px solid transparent" },
   secondary: { background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border-strong)" },
   ghost: { background: "transparent", color: "var(--text-primary)", border: "1px solid transparent" },
+  surface: { background: "var(--bg-surface)", color: "var(--text-primary)", border: "1px solid transparent", boxShadow: "var(--shadow-sm)" },
 };
 
 const HOVER: Record<ButtonVariant, CSSProperties> = {
   primary: { background: "var(--accent-hover)" },
   secondary: { background: "var(--bg-surface-2)" },
   ghost: { background: "var(--bg-surface-2)" },
+  surface: { background: "var(--bg-surface-2)" },
 };
 
 export type ButtonProps = {
@@ -39,6 +45,10 @@ export type ButtonProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   type?: "button" | "submit";
   href?: string;
+  // Stretches to the parent's width, text centered — the facts card's
+  // CTA (2a handoff) needs this; every prior caller sizes to content,
+  // so this defaults off rather than changing existing layouts.
+  fullWidth?: boolean;
 };
 
 export function Button({
@@ -49,6 +59,7 @@ export function Button({
   onClick,
   type = "button",
   href,
+  fullWidth = false,
 }: ButtonProps) {
   const s = SIZES[size];
   const v = VARIANTS[variant];
@@ -64,7 +75,9 @@ export function Button({
     transition:
       "background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard)",
     whiteSpace: "nowrap",
-    display: "inline-block",
+    display: fullWidth ? "block" : "inline-block",
+    width: fullWidth ? "100%" : undefined,
+    textAlign: fullWidth ? "center" : undefined,
     textDecoration: "none",
     ...v,
     ...(hover && !disabled ? HOVER[variant] : {}),

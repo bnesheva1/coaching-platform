@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -62,6 +62,12 @@ export type SlotPickerProps = {
   // in this app (SlotList.tsx before it) deliberately sticks to plain
   // Date/Intl to avoid pulling luxon into the client bundle at all.
   windowDays: number;
+  // Rendered inline beside this component's own heading/timezone
+  // caption (top-right) — the practitioner-profile 2a handoff's
+  // "Скрий свободните часове" toggle lives in the caller (it owns the
+  // expand/collapse state, this component doesn't), but the design
+  // puts it on the SAME row as this heading, not above or below it.
+  headerAction?: ReactNode;
 };
 
 type Chip =
@@ -93,6 +99,7 @@ export function SlotPicker({
   viewerRole,
   isOwnProfile,
   windowDays,
+  headerAction,
 }: SlotPickerProps) {
   const t = useTranslations("Booking");
   const tHeader = useTranslations("Header");
@@ -451,13 +458,19 @@ export function SlotPicker({
       {/* h3, nested under this tile's own service-name/"Услуги" level —
           orients the client before any times are scanned, per the
           heading this section was previously missing entirely. Day-card
-          date labels below are h4, one level under this. */}
-      <h3 style={{ margin: "0 0 var(--space-1)", font: "var(--text-label)", color: "var(--text-primary)" }}>
-        {t("chooseTimeHeading")}
-      </h3>
-      <p style={{ margin: "0 0 var(--space-3)", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-        {t("timesShownIn", { timezone: clientTimezone })}
-      </p>
+          date labels below are h4, one level under this. headerAction
+          (when passed) sits top-right on the same row, per the 2a
+          handoff's "Избери свободен час ... Скрий свободните часове"
+          layout. */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
+        <div>
+          <h3 style={{ margin: 0, font: "var(--text-label)", color: "var(--text-primary)" }}>{t("chooseTimeHeading")}</h3>
+          <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+            {t("timesShownIn", { timezone: clientTimezone })}
+          </p>
+        </div>
+        {headerAction}
+      </div>
 
       {/* Login prompt stays up top — unlike the practitioner-preview
           note below, it's an actionable prompt worth seeing before
@@ -487,17 +500,24 @@ export function SlotPicker({
               onClick={() => setDesktopPageStart((p) => Math.max(0, p - DESKTOP_PAGE_SIZE))}
               style={{
                 alignSelf: "center",
-                background: "none",
+                flex: "none",
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: "var(--bg-surface)",
+                boxShadow: "var(--shadow-sm)",
                 border: "none",
-                color: "var(--text-tertiary)",
-                fontSize: "16px",
+                color: "var(--text-secondary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: desktopPageStart === 0 ? "default" : "pointer",
                 opacity: desktopPageStart === 0 ? 0.35 : 1,
-                padding: "var(--space-1)",
-                borderRadius: "var(--radius-sm)",
               }}
             >
-              ‹
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M15 6l-6 6 6 6" />
+              </svg>
             </button>
             {days.slice(desktopPageStart, desktopPageStart + DESKTOP_PAGE_SIZE).map((day) => renderDayCard(day, "desktop"))}
             <button
@@ -510,17 +530,24 @@ export function SlotPicker({
               }
               style={{
                 alignSelf: "center",
-                background: "none",
+                flex: "none",
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                background: "var(--bg-surface)",
+                boxShadow: "var(--shadow-sm)",
                 border: "none",
-                color: "var(--text-tertiary)",
-                fontSize: "16px",
+                color: "var(--text-secondary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: desktopPageStart + DESKTOP_PAGE_SIZE >= windowDays ? "default" : "pointer",
                 opacity: desktopPageStart + DESKTOP_PAGE_SIZE >= windowDays ? 0.35 : 1,
-                padding: "var(--space-1)",
-                borderRadius: "var(--radius-sm)",
               }}
             >
-              ›
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
             </button>
           </div>
           {/* Its own row below the day cards, right-aligned under the

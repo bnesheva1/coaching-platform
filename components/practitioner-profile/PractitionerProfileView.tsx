@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,8 @@ import { EditableSpecialties } from "./EditableSpecialties";
 import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
+import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import styles from "./PractitionerProfileView.module.css";
 
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 
@@ -44,6 +46,10 @@ export type PractitionerProfileViewProps = {
   bio: string;
   avatarUrl: string | null;
   bannerUrl: string | null;
+  // Practitioner's own scheduling timezone (practitioner_profiles.timezone)
+  // — shown under the facts card's "next available time" so a seeker
+  // knows what that value actually means before they even get there.
+  timezone: string;
   specialties: string[];
   topics: string[];
   services: ProfileService[];
@@ -51,11 +57,12 @@ export type PractitionerProfileViewProps = {
   averageRating: number | null;
   // Pre-fetched per service (not just the currently-expanded one) —
   // expand/collapse is local client state now, not a `?service=`
-  // navigation, so every tile's slots need to already be on hand. Still
-  // safe to wire up unconditionally even when isOwner is previewing,
-  // since SlotPicker already gates the actual booking action on
-  // viewerRole (a practitioner previewing their own profile just sees
-  // "only clients can book", same as viewing anyone else's).
+  // navigation, so every tile's slots need to already be on hand. Also
+  // the source for the facts card's "next available time" (the
+  // earliest slot across every service — same source of truth as the
+  // per-service tables below, not computed separately). Still safe to
+  // wire up unconditionally even when isOwner is previewing, since
+  // SlotPicker already gates the actual booking action on viewerRole.
   slotsByServiceId: Record<string, { startUtc: string }[]>;
   // The viewing client's own existing bookings with this practitioner
   // (any service, not scoped per-service like slotsByServiceId — a
@@ -86,14 +93,23 @@ export type PractitionerProfileViewProps = {
   // on the dashboard's own edit-tab render (no redirect ever lands
   // there).
   initialExpandedServiceId: string | null;
+  // Rendered only when isEditing (isOwner && mode === "edit") — the
+  // owner's own management UI (Stripe Connect status, username/settings),
+  // which used to render as unconditional siblings of this component on
+  // the dashboard's Profile tab, meaning clicking "Preview" never
+  // actually hid them. Passing them in as a slot, gated internally by
+  // this component's own isEditing state, is what makes that structurally
+  // impossible now — the public route simply never passes this prop.
+  ownerOnlyContent?: ReactNode;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
 // false — the public, static view) and
 // app/[locale]/practitioner-dashboard/profile/page.tsx (isOwner always
-// true — the LinkedIn-style editable view). The isOwner/mode split
-// mirrors the approved design source exactly: only an owner ever sees
-// the Preview/Edit toggle or any pencil.
+// true — the LinkedIn-style editable view). Layout follows
+// design/design_handoff_practitioner_profile_2a (direction 2a) —
+// cover-style header, quote pulled out of the banner into the intro
+// block, a dedicated facts card, no section rule lines.
 export function PractitionerProfileView({
   isOwner,
   practitionerId,
@@ -104,6 +120,7 @@ export function PractitionerProfileView({
   bio,
   avatarUrl,
   bannerUrl,
+  timezone,
   specialties,
   topics,
   services,
@@ -119,15 +136,11 @@ export function PractitionerProfileView({
   bookingErrorCode,
   paymentStatus,
   initialExpandedServiceId,
+  ownerOnlyContent,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
-  const tBooking = useTranslations("Booking");
   const tReviews = useTranslations("Reviews");
-  // Reused, not duplicated — the dashboard's service-editing form
-  // (ServicesSection.tsx) already has the exact "Онлайн"/"Присъствено"/
-  // "По телефон" labels this needs.
-  const tServices = useTranslations("Services");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -141,6 +154,12 @@ export function PractitionerProfileView({
   // after a bookSlot redirect should land with that service's tile
   // already open, not collapsed.
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(initialExpandedServiceId);
+  const [reviewsExpanded, setReviewsExpanded] = useState(false);
+  // Placeholder only — local, optimistic, not persisted anywhere yet.
+  // No auth gate either: there's no real save/favourite backend to gate
+  // access to. Wire this up to a real table + server action when the
+  // feature itself is actually built.
+  const [isSaved, setIsSaved] = useState(false);
 
   // Scrolls the services section into view on mount when the page was
   // loaded with a specific service in mind (i.e. right after a bookSlot
@@ -154,6 +173,34 @@ export function PractitionerProfileView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const dedupedDeliveryTypes = Array.from(new Set(services.map((s) => s.deliveryType))) as (
+    | "online"
+    | "in_person"
+    | "phone"
+  )[];
+
+  // Earliest slot across every service — same source of truth as the
+  // per-service tables below the fold, not computed separately.
+  // Formatted in the PRACTITIONER's own stated timezone (the caption
+  // directly beneath it names that same zone), not the viewer's
+  // detected one — this is a summary fact about the practitioner's
+  // calendar, unlike SlotPicker's own internal chips, which convert to
+  // the viewer's browser timezone for actual booking.
+  const nextSlotStartUtc = Object.values(slotsByServiceId)
+    .flat()
+    .map((s) => s.startUtc)
+    .sort()[0];
+  const nextSlotLabel = nextSlotStartUtc
+    ? new Intl.DateTimeFormat(intlLocale, {
+        weekday: "short",
+        day: "numeric",
+        month: "long",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: timezone,
+      }).format(new Date(nextSlotStartUtc))
+    : null;
 
   return (
     <div>
@@ -200,11 +247,24 @@ export function PractitionerProfileView({
         </div>
       )}
 
-      {/* Banner */}
-      <div style={{ position: "relative", height: "18vw", borderRadius: "var(--radius-xl)", overflow: "hidden", background: bannerUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))" }}>
-        {bannerUrl && (
+      {/* Banner — no text inside. The pull-quote (headline) moved to
+          the intro block below; a tall empty-feeling banner with text
+          lost inside it was the main defect of the version this
+          replaces. */}
+      <div
+        className={styles.banner}
+        style={{
+          position: "relative",
+          borderRadius: "var(--radius-xl)",
+          overflow: "hidden",
+          background: bannerUrl ? undefined : "linear-gradient(105deg, oklch(94% 0.03 82), oklch(88% 0.065 72))",
+        }}
+      >
+        {bannerUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div aria-hidden="true" className={styles.bannerAccent} />
         )}
         {isEditing && (
           <div style={{ position: "absolute", top: 14, right: 14 }}>
@@ -215,23 +275,26 @@ export function PractitionerProfileView({
         )}
       </div>
 
-      {/* Identity block — avatar overlaps the banner seam */}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-4)", marginTop: "-7vw", marginLeft: "var(--space-4)" }}>
-        <div style={{ position: "relative" }}>
+      {/* Identity row — portrait overlaps the banner's lower edge
+          (cover-photo style); name + specialty line beside it on
+          desktop, stacked beneath it on mobile. */}
+      <div className={styles.identityRow} style={{ padding: "0 40px" }}>
+        <div className={styles.portrait} style={{ position: "relative", flex: "none" }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
               alt={displayName}
-              style={{ width: "14vw", height: "14vw", borderRadius: "50%", objectFit: "cover", border: "4px solid var(--bg-page)" }}
+              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
             />
           ) : (
             <div
               style={{
-                width: 96,
-                height: 96,
+                width: "100%",
+                height: "100%",
                 borderRadius: "50%",
-                border: "4px solid var(--bg-page)",
+                border: "6px solid var(--bg-page)",
+                boxShadow: "var(--shadow-md)",
                 background: "var(--accent-subtle)",
                 color: "var(--accent-subtle-text)",
                 display: "flex",
@@ -251,123 +314,130 @@ export function PractitionerProfileView({
             </div>
           )}
         </div>
+
+        {isEditing ? (
+          <div style={{ paddingBottom: 12, flex: 1, minWidth: 0 }}>
+            <EditableIdentity displayName={displayName} headline={headline} location={location} />
+          </div>
+        ) : (
+          <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+            <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{displayName}</h1>
+            {specialties.length > 0 && (
+              <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
+                {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <div style={{ padding: "var(--space-4)" }}>
+      {/* Intro block — quote/pills/save button beside the facts card. */}
+      <div style={{ padding: "26px 40px 34px" }}>
         {isEditing ? (
-          <EditableIdentity displayName={displayName} headline={headline} location={location} />
-        ) : (
-          <div>
-            <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{displayName}</h1>
-            {/* Placeholder text only for the owner (previewing their own,
-                still-incomplete profile) — a real visitor never sees an
-                "add a headline" nudge; the line is simply omitted for
-                them, same as before. */}
-            {headline ? (
-              <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)", margin: "var(--space-1) 0 0" }}>{headline}</p>
-            ) : (
-              isOwner && <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)", fontStyle: "italic", margin: "var(--space-1) 0 0" }}>{t("headlinePlaceholder")}</p>
-            )}
-            {location ? (
-              <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", margin: "var(--space-1) 0 0" }}>{location}</p>
-            ) : (
-              isOwner && <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", fontStyle: "italic", margin: "var(--space-1) 0 0" }}>{t("locationPlaceholder")}</p>
-            )}
-          </div>
-        )}
-
-        <div style={{ margin: "var(--space-3) 0" }}>
-          {isEditing ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
             <EditableSpecialties specialties={specialties} />
-          ) : (
-            specialties.length > 0 && (
-              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                {specialties.map((key) => (
-                  <span
-                    key={key}
-                    style={{
-                      font: "var(--text-label)",
-                      padding: "6px 14px",
-                      borderRadius: "var(--radius-pill)",
-                      border: "1px solid var(--border-default)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {specialtyLabelFor(key, locale)}
-                  </span>
-                ))}
-              </div>
-            )
-          )}
-        </div>
-
-        {/* Topics: a second, independent tag dimension (what a session
-            helps with, not the modality/method above) — only shown at
-            all when there's something to show or the owner is editing,
-            same "isOwner sees a nudge, a visitor sees nothing" split as
-            headline/location above. */}
-        <div style={{ margin: "var(--space-3) 0" }}>
-          {isEditing ? (
             <EditableTopics topics={topics} />
-          ) : (
-            topics.length > 0 && (
-              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                {topics.map((key) => (
-                  <span
-                    key={key}
-                    style={{
-                      font: "var(--text-micro)",
-                      fontWeight: 600,
-                      padding: "var(--badge-padding-sm)",
-                      borderRadius: "var(--radius-pill)",
-                      background: "var(--accent-subtle)",
-                      color: "var(--accent-subtle-text)",
-                    }}
-                  >
-                    {topicLabelFor(key, locale)}
+          </div>
+        ) : (
+          <div className={styles.introRow}>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 22 }}>
+              {headline && (
+                <p style={{ margin: 0, font: "italic 400 20px/1.5 var(--font-display)", color: "var(--text-primary)", maxWidth: 440 }}>
+                  &ldquo;{headline}&rdquo;
+                </p>
+              )}
+
+              {(specialties.length > 0 || topics.length > 0) && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {specialties.length > 0 && (
+                    <div className={styles.pillRow}>
+                      <span
+                        className={styles.pillLabel}
+                        style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--text-tertiary)" }}
+                      >
+                        {tPublic("practicesLabel")}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {specialties.map((key) => (
+                          <span
+                            key={key}
+                            style={{ font: "600 12px var(--font-ui)", padding: "6px 14px", borderRadius: "var(--radius-pill)", background: "var(--accent)", color: "var(--text-on-accent)" }}
+                          >
+                            {specialtyLabelFor(key, locale)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {topics.length > 0 && (
+                    <div className={styles.pillRow}>
+                      <span
+                        className={styles.pillLabel}
+                        style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--text-tertiary)" }}
+                      >
+                        {tPublic("topicsLabel")}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {topics.map((key) => (
+                          <span
+                            key={key}
+                            style={{ font: "500 12px var(--font-ui)", padding: "6px 14px", borderRadius: "var(--radius-pill)", background: "var(--bg-surface-2)", color: "var(--text-secondary)", boxShadow: "var(--shadow-sm)" }}
+                          >
+                            {topicLabelFor(key, locale)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <Button variant="surface" size="lg" onClick={() => setIsSaved((v) => !v)}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <IconHeart filled={isSaved} />
+                    {tPublic("savePractitioner")}
                   </span>
-                ))}
+                </Button>
               </div>
-            )
-          )}
-        </div>
+            </div>
 
-        {averageRating !== null && (
-          <p style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-            {tReviews("averageRatingSummary", { average: averageRating.toFixed(1), count: reviews.length })}
-          </p>
-        )}
-
-        {!isEditing && (
-          <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
-            <Button href="#services" variant="primary" size="sm">
-              {t("seeAvailability")}
-            </Button>
+            <div className={styles.factsCard}>
+              <FactsCard
+                averageRating={averageRating}
+                reviewCount={reviews.length}
+                deliveryTypes={dedupedDeliveryTypes}
+                city={location}
+                nextSlotLabel={nextSlotLabel}
+                timezone={timezone}
+              />
+            </div>
           </div>
         )}
+      </div>
 
+      {/* Sections — spacing alone separates them, no rule lines. */}
+      <div style={{ padding: "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
         {/* About */}
-        <section style={{ marginTop: "var(--space-8)" }}>
-          <h2 style={{ font: "var(--text-heading-md)" }}>{t("aboutHeading")}</h2>
-          {isEditing ? <EditableAbout bio={bio} /> : (
-            <>
-              {bio ? (
-                bio.split("\n\n").map((paragraph, i) => (
-                  <p key={i} style={{ font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                    {paragraph}
-                  </p>
-                ))
-              ) : (
-                <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("aboutEmpty")}</p>
-              )}
-            </>
+        <div>
+          <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
+          {isEditing ? (
+            <EditableAbout bio={bio} />
+          ) : bio ? (
+            bio.split("\n\n").map((paragraph, i) => (
+              <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)", maxWidth: 600 }}>
+                {paragraph}
+              </p>
+            ))
+          ) : (
+            <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("aboutEmpty")}</p>
           )}
-        </section>
+        </div>
 
         {/* Services */}
-        <section id="services" style={{ marginTop: "var(--space-8)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ font: "var(--text-heading-md)" }}>{tPublic("servicesTitle")}</h2>
+        <div id="services">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h2 style={{ margin: 0, font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{tPublic("servicesTitle")}</h2>
             {isEditing && (
               <Link href="/practitioner-dashboard/services" aria-label={t("editServices")}>
                 <EditPencilButtonAsLink label={t("editServices")} />
@@ -376,188 +446,54 @@ export function PractitionerProfileView({
           </div>
           {/* A non-owner viewer (client, or another practitioner) on a
               currently-unbookable profile gets a single calm state
-              instead of the whole booking mechanism — never an empty
-              services list or slot-pickers that can't actually be used.
-              The owner previewing their OWN public link (isOwnProfile)
-              always sees the real, functional preview regardless — they
-              already get the detailed "why" on their own dashboard, and
-              this page seeing "broken" without explanation would be bad
-              UX specifically for them. Deliberately doesn't say WHY —
-              is_practitioner_bookable is boolean-only on purpose. */}
+              instead of the whole booking mechanism. The owner
+              previewing their OWN public link (isOwnProfile) always
+              sees the real, functional preview regardless. Deliberately
+              doesn't say WHY — is_practitioner_bookable is boolean-only
+              on purpose. */}
           {!isOwnProfile && !isBookable ? (
-            <div
-              style={{
-                padding: "var(--space-6)",
-                borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border-subtle)",
-                background: "var(--bg-surface-2)",
-              }}
-            >
-              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                {tPublic("notCurrentlyBookable")}
-              </p>
+            <div style={{ padding: "var(--space-6)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-subtle)", background: "var(--bg-surface-2)" }}>
+              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{tPublic("notCurrentlyBookable")}</p>
             </div>
+          ) : services.length === 0 ? (
+            <p style={{ margin: 0, color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
           ) : (
-            <>
-              {/* visibility, not conditional unmount — expanding a tile
-                  still hides the text (it's no longer relevant once a
-                  service is picked), but keeps its line height reserved so
-                  the services list above doesn't jump up when it
-                  disappears and back down when it reappears. */}
-              {services.length > 0 && (
-                <p
-                  style={{
-                    font: "var(--text-body-sm)",
-                    color: "var(--text-tertiary)",
-                    visibility: expandedServiceId ? "hidden" : "visible",
-                  }}
-                >
-                  {tBooking("selectService")}
-                </p>
-              )}
-              {services.length === 0 ? (
-                <p style={{ color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-                  {services.map((service) => {
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {services.map((service) => {
                 const isSelected = service.id === expandedServiceId;
                 return (
-                  <div
-                    key={service.id}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      padding: "var(--space-4)",
-                      borderRadius: "var(--radius-lg)",
-                      border: "1px solid var(--border-subtle)",
-                      background: "var(--bg-surface)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        // flex-start, not the flex default (stretch) —
-                        // keeps the image square regardless of how tall
-                        // the text column next to it gets.
-                        alignItems: "flex-start",
-                        gap: "var(--space-4)",
-                      }}
-                    >
-                      {/* Square thumbnail, capped at a third of the tile's
-                          width — flex-basis (not a fixed px width) so it
-                          scales with the tile rather than overflowing on
-                          narrow screens. No upload UI exists yet for this
-                          (see the plan's note); shows a placeholder until
-                          one does, same treatment as the banner. */}
-                      <div
-                        style={{
-                          flex: "0 0 33%",
-                          maxWidth: "33%",
-                          aspectRatio: "1 / 1",
-                          borderRadius: "var(--radius-md)",
-                          overflow: "hidden",
-                          background: service.imageUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
-                        }}
-                      >
-                        {service.imageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
+                  <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-sm)", padding: 20 }}>
+                    <div className={rowStyles.row} style={{ gap: 20 }}>
+                      {/* No image at all → no tile, no gradient
+                          placeholder: the text column just takes the
+                          full width instead, an intentional text-only
+                          layout rather than a broken-looking gap. */}
+                      {service.imageUrl && (
+                        <div
+                          className={rowStyles.tile}
+                          style={{ "--tile-size": "152px", height: 114, borderRadius: 12, overflow: "hidden" } as React.CSSProperties}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={service.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        )}
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <strong>{service.name}</strong>
-                        <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-                          {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
-                          {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
-                          {" · "}
-                          {service.deliveryType === "online"
-                            ? tServices("deliveryTypeOnline")
-                            : service.deliveryType === "in_person"
-                              ? tServices("deliveryTypeInPerson")
-                              : tServices("deliveryTypePhone")}
-                        </p>
-                        {/* Always visible, not gated behind expand — only
-                            the timetable is deferred until you ask for it. */}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{service.name}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                            {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
+                            {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
+                          </span>
+                          <ModeBadge deliveryType={service.deliveryType} city={location} compact />
+                        </div>
                         {service.description && (
-                          <p style={{ margin: "0 0 var(--space-2)", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
+                          <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{service.description}</span>
                         )}
                       </div>
                     </div>
 
-                    {/* Full tile width, sitting directly above the
-                        accordion it opens — not nested in the ~67% text
-                        column above, so it reads as the hinge between
-                        the collapsed summary and the expanded content
-                        rather than just another line of tile text. Text
-                        + a small chevron that flips on expand, rather
-                        than a bordered button — reads as a disclosure
-                        toggle (the chevron communicates "this expands"),
-                        not an action button. A plain button + local
-                        state, not a Link to `?service=` — that was a
-                        real navigation on every click (new RSC payload,
-                        scroll reset), which read as the page
-                        reloading/jumping. */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedServiceId(isSelected ? null : service.id)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "var(--space-1)",
-                        width: "100%",
-                        marginTop: "var(--space-3)",
-                        paddingTop: "var(--space-3)",
-                        paddingLeft: 0,
-                        paddingRight: 0,
-                        paddingBottom: 0,
-                        font: "var(--text-label)",
-                        color: "var(--accent)",
-                        background: "none",
-                        border: "none",
-                        borderTop: "1px solid var(--border-subtle)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {isSelected ? t("hideDetails") : t("seeDetailsAndAvailability")}
-                      <span
-                        aria-hidden
-                        style={{
-                          display: "inline-block",
-                          // Smaller than the label text next to it,
-                          // same --text-caption token used for the
-                          // other small icon buttons on this page.
-                          font: "var(--text-caption)",
-                          transition: "transform var(--duration-fast) var(--ease-standard)",
-                          transform: isSelected ? "rotate(180deg)" : "none",
-                        }}
-                      >
-                        ⌄
-                      </span>
-                    </button>
-
-                    {/* Sibling of the image+text row above, not nested
-                        inside the text column — spans the tile's full
-                        width instead of just the ~67% remaining next to
-                        the image. max-height (not the content's real
-                        height, which isn't known up front) is the
-                        broadly-supported way to get a smooth CSS-only
-                        expand — the slot timetable can get tall, so this
-                        is generous enough that it never clips real
-                        content; the transition timing is tuned around
-                        that, not the actual height, which is the normal
-                        tradeoff of this technique. */}
-                    <div
-                      style={{
-                        display: "grid",
-                        maxHeight: isSelected ? 3000 : 0,
-                        opacity: isSelected ? 1 : 0,
-                        overflow: "hidden",
-                        transition: "max-height 0.4s var(--ease-standard), opacity 0.25s var(--ease-standard)",
-                      }}
-                    >
-                      <div style={{ marginTop: "var(--space-3)" }}>
+                    {isSelected ? (
+                      <div style={{ marginTop: 20 }}>
                         <SlotPicker
                           slots={slotsByServiceId[service.id] ?? []}
                           ownBookings={ownBookings}
@@ -567,42 +503,285 @@ export function PractitionerProfileView({
                           viewerRole={viewerRole}
                           isOwnProfile={isOwnProfile}
                           windowDays={bookingWindowDays}
+                          headerAction={
+                            <button
+                              type="button"
+                              onClick={() => setExpandedServiceId(null)}
+                              aria-expanded="true"
+                              aria-controls={`slotpicker-${service.id}`}
+                              style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                            >
+                              {t("hideDetails")} ⌃
+                            </button>
+                          }
                         />
                       </div>
-                    </div>
+                    ) : (
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedServiceId(service.id)}
+                          aria-expanded="false"
+                          aria-controls={`slotpicker-${service.id}`}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}
+                        >
+                          <IconCalendar size={14} />
+                          {t("seeAvailability")} ⌄
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Reviews */}
+        <div id="reviews">
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--space-3)", marginBottom: 16 }}>
+            <h2 style={{ margin: 0, font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{tReviews("reviewsTitle")}</h2>
+            {averageRating !== null && (
+              <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>
+                <b style={{ font: "700 15px var(--font-ui)", color: "var(--text-primary)" }}>{averageRating.toFixed(1)}</b>{" "}
+                {tReviews("reviewCountBadge", { count: reviews.length })}
+              </span>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <p style={{ margin: 0, color: "var(--text-tertiary)" }}>{tReviews("noReviewsYet")}</p>
+          ) : !reviewsExpanded ? (
+            <>
+              <div className={styles.reviewsGrid}>
+                {reviews.slice(0, 6).map((review) => (
+                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 12 }}>
+                      {"★".repeat(review.rating)}
+                      {"☆".repeat(5 - review.rating)}
+                    </span>
+                    <span style={{ flex: 1, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{review.reviewText}</span>
+                    <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
+                      {tReviews("verifiedUser")} · {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {reviews.length > 6 && (
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+                  <Button variant="surface" size="lg" onClick={() => setReviewsExpanded(true)}>
+                    {tPublic("expandAllReviews", { count: reviews.length })}
+                  </Button>
                 </div>
               )}
             </>
-          )}
-        </section>
-
-        {/* Reviews */}
-        <section style={{ marginTop: "var(--space-8)" }}>
-          <h2 style={{ font: "var(--text-heading-md)" }}>{tReviews("reviewsTitle")}</h2>
-          {reviews.length === 0 ? (
-            <p style={{ color: "var(--text-tertiary)" }}>{tReviews("noReviewsYet")}</p>
           ) : (
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {reviews.map((review) => (
-                <li key={review.id} style={{ marginBottom: "var(--space-4)", borderTop: "1px solid var(--border-subtle)", paddingTop: "var(--space-3)" }}>
-                  <strong>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</strong>
-                  {" — "}
-                  <span>{tReviews("verifiedUser")}</span>
-                  {" · "}
-                  <span style={{ color: "var(--text-tertiary)", font: "var(--text-body-sm)" }}>
-                    {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
-                  </span>
-                  {review.reviewText && <p style={{ margin: "var(--space-1) 0 0" }}>{review.reviewText}</p>}
-                </li>
-              ))}
-            </ul>
+            <>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {reviews.map((review) => (
+                  <div key={review.id} style={{ padding: "14px 0", borderTop: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
+                      <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)", letterSpacing: 1 }}>
+                        {"★".repeat(review.rating)}
+                        {"☆".repeat(5 - review.rating)}
+                      </span>{" "}
+                      — {tReviews("verifiedUser")} · {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
+                    </span>
+                    {review.reviewText && <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{review.reviewText}</span>}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+                <Button variant="surface" size="lg" onClick={() => setReviewsExpanded(false)}>
+                  {tPublic("collapseReviews")}
+                </Button>
+              </div>
+            </>
           )}
-        </section>
+        </div>
+
+        {/* Owner-only management UI (Stripe Connect status, username/
+            settings) — only ever rendered while actually editing, never
+            in Preview and never on the public route (which doesn't pass
+            this prop at all). See this prop's own comment for why. */}
+        {isEditing && ownerOnlyContent && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>{ownerOnlyContent}</div>
+        )}
       </div>
     </div>
+  );
+}
+
+// The right-hand facts card in the intro block: rating (decorative
+// stars + the real number/count as an accessible link to Reviews),
+// delivery-mode badges, the next available slot (see this file's own
+// comment on nextSlotLabel for why it's computed once, up top, not
+// here), and the page's one gold CTA — the design is explicit that
+// this button exists only here, not duplicated in the left column.
+function FactsCard({
+  averageRating,
+  reviewCount,
+  deliveryTypes,
+  city,
+  nextSlotLabel,
+  timezone,
+}: {
+  averageRating: number | null;
+  reviewCount: number;
+  deliveryTypes: ("online" | "in_person" | "phone")[];
+  city: string;
+  nextSlotLabel: string | null;
+  timezone: string;
+}) {
+  const t = useTranslations("Profile");
+  const tPublic = useTranslations("PublicProfile");
+  const tReviews = useTranslations("Reviews");
+
+  return (
+    <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
+      {averageRating !== null && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span aria-hidden="true" style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 13 }}>
+            ★★★★★
+          </span>
+          <span aria-hidden="true" style={{ font: "700 18px var(--font-ui)", color: "var(--text-primary)" }}>
+            {averageRating.toFixed(1)}
+          </span>
+          {/* Visible text is just the count; the full sentence is the
+              accessible name, so a screen reader gets "4.9 out of 5
+              (26 reviews)" from one focusable control instead of the
+              decorative stars/number above being read redundantly. */}
+          <a
+            href="#reviews"
+            aria-label={tReviews("averageRatingSummary", { average: averageRating.toFixed(1), count: reviewCount })}
+            style={{ font: "var(--text-caption)", textDecoration: "none" }}
+          >
+            {tReviews("reviewCountBadge", { count: reviewCount })}
+          </a>
+        </div>
+      )}
+
+      {deliveryTypes.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {deliveryTypes.map((deliveryType) => (
+            <ModeBadge key={deliveryType} deliveryType={deliveryType} city={city} />
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            font: "var(--text-overline)",
+            letterSpacing: "var(--letter-overline)",
+            textTransform: "uppercase",
+            color: "var(--text-tertiary)",
+          }}
+        >
+          <IconCalendar size={13} color="currentColor" />
+          {tPublic("nextAvailableSlotLabel")}
+        </span>
+        <span style={{ font: "400 19px/1.3 var(--font-display)", color: "var(--text-primary)" }}>
+          {nextSlotLabel ?? tPublic("nextAvailableSlotEmpty")}
+        </span>
+        {nextSlotLabel && <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>{timezone}</span>}
+      </div>
+
+      <Button href="#services" variant="primary" size="lg" fullWidth>
+        {t("seeAvailability")}
+      </Button>
+    </div>
+  );
+}
+
+// city comes straight from practitioner_profiles.location — there's no
+// dedicated city-only field in the schema, so whatever the practitioner
+// entered there (typically "City, Country") is what renders after the
+// em dash. Reused for both the facts card (regular size) and each
+// service card's own single mode badge (compact size).
+function ModeBadge({ deliveryType, city, compact = false }: { deliveryType: "online" | "in_person" | "phone"; city: string; compact?: boolean }) {
+  const tPublic = useTranslations("PublicProfile");
+  const tServices = useTranslations("Services");
+  const size = compact ? 11 : 13;
+  const icon =
+    deliveryType === "online" ? <IconMonitor size={size} /> : deliveryType === "in_person" ? <IconMapPin size={size} /> : <IconPhone size={size} />;
+  const label =
+    deliveryType === "online"
+      ? tServices("deliveryTypeOnline")
+      : deliveryType === "in_person"
+        ? city
+          ? tPublic("modeInPerson", { city })
+          : tServices("deliveryTypeInPerson")
+        : tServices("deliveryTypePhone");
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        font: `600 ${compact ? "10.5px" : "11.5px"} var(--font-ui)`,
+        padding: compact ? "3px 8px" : "5px 11px",
+        borderRadius: "var(--radius-pill)",
+        background: "var(--accent-subtle)",
+        color: "var(--accent-subtle-text)",
+      }}
+    >
+      {icon}
+      {label}
+    </span>
+  );
+}
+
+// Inline SVG icons, Lucide-style (1.5-2px stroke, currentColor) — this
+// app has no icon library (every icon elsewhere is a Unicode glyph),
+// but the approved handoff specs these shapes explicitly, so they're
+// hand-written here rather than substituted with a glyph.
+function IconMonitor({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
+      <rect x="2" y="4" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+function IconMapPin({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
+      <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+// Not part of the approved mockup (it only illustrates online/in-person)
+// but the schema supports a phone delivery type too, so this needs a
+// matching-weight icon rather than silently reusing one of the other two.
+function IconPhone({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
+      <path d="M4 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L14 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 2 6a2 2 0 0 1 2-2z" />
+    </svg>
+  );
+}
+
+function IconCalendar({ size = 17, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
+  );
+}
+
+function IconHeart({ size = 15, filled = false }: { size?: number; filled?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "var(--accent)" : "none"} stroke="var(--accent)" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
+      <path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z" />
+    </svg>
   );
 }
 

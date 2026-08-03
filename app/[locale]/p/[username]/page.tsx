@@ -142,6 +142,7 @@ export default async function PublicProfilePage({
           bio={practitionerProfile.bio ?? ""}
           avatarUrl={practitionerProfile.avatar_url}
           bannerUrl={practitionerProfile.banner_url}
+          timezone={practitionerProfile.timezone}
           specialties={practitionerProfile.specialties ?? []}
           topics={practitionerProfile.topics ?? []}
           services={(services ?? []).map((s) => ({

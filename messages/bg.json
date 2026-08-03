@@ -207,7 +207,6 @@
     "topicsHint": "Избери до {max} теми, с които се свързва работата ти ({count}/{max}).",
     "topicsMaxExceeded": "Може да избереш най-много {max} теми.",
     "seeAvailability": "Виж свободни часове",
-    "seeDetailsAndAvailability": "Свободни часове",
     "hideDetails": "Скрий свободните часове",
     "noServicesYet": "Все още няма добавени услуги."
   },
@@ -341,10 +340,17 @@
     "profilePhotoAlt": "Профилна снимка",
     "servicesTitle": "Услуги",
     "serviceDuration": "{minutes} мин.",
-    "notCurrentlyBookable": "Този практик в момента не приема резервации."
+    "notCurrentlyBookable": "Този практик в момента не приема резервации.",
+    "practicesLabel": "Практики",
+    "topicsLabel": "Теми",
+    "modeInPerson": "На място — {city}",
+    "nextAvailableSlotLabel": "Следващ свободен час",
+    "nextAvailableSlotEmpty": "Няма предстоящи часове",
+    "savePractitioner": "Запази практикуващ",
+    "expandAllReviews": "Виж всички отзиви ({count})",
+    "collapseReviews": "Покажи по-малко"
   },
   "Booking": {
-    "selectService": "Избери услуга по-долу, за да видиш свободните часове.",
     "availableTimes": "Свободни часове",
     "timesShownIn": "Часовете са показани в {timezone}",
     "noSlotsAvailable": "Няма свободни часове през следващите {days} дни.",

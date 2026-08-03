@@ -1,0 +1,19 @@
+/* DashboardShell pads its content column symmetrically (44px desktop /
+   16px mobile — see DashboardShell.tsx's own comment) so every other
+   dashboard page gets breathing room from the viewport edge on both
+   sides. The profile view specifically wants that gap kept on the left
+   (separation from the sidebar) but not on the right, so its
+   banner/cards/service-grid layout — built for its own wider 820px
+   reference width — has room to actually use it instead of being
+   squeezed by an inset it doesn't need. A negative right margin exactly
+   cancels the shell's own right padding, scoped to this one page rather
+   than changing DashboardShell for every route under it. */
+.content {
+  margin-right: -2.75rem;
+}
+
+@media (max-width: 640px) {
+  .content {
+    margin-right: -1rem;
+  }
+}
