@@ -114,6 +114,11 @@ export default async function ProfilePage({
           bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole="practitioner"
           isOwnProfile
+          // isOwnProfile is always true here, so this value is never
+          // actually read for gating (see PractitionerProfileView's own
+          // comment) — passed as true regardless for explicitness, since
+          // an owner editing their profile must never be blocked by it.
+          isBookable
           justBooked={false}
           bookingErrorCode={null}
           paymentStatus={null}

@@ -53,9 +53,17 @@ type SearchPractitionersRow = {
 export async function searchPractitioners({
   specialtyKeys,
   searchText,
+  // Defaults to true — the common case (Browse, the recommended-
+  // practitioners widget) wants unbookable practitioners excluded.
+  // The one known exception is the client dashboard's "My
+  // practitioners" grid, which shows booking HISTORY — a practitioner
+  // going unbookable later must not make them silently disappear from
+  // there, so that call site explicitly passes false.
+  onlyBookable = true,
 }: {
   specialtyKeys?: string[];
   searchText?: string;
+  onlyBookable?: boolean;
 }): Promise<PractitionerSearchResult[]> {
   const supabase = await createClient();
 
@@ -64,6 +72,7 @@ export async function searchPractitioners({
   const { data, error } = await supabase.rpc("search_practitioners", {
     specialty_keys: specialtyKeys && specialtyKeys.length > 0 ? specialtyKeys : null,
     search_query: trimmedSearchText,
+    only_bookable: onlyBookable,
   });
 
   if (error) {

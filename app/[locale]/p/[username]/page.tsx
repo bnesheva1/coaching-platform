@@ -36,25 +36,31 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
-    supabase
-      .from("services")
-      .select("id, name, description, duration_minutes, price_cents, currency, image_url, delivery_type")
-      .eq("practitioner_id", practitionerProfile.id)
-      .eq("is_active", true)
-      .order("created_at", { ascending: true }),
-    supabase.auth.getUser(),
-    // Public grant (rating, review_text, created_at) — booking_id is
-    // excluded from it entirely, and there's no name column at all: every
-    // review is shown as "Verified user", to the public and the
-    // practitioner alike, never any identifying detail.
-    supabase
-      .from("reviews")
-      .select("id, rating, review_text, created_at")
-      .eq("practitioner_id", practitionerProfile.id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }] =
+    await Promise.all([
+      supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
+      supabase
+        .from("services")
+        .select("id, name, description, duration_minutes, price_cents, currency, image_url, delivery_type")
+        .eq("practitioner_id", practitionerProfile.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true }),
+      supabase.auth.getUser(),
+      // Public grant (rating, review_text, created_at) — booking_id is
+      // excluded from it entirely, and there's no name column at all: every
+      // review is shown as "Verified user", to the public and the
+      // practitioner alike, never any identifying detail.
+      supabase
+        .from("reviews")
+        .select("id, rating, review_text, created_at")
+        .eq("practitioner_id", practitionerProfile.id)
+        .order("created_at", { ascending: false }),
+      // Boolean-only, single source of truth shared with Browse/search
+      // and the practitioner's own dashboard checklist — never exposes
+      // WHICH condition failed, just whether this profile can book at
+      // all right now.
+      supabase.rpc("is_practitioner_bookable", { target_practitioner_id: practitionerProfile.id }),
+    ]);
 
   const averageRating =
     reviews && reviews.length > 0
@@ -154,6 +160,7 @@ export default async function PublicProfilePage({
           bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole={viewerRole}
           isOwnProfile={isOwnProfile}
+          isBookable={isBookable ?? false}
           justBooked={justBooked}
           bookingErrorCode={bookingErrorCode}
           paymentStatus={paymentStatus}

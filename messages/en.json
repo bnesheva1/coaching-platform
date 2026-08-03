@@ -99,6 +99,8 @@
     "activation": {
       "eyebrow": "Welcome",
       "heading": "Hi {name} — let's get you ready for your first booking",
+      "regressedEyebrow": "Not visible",
+      "regressedHeading": "Hi {name} — your profile isn't visible to seekers right now",
       "progress": "{done} of {total} complete",
       "step1Title": "Profile complete",
       "step1Desc": "Photo, bio, specialties, headline, and location",
@@ -109,8 +111,12 @@
       "step3Title": "Set your schedule",
       "step3Desc": "When you're available for bookings",
       "step3Cta": "Set schedule",
+      "step4Title": "Connect Stripe",
+      "step4Desc": "So you can actually get paid for sessions",
+      "step4Cta": "Connect Stripe",
       "stepDoneSr": "— complete",
-      "reassurance": "Your profile becomes visible to seekers right after step 3."
+      "reassurance": "Your profile becomes visible to seekers once every step above is done.",
+      "regressedReassurance": "Your profile will become visible to seekers again once every step above is done."
     },
     "agenda": {
       "greeting": "Good day, {name}",
@@ -323,7 +329,8 @@
     "editProfile": "Edit profile",
     "profilePhotoAlt": "Profile photo",
     "servicesTitle": "Services",
-    "serviceDuration": "{minutes} min"
+    "serviceDuration": "{minutes} min",
+    "notCurrentlyBookable": "This practitioner isn't currently accepting bookings."
   },
   "Booking": {
     "selectService": "Select a service below to see available times.",

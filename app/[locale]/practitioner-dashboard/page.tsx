@@ -70,29 +70,35 @@ export default async function PractitionerHomePage() {
   // rest of this function without a redundant redirect.
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: services }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", userId).single(),
-    supabase
-      .from("practitioner_profiles")
-      .select("bio, specialties, avatar_url, headline, location, timezone")
-      .eq("id", userId)
-      .single(),
-    supabase
-      .from("services")
-      .select("id, name, duration_minutes, is_active, delivery_type")
-      .eq("practitioner_id", userId)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: bookableStatus }] =
+    await Promise.all([
+      supabase.from("profiles").select("display_name").eq("id", userId).single(),
+      // timezone/billing_model only — profile-completeness fields
+      // (bio/specialties/avatar_url/headline/location) used to be read
+      // here too, but bookability is now entirely derived by
+      // get_my_bookable_status() below, the single source of truth
+      // shared with Browse/search and the public profile page.
+      supabase.from("practitioner_profiles").select("timezone, billing_model").eq("id", userId).single(),
+      supabase
+        .from("services")
+        .select("id, name, duration_minutes, is_active, delivery_type")
+        .eq("practitioner_id", userId)
+        .order("created_at", { ascending: true }),
+      supabase.rpc("get_my_bookable_status").single() as unknown as Promise<{
+        data: {
+          profile_complete: boolean;
+          has_active_service: boolean;
+          availability_set: boolean;
+          connect_ready: boolean;
+          is_bookable: boolean;
+        } | null;
+      }>,
+    ]);
 
   const { data: deliveryInfoRows } = (await supabase.rpc("get_my_services_delivery_info")) as {
     data: { service_id: string; delivery_info: string | null }[] | null;
   };
   const deliveryInfoByServiceId = new Map((deliveryInfoRows ?? []).map((row) => [row.service_id, row.delivery_info]));
-
-  const { data: availabilityRules } = await supabase
-    .from("practitioner_availability")
-    .select("id")
-    .eq("practitioner_id", userId);
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -103,22 +109,23 @@ export default async function PractitionerHomePage() {
     .order("start_utc", { ascending: true });
 
   const timezone = practitionerProfile?.timezone ?? "Europe/Sofia";
-  const activeServices = (services ?? []).filter((s) => s.is_active);
-  const profileComplete = Boolean(
-    practitionerProfile?.avatar_url &&
-      practitionerProfile?.bio &&
-      practitionerProfile?.headline &&
-      practitionerProfile?.location &&
-      (practitionerProfile?.specialties?.length ?? 0) > 0,
-  );
-  const availabilitySet = (availabilityRules ?? []).length > 0;
-  const isBookable = profileComplete && activeServices.length >= 1 && availabilitySet;
+  const isBookable = bookableStatus?.is_bookable ?? false;
 
   if (!isBookable) {
-    const doneCount = [profileComplete, activeServices.length >= 1, availabilitySet].filter(Boolean).length;
+    const profileComplete = bookableStatus?.profile_complete ?? false;
+    const hasActiveService = bookableStatus?.has_active_service ?? false;
+    const availabilitySet = bookableStatus?.availability_set ?? false;
+    const connectReady = bookableStatus?.connect_ready ?? false;
+    // The Connect step only exists for commission-model practitioners —
+    // software_provider ones are exempt from that condition entirely
+    // (see practitioner_bookable_flags' own comment), so showing them a
+    // step they can never usefully act on would be actively confusing.
+    const showConnectStep = practitionerProfile?.billing_model === "commission";
+
     const step1 = stepStatus(profileComplete, !profileComplete);
-    const step2 = stepStatus(activeServices.length >= 1, profileComplete && activeServices.length === 0);
-    const step3 = stepStatus(availabilitySet, profileComplete && activeServices.length >= 1 && !availabilitySet);
+    const step2 = stepStatus(hasActiveService, profileComplete && !hasActiveService);
+    const step3 = stepStatus(availabilitySet, profileComplete && hasActiveService && !availabilitySet);
+    const step4 = stepStatus(connectReady, profileComplete && hasActiveService && availabilitySet && !connectReady);
 
     // Every tile gets a CTA to its own tab, always shown — a deliberate
     // deviation from the design source (which only shows a CTA on
@@ -143,7 +150,31 @@ export default async function PractitionerHomePage() {
         desc: t("activation.step3Desc"),
         cta: { label: t("activation.step3Cta"), href: "/practitioner-dashboard/schedule" },
       },
+      ...(showConnectStep
+        ? [
+            {
+              status: step4,
+              title: t("activation.step4Title"),
+              desc: t("activation.step4Desc"),
+              cta: { label: t("activation.step4Cta"), href: "/practitioner-dashboard/profile" },
+            },
+          ]
+        : []),
     ];
+    const doneCount = steps.filter((s) => s.status === "done").length;
+
+    // A practitioner who has ever had ANY booking (any status, any
+    // time) was clearly bookable at some point — "let's get you ready
+    // for your first booking" is wrong for someone who's since
+    // regressed (e.g. hid their last service), and silent invisibility
+    // like that is a real churn risk. Distinct copy for that case; a
+    // genuinely brand-new practitioner keeps the existing onboarding
+    // copy unchanged.
+    const { count: everBookedCount } = await supabase
+      .from("bookings")
+      .select("id", { count: "exact", head: true })
+      .eq("practitioner_id", userId);
+    const hasEverHadBooking = (everBookedCount ?? 0) > 0;
 
     return (
       <main style={{ padding: "var(--space-8) 0", position: "relative" }}>
@@ -163,10 +194,10 @@ export default async function PractitionerHomePage() {
         />
         <div style={{ position: "relative" }}>
           <span style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--accent)" }}>
-            {t("activation.eyebrow")}
+            {t(hasEverHadBooking ? "activation.regressedEyebrow" : "activation.eyebrow")}
           </span>
           <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-2) 0" }}>
-            {t("activation.heading", { name: profile?.display_name ?? "" })}
+            {t(hasEverHadBooking ? "activation.regressedHeading" : "activation.heading", { name: profile?.display_name ?? "" })}
           </h1>
 
           <div
@@ -248,7 +279,7 @@ export default async function PractitionerHomePage() {
           </ol>
 
           <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", marginTop: "var(--space-4)" }}>
-            {t("activation.reassurance")}
+            {t(hasEverHadBooking ? "activation.regressedReassurance" : "activation.reassurance")}
           </p>
         </div>
       </main>

@@ -126,8 +126,10 @@ export default async function ClientUpcomingPage({
   // /browse, filtered down to just who they've booked — no new query
   // for the practitioner-id list either, `bookings` above already has
   // practitioner_id/start_utc for every booking this client has ever
-  // made.
-  const allPractitioners = await searchPractitioners({});
+  // made. onlyBookable: false — this is booking HISTORY, not discovery;
+  // a practitioner going unbookable later must not make them silently
+  // vanish from a client's own "who I've worked with" list.
+  const allPractitioners = await searchPractitioners({ onlyBookable: false });
   const lastBookedAtByPractitioner = new Map<string, string>();
   for (const b of bookings ?? []) {
     const existing = lastBookedAtByPractitioner.get(b.practitioner_id);

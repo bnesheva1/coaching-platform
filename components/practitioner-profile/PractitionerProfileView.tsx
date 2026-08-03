@@ -69,6 +69,12 @@ export type PractitionerProfileViewProps = {
   // there. This is the real "is the viewer the profile owner" signal,
   // used only to word SlotPicker's practitioner-viewer dialog correctly.
   isOwnProfile: boolean;
+  // Single source of truth (is_practitioner_bookable RPC), same one
+  // Browse/search and the dashboard checklist use. The dashboard's own
+  // edit-tab render of this component (isOwnProfile always true there)
+  // passes true unconditionally — see that page's own comment — since
+  // an owner editing their profile must never be gated by this.
+  isBookable: boolean;
   justBooked: boolean;
   bookingErrorCode: string | null;
   paymentStatus: "processing" | "cancelled" | null;
@@ -100,6 +106,7 @@ export function PractitionerProfileView({
   bookingWindowDays,
   viewerRole,
   isOwnProfile,
+  isBookable,
   justBooked,
   bookingErrorCode,
   paymentStatus,
@@ -336,47 +343,72 @@ export function PractitionerProfileView({
               </Link>
             )}
           </div>
-          {/* visibility, not conditional unmount — expanding a tile
-              still hides the text (it's no longer relevant once a
-              service is picked), but keeps its line height reserved so
-              the services list above doesn't jump up when it
-              disappears and back down when it reappears. */}
-          {services.length > 0 && (
-            <p
+          {/* A non-owner viewer (client, or another practitioner) on a
+              currently-unbookable profile gets a single calm state
+              instead of the whole booking mechanism — never an empty
+              services list or slot-pickers that can't actually be used.
+              The owner previewing their OWN public link (isOwnProfile)
+              always sees the real, functional preview regardless — they
+              already get the detailed "why" on their own dashboard, and
+              this page seeing "broken" without explanation would be bad
+              UX specifically for them. Deliberately doesn't say WHY —
+              is_practitioner_bookable is boolean-only on purpose. */}
+          {!isOwnProfile && !isBookable ? (
+            <div
               style={{
-                font: "var(--text-body-sm)",
-                color: "var(--text-tertiary)",
-                visibility: expandedServiceId ? "hidden" : "visible",
+                padding: "var(--space-6)",
+                borderRadius: "var(--radius-lg)",
+                border: "1px solid var(--border-subtle)",
+                background: "var(--bg-surface-2)",
               }}
             >
-              {tBooking("selectService")}
-            </p>
-          )}
-          {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
-          {/* Generously spaced + a filled banner (not bare crimson text)
-              so it reads as a warning sitting above the service tiles'
-              buttons below, not an easy-to-miss caption line. */}
-          {bookingErrorCode && (
-            <p
-              style={{
-                margin: "var(--space-3) 0 var(--space-5)",
-                padding: "var(--space-3) var(--space-4)",
-                borderRadius: "var(--radius-md)",
-                background: "rgba(220, 20, 60, 0.08)",
-                border: "1px solid rgba(220, 20, 60, 0.3)",
-                color: "crimson",
-              }}
-            >
-              {tBooking.has(bookingErrorCode) ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0]) : tBooking("bookingFailed")}
-            </p>
-          )}
-          {paymentStatus === "processing" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentProcessing")}</p>}
-          {paymentStatus === "cancelled" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentCancelled")}</p>}
-          {services.length === 0 ? (
-            <p style={{ color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
+              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+                {tPublic("notCurrentlyBookable")}
+              </p>
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-              {services.map((service) => {
+            <>
+              {/* visibility, not conditional unmount — expanding a tile
+                  still hides the text (it's no longer relevant once a
+                  service is picked), but keeps its line height reserved so
+                  the services list above doesn't jump up when it
+                  disappears and back down when it reappears. */}
+              {services.length > 0 && (
+                <p
+                  style={{
+                    font: "var(--text-body-sm)",
+                    color: "var(--text-tertiary)",
+                    visibility: expandedServiceId ? "hidden" : "visible",
+                  }}
+                >
+                  {tBooking("selectService")}
+                </p>
+              )}
+              {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
+              {/* Generously spaced + a filled banner (not bare crimson text)
+                  so it reads as a warning sitting above the service tiles'
+                  buttons below, not an easy-to-miss caption line. */}
+              {bookingErrorCode && (
+                <p
+                  style={{
+                    margin: "var(--space-3) 0 var(--space-5)",
+                    padding: "var(--space-3) var(--space-4)",
+                    borderRadius: "var(--radius-md)",
+                    background: "rgba(220, 20, 60, 0.08)",
+                    border: "1px solid rgba(220, 20, 60, 0.3)",
+                    color: "crimson",
+                  }}
+                >
+                  {tBooking.has(bookingErrorCode) ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0]) : tBooking("bookingFailed")}
+                </p>
+              )}
+              {paymentStatus === "processing" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentProcessing")}</p>}
+              {paymentStatus === "cancelled" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentCancelled")}</p>}
+              {services.length === 0 ? (
+                <p style={{ color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+                  {services.map((service) => {
                 const isSelected = service.id === expandedServiceId;
                 return (
                   <div
@@ -530,7 +562,9 @@ export function PractitionerProfileView({
                   </div>
                 );
               })}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </section>
 
