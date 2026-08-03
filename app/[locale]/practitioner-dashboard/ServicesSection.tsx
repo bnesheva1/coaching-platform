@@ -134,60 +134,56 @@ function DeliveryFields({
 }) {
   const t = useTranslations("Services");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>(defaultType ?? "online");
-  const deliveryTypeLabel =
-    deliveryType === "online" ? t("deliveryTypeOnline") : deliveryType === "in_person" ? t("deliveryTypeInPerson") : t("deliveryTypePhone");
 
   return (
     <>
       {locked ? (
-        // A disabled radio input is excluded from form submission
-        // entirely (browsers never include disabled controls in
-        // FormData) — using `disabled` here would silently drop
-        // deliveryType from the submit and break saving ANY change to a
-        // locked service, since it's a required field. A hidden input
-        // guarantees the current value is still submitted; the visible
-        // radios only render when actually editable.
-        <div>
-          <span style={{ display: "block", font: "var(--text-label)", marginBottom: "var(--space-1)" }}>{t("deliveryTypeLegend")}</span>
-          <p style={{ margin: 0, color: "var(--text-secondary)" }}>{deliveryTypeLabel}</p>
+        // A disabled select is excluded from form submission entirely
+        // (browsers never include disabled controls in FormData) —
+        // using only `disabled` here would silently drop deliveryType
+        // from the submit and break saving ANY change to a locked
+        // service, since it's a required field. So the visible select
+        // is disabled (display-only, greyed out like durationMinutes/
+        // price above) and a separate hidden input carries the real
+        // value through to the server action instead.
+        <label>
+          {t("deliveryTypeLegend")}
+          <select
+            disabled
+            value={deliveryType}
+            className="form-field"
+            style={{ display: "block", width: "100%", maxWidth: 220, background: "var(--bg-sunken)" }}
+          >
+            <option value="online">{t("deliveryTypeOnline")}</option>
+            <option value="in_person">{t("deliveryTypeInPerson")}</option>
+            {SHOW_PHONE_DELIVERY_OPTION && <option value="phone">{t("deliveryTypePhone")}</option>}
+          </select>
           <input type="hidden" name="deliveryType" value={deliveryType} />
-        </div>
+        </label>
       ) : (
-        <fieldset style={{ border: "none", padding: 0 }}>
-          <legend style={{ padding: 0 }}>{t("deliveryTypeLegend")}</legend>
-          <label style={{ display: "block" }}>
-            <input
-              type="radio"
-              name="deliveryType"
-              value="online"
-              checked={deliveryType === "online"}
-              onChange={() => setDeliveryType("online")}
-            />{" "}
-            {t("deliveryTypeOnline")}
-          </label>
-          <label style={{ display: "block" }}>
-            <input
-              type="radio"
-              name="deliveryType"
-              value="in_person"
-              checked={deliveryType === "in_person"}
-              onChange={() => setDeliveryType("in_person")}
-            />{" "}
-            {t("deliveryTypeInPerson")}
-          </label>
-          {SHOW_PHONE_DELIVERY_OPTION && (
-            <label style={{ display: "block" }}>
-              <input
-                type="radio"
-                name="deliveryType"
-                value="phone"
-                checked={deliveryType === "phone"}
-                onChange={() => setDeliveryType("phone")}
-              />{" "}
-              {t("deliveryTypePhone")}
-            </label>
-          )}
-        </fieldset>
+        <label>
+          {t("deliveryTypeLegend")}
+          {/* No width: "100%" here, unlike the text fields above — a
+              select's content (Online/In-person/By phone) is short
+              enough that stretching it to the full card width just
+              leaves a wide empty box. Same intrinsic-sizing convention
+              AvailabilitySection.tsx / AvailabilityExceptionsSection.tsx
+              already use for their own <select> fields. Capped with
+              maxWidth (not left fully auto) so it can't grow past a
+              sensible size on very wide desktop cards, but still
+              shrinks to fit narrow mobile viewports. */}
+          <select
+            name="deliveryType"
+            value={deliveryType}
+            onChange={(e) => setDeliveryType(e.target.value as DeliveryType)}
+            className="form-field"
+            style={{ display: "block", width: "100%", maxWidth: 220 }}
+          >
+            <option value="online">{t("deliveryTypeOnline")}</option>
+            <option value="in_person">{t("deliveryTypeInPerson")}</option>
+            {SHOW_PHONE_DELIVERY_OPTION && <option value="phone">{t("deliveryTypePhone")}</option>}
+          </select>
+        </label>
       )}
       {deliveryType === "phone" ? (
         <label>
@@ -230,6 +226,8 @@ function ServiceRow({ service }: { service: Service }) {
 
   const locked = service.upcoming_booking_count > 0;
   const deleteDialogRef = useRef<ConfirmDialogHandle>(null);
+  const hideDialogRef = useRef<ConfirmDialogHandle>(null);
+  const deleteBlockedDialogRef = useRef<ConfirmDialogHandle>(null);
 
   if (isEditing) {
     return (
@@ -379,10 +377,28 @@ function ServiceRow({ service }: { service: Service }) {
             <Button type="button" variant="secondary" size="sm" onClick={() => setIsEditing(true)}>
               {t("editButton")}
             </Button>
-            <form action={setServiceActive.bind(null, service.id, !service.is_active)}>
-              <Button type="submit" variant="secondary" size="sm">{service.is_active ? t("hideButton") : t("showButton")}</Button>
-            </form>
-            <Button type="button" variant="secondary" size="sm" onClick={() => deleteDialogRef.current?.open()}>
+            {/* Hiding a service with upcoming bookings still goes ahead
+                (it only stops NEW bookings — existing ones aren't
+                touched), but is confirmed first, not instant, since it's
+                otherwise easy to click without realizing bookings are
+                unaffected. Un-hiding, and hiding a service with no
+                upcoming bookings, stay a single click — nothing there
+                needs a warning. */}
+            {service.is_active && locked ? (
+              <Button type="button" variant="secondary" size="sm" onClick={() => hideDialogRef.current?.open()}>
+                {t("hideButton")}
+              </Button>
+            ) : (
+              <form action={setServiceActive.bind(null, service.id, !service.is_active)}>
+                <Button type="submit" variant="secondary" size="sm">{service.is_active ? t("hideButton") : t("showButton")}</Button>
+              </form>
+            )}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => (locked ? deleteBlockedDialogRef.current?.open() : deleteDialogRef.current?.open())}
+            >
               {t("deleteButton")}
             </Button>
           </div>
@@ -394,6 +410,26 @@ function ServiceRow({ service }: { service: Service }) {
         confirmLabel={t("deleteDialogConfirm")}
         cancelLabel={t("deleteDialogDismiss")}
         action={deleteService.bind(null, service.id)}
+      />
+      <ConfirmDialog
+        ref={hideDialogRef}
+        title={t("hideDialogTitle")}
+        message={t("hideDialogMessage", { count: service.upcoming_booking_count })}
+        confirmLabel={t("hideDialogConfirm")}
+        cancelLabel={t("hideDialogCancel")}
+        action={setServiceActive.bind(null, service.id, false)}
+      />
+      {/* bookings.service_id cascades on delete (see services-actions.ts's
+          own comment) — a locked service is never actually deletable,
+          this dialog explains why and offers hiding as the real path
+          instead of a dead-end "delete failed" error. */}
+      <ConfirmDialog
+        ref={deleteBlockedDialogRef}
+        title={t("deleteBlockedTitle")}
+        message={t("deleteBlockedMessage", { count: service.upcoming_booking_count })}
+        confirmLabel={t("deleteBlockedConfirm")}
+        cancelLabel={t("deleteBlockedDismiss")}
+        action={setServiceActive.bind(null, service.id, false)}
       />
     </li>
   );

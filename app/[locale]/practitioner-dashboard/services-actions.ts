@@ -348,18 +348,27 @@ export async function setServiceActive(
   revalidatePath("/practitioner-dashboard", "layout");
 }
 
-// Hard delete is fine for now — no bookings table exists yet, so nothing
-// could reference a deleted service. Once bookings exist, deleting a
-// service that has any booking history must become a soft-delete (set
-// is_active = false) instead of a real delete — otherwise existing
-// bookings would end up pointing at a service row that no longer exists,
-// losing the details that booking's history referred to.
+// bookings.service_id is `on delete cascade` (see the create_bookings
+// migration) — a hard delete of a service with any upcoming booking
+// would silently take those bookings with it, including ones a client
+// has already paid for. The UI routes this case to a "can't delete,
+// hide instead" dialog rather than the real delete action, but that's
+// a courtesy, not the boundary (same reasoning as updateService's lock
+// re-check below) — this independently re-verifies before deleting, so
+// a hand-crafted request bypassing the UI still can't destroy live
+// booking history.
 export async function deleteService(serviceId: string, _formData: FormData) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
+    return;
+  }
+
+  const upcomingBookingCount = await getUpcomingBookingCount(supabase, serviceId);
+  if (upcomingBookingCount > 0) {
+    console.error("deleteService rejected: service has upcoming bookings", { serviceId, upcomingBookingCount });
     return;
   }
 
