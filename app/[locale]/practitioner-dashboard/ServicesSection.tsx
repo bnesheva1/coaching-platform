@@ -386,8 +386,16 @@ function ServiceRow({ service }: { service: Service }) {
   // (react-hooks/set-state-in-effect) for the cascading-render risk.
   // Same pattern as EditableAbout.tsx etc. in components/practitioner-profile/.
   const [prevState, setPrevState] = useState(state);
+  // Bumped every time the action returns (error or success) and used as
+  // the <form>'s own key below — forces a remount of the form and its
+  // DurationField/DeliveryFields children so a corrected defaultValue/
+  // defaultType actually takes effect after a rejected submission. See
+  // ServiceFormState's own comment (services-actions.ts) for why this is
+  // needed at all.
+  const [formKey, setFormKey] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
+    setFormKey((k) => k + 1);
     if (state?.success && isEditing) setIsEditing(false);
   }
 
@@ -401,6 +409,7 @@ function ServiceRow({ service }: { service: Service }) {
       <li style={{ marginBottom: "var(--space-4)" }}>
         <div style={tileStyle}>
           <form
+            key={formKey}
             action={formAction}
             style={{ display: "flex", gap: "var(--space-4)", flex: 1, minWidth: 0 }}
           >
@@ -414,11 +423,11 @@ function ServiceRow({ service }: { service: Service }) {
             <input type="hidden" name="serviceId" value={service.id} />
             <label>
               {t("nameLabel")}
-              <input name="name" type="text" required defaultValue={service.name} maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
+              <input name="name" type="text" required defaultValue={state?.values?.name ?? service.name} maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
             <label>
               {t("descriptionLabel")}
-              <textarea name="description" rows={2} defaultValue={service.description ?? ""} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
+              <textarea name="description" rows={2} defaultValue={state?.values?.description ?? service.description ?? ""} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
             {locked && (
               // Practitioner-facing only — this whole page is already
@@ -432,7 +441,10 @@ function ServiceRow({ service }: { service: Service }) {
                 {t("structuralFieldsLockedNote", { count: service.upcoming_booking_count })}
               </p>
             )}
-            <DurationField defaultValue={service.duration_minutes} locked={locked} />
+            <DurationField
+              defaultValue={state?.values?.durationMinutes ? Number(state.values.durationMinutes) : service.duration_minutes}
+              locked={locked}
+            />
             <label>
               {t("priceLabel")}
               <input
@@ -443,7 +455,7 @@ function ServiceRow({ service }: { service: Service }) {
                 step={0.01}
                 required
                 readOnly={locked}
-                defaultValue={(service.price_cents / 100).toFixed(2)}
+                defaultValue={state?.values?.price ?? (service.price_cents / 100).toFixed(2)}
                 className="form-field"
                 style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
               />
@@ -452,9 +464,9 @@ function ServiceRow({ service }: { service: Service }) {
               </span>
             </label>
             <DeliveryFields
-              defaultType={service.delivery_type}
-              defaultInfo={service.delivery_info ?? ""}
-              defaultPhoneNumber={service.phone_number ?? ""}
+              defaultType={(state?.values?.deliveryType as DeliveryType) || service.delivery_type}
+              defaultInfo={state?.values?.deliveryInfo ?? (service.delivery_info ?? "")}
+              defaultPhoneNumber={state?.values?.phoneNumber ?? (service.phone_number ?? "")}
               locked={locked}
             />
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
@@ -607,10 +619,13 @@ export function ServicesSection({ services }: { services: Service[] }) {
   const t = useTranslations("Services");
   const [isAdding, setIsAdding] = useState(false);
   const [state, formAction, pending] = useActionState(createService, initialState);
-  // Same render-time-adjustment pattern as ServiceRow above.
+  // Same render-time-adjustment pattern as ServiceRow above, including
+  // the formKey bump for the same form-reset-on-error reason.
   const [prevState, setPrevState] = useState(state);
+  const [formKey, setFormKey] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
+    setFormKey((k) => k + 1);
     if (state?.success && isAdding) setIsAdding(false);
   }
 
@@ -634,6 +649,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
       ) : (
         <div style={tileStyle}>
           <form
+            key={formKey}
             action={formAction}
             style={{ display: "flex", gap: "var(--space-4)", flex: 1, minWidth: 0 }}
           >
@@ -641,21 +657,29 @@ export function ServicesSection({ services }: { services: Service[] }) {
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             <label>
               {t("nameLabel")}
-              <input name="name" type="text" required maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
+              <input name="name" type="text" required defaultValue={state?.values?.name ?? ""} maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
             <label>
               {t("descriptionLabel")}
-              <textarea name="description" rows={2} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
+              <textarea name="description" rows={2} defaultValue={state?.values?.description ?? ""} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
-            <DurationField defaultValue={DEFAULT_DURATION_MINUTES} locked={false} />
+            <DurationField
+              defaultValue={state?.values?.durationMinutes ? Number(state.values.durationMinutes) : DEFAULT_DURATION_MINUTES}
+              locked={false}
+            />
             <label>
               {t("priceLabel")}
-              <input name="price" type="number" min={MIN_PRICE_EUROS} max={DEFAULT_MAX_PRICE_EUROS} step={0.01} required className="form-field" style={{ width: "100%" }} />
+              <input name="price" type="number" min={MIN_PRICE_EUROS} max={DEFAULT_MAX_PRICE_EUROS} step={0.01} required defaultValue={state?.values?.price ?? ""} className="form-field" style={{ width: "100%" }} />
               <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
                 {t("priceHint", { min: MIN_PRICE_EUROS, max: DEFAULT_MAX_PRICE_EUROS })}
               </span>
             </label>
-            <DeliveryFields defaultType={null} defaultInfo="" defaultPhoneNumber="" locked={false} />
+            <DeliveryFields
+              defaultType={(state?.values?.deliveryType as DeliveryType) || null}
+              defaultInfo={state?.values?.deliveryInfo ?? ""}
+              defaultPhoneNumber={state?.values?.phoneNumber ?? ""}
+              locked={false}
+            />
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>

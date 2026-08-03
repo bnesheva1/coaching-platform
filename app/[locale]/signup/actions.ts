@@ -6,7 +6,12 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 
-export type AuthFormState = { error: string } | null;
+// values echoes back displayName/email/role on a rejected submission —
+// deliberately EXCLUDES password (never echo a submitted password back
+// to the client, matching common practice elsewhere; a rejected signup
+// just needs it retyped). See ProfileFormState (practitioner-dashboard/
+// actions.ts) for the full reasoning behind this pattern.
+export type AuthFormState = { error: string; values?: { displayName?: string; email?: string; role?: string } } | null;
 
 // Verified here, in code, rather than via Supabase's own "Bot and Abuse
 // Protection" dashboard toggle — that toggle turned out to be a single
@@ -37,25 +42,26 @@ export async function signup(
 ): Promise<AuthFormState> {
   const t = await getTranslations("Auth");
 
-  const ip = getClientIp(await headers());
-  const { success } = await checkRateLimit(signupLimiter, ip);
-  if (!success) {
-    return { error: t("tooManyAttempts") };
-  }
-
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const displayName = formData.get("displayName") as string;
   const role = formData.get("role") as string;
   const captchaToken = formData.get("cf-turnstile-response") as string | null;
+  const values = { displayName, email, role };
+
+  const ip = getClientIp(await headers());
+  const { success } = await checkRateLimit(signupLimiter, ip);
+  if (!success) {
+    return { error: t("tooManyAttempts"), values };
+  }
 
   if (password.length < 12) {
-    return { error: t("passwordTooShort") };
+    return { error: t("passwordTooShort"), values };
   }
 
   const captchaValid = await verifyTurnstileToken(captchaToken);
   if (!captchaValid) {
-    return { error: t("captchaFailed") };
+    return { error: t("captchaFailed"), values };
   }
 
   const supabase = await createClient();
@@ -77,7 +83,7 @@ export async function signup(
     // Supabase's own auth error messages (e.g. "User already
     // registered") aren't ours to translate — see the same note in
     // login/actions.ts.
-    return { error: error.message };
+    return { error: error.message, values };
   }
 
   // If email confirmation is disabled on the Supabase project, signUp

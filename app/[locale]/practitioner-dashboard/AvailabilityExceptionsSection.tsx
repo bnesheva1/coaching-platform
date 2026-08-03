@@ -84,8 +84,18 @@ export function AvailabilityExceptionsSection({
   // Same render-time-adjustment pattern as AvailabilitySection.tsx /
   // ServicesSection.tsx's isAdding toggle.
   const [prevState, setPrevState] = useState(state);
+  // Bumped every time the action returns and used as the <form>'s own
+  // key below — forces a remount so a corrected defaultValue on the
+  // plain exceptionDate input actually takes effect after a rejected
+  // submission. startTime/endTime/blockType below are all controlled
+  // React state, not defaultValue — they survive a remount unchanged,
+  // so they don't need anything from state.values. See
+  // AvailabilityExceptionFormState's own comment in
+  // availability-exceptions-actions.ts.
+  const [formKey, setFormKey] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
+    setFormKey((k) => k + 1);
     if (state?.success && isAdding) setIsAdding(false);
   }
   const [blockType, setBlockType] = useState<"wholeDay" | "timeRange">("wholeDay");
@@ -187,12 +197,13 @@ export function AvailabilityExceptionsSection({
         </div>
       ) : (
         <form
+          key={formKey}
           action={formAction}
           style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-4)" }}
         >
           <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
             <span style={{ width: FIELD_LABEL_WIDTH, flexShrink: 0 }}>{t("dateLabel")}</span>
-            <input type="date" name="exceptionDate" min={todayIsoDate()} required className="form-field" />
+            <input type="date" name="exceptionDate" min={todayIsoDate()} defaultValue={state?.values?.exceptionDate ?? ""} required className="form-field" />
           </label>
 
           <fieldset style={{ border: "none", padding: 0 }}>

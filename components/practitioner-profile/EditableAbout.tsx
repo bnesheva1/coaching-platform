@@ -23,8 +23,15 @@ export function EditableAbout({ bio }: { bio: string }) {
   // setState, which this project's lint config flags
   // (react-hooks/set-state-in-effect) for the cascading-render risk.
   const [prevState, setPrevState] = useState(state);
+  // Bumped every time the action returns (error or success) and used as
+  // the <form>'s own key below — forces a remount so a corrected
+  // defaultValue actually takes effect after a rejected submission. See
+  // ProfileFormState's own comment (actions.ts) and
+  // EditableIdentity.tsx's identical block for why this is needed.
+  const [formKey, setFormKey] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
+    setFormKey((k) => k + 1);
     if (state?.success && isEditing) setIsEditing(false);
   }
 
@@ -48,8 +55,8 @@ export function EditableAbout({ bio }: { bio: string }) {
   }
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-      <textarea name="bio" defaultValue={bio} rows={6} maxLength={MAX_BIO_LENGTH} className="form-field" style={{ width: "100%" }} />
+    <form key={formKey} action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+      <textarea name="bio" defaultValue={state?.values?.bio ?? bio} rows={6} maxLength={MAX_BIO_LENGTH} className="form-field" style={{ width: "100%" }} />
       {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>
         <Button type="submit" size="sm" disabled={pending}>

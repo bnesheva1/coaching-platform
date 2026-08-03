@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Script from "next/script";
 import { Turnstile, SCRIPT_URL, DEFAULT_SCRIPT_ID } from "@marsidev/react-turnstile";
@@ -25,6 +25,19 @@ export function ContactForm() {
   const [state, formAction, pending] = useActionState(submitContact, initialState);
   const errors = state?.errors;
 
+  // Bumped every time the action returns and used as the <form>'s own
+  // key below — forces a remount so a corrected defaultValue actually
+  // takes effect after a rejected submission (React resets the native
+  // form after ANY action completion). Same pattern as
+  // ProfileFormState/ServiceFormState; see actions.ts's comment on
+  // ContactFormState's own values field for the full reasoning.
+  const [prevState, setPrevState] = useState(state);
+  const [formKey, setFormKey] = useState(0);
+  if (state !== prevState) {
+    setPrevState(state);
+    setFormKey((k) => k + 1);
+  }
+
   // Focus the first invalid field after a failed submission — the
   // per-field error text alone isn't enough for someone tabbing/using a
   // screen reader to immediately land on what needs fixing. Looked up
@@ -45,7 +58,7 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} noValidate style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+    <form key={formKey} action={formAction} noValidate style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       {/* Manually injecting the Turnstile script (rather than letting
           the component do it) avoids a hydration mismatch — same
           precedent as SignupForm.tsx. */}
@@ -70,6 +83,7 @@ export function ContactForm() {
           type="text"
           required
           maxLength={100}
+          defaultValue={state?.values?.name ?? ""}
           className="form-field"
           style={{ width: "100%" }}
           aria-invalid={!!errors?.name}
@@ -86,6 +100,7 @@ export function ContactForm() {
           type="email"
           required
           maxLength={254}
+          defaultValue={state?.values?.email ?? ""}
           className="form-field"
           style={{ width: "100%" }}
           aria-invalid={!!errors?.email}
@@ -100,7 +115,7 @@ export function ContactForm() {
           id="category"
           name="category"
           required
-          defaultValue=""
+          defaultValue={state?.values?.category ?? ""}
           className="form-field"
           style={{ width: "100%" }}
           aria-invalid={!!errors?.category}
@@ -124,6 +139,7 @@ export function ContactForm() {
           required
           rows={6}
           maxLength={MAX_MESSAGE_LENGTH}
+          defaultValue={state?.values?.message ?? ""}
           className="form-field"
           style={{ width: "100%" }}
           aria-invalid={!!errors?.message}

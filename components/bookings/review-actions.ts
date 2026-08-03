@@ -9,7 +9,10 @@ import { checkRateLimit, reviewLimiter } from "@/lib/rate-limit";
 // on free text anywhere in this schema — app-level bound only).
 const MAX_REVIEW_TEXT_LENGTH = 1000;
 
-export type ReviewFormState = { error?: string; success?: boolean } | null;
+// values echoes back rating/reviewText on a rejected submission — same
+// form-reset-on-error fix as ProfileFormState (practitioner-dashboard/
+// actions.ts).
+export type ReviewFormState = { error?: string; success?: boolean; values?: { rating?: string; reviewText?: string } } | null;
 
 // bookingId is bound via .bind(null, bookingId) from the per-row form,
 // not an editable field — but binding isn't a security boundary, a
@@ -34,21 +37,23 @@ export async function createReview(
     return { error: t("notLoggedIn") };
   }
 
-  const { success } = await checkRateLimit(reviewLimiter, user.id);
-  if (!success) {
-    return { error: t("rateLimited") };
-  }
-
   const ratingRaw = formData.get("rating");
   const rating = typeof ratingRaw === "string" ? Number.parseInt(ratingRaw, 10) : NaN;
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return { error: t("ratingRequired") };
-  }
-
   const reviewTextRaw = formData.get("reviewText");
   const reviewText = typeof reviewTextRaw === "string" ? reviewTextRaw.trim() : "";
+  const values = { rating: typeof ratingRaw === "string" ? ratingRaw : undefined, reviewText };
+
+  const { success } = await checkRateLimit(reviewLimiter, user.id);
+  if (!success) {
+    return { error: t("rateLimited"), values };
+  }
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { error: t("ratingRequired"), values };
+  }
+
   if (reviewText.length > MAX_REVIEW_TEXT_LENGTH) {
-    return { error: t("reviewTextTooLong") };
+    return { error: t("reviewTextTooLong"), values };
   }
 
   const { data: booking } = await supabase
@@ -58,10 +63,10 @@ export async function createReview(
     .single();
 
   if (!booking || booking.client_id !== user.id) {
-    return { error: t("bookingNotFound") };
+    return { error: t("bookingNotFound"), values };
   }
   if (booking.status !== "completed") {
-    return { error: t("notCompletedYet") };
+    return { error: t("notCompletedYet"), values };
   }
 
   // A snapshot of the reviewer's name at the time of writing, captured
@@ -92,10 +97,10 @@ export async function createReview(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: t("alreadyReviewed") };
+      return { error: t("alreadyReviewed"), values };
     }
     console.error("createReview failed:", error);
-    return { error: t("saveFailed") };
+    return { error: t("saveFailed"), values };
   }
 
   revalidatePath("/client-dashboard");

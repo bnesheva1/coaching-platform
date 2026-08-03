@@ -6,7 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getUpcomingBookingCount } from "@/lib/services/bookingLock";
 import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
 
-export type ServiceFormState = { error?: string; success?: boolean } | null;
+// values echoes back whatever text fields were actually submitted, on an
+// error return only — React 19 resets a <form action={...}> after ANY
+// action completion (success or failure), which wipes plain defaultValue
+// fields back to their pre-edit values, not just the one that was
+// actually invalid. ServicesSection.tsx re-keys its <form> off this
+// object's identity to force a remount with these as the new
+// defaultValues (see ProfileFormState in actions.ts for the identical
+// pattern/reasoning, applied there first).
+export type ServiceFormState = { error?: string; success?: boolean; values?: Record<string, string> } | null;
 
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -92,6 +100,7 @@ function eurosToCents(rawEuros: string): number | null {
 type ParsedServiceForm =
   | {
       ok: true;
+      values: Record<string, string>;
       name: string;
       description: string | null;
       durationMinutes: number;
@@ -100,7 +109,7 @@ type ParsedServiceForm =
       deliveryInfo: string | null;
       phoneNumber: string | null;
     }
-  | { ok: false; error: string };
+  | { ok: false; error: string; values: Record<string, string> };
 
 function isDeliveryType(value: string): value is DeliveryType {
   return (DELIVERY_TYPES as readonly string[]).includes(value);
@@ -126,14 +135,32 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
   const deliveryInfo = (formData.get("deliveryInfo") as string)?.trim();
   const phoneNumber = (formData.get("phoneNumber") as string)?.trim();
 
+  // Echoed back on every error return below so a rejected submission can
+  // redisplay what was actually typed instead of the pre-edit/blank
+  // value. rawPrice/durationMinutes are kept as the raw submitted string
+  // (not the parsed number) so an invalid entry like "12.5.3" survives
+  // to be corrected rather than silently disappearing. image isn't a
+  // text field and can't be echoed this way — a rejected submission
+  // always requires re-picking the file, which is an acceptable, minor
+  // regression given files can't be preserved across a server round-trip.
+  const values: Record<string, string> = {
+    name: name ?? "",
+    description: description ?? "",
+    durationMinutes: (formData.get("durationMinutes") as string) ?? "",
+    price: rawPrice ?? "",
+    deliveryType: rawDeliveryType ?? "",
+    deliveryInfo: deliveryInfo ?? "",
+    phoneNumber: phoneNumber ?? "",
+  };
+
   if (!name) {
-    return { ok: false, error: t("nameRequired") };
+    return { ok: false, error: t("nameRequired"), values };
   }
   if (name.length > MAX_NAME_LENGTH) {
-    return { ok: false, error: t("nameTooLong", { max: MAX_NAME_LENGTH }) };
+    return { ok: false, error: t("nameTooLong", { max: MAX_NAME_LENGTH }), values };
   }
   if (description && description.length > MAX_DESCRIPTION_LENGTH) {
-    return { ok: false, error: t("descriptionTooLong", { max: MAX_DESCRIPTION_LENGTH }) };
+    return { ok: false, error: t("descriptionTooLong", { max: MAX_DESCRIPTION_LENGTH }), values };
   }
   // The client now only ever submits one of the 7 dropdown values
   // (30/45/60/75/90/105/120), but this re-validates from scratch
@@ -146,24 +173,24 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
     durationMinutes < MIN_DURATION_MINUTES ||
     durationMinutes > MAX_DURATION_MINUTES
   ) {
-    return { ok: false, error: t("durationInvalid", { min: MIN_DURATION_MINUTES, max: MAX_DURATION_MINUTES }) };
+    return { ok: false, error: t("durationInvalid", { min: MIN_DURATION_MINUTES, max: MAX_DURATION_MINUTES }), values };
   }
   const priceCents = eurosToCents(rawPrice);
   if (priceCents === null) {
-    return { ok: false, error: t("priceInvalid") };
+    return { ok: false, error: t("priceInvalid"), values };
   }
   if (priceCents < MIN_PRICE_CENTS) {
-    return { ok: false, error: t("priceTooLow", { min: (MIN_PRICE_CENTS / 100).toFixed(0) }) };
+    return { ok: false, error: t("priceTooLow", { min: (MIN_PRICE_CENTS / 100).toFixed(0) }), values };
   }
   if (priceCents > maxPriceCents) {
-    return { ok: false, error: t("priceTooHigh", { max: (maxPriceCents / 100).toFixed(0) }) };
+    return { ok: false, error: t("priceTooHigh", { max: (maxPriceCents / 100).toFixed(0) }), values };
   }
   // Required, not just nudged — a bookable service with no "how to
   // attend" info is a broken client experience. The DB's own NOT VALID
   // check constraint is the backstop against a direct-API bypass; this
   // is what gives a practitioner a clean, specific message instead.
   if (!rawDeliveryType || !isDeliveryType(rawDeliveryType)) {
-    return { ok: false, error: t("deliveryTypeRequired") };
+    return { ok: false, error: t("deliveryTypeRequired"), values };
   }
 
   // phone_number REPLACES delivery_info for this type — the existing
@@ -171,17 +198,17 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
   // apply to "call this number."
   if (rawDeliveryType === "phone") {
     if (!phoneNumber) {
-      return { ok: false, error: t("phoneNumberRequired") };
+      return { ok: false, error: t("phoneNumberRequired"), values };
     }
     if (phoneNumber.length > MAX_PHONE_LENGTH) {
-      return { ok: false, error: t("phoneNumberTooLong", { max: MAX_PHONE_LENGTH }) };
+      return { ok: false, error: t("phoneNumberTooLong", { max: MAX_PHONE_LENGTH }), values };
     }
   } else if (rawDeliveryType === "in_person") {
     if (!deliveryInfo) {
-      return { ok: false, error: t("deliveryInfoRequired") };
+      return { ok: false, error: t("deliveryInfoRequired"), values };
     }
     if (deliveryInfo.length > MAX_DELIVERY_INFO_LENGTH) {
-      return { ok: false, error: t("deliveryInfoTooLong", { max: MAX_DELIVERY_INFO_LENGTH }) };
+      return { ok: false, error: t("deliveryInfoTooLong", { max: MAX_DELIVERY_INFO_LENGTH }), values };
     }
   }
   // online: no delivery_info collected at all anymore — a per-booking
@@ -193,6 +220,7 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
 
   return {
     ok: true,
+    values,
     name,
     description: description || null,
     durationMinutes,
@@ -219,7 +247,7 @@ export async function createService(
   const maxPriceCents = await getEffectiveMaxPriceCents(supabase);
   const parsed = await parseServiceForm(formData, maxPriceCents);
   if (!parsed.ok) {
-    return { error: parsed.error };
+    return { error: parsed.error, values: parsed.values };
   }
 
   // .select("id") only — delivery_info is excluded from the column
@@ -244,7 +272,7 @@ export async function createService(
 
   if (error) {
     console.error("createService failed:", error);
-    return { error: t("saveFailed") };
+    return { error: t("saveFailed"), values: parsed.values };
   }
 
   // Image upload happens after the insert (the storage path needs the
@@ -257,7 +285,7 @@ export async function createService(
   if (imageFile) {
     const { url, error: imageError } = await uploadServiceImage(supabase, user.id, inserted.id, imageFile);
     if (imageError) {
-      return { error: imageError };
+      return { error: imageError, values: parsed.values };
     }
     await supabase.from("services").update({ image_url: url }).eq("id", inserted.id);
   }
@@ -285,7 +313,7 @@ export async function updateService(
   const maxPriceCents = await getEffectiveMaxPriceCents(supabase);
   const parsed = await parseServiceForm(formData, maxPriceCents);
   if (!parsed.ok) {
-    return { error: parsed.error };
+    return { error: parsed.error, values: parsed.values };
   }
 
   // Lock re-verification — the actual enforcement. The UI disables
@@ -302,7 +330,7 @@ export async function updateService(
     .single();
 
   if (!currentService) {
-    return { error: t("saveFailed") };
+    return { error: t("saveFailed"), values: parsed.values };
   }
 
   const upcomingBookingCount = await getUpcomingBookingCount(supabase, serviceId);
@@ -312,7 +340,7 @@ export async function updateService(
       parsed.durationMinutes !== currentService.duration_minutes ||
       parsed.deliveryType !== currentService.delivery_type;
     if (structuralFieldsChanged) {
-      return { error: t("fieldsLockedError", { count: upcomingBookingCount }) };
+      return { error: t("fieldsLockedError", { count: upcomingBookingCount }), values: parsed.values };
     }
   }
 
@@ -354,7 +382,7 @@ export async function updateService(
   if (imageFile) {
     const { url, error: imageError } = await uploadServiceImage(supabase, user.id, serviceId, imageFile);
     if (imageError) {
-      return { error: imageError };
+      return { error: imageError, values: parsed.values };
     }
     updatePayload.image_url = url;
   } else if (removeImage && currentService.image_url) {
@@ -380,7 +408,7 @@ export async function updateService(
 
   if (error) {
     console.error("updateService failed:", error);
-    return { error: t("saveFailed") };
+    return { error: t("saveFailed"), values: parsed.values };
   }
 
   // "layout" — see availability-actions.ts's identical comment; the

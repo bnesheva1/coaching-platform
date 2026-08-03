@@ -5,8 +5,17 @@ import { getTranslations } from "next-intl/server";
 import { DateTime } from "luxon";
 import { createClient } from "@/lib/supabase/server";
 
+// values echoes back exceptionDate (and startTime/endTime, when given)
+// on a rejected submission — same form-reset-on-error fix as
+// ProfileFormState (practitioner-dashboard/actions.ts). Only
+// exceptionDate actually needs this in the client: startTime/endTime/
+// blockType are fully controlled React state in
+// AvailabilityExceptionsSection.tsx (no defaultValue anywhere), so
+// remounting the <form> to apply this doesn't touch them — they were
+// never lost in the first place. exceptionDate is a plain uncontrolled
+// input, which IS wiped by React 19's native form-reset-after-action.
 export type AvailabilityExceptionFormState =
-  | { error?: string; success?: boolean; warningCount?: number }
+  | { error?: string; success?: boolean; warningCount?: number; values?: { exceptionDate?: string; startTime?: string; endTime?: string } }
   | null;
 
 // Validated independently of the <input type="date"> element's own
@@ -43,15 +52,16 @@ export async function createAvailabilityException(
   }
 
   const exceptionDate = formData.get("exceptionDate") as string;
-  if (!DATE_FORMAT.test(exceptionDate) || !DateTime.fromISO(exceptionDate).isValid) {
-    return { error: t("invalidDate") };
-  }
-
   const startTime = (formData.get("startTime") as string)?.trim() || null;
   const endTime = (formData.get("endTime") as string)?.trim() || null;
+  const values = { exceptionDate, startTime: startTime ?? undefined, endTime: endTime ?? undefined };
+
+  if (!DATE_FORMAT.test(exceptionDate) || !DateTime.fromISO(exceptionDate).isValid) {
+    return { error: t("invalidDate"), values };
+  }
 
   if ((startTime === null) !== (endTime === null)) {
-    return { error: t("invalidTimeRange") };
+    return { error: t("invalidTimeRange"), values };
   }
 
   let startMinutes: number | null = null;
@@ -60,13 +70,13 @@ export async function createAvailabilityException(
     startMinutes = timeToMinutes(startTime);
     endMinutes = timeToMinutes(endTime);
     if (startMinutes === null || endMinutes === null) {
-      return { error: tAvailability("invalidTime") };
+      return { error: tAvailability("invalidTime"), values };
     }
     if (startMinutes % MIN_DURATION_MINUTES !== 0 || endMinutes % MIN_DURATION_MINUTES !== 0) {
-      return { error: tAvailability("invalidGrid", { min: MIN_DURATION_MINUTES }) };
+      return { error: tAvailability("invalidGrid", { min: MIN_DURATION_MINUTES }), values };
     }
     if (endMinutes <= startMinutes) {
-      return { error: tAvailability("endBeforeStart") };
+      return { error: tAvailability("endBeforeStart"), values };
     }
   }
 
@@ -82,7 +92,7 @@ export async function createAvailabilityException(
   // string comparison against "today" in their zone is exact.
   const todayLocal = DateTime.now().setZone(timezone).toISODate()!;
   if (exceptionDate < todayLocal) {
-    return { error: t("dateInPast") };
+    return { error: t("dateInPast"), values };
   }
 
   const { error } = await supabase.from("availability_exceptions").insert({
@@ -95,10 +105,10 @@ export async function createAvailabilityException(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: t("dateAlreadyBlocked") };
+      return { error: t("dateAlreadyBlocked"), values };
     }
     console.error("createAvailabilityException failed:", error);
-    return { error: t("saveFailed") };
+    return { error: t("saveFailed"), values };
   }
 
   // Read-only — deliberately does not touch bookings. Blocking a

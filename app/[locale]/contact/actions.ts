@@ -26,6 +26,13 @@ export type ContactFormState = {
   };
   generalError?: string;
   success?: boolean;
+  // Echoes back whatever was submitted, on any return that keeps the
+  // form visible (validation errors, rate-limit, captcha failure, send
+  // failure) — same form-reset-on-error fix as ProfileFormState in
+  // practitioner-dashboard/actions.ts. Not set on the honeypot's fake
+  // success return (that's an intentional lie to bots, not a real
+  // rejection a human ever sees).
+  values?: { name?: string; email?: string; category?: string; message?: string };
 } | null;
 
 // Duplicated from app/[locale]/signup/actions.ts rather than shared —
@@ -66,16 +73,17 @@ export async function submitContact(
     return { success: true };
   }
 
-  const ip = getClientIp(await headers());
-  const { success: withinLimit } = await checkRateLimit(contactLimiter, ip);
-  if (!withinLimit) {
-    return { generalError: t("errorTooManyAttempts") };
-  }
-
   const name = ((formData.get("name") as string) ?? "").trim();
   const email = ((formData.get("email") as string) ?? "").trim();
   const category = (formData.get("category") as string) ?? "";
   const message = ((formData.get("message") as string) ?? "").trim();
+  const values = { name, email, category, message };
+
+  const ip = getClientIp(await headers());
+  const { success: withinLimit } = await checkRateLimit(contactLimiter, ip);
+  if (!withinLimit) {
+    return { generalError: t("errorTooManyAttempts"), values };
+  }
 
   const errors: NonNullable<ContactFormState>["errors"] = {};
 
@@ -106,7 +114,7 @@ export async function submitContact(
   }
 
   if (Object.keys(errors).length > 0) {
-    return { errors };
+    return { errors, values };
   }
 
   // Checked last, after every cheap validation has already passed —
@@ -115,7 +123,7 @@ export async function submitContact(
   const captchaToken = formData.get("cf-turnstile-response") as string | null;
   const captchaValid = await verifyTurnstileToken(captchaToken);
   if (!captchaValid) {
-    return { generalError: t("errorCaptchaFailed") };
+    return { generalError: t("errorCaptchaFailed"), values };
   }
 
   const categoryLabelKeys: Record<Category, "categoryBooking" | "categoryPractitioner" | "categoryOther"> = {
@@ -127,7 +135,7 @@ export async function submitContact(
 
   const result = await sendContactMessage({ categoryLabel, name, email, message });
   if (!result.success) {
-    return { generalError: t("errorSendFailed") };
+    return { generalError: t("errorSendFailed"), values };
   }
 
   return { success: true };

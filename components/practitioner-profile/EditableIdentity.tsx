@@ -39,8 +39,17 @@ export function EditableIdentity({
   // See EditableAbout.tsx's identical comment on why this is adjusted
   // during render rather than via useEffect+setState.
   const [prevState, setPrevState] = useState(state);
+  // Bumped every time the action returns (error or success) and used as
+  // the <form>'s own key below — forces React to remount it (and every
+  // plain defaultValue input inside), which is what actually makes a
+  // changed defaultValue take effect after a rejected submission. See
+  // ProfileFormState's own comment for why this is needed at all: React
+  // resets the underlying native form after ANY action completion, on
+  // its own, before this component ever re-renders.
+  const [formKey, setFormKey] = useState(0);
   if (state !== prevState) {
     setPrevState(state);
+    setFormKey((k) => k + 1);
     if (state?.success && isEditing) setIsEditing(false);
   }
 
@@ -70,18 +79,18 @@ export function EditableIdentity({
   }
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxWidth: 400 }}>
+    <form key={formKey} action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxWidth: 400 }}>
       <label>
         {t("displayNameLabel")}
-        <input name="displayName" type="text" defaultValue={displayName} maxLength={MAX_DISPLAY_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
+        <input name="displayName" type="text" defaultValue={state?.values?.displayName ?? displayName} maxLength={MAX_DISPLAY_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
       <label>
         {t("headlineLabel")}
-        <input name="headline" type="text" defaultValue={headline} maxLength={MAX_HEADLINE_LENGTH} className="form-field" style={{ width: "100%" }} />
+        <input name="headline" type="text" defaultValue={state?.values?.headline ?? headline} maxLength={MAX_HEADLINE_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
       <label>
         {t("locationLabel")}
-        <input name="location" type="text" defaultValue={location} maxLength={MAX_LOCATION_LENGTH} className="form-field" style={{ width: "100%" }} />
+        <input name="location" type="text" defaultValue={state?.values?.location ?? location} maxLength={MAX_LOCATION_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
       {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>

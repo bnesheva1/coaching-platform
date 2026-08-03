@@ -7,7 +7,17 @@ import { validateUsernameFormat } from "@/lib/validation/username";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
-export type ProfileFormState = { error?: string; success?: boolean } | null;
+// values echoes back whatever text fields were actually submitted, on
+// an error return only — React 19 resets a <form action={...}> after
+// ANY action completion (success or failure), which wipes plain
+// defaultValue fields back to their pre-edit values, not just the one
+// that was actually invalid. The caller re-keys its <form> off this
+// object's identity to force a remount with these as the new
+// defaultValues, so a rejected submission redisplays what was typed
+// instead of discarding it. Only used by updateProfileText today, but
+// shared on this broad type rather than a narrower one-off, same
+// precedent as ServiceFormState being shared across create/update.
+export type ProfileFormState = { error?: string; success?: boolean; values?: Record<string, string> } | null;
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
 const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -58,15 +68,26 @@ export async function updateProfileText(
     return { error: t("notLoggedIn") };
   }
 
+  // Whatever text fields this particular caller submitted (only
+  // displayName for EditableIdentity's own submit, all three for
+  // EditableIdentity, just bio for EditableAbout) — echoed back on
+  // every error return below so a rejected submission can redisplay
+  // what was actually typed instead of the pre-edit value. See
+  // ProfileFormState's own comment for why this is necessary at all.
+  const submittedValues: Record<string, string> = {};
+  for (const key of ["displayName", "headline", "location", "bio"]) {
+    if (formData.has(key)) submittedValues[key] = (formData.get(key) as string).trim();
+  }
+
   if (formData.has("displayName")) {
     const displayName = (formData.get("displayName") as string).trim();
     if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
-      return { error: t("displayNameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }) };
+      return { error: t("displayNameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }), values: submittedValues };
     }
     const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
     if (error) {
       console.error("updateProfileText: failed to update display_name:", error);
-      return { error: t("saveFailed") };
+      return { error: t("saveFailed"), values: submittedValues };
     }
   }
 
@@ -75,21 +96,21 @@ export async function updateProfileText(
   if (formData.has("headline")) {
     const headline = (formData.get("headline") as string).trim();
     if (headline.length > MAX_HEADLINE_LENGTH) {
-      return { error: t("headlineTooLong", { max: MAX_HEADLINE_LENGTH }) };
+      return { error: t("headlineTooLong", { max: MAX_HEADLINE_LENGTH }), values: submittedValues };
     }
     practitionerPayload.headline = headline;
   }
   if (formData.has("location")) {
     const location = (formData.get("location") as string).trim();
     if (location.length > MAX_LOCATION_LENGTH) {
-      return { error: t("locationTooLong", { max: MAX_LOCATION_LENGTH }) };
+      return { error: t("locationTooLong", { max: MAX_LOCATION_LENGTH }), values: submittedValues };
     }
     practitionerPayload.location = location;
   }
   if (formData.has("bio")) {
     const bio = (formData.get("bio") as string).trim();
     if (bio.length > MAX_BIO_LENGTH) {
-      return { error: t("bioTooLong", { max: MAX_BIO_LENGTH }) };
+      return { error: t("bioTooLong", { max: MAX_BIO_LENGTH }), values: submittedValues };
     }
     practitionerPayload.bio = bio;
   }
@@ -98,7 +119,7 @@ export async function updateProfileText(
     const { error } = await supabase.from("practitioner_profiles").update(practitionerPayload).eq("id", user.id);
     if (error) {
       console.error("updateProfileText: failed to update practitioner_profiles:", error);
-      return { error: t("saveFailed") };
+      return { error: t("saveFailed"), values: submittedValues };
     }
   }
 
