@@ -271,6 +271,39 @@ export async function uploadProfileImage(
   return { success: true };
 }
 
+// The removal counterpart — clears the column and best-effort deletes
+// the underlying storage object (same deterministic "<user id>/<kind>"
+// path uploadProfileImage writes to). A failed storage delete doesn't
+// block clearing the column: an orphaned file in the bucket is a much
+// smaller problem than a stuck "can't remove my photo" UI, and the
+// column is what every reader (this profile, Browse, etc.) actually
+// looks at.
+export async function removeProfileImage(kind: "avatar" | "banner"): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const { error: deleteError } = await supabase.storage.from("avatars").remove([`${user.id}/${kind}`]);
+  if (deleteError) {
+    console.error("removeProfileImage: failed to delete storage object", { kind, deleteError });
+  }
+
+  const column = kind === "avatar" ? "avatar_url" : "banner_url";
+  const { error } = await supabase.from("practitioner_profiles").update({ [column]: null }).eq("id", user.id);
+  if (error) {
+    console.error("removeProfileImage failed:", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
 export type UsernameAvailability =
   | { available: true }
   | { available: false; reason: string };

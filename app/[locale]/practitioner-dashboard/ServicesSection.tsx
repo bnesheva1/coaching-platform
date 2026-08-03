@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import { EditPencilButton } from "@/components/practitioner-profile/EditPencilButton";
+import { RemoveImageButton } from "@/components/practitioner-profile/RemoveImageButton";
 import {
   createService,
   updateService,
@@ -48,6 +49,18 @@ const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_DELIVERY_INFO_LENGTH = 500;
 const MAX_PHONE_LENGTH = 30;
+// Mirrors MIN_DURATION_MINUTES/MAX_DURATION_MINUTES in
+// services-actions.ts — the fixed dropdown offers exactly these 7
+// values, no free entry.
+const DURATION_OPTIONS = [30, 45, 60, 75, 90, 105, 120] as const;
+const DEFAULT_DURATION_MINUTES = 60;
+// Mirrors MIN_PRICE_CENTS in services-actions.ts.
+const MIN_PRICE_EUROS = 20;
+// Mirrors DEFAULT_MAX_PRICE_CENTS in services-actions.ts — the
+// platform default. A practitioner's own max_price_cents override (no
+// UI yet) can raise the real, server-enforced ceiling above this; this
+// is only a client-side hint for the common (no override) case.
+const DEFAULT_MAX_PRICE_EUROS = 500;
 
 function formatPrice(priceCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -78,10 +91,14 @@ function LinkifiedText({ text }: { text: string }) {
 }
 
 // Same square-thumbnail treatment as the profile page's service tiles
-// (components/practitioner-profile/PractitionerProfileView.tsx) — a
-// gradient placeholder until an image is uploaded, capped at a third of
-// the tile's width via flex-basis so it scales instead of overflowing.
+// (components/practitioner-profile/PractitionerProfileView.tsx),
+// including that file's own "no image → no placeholder" rule: renders
+// nothing at all (not even a gradient box) when there's no image, so a
+// service without one reads as an intentional text-only layout rather
+// than something failed to load. Capped at a third of the tile's width
+// via flex-basis so it scales instead of overflowing when it does render.
 function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
+  if (!imageUrl) return null;
   return (
     <div
       style={{
@@ -90,13 +107,10 @@ function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
         aspectRatio: "1 / 1",
         borderRadius: "var(--radius-md)",
         overflow: "hidden",
-        background: imageUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
       }}
     >
-      {imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
     </div>
   );
 }
@@ -110,11 +124,20 @@ function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
 // travels through with the rest of this same form's fields on the
 // service's own Save button, since the image here is one field among
 // several being edited together, not a standalone upload action.
+//
+// Remove works the same way — client-side only until Save, via a
+// hidden "removeImage" input the server action checks. Picking a new
+// file after clicking remove un-marks it (a fresh selection obviously
+// means keep/replace, not clear); clicking remove after picking a file
+// clears that pending selection too (both the preview state and the
+// file input's own value), so Save can't end up submitting a file the
+// UI just showed as removed.
 function ServiceImageField({ currentImageUrl }: { currentImageUrl: string | null }) {
   const t = useTranslations("Services");
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const displayUrl = previewUrl ?? currentImageUrl;
+  const [removed, setRemoved] = useState(false);
+  const displayUrl = removed ? null : (previewUrl ?? currentImageUrl);
 
   // Revoke the previous object URL when a new file is picked or this
   // component unmounts — otherwise each selection leaks the blob URL
@@ -149,11 +172,29 @@ function ServiceImageField({ currentImageUrl }: { currentImageUrl: string | null
         style={{ display: "none" }}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) setPreviewUrl(URL.createObjectURL(file));
+          if (file) {
+            setPreviewUrl(URL.createObjectURL(file));
+            setRemoved(false);
+          }
         }}
       />
-      <div style={{ position: "absolute", bottom: 6, right: 6 }}>
+      {/* Only ever "1" when there's an existing (server-side) image to
+          actually clear and nothing new was picked to replace it — a
+          brand-new, not-yet-saved service has no image to remove in
+          the first place. */}
+      <input type="hidden" name="removeImage" value={removed && currentImageUrl ? "1" : ""} />
+      <div style={{ position: "absolute", bottom: 6, right: 6, display: "flex", gap: 4 }}>
         <EditPencilButton label={t("imageLabel")} onClick={() => inputRef.current?.click()} />
+        {displayUrl && (
+          <RemoveImageButton
+            label={t("removeImageLabel")}
+            onClick={() => {
+              setRemoved(true);
+              setPreviewUrl(null);
+              if (inputRef.current) inputRef.current.value = "";
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -249,13 +290,80 @@ function DeliveryFields({
           {t("phoneNumberLabel")}
           <input name="phoneNumber" type="tel" required defaultValue={defaultPhoneNumber} maxLength={MAX_PHONE_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
-      ) : (
+      ) : deliveryType === "in_person" ? (
         <label>
-          {deliveryType === "online" ? t("deliveryInfoLabelOnline") : t("deliveryInfoLabelInPerson")}
+          {t("deliveryInfoLabelInPerson")}
           <input name="deliveryInfo" type="text" required defaultValue={defaultInfo} maxLength={MAX_DELIVERY_INFO_LENGTH} className="form-field" style={{ width: "100%" }} />
         </label>
+      ) : (
+        // online: no field at all — a per-booking meeting link will be
+        // auto-generated (LiveKit) instead of practitioner-entered. See
+        // services-actions.ts's parseServiceForm for the matching
+        // server-side change (no longer required, and an existing
+        // value from before this change is preserved, not overwritten).
+        null
       )}
     </>
+  );
+}
+
+// A fixed dropdown (30/45/60/75/90/105/120 minutes) — was a free
+// numeric input. Same locked/unlocked disabled-select-plus-hidden-input
+// pattern as DeliveryFields' own delivery-type select, for the same
+// reason: a disabled control is dropped from form submission entirely,
+// so a hidden input is what actually carries the real value through
+// while the visible select just shows it, greyed out.
+function DurationField({ defaultValue, locked }: { defaultValue: number; locked: boolean }) {
+  const t = useTranslations("Services");
+  const [duration, setDuration] = useState(defaultValue);
+  // An existing service saved before this dropdown replaced the free
+  // numeric input (or one with an off-grid value reached via a direct
+  // API call) might not be one of the 7 fixed options — include it so
+  // opening the edit form never silently rewrites a value the
+  // practitioner didn't touch.
+  const options: readonly number[] = (DURATION_OPTIONS as readonly number[]).includes(defaultValue)
+    ? DURATION_OPTIONS
+    : [...DURATION_OPTIONS, defaultValue].sort((a, b) => a - b);
+
+  if (locked) {
+    return (
+      <label>
+        {t("durationLabel")}
+        <select
+          disabled
+          value={duration}
+          className="form-field"
+          style={{ display: "block", width: "100%", maxWidth: 220, background: "var(--bg-sunken)" }}
+        >
+          {options.map((minutes) => (
+            <option key={minutes} value={minutes}>
+              {t("durationOptionLabel", { minutes })}
+            </option>
+          ))}
+        </select>
+        <input type="hidden" name="durationMinutes" value={duration} />
+      </label>
+    );
+  }
+
+  return (
+    <label>
+      {t("durationLabel")}
+      <select
+        name="durationMinutes"
+        value={duration}
+        onChange={(e) => setDuration(Number(e.target.value))}
+        required
+        className="form-field"
+        style={{ display: "block", width: "100%", maxWidth: 220 }}
+      >
+        {options.map((minutes) => (
+          <option key={minutes} value={minutes}>
+            {t("durationOptionLabel", { minutes })}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -324,27 +432,14 @@ function ServiceRow({ service }: { service: Service }) {
                 {t("structuralFieldsLockedNote", { count: service.upcoming_booking_count })}
               </p>
             )}
-            <label>
-              {t("durationLabel")}
-              <input
-                name="durationMinutes"
-                type="number"
-                min={15}
-                max={240}
-                step={15}
-                required
-                readOnly={locked}
-                defaultValue={service.duration_minutes}
-                className="form-field"
-                style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
-              />
-            </label>
+            <DurationField defaultValue={service.duration_minutes} locked={locked} />
             <label>
               {t("priceLabel")}
               <input
                 name="price"
                 type="number"
-                min={0}
+                min={MIN_PRICE_EUROS}
+                max={DEFAULT_MAX_PRICE_EUROS}
                 step={0.01}
                 required
                 readOnly={locked}
@@ -352,6 +447,9 @@ function ServiceRow({ service }: { service: Service }) {
                 className="form-field"
                 style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
               />
+              <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+                {t("priceHint", { min: MIN_PRICE_EUROS, max: DEFAULT_MAX_PRICE_EUROS })}
+              </span>
             </label>
             <DeliveryFields
               defaultType={service.delivery_type}
@@ -385,7 +483,7 @@ function ServiceRow({ service }: { service: Service }) {
             <StatusBadge isActive={service.is_active} label={service.is_active ? t("activeStatus") : t("hiddenStatus")} />
           </div>
           <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-            {service.duration_minutes} min · {formatPrice(service.price_cents, service.currency)}
+            {t("durationOptionLabel", { minutes: service.duration_minutes })} · {formatPrice(service.price_cents, service.currency)}
           </p>
           {service.description && (
             <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>{service.description}</p>
@@ -411,13 +509,21 @@ function ServiceRow({ service }: { service: Service }) {
                 {t("deliveryInfoMissingNudge")}
               </p>
             )
+          ) : service.delivery_type === "online" ? (
+            // No nudge here even when delivery_info is empty — that's
+            // the new normal for online (see DeliveryFields' own
+            // comment), not a gap the practitioner can currently fix
+            // through this form. Still shows a stored value from
+            // before that change, if one exists.
+            service.delivery_info && (
+              <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                <strong>{t("deliveryTypeOnline")}: </strong>
+                <LinkifiedText text={service.delivery_info} />
+              </p>
+            )
           ) : service.delivery_info ? (
             <p style={{ margin: "var(--space-1) 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-              {service.delivery_type && (
-                <strong>
-                  {service.delivery_type === "online" ? t("deliveryTypeOnline") : t("deliveryTypeInPerson")}:{" "}
-                </strong>
-              )}
+              <strong>{t("deliveryTypeInPerson")}: </strong>
               <LinkifiedText text={service.delivery_info} />
             </p>
           ) : (
@@ -541,13 +647,13 @@ export function ServicesSection({ services }: { services: Service[] }) {
               {t("descriptionLabel")}
               <textarea name="description" rows={2} maxLength={MAX_DESCRIPTION_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
-            <label>
-              {t("durationLabel")}
-              <input name="durationMinutes" type="number" min={15} max={240} step={15} required className="form-field" style={{ width: "100%" }} />
-            </label>
+            <DurationField defaultValue={DEFAULT_DURATION_MINUTES} locked={false} />
             <label>
               {t("priceLabel")}
-              <input name="price" type="number" min={0} step={0.01} required className="form-field" style={{ width: "100%" }} />
+              <input name="price" type="number" min={MIN_PRICE_EUROS} max={DEFAULT_MAX_PRICE_EUROS} step={0.01} required className="form-field" style={{ width: "100%" }} />
+              <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+                {t("priceHint", { min: MIN_PRICE_EUROS, max: DEFAULT_MAX_PRICE_EUROS })}
+              </span>
             </label>
             <DeliveryFields defaultType={null} defaultInfo="" defaultPhoneNumber="" locked={false} />
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}

@@ -276,7 +276,7 @@ export function PractitionerProfileView({
         )}
         {isEditing && (
           <div style={{ position: "absolute", top: 14, right: 14 }}>
-            <EditableImage kind="banner" label={t("editBanner")}>
+            <EditableImage kind="banner" label={t("editBanner")} removeLabel={t("removeBanner")} hasImage={!!bannerUrl}>
               <></>
             </EditableImage>
           </div>
@@ -330,7 +330,7 @@ export function PractitionerProfileView({
                 )}
                 {isEditing && (
                   <div style={{ position: "absolute", bottom: 0, right: 0 }}>
-                    <EditableImage kind="avatar" label={t("editPhoto")}>
+                    <EditableImage kind="avatar" label={t("editPhoto")} removeLabel={t("removePhoto")} hasImage={!!avatarUrl}>
                       <></>
                     </EditableImage>
                   </div>
