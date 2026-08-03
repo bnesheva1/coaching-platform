@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useActionState, useRef, useState } from "react";
+import { Fragment, useActionState, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
+import { EditPencilButton } from "@/components/practitioner-profile/EditPencilButton";
 import {
   createService,
   updateService,
@@ -96,6 +97,64 @@ function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
+    </div>
+  );
+}
+
+// The editable counterpart of ServiceImage above — same square tile,
+// but with a pencil overlay (same EditPencilButton used for the
+// profile's own avatar/banner) that opens the file picker, and a local
+// object-URL preview so picking a file shows up immediately instead of
+// only after Save. Unlike EditableImage.tsx (avatar/banner), this
+// doesn't submit on selection — the file input stays named "image" and
+// travels through with the rest of this same form's fields on the
+// service's own Save button, since the image here is one field among
+// several being edited together, not a standalone upload action.
+function ServiceImageField({ currentImageUrl }: { currentImageUrl: string | null }) {
+  const t = useTranslations("Services");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const displayUrl = previewUrl ?? currentImageUrl;
+
+  // Revoke the previous object URL when a new file is picked or this
+  // component unmounts — otherwise each selection leaks the blob URL
+  // for the one it replaced.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        flex: "0 0 33%",
+        maxWidth: "33%",
+        aspectRatio: "1 / 1",
+        borderRadius: "var(--radius-md)",
+        overflow: "hidden",
+        background: displayUrl ? undefined : "linear-gradient(135deg, var(--bg-sunken), var(--accent-glow))",
+      }}
+    >
+      {displayUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={displayUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        name="image"
+        accept="image/png,image/jpeg,image/webp"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) setPreviewUrl(URL.createObjectURL(file));
+        }}
+      />
+      <div style={{ position: "absolute", bottom: 6, right: 6 }}>
+        <EditPencilButton label={t("imageLabel")} onClick={() => inputRef.current?.click()} />
+      </div>
     </div>
   );
 }
@@ -233,11 +292,17 @@ function ServiceRow({ service }: { service: Service }) {
     return (
       <li style={{ marginBottom: "var(--space-4)" }}>
         <div style={tileStyle}>
-          <ServiceImage imageUrl={service.image_url} />
           <form
             action={formAction}
-            style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}
+            style={{ display: "flex", gap: "var(--space-4)", flex: 1, minWidth: 0 }}
           >
+            {/* Inside the form (not a sibling like the read-only
+                ServiceImage) so its file input travels through with
+                the rest of these fields on Save — see this
+                component's own comment for why it doesn't upload on
+                selection the way avatar/banner does. */}
+            <ServiceImageField currentImageUrl={service.image_url} />
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             <input type="hidden" name="serviceId" value={service.id} />
             <label>
               {t("nameLabel")}
@@ -294,10 +359,6 @@ function ServiceRow({ service }: { service: Service }) {
               defaultPhoneNumber={service.phone_number ?? ""}
               locked={locked}
             />
-            <label>
-              {t("imageLabel")}
-              <input type="file" name="image" accept="image/png,image/jpeg,image/webp" className="form-field" style={{ width: "100%" }} />
-            </label>
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
@@ -306,6 +367,7 @@ function ServiceRow({ service }: { service: Service }) {
               <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
                 {t("cancelButton")}
               </Button>
+            </div>
             </div>
           </form>
         </div>
@@ -467,8 +529,10 @@ export function ServicesSection({ services }: { services: Service[] }) {
         <div style={tileStyle}>
           <form
             action={formAction}
-            style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}
+            style={{ display: "flex", gap: "var(--space-4)", flex: 1, minWidth: 0 }}
           >
+            <ServiceImageField currentImageUrl={null} />
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             <label>
               {t("nameLabel")}
               <input name="name" type="text" required maxLength={MAX_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />
@@ -486,10 +550,6 @@ export function ServicesSection({ services }: { services: Service[] }) {
               <input name="price" type="number" min={0} step={0.01} required className="form-field" style={{ width: "100%" }} />
             </label>
             <DeliveryFields defaultType={null} defaultInfo="" defaultPhoneNumber="" locked={false} />
-            <label>
-              {t("imageLabel")}
-              <input type="file" name="image" accept="image/png,image/jpeg,image/webp" className="form-field" style={{ width: "100%" }} />
-            </label>
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
@@ -498,6 +558,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
               <Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>
                 {t("cancelButton")}
               </Button>
+            </div>
             </div>
           </form>
         </div>

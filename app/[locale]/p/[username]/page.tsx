@@ -132,6 +132,12 @@ export default async function PublicProfilePage({
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <ContentContainer maxWidth={"var(--content-max-width)"}>
+        {/* Centered, capped-width reading column for the public route
+            specifically — PractitionerProfileView itself no longer
+            applies this, since the dashboard's own Profile tab
+            (practitioner-dashboard/profile/page.tsx) wants the
+            opposite: left-aligned, filling the available width. */}
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <PractitionerProfileView
           isOwner={false}
           practitionerId={practitionerProfile.id}
@@ -173,6 +179,7 @@ export default async function PublicProfilePage({
           paymentStatus={paymentStatus}
           initialExpandedServiceId={initialExpandedServiceId}
         />
+        </div>
       </ContentContainer>
     </main>
   );

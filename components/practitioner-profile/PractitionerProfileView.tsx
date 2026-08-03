@@ -202,8 +202,16 @@ export function PractitionerProfileView({
       }).format(new Date(nextSlotStartUtc))
     : null;
 
+  // No width constraint or centering on the root element on purpose —
+  // that's a page-level layout decision, not this shared component's to
+  // make. The public route wants a centered, capped-width column; the
+  // dashboard's Profile tab wants this to left-align with its own "Профил"
+  // heading and expand to fill the available width instead. A max-width
+  // + margin:auto baked in here previously forced the same centered
+  // treatment on both, which broke the dashboard's alignment/width. See
+  // p/[username]/page.tsx for the public route's own wrapper.
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <div>
       {/* Renders nothing on the dashboard's own edit-tab render of this
           component (justBooked/bookingErrorCode/paymentStatus are
           always false/null/null there) — only ever opens on the public
@@ -494,7 +502,7 @@ export function PractitionerProfileView({
                       {service.imageUrl && (
                         <div
                           className={rowStyles.tile}
-                          style={{ "--tile-size": "152px", height: 114, borderRadius: 12, overflow: "hidden" } as React.CSSProperties}
+                          style={{ "--tile-size": "152px", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden" } as React.CSSProperties}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={service.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
