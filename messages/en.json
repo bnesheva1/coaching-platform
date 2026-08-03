@@ -353,8 +353,15 @@
     "loginPromptClose": "Close",
     "confirmBooking": "Book the {time} slot?",
     "confirmBookingDialogConfirm": "Book",
+    "confirmBookingDialogPending": "Booking…",
     "confirmBookingDialogDismiss": "Cancel",
     "bookingConfirmed": "Booked! You'll see it reflected in the times below.",
+    "resultConfirmedTitle": "Booked!",
+    "resultConfirmedBody": "Your session is confirmed — you'll get a confirmation email shortly.",
+    "resultFailedTitle": "Booking failed",
+    "resultProcessingTitle": "Payment received",
+    "resultCancelledTitle": "Payment cancelled",
+    "resultClose": "Close",
     "paymentProcessing": "Payment received — a confirmation email is on its way, usually within a few minutes.",
     "paymentCancelled": "Payment was cancelled. The slot wasn't booked.",
     "rateLimited": "Too many booking attempts. Please wait a few minutes and try again.",
@@ -408,6 +415,7 @@
     "cancelDialogTitleClient": "Cancel your session with {practitioner} on {time}?",
     "cancelNoteLabel": "Message to the client (optional)",
     "cancelDialogConfirm": "Cancel session",
+    "cancelDialogPending": "Cancelling…",
     "cancelDialogDismiss": "Back"
   },
   "StripeConnect": {

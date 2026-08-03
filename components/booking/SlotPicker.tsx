@@ -695,6 +695,7 @@ export function SlotPicker({
         ref={bookingConfirmRef}
         message={pendingConfirmSlot ? t("confirmBooking", { time: timeFormatter.format(new Date(pendingConfirmSlot)) }) : ""}
         confirmLabel={t("confirmBookingDialogConfirm")}
+        confirmPendingLabel={t("confirmBookingDialogPending")}
         cancelLabel={t("confirmBookingDialogDismiss")}
         action={bookSlot.bind(null, practitionerId, serviceId, username, pendingConfirmSlot ?? "", clientTimezone)}
         onCancel={() => setSelectedStartUtc(null)}

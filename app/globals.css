@@ -146,6 +146,23 @@ body {
   cursor: default;
 }
 
+/* components/ui/Spinner.tsx's rotation — a class, not an inline style,
+   since inline styles can't be scoped by a media query the way this
+   needs (prefers-reduced-motion below). */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
 /* Native <dialog> backdrop (e.g. CancelSessionDialog.tsx) — only
    reachable via the ::backdrop pseudo-element, which inline styles
    can't target at all, unlike everything else in this app's dialogs. */

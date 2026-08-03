@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { DialogFormActions } from "@/components/ui/DialogFormActions";
 
 // Mirrors the server actions' own MAX_NOTE_LENGTH — this is just the
 // UX-level constraint (stops typing early); the server copy is what
@@ -76,14 +77,12 @@ export function CancelSessionDialog({
               <textarea name="note" rows={3} maxLength={MAX_NOTE_LENGTH} className="form-field" style={{ width: "100%" }} />
             </label>
           )}
-          <div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end" }}>
-            <Button type="button" variant="ghost" size="sm" onClick={() => dialogRef.current?.close()}>
-              {t("cancelDialogDismiss")}
-            </Button>
-            <Button type="submit" size="sm">
-              {t("cancelDialogConfirm")}
-            </Button>
-          </div>
+          <DialogFormActions
+            cancelLabel={t("cancelDialogDismiss")}
+            confirmLabel={t("cancelDialogConfirm")}
+            confirmPendingLabel={t("cancelDialogPending")}
+            onCancel={() => dialogRef.current?.close()}
+          />
         </form>
       </dialog>
     </>

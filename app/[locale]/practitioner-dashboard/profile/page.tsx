@@ -122,6 +122,7 @@ export default async function ProfilePage({
           justBooked={false}
           bookingErrorCode={null}
           paymentStatus={null}
+          initialExpandedServiceId={null}
         />
         <StripeConnectSection
           isConnected={connectStatus?.is_connected ?? false}

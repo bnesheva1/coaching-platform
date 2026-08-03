@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { SlotPicker } from "@/components/booking/SlotPicker";
+import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
@@ -78,6 +79,13 @@ export type PractitionerProfileViewProps = {
   justBooked: boolean;
   bookingErrorCode: string | null;
   paymentStatus: "processing" | "cancelled" | null;
+  // The service a bookSlot redirect was for (every redirect target
+  // carries ?service=<id> already) — opens that tile expanded and
+  // scrolls it into view on mount, so the client lands looking at the
+  // slot they just booked/tried to book, not the top of the page. null
+  // on the dashboard's own edit-tab render (no redirect ever lands
+  // there).
+  initialExpandedServiceId: string | null;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -110,6 +118,7 @@ export function PractitionerProfileView({
   justBooked,
   bookingErrorCode,
   paymentStatus,
+  initialExpandedServiceId,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
@@ -127,11 +136,33 @@ export function PractitionerProfileView({
   // every expand/collapse was a real Next.js navigation (new RSC
   // payload, scroll position reset) and felt like a page reload/jump.
   // Slots for every service are already fetched up front (see the page
-  // components), so there's nothing left to fetch on click.
-  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
+  // components), so there's nothing left to fetch on click. Seeded from
+  // initialExpandedServiceId, not always null — a fresh page load right
+  // after a bookSlot redirect should land with that service's tile
+  // already open, not collapsed.
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(initialExpandedServiceId);
+
+  // Scrolls the services section into view on mount when the page was
+  // loaded with a specific service in mind (i.e. right after a bookSlot
+  // redirect) — otherwise the client lands at the top of the page and
+  // has to notice/scroll to the now-expanded tile themselves. Mount-only:
+  // initialExpandedServiceId is derived from the URL this page loaded
+  // with, never changes afterward, so there's nothing to re-run this on.
+  useEffect(() => {
+    if (initialExpandedServiceId) {
+      document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>
+      {/* Renders nothing on the dashboard's own edit-tab render of this
+          component (justBooked/bookingErrorCode/paymentStatus are
+          always false/null/null there) — only ever opens on the public
+          route, and only for the outcome the redirect that brought the
+          client here actually carries. */}
+      <BookingResultDialog justBooked={justBooked} bookingErrorCode={bookingErrorCode} paymentStatus={paymentStatus} />
       {isOwner && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--space-4)" }}>
           <div style={{ display: "inline-flex", border: "1px solid var(--border-default)", borderRadius: "var(--radius-pill)", padding: 2 }}>
@@ -384,26 +415,6 @@ export function PractitionerProfileView({
                   {tBooking("selectService")}
                 </p>
               )}
-              {justBooked && <p style={{ color: "green" }}>{tBooking("bookingConfirmed")}</p>}
-              {/* Generously spaced + a filled banner (not bare crimson text)
-                  so it reads as a warning sitting above the service tiles'
-                  buttons below, not an easy-to-miss caption line. */}
-              {bookingErrorCode && (
-                <p
-                  style={{
-                    margin: "var(--space-3) 0 var(--space-5)",
-                    padding: "var(--space-3) var(--space-4)",
-                    borderRadius: "var(--radius-md)",
-                    background: "rgba(220, 20, 60, 0.08)",
-                    border: "1px solid rgba(220, 20, 60, 0.3)",
-                    color: "crimson",
-                  }}
-                >
-                  {tBooking.has(bookingErrorCode) ? tBooking(bookingErrorCode as Parameters<typeof tBooking>[0]) : tBooking("bookingFailed")}
-                </p>
-              )}
-              {paymentStatus === "processing" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentProcessing")}</p>}
-              {paymentStatus === "cancelled" && <p style={{ color: "var(--text-secondary)" }}>{tBooking("paymentCancelled")}</p>}
               {services.length === 0 ? (
                 <p style={{ color: "var(--text-tertiary)" }}>{t("noServicesYet")}</p>
               ) : (

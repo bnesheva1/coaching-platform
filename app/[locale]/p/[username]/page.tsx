@@ -113,6 +113,12 @@ export default async function PublicProfilePage({
   const justBooked = resolvedSearchParams.booked === "1";
   const bookingErrorCode =
     typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
+  // Every bookSlot redirect back to this page already carries the
+  // service the attempt was for — previously never read, so the client
+  // landed back at the top of the page with the whole accordion
+  // collapsed, no indication of which tile the outcome even applied to.
+  const initialExpandedServiceId =
+    typeof resolvedSearchParams.service === "string" ? resolvedSearchParams.service : null;
   // Epic 9: the commission-model path redirects back here straight from
   // Stripe, before the webhook has necessarily finished creating the
   // booking — "processing" is deliberately non-committal (never "your
@@ -164,6 +170,7 @@ export default async function PublicProfilePage({
           justBooked={justBooked}
           bookingErrorCode={bookingErrorCode}
           paymentStatus={paymentStatus}
+          initialExpandedServiceId={initialExpandedServiceId}
         />
       </ContentContainer>
     </main>

@@ -351,8 +351,15 @@
     "loginPromptClose": "Затвори",
     "confirmBooking": "Запазваш часа {time}?",
     "confirmBookingDialogConfirm": "Запази",
+    "confirmBookingDialogPending": "Записване…",
     "confirmBookingDialogDismiss": "Отказ",
     "bookingConfirmed": "Записано! Ще видиш промяната в часовете по-долу.",
+    "resultConfirmedTitle": "Записано!",
+    "resultConfirmedBody": "Часът ти е потвърден — ще получиш имейл за потвърждение скоро.",
+    "resultFailedTitle": "Неуспешна резервация",
+    "resultProcessingTitle": "Плащането е получено",
+    "resultCancelledTitle": "Плащането е отказано",
+    "resultClose": "Затвори",
     "paymentProcessing": "Плащането е получено — потвърждението пристига по имейл до няколко минути.",
     "paymentCancelled": "Плащането беше отказано. Часът не е запазен.",
     "rateLimited": "Твърде много опити за записване. Изчакай няколко минути и опитай отново.",
@@ -406,6 +413,7 @@
     "cancelDialogTitleClient": "Отказваш сесията си с {practitioner} на {time}?",
     "cancelNoteLabel": "Съобщение към клиента (по избор)",
     "cancelDialogConfirm": "Отмени сесията",
+    "cancelDialogPending": "Отказване…",
     "cancelDialogDismiss": "Назад"
   },
   "StripeConnect": {

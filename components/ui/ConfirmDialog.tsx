@@ -1,7 +1,7 @@
 "use client";
 
 import { useImperativeHandle, useRef } from "react";
-import { Button } from "@/components/ui/Button";
+import { DialogFormActions } from "@/components/ui/DialogFormActions";
 
 export type ConfirmDialogHandle = { open: () => void };
 
@@ -15,6 +15,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  confirmPendingLabel,
   cancelLabel,
   action,
   onCancel,
@@ -30,6 +31,9 @@ export function ConfirmDialog({
   // caller passes a single short line, which split() leaves untouched.
   message: string;
   confirmLabel: string;
+  // See DialogFormActions' own comment — optional, falls back to
+  // confirmLabel if the caller doesn't have tailored "…ing" copy.
+  confirmPendingLabel?: string;
   cancelLabel: string;
   action: (formData: FormData) => void | Promise<void>;
   // Called right before the dialog closes on Cancel — not on a
@@ -85,14 +89,12 @@ export function ConfirmDialog({
             {paragraph}
           </p>
         ))}
-        <div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end" }}>
-          <Button type="button" variant="ghost" size="sm" onClick={close}>
-            {cancelLabel}
-          </Button>
-          <Button type="submit" size="sm">
-            {confirmLabel}
-          </Button>
-        </div>
+        <DialogFormActions
+          cancelLabel={cancelLabel}
+          confirmLabel={confirmLabel}
+          confirmPendingLabel={confirmPendingLabel}
+          onCancel={close}
+        />
       </form>
     </dialog>
   );
