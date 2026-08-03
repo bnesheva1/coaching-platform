@@ -5,7 +5,12 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/siteOrigin";
-import { ensureConnectAccount, createOnboardingLink } from "@/lib/payments/stripe/connect";
+import {
+  ensureConnectAccount,
+  createOnboardingLink,
+  getConnectedAccountId,
+  createExpressDashboardLoginLink,
+} from "@/lib/payments/stripe/connect";
 
 // Serves both "Connect Stripe" (first visit) and "Continue setup"
 // (resuming) — identical call either way. ensureConnectAccount's own
@@ -67,4 +72,55 @@ export async function startStripeConnectOnboarding() {
   }
 
   redirectExternal(onboardingUrl);
+}
+
+// Only ever rendered (see StripeConnectSection.tsx) once the account is
+// connected and active — same auth + role checks as
+// startStripeConnectOnboarding above, scoped to the caller's own
+// account via getConnectedAccountId(user.id), never a client-supplied
+// account id.
+export async function manageStripeConnectAccount() {
+  const locale = await getLocale();
+
+  async function redirectWithError(code: string) {
+    redirect({ href: { pathname: "/practitioner-dashboard/profile", query: { manageError: code } }, locale });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect({ href: "/login", locale });
+    return;
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "practitioner") {
+    await redirectWithError("notAPractitioner");
+    return;
+  }
+
+  // redirect()/redirectExternal() throw internally — kept outside any
+  // try/catch, same reasoning as startStripeConnectOnboarding above.
+  let loginLinkUrl: string;
+  try {
+    const accountId = await getConnectedAccountId(user.id);
+    if (!accountId) {
+      // Shouldn't be reachable — the button that calls this action only
+      // renders once isConnected is true — but a direct call (or a
+      // stale page still showing the button after a state change)
+      // shouldn't 500, just redirect with a clean error.
+      await redirectWithError("notConnected");
+      return;
+    }
+    loginLinkUrl = await createExpressDashboardLoginLink(accountId);
+  } catch (err) {
+    console.error("manageStripeConnectAccount failed", { practitionerId: user.id, err });
+    await redirectWithError("manageFailed");
+    return;
+  }
+
+  redirectExternal(loginLinkUrl);
 }

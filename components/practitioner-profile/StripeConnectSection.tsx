@@ -1,7 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { startStripeConnectOnboarding } from "@/app/[locale]/practitioner-dashboard/connect-actions";
+import {
+  startStripeConnectOnboarding,
+  manageStripeConnectAccount,
+} from "@/app/[locale]/practitioner-dashboard/connect-actions";
 
 // No "use client" — a plain <form action={...}> submitting straight to
 // the Server Action is all this needs (unlike ProfileSettingsBox, there
@@ -14,15 +17,23 @@ export async function StripeConnectSection({
   isConnected,
   transfersActive,
   errorCode,
+  manageErrorCode,
 }: {
   isConnected: boolean;
   transfersActive: boolean;
   errorCode: string | null;
+  manageErrorCode: string | null;
 }) {
   const t = await getTranslations("StripeConnect");
 
   const isActive = isConnected && transfersActive;
   const status = !isConnected ? "notConnected" : isActive ? "active" : "incomplete";
+  // errorCode/manageErrorCode are mutually exclusive in practice (each
+  // comes back from a different action's own redirect), but resolved to
+  // a single message rather than two separate boxes — showing both at
+  // once would only happen from a manually-crafted URL with both query
+  // params set, not a real user flow.
+  const errorMessage = errorCode ? t("connectError") : manageErrorCode ? t("manageError") : null;
 
   const badgeStyle = {
     font: "var(--text-caption)",
@@ -41,7 +52,7 @@ export async function StripeConnectSection({
           {/* Above the button row, not inline beside it — needs to read
               as "why the action below might fail / failed", not a
               trailing caption easy to miss next to the button. */}
-          {errorCode && (
+          {errorMessage && (
             <p
               style={{
                 margin: 0,
@@ -53,7 +64,7 @@ export async function StripeConnectSection({
                 color: "crimson",
               }}
             >
-              {t("connectError")}
+              {errorMessage}
             </p>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
@@ -62,6 +73,21 @@ export async function StripeConnectSection({
               <form action={startStripeConnectOnboarding}>
                 <Button type="submit" size="sm">
                   {isConnected ? t("continueSetupButton") : t("connectButton")}
+                </Button>
+              </form>
+            )}
+            {/* The gap this closes: once active, the button above simply
+                stopped rendering — no way back into Stripe to update
+                bank details, tax info, or identity documents. Scoped to
+                isActive specifically (not isConnected broadly) so the
+                incomplete case keeps exactly one button
+                (continueSetupButton, which itself also lets a
+                practitioner finish outstanding requirements) rather than
+                showing two. */}
+            {isActive && (
+              <form action={manageStripeConnectAccount}>
+                <Button type="submit" size="sm" variant="secondary">
+                  {t("manageAccountButton")}
                 </Button>
               </form>
             )}

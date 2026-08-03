@@ -106,6 +106,42 @@ export async function createOnboardingLink(
   return link.url;
 }
 
+// Service-role read of the same column ensureConnectAccount itself
+// reads — stripe_connected_account_id is excluded from the
+// practitioner's own column grant (admin/system-only, same reasoning as
+// every other Connect-status column), so this is the only way a server
+// action can look it up. Unlike ensureConnectAccount, this never
+// creates one — the manage-account action this backs is only ever
+// reachable once an account already exists and is active.
+export async function getConnectedAccountId(practitionerId: string): Promise<string | null> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase
+    .from("practitioner_profiles")
+    .select("stripe_connected_account_id")
+    .eq("id", practitionerId)
+    .single();
+  return data?.stripe_connected_account_id ?? null;
+}
+
+// Single-use, generated fresh on every call, never stored — same
+// security shape as createOnboardingLink above. Deliberately NOT
+// stripe.accountLinks.create({ type: "account_management" }): that
+// type doesn't exist in this Stripe API version (only
+// "account_onboarding"/"account_update"), and "account_update" is
+// documented as only valid for accounts WITHOUT Stripe-hosted Dashboard
+// access — the opposite of what createConnectAccount above sets up
+// (dashboard: "express"). The correct mechanism for a dashboard:
+// "express" account is a login link, which drops the practitioner
+// straight into their own Stripe Express Dashboard to update bank
+// details, tax info, and identity documents. Unlike account links, a
+// login link takes no return_url — Stripe's Express Dashboard has its
+// own built-in way back, not a per-request parameter.
+export async function createExpressDashboardLoginLink(accountId: string): Promise<string> {
+  const stripe = getStripeClient();
+  const link = await stripe.accounts.createLoginLink(accountId);
+  return link.url;
+}
+
 // Called from the webhook route for both v2.core.account.updated and
 // v2.core.account[configuration.recipient].capability_status_updated —
 // deliberately re-fetches the account's current state rather than

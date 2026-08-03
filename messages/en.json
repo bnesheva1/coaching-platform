@@ -458,7 +458,9 @@
     },
     "connectButton": "Connect Stripe",
     "continueSetupButton": "Continue setup",
-    "connectError": "Something went wrong starting Stripe setup. Please try again."
+    "manageAccountButton": "Manage Stripe account",
+    "connectError": "Something went wrong starting Stripe setup. Please try again.",
+    "manageError": "Something went wrong opening your Stripe account. Please try again."
   },
   "Browse": {
     "title": "Find a practitioner",

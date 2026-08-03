@@ -19,6 +19,8 @@ export default async function ProfilePage({
   const resolvedSearchParams = await searchParams;
   const connectErrorParam = resolvedSearchParams.connectError;
   const connectError = typeof connectErrorParam === "string" ? connectErrorParam : null;
+  const manageErrorParam = resolvedSearchParams.manageError;
+  const manageError = typeof manageErrorParam === "string" ? manageErrorParam : null;
 
   const t = await getTranslations("Dashboard");
   const supabase = await createClient();
@@ -140,6 +142,7 @@ export default async function ProfilePage({
                 isConnected={connectStatus?.is_connected ?? false}
                 transfersActive={connectStatus?.transfers_active ?? false}
                 errorCode={connectError}
+                manageErrorCode={manageError}
               />
               <ProfileSettingsBox initialUsername={practitionerProfile?.username ?? null} />
             </>
