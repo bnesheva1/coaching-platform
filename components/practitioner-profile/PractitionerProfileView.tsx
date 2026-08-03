@@ -203,7 +203,7 @@ export function PractitionerProfileView({
     : null;
 
   return (
-    <div>
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
       {/* Renders nothing on the dashboard's own edit-tab render of this
           component (justBooked/bookingErrorCode/paymentStatus are
           always false/null/null there) — only ever opens on the public
@@ -275,72 +275,83 @@ export function PractitionerProfileView({
         )}
       </div>
 
-      {/* Identity row — portrait overlaps the banner's lower edge
-          (cover-photo style); name + specialty line beside it on
-          desktop, stacked beneath it on mobile. */}
-      <div className={styles.identityRow} style={{ padding: "0 40px" }}>
-        <div className={styles.portrait} style={{ position: "relative", flex: "none" }}>
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                border: "6px solid var(--bg-page)",
-                boxShadow: "var(--shadow-md)",
-                background: "var(--accent-subtle)",
-                color: "var(--accent-subtle-text)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                font: "var(--text-heading-lg)",
-              }}
-            >
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          {isEditing && (
-            <div style={{ position: "absolute", bottom: 0, right: 0 }}>
-              <EditableImage kind="avatar" label={t("editPhoto")}>
-                <></>
-              </EditableImage>
-            </div>
-          )}
-        </div>
+      {/* Header row: identity (portrait overlapping the banner) +
+          quote/pills/save button on the left, facts card on the right —
+          the facts card's top aligns with the portrait's top and
+          overlaps the banner the same way (matching negative margin in
+          the CSS module), only in view mode. Edit mode has no facts
+          card, just the identity block followed by the editable
+          specialty/topic sections, stacked. */}
+      <div style={{ padding: "0 40px 34px" }}>
+        <div className={styles.introRow}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 26 }}>
+            {/* Identity row — portrait overlaps the banner's lower
+                edge (cover-photo style); name + specialty line beside
+                it on desktop, stacked beneath it on mobile. A flex
+                container (not a plain block) so its own negative
+                margin-top doesn't collapse through into this parent —
+                only the identity row itself should shift up over the
+                banner, not the quote/pills below it too. */}
+            <div className={styles.identityRow}>
+              <div className={styles.portrait} style={{ position: "relative", flex: "none" }}>
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "50%",
+                      border: "6px solid var(--bg-page)",
+                      boxShadow: "var(--shadow-md)",
+                      background: "var(--accent-subtle)",
+                      color: "var(--accent-subtle-text)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      font: "var(--text-heading-lg)",
+                    }}
+                  >
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                {isEditing && (
+                  <div style={{ position: "absolute", bottom: 0, right: 0 }}>
+                    <EditableImage kind="avatar" label={t("editPhoto")}>
+                      <></>
+                    </EditableImage>
+                  </div>
+                )}
+              </div>
 
-        {isEditing ? (
-          <div style={{ paddingBottom: 12, flex: 1, minWidth: 0 }}>
-            <EditableIdentity displayName={displayName} headline={headline} location={location} />
-          </div>
-        ) : (
-          <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-            <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{displayName}</h1>
-            {specialties.length > 0 && (
-              <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
-                {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+              {isEditing ? (
+                <div style={{ paddingBottom: 12, flex: 1, minWidth: 0 }}>
+                  <EditableIdentity displayName={displayName} headline={headline} location={location} />
+                </div>
+              ) : (
+                <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+                  <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{displayName}</h1>
+                  {specialties.length > 0 && (
+                    <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
+                      {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
 
-      {/* Intro block — quote/pills/save button beside the facts card. */}
-      <div style={{ padding: "26px 40px 34px" }}>
-        {isEditing ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-            <EditableSpecialties specialties={specialties} />
-            <EditableTopics topics={topics} />
-          </div>
-        ) : (
-          <div className={styles.introRow}>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 22 }}>
+            {isEditing ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+                <EditableSpecialties specialties={specialties} />
+                <EditableTopics topics={topics} />
+              </div>
+            ) : (
+              <>
               {headline && (
                 <p style={{ margin: 0, font: "italic 400 20px/1.5 var(--font-display)", color: "var(--text-primary)", maxWidth: 440 }}>
                   &ldquo;{headline}&rdquo;
@@ -400,9 +411,21 @@ export function PractitionerProfileView({
                   </span>
                 </Button>
               </div>
-            </div>
+              </>
+            )}
+          </div>
 
-            <div className={styles.factsCard}>
+          {!isEditing && (
+            // position: relative (not just the overlap margin) is what
+            // actually puts this on top of the banner, not just next to
+            // it — the banner has position:relative too (for its own
+            // absolute-positioned decorative layer), which promotes
+            // positioned elements into a later paint pass than static
+            // ones regardless of DOM order. The portrait avoids this
+            // the same way (.portrait is also position:relative);
+            // without it here, the banner painted over the card despite
+            // coming first in the markup.
+            <div className={styles.factsCard} style={{ position: "relative" }}>
               <FactsCard
                 averageRating={averageRating}
                 reviewCount={reviews.length}
@@ -412,8 +435,8 @@ export function PractitionerProfileView({
                 timezone={timezone}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Sections — spacing alone separates them, no rule lines. */}
@@ -425,7 +448,7 @@ export function PractitionerProfileView({
             <EditableAbout bio={bio} />
           ) : bio ? (
             bio.split("\n\n").map((paragraph, i) => (
-              <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)", maxWidth: 600 }}>
+              <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
                 {paragraph}
               </p>
             ))
@@ -462,7 +485,7 @@ export function PractitionerProfileView({
               {services.map((service) => {
                 const isSelected = service.id === expandedServiceId;
                 return (
-                  <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-sm)", padding: 20 }}>
+                  <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)", padding: 20 }}>
                     <div className={rowStyles.row} style={{ gap: 20 }}>
                       {/* No image at all → no tile, no gradient
                           placeholder: the text column just takes the
@@ -555,7 +578,7 @@ export function PractitionerProfileView({
             <>
               <div className={styles.reviewsGrid}>
                 {reviews.slice(0, 6).map((review) => (
-                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
                     <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 12 }}>
                       {"★".repeat(review.rating)}
                       {"☆".repeat(5 - review.rating)}
@@ -638,7 +661,7 @@ function FactsCard({
   const tReviews = useTranslations("Reviews");
 
   return (
-    <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
+    <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
       {averageRating !== null && (
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span aria-hidden="true" style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 13 }}>

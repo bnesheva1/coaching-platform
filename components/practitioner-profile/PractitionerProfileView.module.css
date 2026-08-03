@@ -84,14 +84,22 @@
   }
 }
 
+/* Negative top margin matches .identityRow's own — both are flex items
+   of the same .introRow line, so the same shift lands the card's top
+   edge exactly on the portrait's top edge, overlapping the banner the
+   same way the portrait does. Reset to 0 on mobile, where .introRow
+   stacks (the card becomes a plain full-width block below the quote/
+   pills, not overlapping anything). */
 .factsCard {
   width: 248px;
   flex: none;
+  margin-top: -62px;
 }
 
 @media (max-width: 640px) {
   .factsCard {
     width: 100%;
+    margin-top: 0;
   }
 }
 
