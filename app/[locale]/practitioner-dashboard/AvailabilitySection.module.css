@@ -1,0 +1,19 @@
+/* The one property inline style objects can't express: a breakpoint —
+   same reasoning as components/bookings/ResponsiveImageRow.module.css,
+   same 640px cutoff used throughout this app. Save/Cancel read as the
+   row's primary, most-reached-for controls, so they sit at the natural
+   reading-flow end (right, in this app's LTR locales) once there's
+   room for that not to look stranded; full-width/left-aligned on
+   mobile, where a right-floated pair would sit awkwardly close to the
+   screen edge. */
+.saveCancelRow {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .saveCancelRow {
+    justify-content: flex-start;
+  }
+}

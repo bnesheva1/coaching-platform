@@ -17,7 +17,7 @@ export default async function SchedulePage() {
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: practitionerProfile }, { data: availabilityRules }, { data: availabilityExceptions }] =
+  const [{ data: practitionerProfile }, { data: availabilityRules }, { data: availabilityExceptions }, { count: upcomingBookingsCount }] =
     await Promise.all([
       supabase.from("practitioner_profiles").select("timezone, min_notice_hours").eq("id", userId).single(),
       supabase.from("practitioner_availability").select("id, day_of_week, start_time, end_time").eq("practitioner_id", userId),
@@ -26,6 +26,17 @@ export default async function SchedulePage() {
         .select("id, exception_date, start_time, end_time")
         .eq("practitioner_id", userId)
         .eq("exception_type", "blocked"),
+      // Shown in the "apply to weekdays/all days" confirmation, so a
+      // practitioner overwriting a chunk of their week knows upfront
+      // that this doesn't touch anything already booked — same
+      // ACTIVE_STATUSES definition as everywhere else this app
+      // distinguishes "still counts" from cancelled/completed.
+      supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("practitioner_id", userId)
+        .in("status", ["pending", "confirmed"])
+        .gte("start_utc", new Date().toISOString()),
     ]);
 
   const timezone = practitionerProfile?.timezone ?? "Europe/Sofia";
@@ -55,13 +66,32 @@ export default async function SchedulePage() {
           by everything below it but changed rarely, so it's a plain
           element up top, not buried in a card; weekly availability is
           the main task and gets the prominent middle position; blocked
-          dates next; minimum notice — set once, rarely revisited — last. */}
+          dates next; minimum notice — the only non-availability setting
+          on this page, set once and rarely revisited — is tucked into a
+          collapsed Advanced section at the very bottom instead of
+          sitting in the main flow. */}
       <div style={{ maxWidth: 500, display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
         <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("nav.schedule")}</h1>
         <TimezoneField initialTimezone={timezone} />
-        <AvailabilitySection rules={availabilityRules ?? []} timezone={timezone} />
+        <AvailabilitySection
+          rules={availabilityRules ?? []}
+          timezone={timezone}
+          exceptionsCount={upcomingExceptions.length}
+          upcomingBookingsCount={upcomingBookingsCount ?? 0}
+        />
         <AvailabilityExceptionsSection exceptions={upcomingExceptions} />
-        <MinNoticeHoursForm initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24} />
+        {/* Native <details>, same collapsed-by-default disclosure
+            pattern as PastSessionsSection.tsx — free keyboard
+            operability and an expanded/collapsed announcement to screen
+            readers with no extra aria wiring. */}
+        <details>
+          <summary style={{ cursor: "pointer", font: "var(--text-heading-md)", padding: "var(--space-2) 0" }}>
+            {t("advancedSectionTitle")}
+          </summary>
+          <div style={{ marginTop: "var(--space-3)" }}>
+            <MinNoticeHoursForm initialMinNoticeHours={practitionerProfile?.min_notice_hours ?? 24} />
+          </div>
+        </details>
       </div>
     </main>
   );

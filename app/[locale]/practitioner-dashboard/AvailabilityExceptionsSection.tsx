@@ -119,7 +119,10 @@ export function AvailabilityExceptionsSection({
   return (
     // Flat — no card wrapper around the whole section, same treatment
     // as AvailabilitySection.tsx. Each block below is its own card.
-    <section>
+    // id="blocked-dates" is the target of the "You have N blocked
+    // dates" link on AvailabilitySection.tsx, right above this section
+    // on the same page.
+    <section id="blocked-dates">
       <h2 style={{ margin: "0 0 var(--space-3)", font: "var(--text-heading-md)" }}>{t("title")}</h2>
 
       {/* Glance-able list first, same reasoning as AvailabilitySection.tsx
