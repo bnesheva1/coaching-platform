@@ -1,21 +1,31 @@
+import type { ReactNode } from "react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { MarketingConsentSection } from "./MarketingConsentSection";
+import { ChangePasswordSection } from "./ChangePasswordSection";
 import { DeleteAccountSection } from "./DeleteAccountSection";
 
 // Shared by both dashboards' own settings pages (practitioner-dashboard/
 // settings, client-dashboard/settings) — everything here is identical
-// regardless of role except displayName, which each page's own layout
-// already fetched for its own header ("Здравей, {name}") and passes
-// straight through rather than this component re-querying it.
+// regardless of role except displayName (each page's own layout already
+// fetched it for its own header, "Здравей, {name}", and passes it
+// straight through rather than this component re-querying it) and
+// practitionerOnlyContent (username + Stripe Connect — moved here from
+// the Profile tab, where Stripe in particular was easy to miss since it
+// only rendered in Edit mode; the client settings page simply never
+// passes this prop). Rendered first, above the identity-agnostic
+// sections below, since it's the more "primary" settings for the role
+// that has it.
 export async function AccountSettingsPage({
   displayName,
   marketingConsent,
   marketingConsentUpdatedAt,
+  practitionerOnlyContent,
 }: {
   displayName: string;
   marketingConsent: boolean;
   marketingConsentUpdatedAt: string | null;
+  practitionerOnlyContent?: ReactNode;
 }) {
   const t = await getTranslations("AccountSettings");
   const locale = await getLocale();
@@ -23,6 +33,10 @@ export async function AccountSettingsPage({
   return (
     <div style={{ maxWidth: 600, display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
       <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("title")}</h1>
+
+      {practitionerOnlyContent}
+
+      <ChangePasswordSection />
 
       <MarketingConsentSection initialConsent={marketingConsent} updatedAt={marketingConsentUpdatedAt} />
 

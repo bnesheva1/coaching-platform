@@ -20,7 +20,7 @@ export async function startStripeConnectOnboarding() {
   const locale = await getLocale();
 
   async function redirectWithError(code: string) {
-    redirect({ href: { pathname: "/practitioner-dashboard/profile", query: { connectError: code } }, locale });
+    redirect({ href: { pathname: "/practitioner-dashboard/settings", query: { connectError: code } }, locale });
   }
 
   const supabase = await createClient();
@@ -54,7 +54,7 @@ export async function startStripeConnectOnboarding() {
   }
 
   const origin = await siteOrigin();
-  const profilePath = `${origin}/${locale}/practitioner-dashboard/profile`;
+  const settingsPath = `${origin}/${locale}/practitioner-dashboard/settings`;
 
   // redirect()/redirectExternal() work by throwing internally — calling
   // either one from inside a try/catch would let the catch block
@@ -64,7 +64,7 @@ export async function startStripeConnectOnboarding() {
   let onboardingUrl: string;
   try {
     const accountId = await ensureConnectAccount(user.id, user.email);
-    onboardingUrl = await createOnboardingLink(accountId, profilePath, profilePath);
+    onboardingUrl = await createOnboardingLink(accountId, settingsPath, settingsPath);
   } catch (err) {
     console.error("startStripeConnectOnboarding failed", { practitionerId: user.id, err });
     await redirectWithError("connectFailed");
@@ -83,7 +83,7 @@ export async function manageStripeConnectAccount() {
   const locale = await getLocale();
 
   async function redirectWithError(code: string) {
-    redirect({ href: { pathname: "/practitioner-dashboard/profile", query: { manageError: code } }, locale });
+    redirect({ href: { pathname: "/practitioner-dashboard/settings", query: { manageError: code } }, locale });
   }
 
   const supabase = await createClient();

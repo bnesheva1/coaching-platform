@@ -64,6 +64,13 @@ export const bookingLimiter = createLimiter("rl:booking", 10, "10 m", 10 * 60 * 
 // needs one genuine completed session per review). Keyed by user id,
 // same reasoning as bookingLimiter.
 export const reviewLimiter = createLimiter("rl:review", 10, "10 m", 10 * 60 * 1000);
+// Keyed by user id, not IP — same reasoning as bookingLimiter/
+// reviewLimiter: this already requires an active session, so the
+// account itself is the more precise identifier. Deliberately as tight
+// as signupLimiter/passwordResetLimiter — a hijacked-but-not-yet-
+// password-changed session re-entering the current password wrong
+// repeatedly is exactly the abuse shape this bounds.
+export const changePasswordLimiter = createLimiter("rl:changepw", 5, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;

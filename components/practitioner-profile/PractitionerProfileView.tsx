@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { SlotPicker } from "@/components/booking/SlotPicker";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
@@ -470,9 +469,14 @@ export function PractitionerProfileView({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h2 style={{ margin: 0, font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{tPublic("servicesTitle")}</h2>
             {isEditing && (
-              <Link href="/practitioner-dashboard/services" aria-label={t("editServices")}>
-                <EditPencilButtonAsLink label={t("editServices")} />
-              </Link>
+              // A labeled button, not the small edit-pencil icon every
+              // other section here uses — those all edit inline, on
+              // this same page; this one navigates all the way to a
+              // different tab, so it reads better as a clearer,
+              // more deliberate action than a quiet icon would.
+              <Button href="/practitioner-dashboard/services" variant="secondary" size="sm">
+                {t("editServices")}
+              </Button>
             )}
           </div>
           {/* A non-owner viewer (client, or another practitioner) on a
@@ -813,32 +817,6 @@ function IconHeart({ size = 15, filled = false }: { size?: number; filled?: bool
     <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "var(--accent)" : "none"} stroke="var(--accent)" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
       <path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z" />
     </svg>
-  );
-}
-
-function EditPencilButtonAsLink({ label }: { label: string }) {
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      style={{
-        width: 26,
-        height: 26,
-        borderRadius: "50%",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        // Same sizing as EditPencilButton.tsx's 26px case (this is its
-        // Link-wrapped twin, for the services section's edit affordance).
-        font: "var(--text-caption)",
-        color: "var(--text-secondary)",
-        boxShadow: "var(--shadow-sm)",
-      }}
-    >
-      ✎
-    </span>
   );
 }
 

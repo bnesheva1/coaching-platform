@@ -5,6 +5,7 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getUpcomingBookingCountForUser } from "@/lib/services/bookingLock";
+import { checkRateLimit, changePasswordLimiter } from "@/lib/rate-limit";
 
 // Locale-independent (lives outside app/[locale], same precedent as
 // cookie-consent-actions.ts) — both actions here operate on "whoever is
@@ -27,6 +28,72 @@ export async function updateMarketingConsent(consent: boolean): Promise<{ succes
     console.error("updateMarketingConsent failed:", error);
     return { success: false };
   }
+  return { success: true };
+}
+
+export type ChangePasswordFormState = { error?: string; success?: boolean } | null;
+
+// Requires re-entering the CURRENT password, verified via a real
+// signInWithPassword call, before accepting the new one — Supabase's
+// own auth.updateUser() would happily change the password of any live
+// session with no such check, but that's the wrong boundary for this
+// specific action: a hijacked-but-unattended session (shared computer,
+// stolen token) is exactly the scenario a password change is meant to
+// lock out, and skipping this check would let that same attacker lock
+// the real owner out permanently instead. Matches how every mainstream
+// app (GitHub, Google, ...) treats this, unlike account deletion above,
+// which intentionally has no equivalent friction beyond the typed-name
+// match (deletion can't be "used against you" the same way — the worst
+// case there is just that it happened, not that someone else now
+// controls the account going forward).
+export async function changePassword(
+  _prevState: ChangePasswordFormState,
+  formData: FormData,
+): Promise<ChangePasswordFormState> {
+  const t = await getTranslations("AccountSettings");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !user.email) {
+    return { error: t("changePasswordGenericError") };
+  }
+
+  const { success: withinLimit } = await checkRateLimit(changePasswordLimiter, user.id);
+  if (!withinLimit) {
+    return { error: t("changePasswordTooManyAttempts") };
+  }
+
+  const currentPassword = (formData.get("currentPassword") as string) ?? "";
+  const newPassword = (formData.get("newPassword") as string) ?? "";
+  const confirmNewPassword = (formData.get("confirmNewPassword") as string) ?? "";
+
+  if (newPassword.length < 12) {
+    return { error: t("changePasswordTooShort") };
+  }
+  if (newPassword !== confirmNewPassword) {
+    return { error: t("changePasswordMismatch") };
+  }
+
+  // Re-authentication — this is the actual "prove you know the current
+  // password" check. Reuses the exact same call the login form itself
+  // makes; a wrong current password fails here exactly like a wrong
+  // login attempt would, before anything is changed.
+  const { error: reauthError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (reauthError) {
+    return { error: t("changePasswordCurrentIncorrect") };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+  if (updateError) {
+    console.error("changePassword: updateUser failed", { userId: user.id, error: updateError });
+    return { error: t("changePasswordGenericError") };
+  }
+
   return { success: true };
 }
 
