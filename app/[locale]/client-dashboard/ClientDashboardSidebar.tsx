@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/client-dashboard", key: "clientUpcoming", nativeAnchor: false, expandFirst: false },
   { href: "#past", key: "clientPast", nativeAnchor: true, expandFirst: true },
   { href: "#practitioners", key: "clientPractitioners", nativeAnchor: true, expandFirst: false },
+  { href: "/client-dashboard/settings", key: "settings", nativeAnchor: false, expandFirst: false },
 ] as const;
 
 // Same shell/NavItem as the practitioner dashboard's own sidebar — this

@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/practitioner-dashboard/schedule", key: "schedule" },
   { href: "/practitioner-dashboard/bookings", key: "bookings" },
   { href: "/practitioner-dashboard/reviews", key: "reviews" },
+  { href: "/practitioner-dashboard/settings", key: "settings" },
 ] as const;
 
 // No wordmark here — that lives in the top NavBar now, and repeating it

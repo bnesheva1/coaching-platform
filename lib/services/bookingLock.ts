@@ -21,3 +21,22 @@ export async function getUpcomingBookingCount(
     .gt("end_utc", new Date().toISOString());
   return count ?? 0;
 }
+
+// Account-level counterpart, used to block self-service deletion
+// (app/account-actions.ts) — same active/upcoming definition, but
+// scoped to either side of a booking rather than one service, since a
+// user's own role determines which FK ever applies to them (client_id
+// for a client, practitioner_id for a practitioner), but checking both
+// is the safer default regardless.
+export async function getUpcomingBookingCountForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .or(`client_id.eq.${userId},practitioner_id.eq.${userId}`)
+    .in("status", [...ACTIVE_STATUSES])
+    .gt("end_utc", new Date().toISOString());
+  return count ?? 0;
+}

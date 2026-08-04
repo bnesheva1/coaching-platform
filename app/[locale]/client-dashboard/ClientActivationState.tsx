@@ -11,9 +11,9 @@ import topicsData from "@/data/topics.json";
 // a second results grid competing with the real one there.
 const SUGGESTED_COUNT = 3;
 
-// Shown by client-dashboard/layout.tsx in place of any of the three
-// sections (Upcoming/Past/My practitioners) when a client has no
-// booking history at all — matches Browse's own empty-state pattern
+// Shown by client-dashboard/page.tsx (the dashboard's index route, née
+// "Предстоящи"/Upcoming) in place of its normal agenda content when a
+// client has no booking history at all — matches Browse's own empty-state pattern
 // (Card + single CTA), not the practitioner dashboard's multi-step
 // activation checklist, which is specific to setting up a bookable
 // profile and has no client equivalent. Reuses PractitionerCard (the

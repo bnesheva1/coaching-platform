@@ -4,6 +4,7 @@ import { BookingConfirmationEmail } from "./templates/BookingConfirmationEmail";
 import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
 import { ContactMessageEmail } from "./templates/ContactMessageEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
+import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
 import { provider, translator, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
 import type { SendEmailResult } from "./types";
 
@@ -462,6 +463,40 @@ export async function sendPasswordResetEmail({
     // Deliberately no actionLink/token in this log line — see the
     // module comment above.
     console.error("sendPasswordResetEmail: email failed", { error: result.error });
+  }
+  return result;
+}
+
+// Twin of sendPasswordResetEmail above — same reasoning, same
+// actionLink contract (Supabase's own admin.generateLink({ type:
+// "signup" }) output, relayed as-is, never logged). Called by
+// app/[locale]/signup/actions.ts instead of letting Supabase's built-in
+// signUp() auto-send its own confirmation email, so delivery goes
+// through this app's Resend integration like every other transactional
+// email here.
+export async function sendEmailConfirmationEmail({
+  to,
+  actionLink,
+  locale,
+}: {
+  to: string;
+  actionLink: string;
+  locale: Locale;
+}): Promise<SendEmailResult> {
+  const t = translator(locale);
+  const result = await provider.send({
+    to,
+    subject: t("emailConfirmationSubject"),
+    react: EmailConfirmationEmail({
+      heading: t("emailConfirmationHeading"),
+      body: t("emailConfirmationBody"),
+      buttonLabel: t("emailConfirmationButton"),
+      actionLink,
+      footer: t("footer"),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendEmailConfirmationEmail: email failed", { error: result.error });
   }
   return result;
 }

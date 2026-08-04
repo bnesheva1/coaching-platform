@@ -54,6 +54,10 @@
 
     "checkEmailTitle": "Check your email",
     "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in.",
+    "confirmEmailTitle": "Confirming your email",
+    "verifyingConfirmLink": "Verifying your link…",
+    "confirmLinkExpiredTitle": "This link has expired",
+    "confirmLinkExpiredBody": "Confirmation links are only valid for a short time. If you already confirmed your email, just log in below — otherwise sign up again to get a new link.",
     "forgotPasswordLink": "Forgot password?",
     "forgotPasswordTitle": "Reset your password",
     "forgotPasswordIntro": "Enter your email and we'll send you a link to reset your password.",
@@ -71,6 +75,36 @@
     "resetLinkExpiredBody": "Password reset links are only valid for a short time. Request a new one below.",
     "requestNewLinkButton": "Request a new link",
     "passwordResetSuccessBanner": "Password reset successfully — please log in."
+  },
+  "AccountSettings": {
+    "title": "Settings",
+    "marketingConsentTitle": "Marketing emails",
+    "marketingConsentDescription": "Occasional emails about new features, tips, or offers — separate from booking confirmations and other account emails, which you'll always receive regardless.",
+    "marketingConsentCheckboxLabel": "I'd like to receive marketing emails",
+    "marketingConsentSaveButton": "Save",
+    "marketingConsentSavedLabel": "Last updated: {date}",
+    "marketingConsentNotSetLabel": "Off — you haven't opted in.",
+    "cookiePreferencesTitle": "Cookie preferences",
+    "cookiePreferencesDescription": "Choose which cookies this site can use.",
+    "cookiePreferencesLink": "Manage cookie preferences",
+    "dataExportTitle": "Download your data",
+    "dataExportDescription": "Get a copy of your profile, bookings, and reviews as a JSON file.",
+    "dataExportButton": "Download my data",
+    "deleteAccountTitle": "Delete account",
+    "deleteAccountIntro": "This permanently deletes your account. This cannot be undone.",
+    "deleteAccountConsequence1": "You'll be signed out immediately and won't be able to log in again.",
+    "deleteAccountConsequence2": "Your profile information (name, bio, photos) will be removed and replaced with \"Deleted user\".",
+    "deleteAccountConsequence3": "Past bookings, reviews, and payment records are kept — for the other party's records and for legal/tax retention — but no longer linked to your identity.",
+    "deleteAccountConsequence4": "If you have any upcoming sessions, you'll need to cancel or complete them first — deletion is blocked while any are pending.",
+    "deleteAccountUpcomingBookingsBlock": "You have upcoming sessions. Cancel or complete them before deleting your account.",
+    "deleteAccountConfirmLabel": "Type your display name ({name}) to confirm",
+    "deleteAccountButton": "Permanently delete my account",
+    "deleteAccountButtonPending": "Deleting…",
+    "deleteAccountGenericError": "Something went wrong. Please try again or contact support."
+  },
+  "AccountDeleted": {
+    "title": "Your account has been deleted",
+    "body": "We're sorry to see you go. Your account has been permanently deleted and you've been signed out."
   },
   "Dashboard": {
     "practitionerTitle": "Practitioner Dashboard",
@@ -95,7 +129,8 @@
       "reviews": "Reviews",
       "clientUpcoming": "Upcoming",
       "clientPast": "Past",
-      "clientPractitioners": "My practitioners"
+      "clientPractitioners": "My practitioners",
+      "settings": "Settings"
     },
     "activation": {
       "eyebrow": "Welcome",
@@ -535,7 +570,32 @@
     "passwordResetBody": "We received a request to reset your password. Click the button below to choose a new one. This link will expire soon.",
     "passwordResetButton": "Reset password",
     "passwordResetIgnoreNote": "If you didn't request this, you can safely ignore this email — your password won't be changed.",
+    "emailConfirmationSubject": "Confirm your email address",
+    "emailConfirmationHeading": "Confirm your email address",
+    "emailConfirmationBody": "Click the button below to confirm your email address and activate your account. This link will expire soon.",
+    "emailConfirmationButton": "Confirm email",
     "footer": "This is an automated message from the coaching platform."
+  },
+  "Privacy": {
+    "metaTitle": "Privacy Policy — {siteName}",
+    "metaDescription": "How {siteName} collects, uses, and protects your personal data.",
+    "heading": "Privacy Policy",
+    "placeholderNote": "This page's final content is being finalised and will replace this placeholder — the route, layout, and translation structure are ready for it."
+  },
+  "CookieConsent": {
+    "bannerBody": "We use essential cookies to run this site (sign-in, language, theme). With your permission, we'd also like to use analytics cookies to understand how the site is used — off by default. See our <link>Privacy Policy</link> for details.",
+    "acceptAllButton": "Accept all",
+    "essentialOnlyButton": "Essential only",
+    "preferencesTitle": "Cookie preferences",
+    "preferencesIntro": "Choose which cookies this site can use. Essential cookies are always on — the site can't work without them.",
+    "essentialTitle": "Essential",
+    "essentialDescription": "Keeps you signed in, remembers your language and theme. Always on — there's no way to opt out, since the site can't function without them.",
+    "alwaysOnBadge": "Always on",
+    "analyticsTitle": "Analytics",
+    "analyticsDescription": "Would help us understand how the site is used. Not in use today — no analytics provider is connected yet — but you can opt in now so your preference is already on record if that changes.",
+    "savePreferencesButton": "Save preferences",
+    "currentChoiceLabel": "Last updated: {date}",
+    "noChoiceYetLabel": "You haven't made a choice yet."
   },
   "HowItWorks": {
     "metaTitle": "How it works — book a session in three steps",
@@ -611,6 +671,8 @@
     "faqLink": "FAQ",
     "contactLink": "Contact",
     "browseLink": "Find a practitioner",
+    "privacyLink": "Privacy Policy",
+    "cookiePreferencesLink": "Cookie preferences",
     "copyright": "© {year} {siteName}. All rights reserved."
   },
   "Contact": {

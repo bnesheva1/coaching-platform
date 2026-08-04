@@ -4,20 +4,28 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ClientDashboardSidebar } from "./ClientDashboardSidebar";
-import { ClientActivationState } from "./ClientActivationState";
 
 // Auth + role guard, mirroring practitioner-dashboard/layout.tsx —
-// hoisted here so it runs once for all three client-dashboard routes
-// instead of being duplicated in each. Owns the sidebar (same
-// DashboardShell/NavItem pattern as the practitioner dashboard, reused
-// rather than hand-rolled a second time) and the "no bookings yet"
-// activation check: a brand-new client sees the same welcome state no
-// matter which of the three sidebar links they land on or click,
-// instead of each of the three pages separately reimplementing (and
-// duplicating a bookings-existence query for) the identical empty case.
-// The top header itself now comes from the root locale layout's
-// SiteHeader (mounted once, sitewide) — this layout no longer renders
-// its own NavBar.
+// hoisted here so it runs once for every client-dashboard route instead
+// of being duplicated in each. Owns the sidebar (same DashboardShell/
+// NavItem pattern as the practitioner dashboard, reused rather than
+// hand-rolled a second time).
+//
+// The "no bookings yet" activation check used to live here too, always
+// substituting ClientActivationState for {children} regardless of which
+// route was actually requested — correct back when the only three
+// destinations under this layout were all bookings-related views where
+// that made sense, but it silently broke the moment a fourth,
+// booking-history-independent destination (settings — account deletion,
+// data export, marketing consent) was added: it made /client-dashboard/
+// settings unreachable for any client who hadn't booked yet, since the
+// layout swapped it out for the welcome screen before the settings page
+// ever got a chance to render. Server Component layouts have no way to
+// know which child route is actually being requested (confirmed against
+// Next.js's own docs — pathname is a Client Component-only concern), so
+// the fix is structural: this layout now always renders {children}
+// unconditionally, and client-dashboard/page.tsx (the one route this
+// gate actually belongs to) makes that call itself.
 export default async function ClientDashboardLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   const supabase = await createClient();
@@ -30,22 +38,12 @@ export default async function ClientDashboardLayout({ children }: { children: Re
     return null;
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role, display_name").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 
   if (profile?.role !== "client") {
     redirect({ href: "/practitioner-dashboard", locale });
     return null;
   }
 
-  const { count: bookingCount } = await supabase
-    .from("bookings")
-    .select("id", { count: "exact", head: true })
-    .eq("client_id", user.id);
-  const hasAnyBookingHistory = (bookingCount ?? 0) > 0;
-
-  return (
-    <DashboardShell sidebar={<ClientDashboardSidebar />}>
-      {hasAnyBookingHistory ? children : <ClientActivationState displayName={profile?.display_name ?? ""} />}
-    </DashboardShell>
-  );
+  return <DashboardShell sidebar={<ClientDashboardSidebar />}>{children}</DashboardShell>;
 }

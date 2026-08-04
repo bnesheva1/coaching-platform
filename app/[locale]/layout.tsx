@@ -7,6 +7,8 @@ import { routing } from "@/i18n/routing";
 import { SiteHeader } from "@/components/header/SiteHeader";
 import { SiteFooter } from "@/components/footer/SiteFooter";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
+import { CookieConsentBanner } from "@/components/cookie-consent/CookieConsentBanner";
+import { getCookieConsent } from "@/lib/cookieConsent";
 import { SITE_URL } from "@/lib/seo";
 import "../globals.css";
 
@@ -68,6 +70,10 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
+  // Read once, server-side, so a returning visitor who already chose
+  // never sees the banner flash before disappearing — it's simply never
+  // rendered in that case, not rendered-then-hidden client-side.
+  const consent = await getCookieConsent();
 
   return (
     <html
@@ -95,6 +101,7 @@ export default async function LocaleLayout({
                 pages instead of it floating up right under the content. */}
             <div style={{ flex: 1 }}>{children}</div>
             <SiteFooter />
+            {consent === null && <CookieConsentBanner />}
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

@@ -3,8 +3,10 @@
 import { headers } from "next/headers";
 import { getTranslations, getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
+import { siteOrigin } from "@/lib/siteOrigin";
+import { sendEmailConfirmationEmail, normalizeLocale } from "@/lib/email";
 
 // values echoes back displayName/email/role on a rejected submission —
 // deliberately EXCLUDES password (never echo a submitted password back
@@ -64,18 +66,32 @@ export async function signup(
     return { error: t("captchaFailed"), values };
   }
 
-  const supabase = await createClient();
   const locale = await getLocale();
+
+  // admin.generateLink (not the public signUp) — same reasoning as
+  // requestPasswordReset in forgot-password/actions.ts: creates the
+  // user and returns Supabase's own token/expiry/single-use link, but
+  // never sends an email itself, so delivery goes through this app's
+  // own Resend seam instead of Supabase's built-in SMTP. This also
+  // means signUp's old "session comes back immediately if confirmation
+  // is disabled" branch no longer applies — generateLink is an
+  // admin-side operation and never establishes a session for the
+  // calling browser either way, so every signup now goes through
+  // check-email regardless of the project's confirmation setting.
+  const supabase = createServiceRoleClient();
+  const origin = await siteOrigin();
 
   // Captured once at signup as the recipient's stored preference for
   // emails they aren't live-in-a-request for (see lib/email) — signup
   // is itself a locale-prefixed route, so this is simply "whichever
   // language they signed up in," not a separate question asked of them.
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: "signup",
     email,
     password,
     options: {
       data: { display_name: displayName, role, locale },
+      redirectTo: `${origin}/${locale}/signup/confirm`,
     },
   });
 
@@ -86,15 +102,22 @@ export async function signup(
     return { error: error.message, values };
   }
 
-  // If email confirmation is disabled on the Supabase project, signUp
-  // returns an active session immediately — otherwise the user has to
-  // click the confirmation link first.
-  if (data.session) {
-    redirect({
-      href: role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
-      locale,
-    });
-    return null;
+  // Straight to /signup/confirm, NOT through /auth/callback — same
+  // reasoning as requestPasswordReset: generateLink()'s links use the
+  // implicit flow (tokens in the URL #fragment), which never reaches
+  // the server at all, so /auth/callback's ?code= handling would never
+  // find anything to exchange.
+  const sendResult = await sendEmailConfirmationEmail({
+    to: email,
+    actionLink: data.properties.action_link,
+    locale: normalizeLocale(locale),
+  });
+  if (!sendResult.success) {
+    // The account genuinely exists at this point regardless — a failed
+    // send just means they land on check-email with nothing coming.
+    // Logged loudly since, unlike a booking notification, there's no
+    // other way for this account to ever become usable without it.
+    console.error("signup: sendEmailConfirmationEmail failed", { email, error: sendResult.error });
   }
 
   redirect({ href: "/signup/check-email", locale });

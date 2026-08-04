@@ -8,6 +8,7 @@ import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
+import { ClientActivationState } from "./ClientActivationState";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
@@ -17,10 +18,12 @@ const INTL_LOCALES: Record<string, string> = {
   en: "en-US",
 };
 
-// Auth/role guard, and the "no bookings yet" activation branch, already
-// ran in layout.tsx — this page (the sidebar's "Предстоящи"/Upcoming
-// section, and the dashboard's index route) can assume `user` is a
-// signed-in client with at least one booking ever made.
+// Auth/role guard already ran in layout.tsx. The "no bookings yet"
+// activation branch used to run there too, unconditionally substituting
+// ClientActivationState for every route under this layout — moved here
+// instead (see layout.tsx's own comment on why) since this is the only
+// route it actually applies to; a client with no bookings yet still
+// needs every other route (settings, above all) to render normally.
 export default async function ClientUpcomingPage({
   searchParams,
 }: {
@@ -47,6 +50,10 @@ export default async function ClientUpcomingPage({
       .eq("client_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
+
+  if ((bookings ?? []).length === 0) {
+    return <ClientActivationState displayName={profile?.display_name ?? ""} />;
+  }
 
   const practitionerIds = [...new Set((bookings ?? []).map((b) => b.practitioner_id))];
   const serviceIds = [...new Set((bookings ?? []).map((b) => b.service_id))];

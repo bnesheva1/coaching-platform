@@ -21,6 +21,8 @@ export async function SiteFooter() {
     { href: "/faq", label: t("faqLink") },
     { href: "/contact", label: t("contactLink") },
     { href: "/browse", label: t("browseLink") },
+    { href: "/privacy", label: t("privacyLink") },
+    { href: "/cookie-preferences", label: t("cookiePreferencesLink") },
   ];
 
   return (
