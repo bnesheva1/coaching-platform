@@ -31,11 +31,35 @@ type ReminderBatchRow = {
   practitioner_locale: string;
   practitioner_timezone: string;
   service_name: string;
+  // Read from the booking's own frozen snapshot (bookings.delivery_type/
+  // delivery_info/phone_number/meeting_link), not live from services —
+  // same fix and same reasoning as lib/email/index.ts's BookingEmailContext.
   service_delivery_type: string | null;
   service_delivery_info: string | null;
+  service_phone_number: string | null;
+  service_meeting_link: string | null;
   start_utc: string;
   end_utc: string;
 };
+
+// Mirrors lib/email/index.ts's own deliveryLabel/deliveryValue — not
+// imported from there, since this file deliberately doesn't depend on
+// index.ts (see the module comment below).
+function deliveryLabel(t: ReturnType<typeof translator>, deliveryType: string | null): string {
+  return deliveryType === "online"
+    ? t("deliveryLabelOnline")
+    : deliveryType === "phone"
+      ? t("deliveryLabelPhone")
+      : t("deliveryLabelInPerson");
+}
+
+function deliveryValue(
+  deliveryType: string | null,
+  deliveryInfo: string | null,
+  phoneNumber: string | null,
+): string | undefined {
+  return (deliveryType === "phone" ? phoneNumber : deliveryInfo) ?? undefined;
+}
 
 export type ReminderBatchResult = {
   bookingsChecked: number;
@@ -53,17 +77,13 @@ async function sendReminderTo(params: {
   serviceName: string;
   serviceDeliveryType: string | null;
   serviceDeliveryInfo: string | null;
+  servicePhoneNumber: string | null;
   startUtc: string;
   bodyKey: "reminderBodyClient" | "reminderBodyPractitioner";
 }): Promise<SendEmailResult> {
   const locale = normalizeLocale(params.locale);
   const t = translator(locale);
   const sessionTime = formatSessionTime(params.startUtc, params.timezone, locale, params.includeUtcBracket);
-  // This is the "here's where to go" moment the reminder exists for —
-  // same type-aware label as the confirmation email in lib/email/index.ts
-  // (a separate copy, not imported from there: index.ts isn't meant to
-  // be a dependency of this file, they're siblings under lib/email/).
-  const deliveryLabel = params.serviceDeliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson");
 
   return provider.send({
     to: params.email,
@@ -77,8 +97,8 @@ async function sendReminderTo(params: {
         sessionTime,
       }),
       footer: t("footer"),
-      deliveryLabel,
-      deliveryInfo: params.serviceDeliveryInfo ?? undefined,
+      deliveryLabel: deliveryLabel(t, params.serviceDeliveryType),
+      deliveryInfo: deliveryValue(params.serviceDeliveryType, params.serviceDeliveryInfo, params.servicePhoneNumber),
     }),
   });
 }
@@ -129,6 +149,7 @@ export async function sendReminderBatch(): Promise<ReminderBatchResult> {
             serviceName: row.service_name,
             serviceDeliveryType: row.service_delivery_type,
             serviceDeliveryInfo: row.service_delivery_info,
+            servicePhoneNumber: row.service_phone_number,
             startUtc: row.start_utc,
             bodyKey: "reminderBodyClient",
           });
@@ -169,6 +190,7 @@ export async function sendReminderBatch(): Promise<ReminderBatchResult> {
             serviceName: row.service_name,
             serviceDeliveryType: row.service_delivery_type,
             serviceDeliveryInfo: row.service_delivery_info,
+            servicePhoneNumber: row.service_phone_number,
             startUtc: row.start_utc,
             bodyKey: "reminderBodyPractitioner",
           });
