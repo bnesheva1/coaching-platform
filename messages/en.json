@@ -599,7 +599,7 @@
     "metaTitle": "Privacy Policy — {siteName}",
     "metaDescription": "How {siteName} collects, uses, and protects your personal data.",
     "heading": "Privacy Policy",
-    "placeholderNote": "This page's final content is being finalised and will replace this placeholder — the route, layout, and translation structure are ready for it."
+    "lastUpdatedLabel": "Last updated: {date}"
   },
   "CookieConsent": {
     "bannerBody": "We use essential cookies to run this site (sign-in, language, theme). With your permission, we'd also like to use analytics cookies to understand how the site is used — off by default. See our <link>Privacy Policy</link> for details.",
