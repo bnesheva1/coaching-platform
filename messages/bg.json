@@ -578,6 +578,7 @@
     "reminderBodyPractitioner": "Здравей, {recipientName}, това е напомняне, че твоята среща за {serviceName} със {counterpartyName} наближава на {sessionTime}.",
     "deliveryLabelOnline": "Как да се включиш",
     "deliveryLabelInPerson": "Локация",
+    "deliveryLabelPhone": "Телефонен номер",
     "amountPaidLine": "Платено: {amount}",
     "paymentRefundedSubject": "Плащането е възстановено",
     "paymentRefundedHeading": "Плащането е възстановено",

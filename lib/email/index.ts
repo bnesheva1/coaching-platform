@@ -24,8 +24,15 @@ type BookingEmailContext = {
   practitioner_locale: string;
   practitioner_timezone: string;
   service_name: string;
+  // Read from the booking's own frozen snapshot (bookings.delivery_type/
+  // delivery_info/phone_number/meeting_link), not live from services —
+  // see get_booking_email_context's own comment for why that distinction
+  // matters. Field names kept as service_* to avoid touching every call
+  // site's property access, even though the values are booking-owned.
   service_delivery_type: string | null;
   service_delivery_info: string | null;
+  service_phone_number: string | null;
+  service_meeting_link: string | null;
   start_utc: string;
   end_utc: string;
   status: string;
@@ -37,7 +44,25 @@ type BookingEmailContext = {
 // callers deliberately; reminders.ts has its own copy since it doesn't
 // import from index.ts (see the comment there for why).
 function deliveryLabel(t: ReturnType<typeof translator>, deliveryType: string | null): string {
-  return deliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson");
+  return deliveryType === "online"
+    ? t("deliveryLabelOnline")
+    : deliveryType === "phone"
+      ? t("deliveryLabelPhone")
+      : t("deliveryLabelInPerson");
+}
+
+// The value shown alongside deliveryLabel above — phone_number for a
+// phone booking, delivery_info (an address, or an online meeting link
+// from before that stopped being collected — see services-actions.ts's
+// own comment on preserving a legacy value on unrelated edits) for
+// everything else. Mirrors BookingsList.tsx's own deliveryDetailsValue
+// selection exactly, so the dashboard and the confirmation email never
+// disagree about what a booking's delivery details actually are.
+function deliveryValue(context: BookingEmailContext): string | undefined {
+  return (
+    (context.service_delivery_type === "phone" ? context.service_phone_number : context.service_delivery_info) ??
+    undefined
+  );
 }
 
 // The single data-fetch point for all of this slice's email
@@ -102,7 +127,7 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
         }),
         footer: tClient("footer"),
         deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
-        deliveryInfo: context.service_delivery_info ?? undefined,
+        deliveryInfo: deliveryValue(context),
       }),
     });
     if (!clientResult.success) {
@@ -142,7 +167,7 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
       }),
       footer: tPractitioner("footer"),
       deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
-      deliveryInfo: context.service_delivery_info ?? undefined,
+      deliveryInfo: deliveryValue(context),
     }),
   });
   if (!practitionerResult.success) {
@@ -272,7 +297,7 @@ export async function sendPaidBookingConfirmationEmails(
         }),
         footer: tClient("footer"),
         deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
-        deliveryInfo: context.service_delivery_info ?? undefined,
+        deliveryInfo: deliveryValue(context),
         amountPaidLine: tClient("amountPaidLine", { amount: formatMoney(amountPaidCents, currency, clientLocale) }),
       }),
     });
@@ -308,7 +333,7 @@ export async function sendPaidBookingConfirmationEmails(
       }),
       footer: tPractitioner("footer"),
       deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
-      deliveryInfo: context.service_delivery_info ?? undefined,
+      deliveryInfo: deliveryValue(context),
       amountPaidLine: tPractitioner("amountPaidLine", {
         amount: formatMoney(amountPaidCents, currency, practitionerLocale),
       }),

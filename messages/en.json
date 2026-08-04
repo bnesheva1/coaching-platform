@@ -580,6 +580,7 @@
     "reminderBodyPractitioner": "Hi {recipientName}, this is a reminder that your {serviceName} session with {counterpartyName} is coming up on {sessionTime}.",
     "deliveryLabelOnline": "How to join",
     "deliveryLabelInPerson": "Location",
+    "deliveryLabelPhone": "Phone number",
     "amountPaidLine": "Paid: {amount}",
     "paymentRefundedSubject": "Your payment was refunded",
     "paymentRefundedHeading": "Your payment was refunded",
