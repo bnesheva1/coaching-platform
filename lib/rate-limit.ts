@@ -71,6 +71,17 @@ export const reviewLimiter = createLimiter("rl:review", 10, "10 m", 10 * 60 * 10
 // password-changed session re-entering the current password wrong
 // repeatedly is exactly the abuse shape this bounds.
 export const changePasswordLimiter = createLimiter("rl:changepw", 5, "10 m", 10 * 60 * 1000);
+// Keyed by `${userId}:${bookingId}` (per your security spec: rate-limit
+// token generation per user per booking). A legitimate join — including
+// reconnects after a dropped connection — needs a handful of tokens over
+// a session; 20 in 10m is generous for that while bounding a script
+// minting tokens in a loop. Fresh token per join, never stored.
+export const videoTokenLimiter = createLimiter("rl:video-token", 20, "10 m", 10 * 60 * 1000);
+// The emergency-contact fallback reveal — keyed by `${userId}:${bookingId}`.
+// A client in genuine connection trouble taps this once or twice; tight
+// on purpose, since each reveal exposes the practitioner's personal
+// contact and flips the session to manual review.
+export const videoFallbackLimiter = createLimiter("rl:video-fallback", 5, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;

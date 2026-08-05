@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sendReminderBatch } from "@/lib/email/reminders";
 import { completePastBookings } from "@/lib/bookings/completePastBookings";
 import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
+import { reconcileVideoRooms } from "@/lib/video/reconcile";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
 // env var (locally AND in the Vercel project dashboard — Vercel's
@@ -33,5 +34,11 @@ export async function GET(request: Request) {
   const reconciliationResult = await reconcilePaidCheckoutSessions();
   const completionResult = await completePastBookings();
   const reminderResult = await sendReminderBatch();
-  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult });
+  // Video runaway-billing backstop, folded into the same daily job (Vercel
+  // Hobby = daily-only; see VIDEO_CONFIG.ROOM_CLOSE_SAFETY_MARGIN_MINUTES).
+  // Force-closes any room open past its window and resolves no-show
+  // outcomes for closed-but-unresolved sessions — the reconcile analog to
+  // the Stripe sweep above, and independent of any LiveKit webhook.
+  const videoResult = await reconcileVideoRooms();
+  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult });
 }

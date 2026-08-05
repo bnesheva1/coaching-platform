@@ -3,6 +3,7 @@ import { getStripeClient } from "./client";
 import { commissionCentsFor } from "./checkout";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPaidBookingConfirmationEmails, sendPaymentRefundedNotice } from "@/lib/email";
+import { ensureVideoSession } from "@/lib/video";
 
 // Signature verification needs the RAW request body — constructEvent
 // re-computes the signature over the exact bytes Stripe sent and
@@ -146,6 +147,12 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
     amountCents,
     (session.currency ?? "eur").toUpperCase(),
   );
+
+  // Create the video session for an online booking — the paid-path
+  // counterpart to bookSlot's own ensureVideoSession call. Self-guards on
+  // delivery_type (a non-online booking is a no-op) and never throws, so
+  // it can't turn a confirmed, paid booking into a webhook failure.
+  await ensureVideoSession(data.booking_id);
 }
 
 // No booking exists for this session — confirm_paid_booking's failure

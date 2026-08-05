@@ -449,6 +449,7 @@
     "slotTaken": "Sorry, that time was just taken. Please pick another.",
     "practitionerNotReady": "This practitioner hasn't finished setting up payments yet. Please check back soon.",
     "bookingFailed": "Unable to complete the booking right now. Please try again.",
+    "videoCapacityReached": "All video sessions for that time are full right now. Please pick another time.",
     "bookingsTitle": "Bookings",
     "upcomingHeading": "Upcoming",
     "pastHeading": "Past",

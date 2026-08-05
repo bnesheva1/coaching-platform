@@ -9,6 +9,7 @@ import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
 import { initiateBookingPayment } from "@/lib/payments";
+import { ensureVideoSession, videoCapacityAvailable } from "@/lib/video";
 import { siteOrigin } from "@/lib/siteOrigin";
 
 // Bound via .bind() from the button, not editable form fields — but
@@ -109,6 +110,20 @@ export async function bookSlot(
     return;
   }
 
+  // Online sessions draw on shared video capacity. Check BEFORE handing
+  // off to payment, so a commission-model client is never sent to Stripe
+  // Checkout for a session we can't host — and a software_provider client
+  // never books one either. Soft cap by design (see lib/video); this same
+  // check covers both paths because both flow through here before the
+  // paths diverge. endUtc mirrors the booking's own duration.
+  if (service.delivery_type === "online") {
+    const endUtc = new Date(new Date(startUtc).getTime() + service.duration_minutes * 60 * 1000).toISOString();
+    if (!(await videoCapacityAvailable(startUtc, endUtc))) {
+      await redirectWithError("videoCapacityReached");
+      return;
+    }
+  }
+
   const origin = await siteOrigin();
   const profilePath = `/${locale}/p/${username}`;
 
@@ -205,6 +220,15 @@ export async function bookSlot(
     .eq("id", user.id);
   if (timezoneError) {
     console.error("bookSlot: failed to refresh profiles.timezone:", timezoneError);
+  }
+
+  // Create the video session for an online booking, post-commit. Like the
+  // email send below, it's a side effect that must never fail the booking
+  // that already committed — ensureVideoSession never throws (logs
+  // internally). Self-guards on delivery_type, but gated here too to skip
+  // a pointless round-trip for phone/in-person bookings.
+  if (service.delivery_type === "online") {
+    await ensureVideoSession(booking.id);
   }
 
   // Sending happens after the booking is already committed — a failed

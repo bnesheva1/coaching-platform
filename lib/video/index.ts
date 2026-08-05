@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
-import { VIDEO_CONFIG } from "./config";
+import { VIDEO_CONFIG, maxConcurrentConnectionUnits } from "./config";
 import { liveKitProvider as provider } from "./livekit/provider";
-import type { VideoParticipantRole } from "./types";
+import type { NormalisedAttendanceEvent, VideoParticipantRole } from "./types";
 
 // THE seam. Every other module in the app calls exactly these functions
 // and never imports the LiveKit SDK, knows what a LiveKit room is, or
@@ -17,20 +17,37 @@ export { VIDEO_CONFIG, maxConcurrentConnectionUnits, liveKitPlan } from "./confi
 // Session creation
 // ---------------------------------------------------------------------------
 
-// Computes the session window from config (the single home for the
-// offsets) and creates the video_sessions row via the service-role-only
-// RPC. Idempotent — safe to call from both booking paths and from the
-// reconcile backfill. NEXT SLICE: call this from bookSlot's software_
-// provider insert and from the Stripe webhook after confirm_paid_booking.
-export async function ensureVideoSession(
-  bookingId: string,
-  startUtc: string,
-  endUtc: string,
-): Promise<void> {
-  const opensAt = new Date(new Date(startUtc).getTime() - VIDEO_CONFIG.EARLY_JOIN_MINUTES * 60_000);
-  const closesAt = new Date(new Date(endUtc).getTime() + VIDEO_CONFIG.POST_SESSION_GRACE_MINUTES * 60_000);
+// The session window for a booking: [start - EARLY_JOIN, end + GRACE],
+// computed from config (the single home for the offsets). Shared by
+// session creation and the capacity check so both reason about the exact
+// same padded window.
+function sessionWindow(startUtc: string, endUtc: string): { opensAt: Date; closesAt: Date } {
+  return {
+    opensAt: new Date(new Date(startUtc).getTime() - VIDEO_CONFIG.EARLY_JOIN_MINUTES * 60_000),
+    closesAt: new Date(new Date(endUtc).getTime() + VIDEO_CONFIG.POST_SESSION_GRACE_MINUTES * 60_000),
+  };
+}
 
+// Creates the video_sessions row for a booking, if it's online. Fetches
+// the booking's own times/type under service role, so callers pass only
+// the id — the paid path (Stripe webhook) never has end_utc to hand in,
+// and neither path should have to know the window math. Idempotent (the
+// RPC is a no-op on conflict), so it's safe from both booking paths and
+// the reconcile backfill.
+export async function ensureVideoSession(bookingId: string): Promise<void> {
   const supabase = createServiceRoleClient();
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("start_utc, end_utc, delivery_type")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !booking) {
+    console.error("ensureVideoSession: booking fetch failed", { bookingId, error: fetchError });
+    return;
+  }
+  if (booking.delivery_type !== "online") return;
+
+  const { opensAt, closesAt } = sessionWindow(booking.start_utc as string, booking.end_utc as string);
   const { error } = await supabase.rpc("ensure_video_session_for_booking", {
     p_booking_id: bookingId,
     p_opens_at: opensAt.toISOString(),
@@ -39,6 +56,28 @@ export async function ensureVideoSession(
   if (error) {
     console.error("ensureVideoSession: RPC failed", { bookingId, error });
   }
+}
+
+// Booking-time capacity gate for an online session at [startUtc, endUtc].
+// True if scheduling one more 1:1 session (its connection units) over the
+// padded window stays within the plan cap. Soft cap by design — checked
+// here, not enforced by a DB constraint (see the RPC's own comment).
+export async function videoCapacityAvailable(startUtc: string, endUtc: string): Promise<boolean> {
+  const { opensAt, closesAt } = sessionWindow(startUtc, endUtc);
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase.rpc("count_overlapping_video_connection_units", {
+    window_start: opensAt.toISOString(),
+    window_end: closesAt.toISOString(),
+  });
+  if (error) {
+    // Fail OPEN: a capacity-check outage shouldn't block bookings. The
+    // provider's own account ceiling is the ultimate backstop, and an
+    // occasional over-provision is the accepted soft-cap trade.
+    console.error("videoCapacityAvailable: count RPC failed, allowing", { error });
+    return true;
+  }
+  const inUse = (data as number | null) ?? 0;
+  return inUse + VIDEO_CONFIG.CONNECTION_UNITS_PER_1TO1_SESSION <= maxConcurrentConnectionUnits();
 }
 
 // ---------------------------------------------------------------------------
@@ -138,15 +177,22 @@ async function ensureProviderRoom(bookingId: string): Promise<void> {
 // Webhook ingestion
 // ---------------------------------------------------------------------------
 
-// Called from the LiveKit webhook route (next slice). Verifies + normalises
-// via the provider (throws on bad signature — the route maps that to 400),
-// then persists to our own tables. Participant role is resolved HERE from
-// the booking's parties, not trusted from the payload. Idempotent on
-// provider_event_id (webhook redelivery is a clean no-op).
-export async function recordVideoWebhookEvent(rawBody: string, authHeader: string | null): Promise<void> {
-  const normalised = await provider.verifyAndNormaliseEvent(rawBody, authHeader);
-  if (!normalised) return; // an event type we don't record
+// Verifies the webhook signature and normalises the payload. Throws on a
+// bad signature so the route can return 400 BEFORE the response is sent —
+// same split as the Stripe route (verify sync, process in after()).
+// Returns null for an event type we don't record.
+export async function verifyAndNormaliseVideoEvent(
+  rawBody: string,
+  authHeader: string | null,
+): Promise<NormalisedAttendanceEvent | null> {
+  return provider.verifyAndNormaliseEvent(rawBody, authHeader);
+}
 
+// Persists an already-verified, normalised event to our own tables.
+// Participant role is resolved HERE from the booking's parties, never
+// trusted from the payload. Idempotent on provider_event_id (webhook
+// redelivery is a clean no-op). Meant to run inside the route's after().
+export async function persistVideoEvent(normalised: NormalisedAttendanceEvent): Promise<void> {
   const supabase = createServiceRoleClient();
 
   const { data: session } = await supabase
