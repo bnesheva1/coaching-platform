@@ -7,6 +7,7 @@ import { GreetingText } from "@/components/dashboard/GreetingText";
 import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import { notPastEndCutoffIso, isSessionLive } from "@/lib/video/sessionWindow";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -30,6 +31,7 @@ type AgendaBooking = {
   deliveryType: "online" | "in_person" | null;
   deliveryInfo: string | null;
   startUtc: string;
+  endUtc: string;
 };
 
 // Date.now() can't be called directly inside a component body — this
@@ -39,8 +41,10 @@ type AgendaBooking = {
 // helper isn't subject to that rule.
 function buildAgendaView(upcoming: AgendaBooking[]) {
   const now = Date.now();
+  // Online sessions use the in-app video room (no external link), so they
+  // never need a "missing link" nudge — only non-online delivery does.
   const missingLinkBookings = upcoming.filter(
-    (b) => new Date(b.startUtc).getTime() - now <= MISSING_LINK_WINDOW_MS && !b.deliveryInfo,
+    (b) => b.deliveryType !== "online" && new Date(b.startUtc).getTime() - now <= MISSING_LINK_WINDOW_MS && !b.deliveryInfo,
   );
   const [nextBooking, ...restUpcoming] = upcoming;
   const upcomingThisWeek = restUpcoming.filter(
@@ -97,10 +101,12 @@ export default async function PractitionerHomePage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("id, client_id, service_id, start_utc")
+    .select("id, client_id, service_id, start_utc, end_utc")
     .eq("practitioner_id", userId)
     .in("status", ["pending", "confirmed"])
-    .gte("start_utc", new Date().toISOString())
+    // Not-past (room still open) rather than not-yet-started, so a session
+    // in progress still appears here with its join/rejoin button.
+    .gte("end_utc", notPastEndCutoffIso())
     .order("start_utc", { ascending: true });
 
   const timezone = practitionerProfile?.timezone ?? "Europe/Sofia";
@@ -299,9 +305,11 @@ export default async function PractitionerHomePage() {
     deliveryType: serviceById.get(b.service_id)?.delivery_type ?? null,
     deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
     startUtc: b.start_utc,
+    endUtc: b.end_utc,
   }));
 
   const { missingLinkBookings, nextBooking, upcomingThisWeek } = buildAgendaView(upcoming);
+  const nextIsLive = nextBooking ? isSessionLive(nextBooking.startUtc, nextBooking.endUtc) : false;
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
 
@@ -358,7 +366,7 @@ export default async function PractitionerHomePage() {
         {nextBooking && (
           <div style={{ marginBottom: "var(--space-6)" }}>
             <Card
-              eyebrow={t("agenda.nextSessionEyebrow")}
+              eyebrow={nextIsLive ? t("agenda.inProgressEyebrow") : t("agenda.nextSessionEyebrow")}
               title={`${nextBooking.serviceName} — ${nextBooking.clientName}`}
               description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
               footer={

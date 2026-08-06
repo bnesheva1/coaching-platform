@@ -4,11 +4,13 @@ import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CancelSessionDialog } from "./CancelSessionDialog";
+import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
 import { PastSessionsSection } from "./PastSessionsSection";
 import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboard/cancel-booking-actions";
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
 import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@/lib/booking-time";
 import { splitTextAndUrls } from "@/lib/linkify";
+import { sessionTimeState, withinJoinWindow } from "@/lib/video/sessionWindow";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -91,9 +93,15 @@ export type SessionBooking = {
   minNoticeHours?: number;
   hasReview?: boolean;
   // Practitioner path only: when the client used the emergency-contact
-  // fallback during this session's video call (get_my_practitioner_video_
-  // reveals). Renders a marker on the card; left undefined elsewhere.
+  // fallback during this session's video call. Renders a marker on the
+  // card; left undefined elsewhere.
   fallbackRevealedAt?: string | null;
+  // Practitioner path only: whether the emergency contact is revoked for
+  // this specific booking, and the session's opens_at (revocation is
+  // allowed only before it). Populated for online bookings with a video
+  // session; left undefined elsewhere.
+  emergencyContactRevoked?: boolean;
+  videoOpensAt?: string | null;
   // Only ever populated on the client path (a client's counterpart is a
   // practitioner, who has a public-facing photo). Left undefined on the
   // practitioner path — a client's own avatar isn't fetched there today,
@@ -122,8 +130,6 @@ function getServerTimezoneSnapshot(): string | null {
   return null;
 }
 
-const JOIN_LEAD_MS = 5 * 60 * 1000;
-const JOIN_GRACE_MS = 10 * 60 * 1000;
 
 function LinkifiedText({ text }: { text: string }) {
   return (
@@ -381,6 +387,10 @@ export function BookingsList({
   // that Past is a section on one scrollable page rather than its own
   // route. Passed straight through to PastSessionsSection.
   pastSectionId,
+  // Practitioner path only: whether the practitioner has an emergency
+  // contact set at all. When false there's nothing to revoke, so the
+  // per-booking revoke control isn't shown.
+  hasEmergencyContact = false,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -388,6 +398,7 @@ export function BookingsList({
   timezone?: string;
   premium?: boolean;
   nextSessionShownSeparately?: boolean;
+  hasEmergencyContact?: boolean;
   showUpcomingSection?: boolean;
   showPastSection?: boolean;
   pastStartsExpanded?: boolean;
@@ -493,15 +504,20 @@ export function BookingsList({
               </p>
             );
 
-            // In-app video join for online sessions. Shown only around the
-            // session window; the room route does the exact gating. Both
-            // parties reach the same room, same tab.
+            // Time state (upcoming / in-progress / past), from the same
+            // config-driven window the room uses. Drives both the "Сесията
+            // тече" label and the join/rejoin button's visibility.
+            const timeState = nowMs !== null ? sessionTimeState(booking.startUtc, booking.endUtc, nowMs) : null;
+            const isLive = timeState === "in_progress" && ACTIVE_STATUSES.has(booking.status);
+            const statusLabel = isLive ? t("statusInProgress") : t(statusKeys[booking.status]);
+
+            // In-app video join/rejoin for online sessions — visible across
+            // the whole live window [start-early, end+grace], for both
+            // parties, covering the first join AND every reconnect. The
+            // room route does the exact gating.
             const isVideoSession = booking.deliveryType === "online";
-            const withinJoinWindow =
-              nowMs !== null &&
-              nowMs >= new Date(booking.startUtc).getTime() - JOIN_LEAD_MS &&
-              nowMs <= new Date(booking.endUtc).getTime() + JOIN_GRACE_MS;
-            const joinSlot = isVideoSession && ACTIVE_STATUSES.has(booking.status) && withinJoinWindow && (
+            const isJoinable = nowMs !== null && withinJoinWindow(booking.startUtc, booking.endUtc, nowMs);
+            const joinSlot = isVideoSession && ACTIVE_STATUSES.has(booking.status) && isJoinable && (
               <Link
                 href={`/session/${booking.id}`}
                 className="focus-ring"
@@ -539,6 +555,22 @@ export function BookingsList({
               </p>
             );
 
+            // Practitioner-only, per-booking emergency-contact revocation —
+            // shown only while it's still changeable: the practitioner has a
+            // contact set, it's an active online booking, and the session
+            // window hasn't opened yet (server enforces the exact cutoff).
+            const canRevoke =
+              perspective === "practitioner" &&
+              hasEmergencyContact &&
+              booking.deliveryType === "online" &&
+              ACTIVE_STATUSES.has(booking.status) &&
+              !!booking.videoOpensAt &&
+              nowMs !== null &&
+              nowMs < new Date(booking.videoOpensAt).getTime();
+            const revokeControl = canRevoke && (
+              <EmergencyContactRevokeControl bookingId={booking.id} revoked={!!booking.emergencyContactRevoked} />
+            );
+
             if (premium) {
               // Same structural pattern as the client dashboard's next-
               // session hero (image, then time/name/identity stacked) —
@@ -568,8 +600,8 @@ export function BookingsList({
                       <span className={rowStyles.inlineSeparator} style={{ color: "var(--text-tertiary)" }} aria-hidden="true">
                         ·
                       </span>
-                      <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-                        {t(statusKeys[booking.status])}
+                      <p style={{ margin: 0, font: "var(--text-body-sm)", color: isLive ? "var(--accent)" : "var(--text-tertiary)" }}>
+                        {statusLabel}
                       </p>
                     </div>
                     {/* Same service-name+chip row as the hero ("[service]
@@ -586,6 +618,7 @@ export function BookingsList({
                     {deliverySlot}
                     {joinSlot}
                     {revealMarker}
+                    {revokeControl}
                     <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                     {cancelSlot}
                   </div>
@@ -608,11 +641,12 @@ export function BookingsList({
                   {t(counterpartLabelKey, { name: booking.counterpartName })}
                 </p>
                 <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-                  {booking.serviceName} · {t(statusKeys[booking.status])}
+                  {booking.serviceName} · <span style={isLive ? { color: "var(--accent)" } : undefined}>{statusLabel}</span>
                 </p>
                 {deliverySlot}
                 {joinSlot}
                 {revealMarker}
+                {revokeControl}
                 <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                 {cancelSlot}
               </div>

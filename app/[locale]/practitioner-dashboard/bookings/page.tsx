@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { BookingsList, type SessionBooking } from "@/components/bookings/BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
+import { getEmergencyContact } from "@/lib/profile/emergencyContact";
 
 // Auth/role guard already ran in the shared layout.tsx. Full history
 // (upcoming, past, cancelled) — the new 6th nav item ("Резервации") that
@@ -40,23 +41,28 @@ export default async function BookingsPage({
   // from the general column grant, same as before — this RPC is the
   // only way to read it, now keyed by booking_id and no longer status-
   // scoped, so it also covers this page's past-bookings list.
-  const [{ data: clients }, { data: contactInfoRows }, { data: revealRows }] = await Promise.all([
+  const [{ data: clients }, { data: contactInfoRows }, { data: sessionStateRows }, emergencyContact] = await Promise.all([
     clientIds.length > 0
       ? supabase.from("profiles").select("id, display_name").in("id", clientIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
     supabase.rpc("get_my_confirmed_bookings_contact_info") as unknown as Promise<{
       data: { booking_id: string; phone_number: string | null; meeting_link: string | null; delivery_info: string | null }[] | null;
     }>,
-    // Emergency-contact reveals on this practitioner's own bookings, so
-    // each card can show that (and when) the client used the fallback.
-    supabase.rpc("get_my_practitioner_video_reveals") as unknown as Promise<{
-      data: { booking_id: string; revealed_at: string }[] | null;
+    // Per-booking video state: the reveal time (marker), the revoke flag,
+    // and opens_at (so the revoke control knows if it's still changeable).
+    supabase.rpc("get_my_practitioner_video_session_states") as unknown as Promise<{
+      data: { booking_id: string; emergency_contact_revoked: boolean; opens_at: string; revealed_at: string | null }[] | null;
     }>,
+    // Whether the practitioner has an emergency contact set at all — read
+    // via service role (excluded from the client column grant). Gates the
+    // per-booking revoke control (nothing to revoke without one).
+    getEmergencyContact(userId),
   ]);
 
   const clientNameById = new Map((clients ?? []).map((c) => [c.id, c.display_name ?? ""]));
   const contactInfoByBookingId = new Map((contactInfoRows ?? []).map((row) => [row.booking_id, row]));
-  const revealedAtByBookingId = new Map((revealRows ?? []).map((row) => [row.booking_id, row.revealed_at]));
+  const sessionStateByBookingId = new Map((sessionStateRows ?? []).map((row) => [row.booking_id, row]));
+  const hasEmergencyContact = !!emergencyContact;
 
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
@@ -77,7 +83,9 @@ export default async function BookingsPage({
     priceCents: b.price_cents,
     currency: b.currency,
     createdAt: b.created_at,
-    fallbackRevealedAt: revealedAtByBookingId.get(b.id) ?? null,
+    fallbackRevealedAt: sessionStateByBookingId.get(b.id)?.revealed_at ?? null,
+    emergencyContactRevoked: sessionStateByBookingId.get(b.id)?.emergency_contact_revoked ?? false,
+    videoOpensAt: sessionStateByBookingId.get(b.id)?.opens_at ?? null,
   }));
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);
@@ -101,6 +109,7 @@ export default async function BookingsPage({
           past={pastBookings}
           perspective="practitioner"
           timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
+          hasEmergencyContact={hasEmergencyContact}
         />
       </div>
     </main>

@@ -7,6 +7,7 @@ import { GreetingText } from "@/components/dashboard/GreetingText";
 import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
+import { isSessionLive } from "@/lib/video/sessionWindow";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
@@ -119,6 +120,9 @@ export default async function ClientUpcomingPage({
   // there's nothing to attend. The hero must be the earliest booking
   // that's actually still happening.
   const nextBooking = upcoming.find((b) => ACTIVE_STATUSES.has(b.status)) ?? null;
+  // Instant comparison (timezone-independent), so it's safe to compute
+  // server-side for the eyebrow label — is the hero session live right now?
+  const nextIsLive = nextBooking ? isSessionLive(nextBooking.startUtc, nextBooking.endUtc) : false;
 
   // The client's own timezone for display: their saved profiles.timezone
   // wins, resolved client-side (falling back to the browser guess, then
@@ -208,7 +212,7 @@ export default async function ClientUpcomingPage({
                 beside it in the content column) — it labels the whole
                 card, image included, not just the text half. */}
             <span style={{ font: "var(--text-overline)", letterSpacing: "var(--letter-overline)", textTransform: "uppercase", color: "var(--accent)" }}>
-              {t("agenda.nextSessionEyebrow")}
+              {nextIsLive ? t("agenda.inProgressEyebrow") : t("agenda.nextSessionEyebrow")}
             </span>
 
             <div className={rowStyles.row} style={{ gap: "var(--space-5)" }}>

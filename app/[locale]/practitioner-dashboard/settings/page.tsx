@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { AccountSettingsPage } from "@/components/settings/AccountSettingsPage";
 import { StripeConnectSection } from "@/components/practitioner-profile/StripeConnectSection";
 import { UsernameSection } from "@/components/settings/UsernameSection";
+import { EmergencyContactField } from "@/components/settings/EmergencyContactField";
+import { getEmergencyContact } from "@/lib/profile/emergencyContact";
 
 // Auth/role guard already ran in the shared layout.tsx.
 export default async function PractitionerSettingsPage({
@@ -23,10 +25,12 @@ export default async function PractitionerSettingsPage({
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: connectStatusRaw }] = await Promise.all([
+  const [{ data: profile }, { data: practitionerProfile }, { data: connectStatusRaw }, emergencyContact] = await Promise.all([
     supabase.from("profiles").select("display_name, marketing_consent, marketing_consent_updated_at").eq("id", userId).single(),
     supabase.from("practitioner_profiles").select("username").eq("id", userId).single(),
     supabase.rpc("get_my_connect_status").single(),
+    // Excluded from the client column grant — read via service role.
+    getEmergencyContact(userId),
   ]);
 
   const connectStatus = connectStatusRaw as { is_connected: boolean; transfers_active: boolean } | null;
@@ -46,6 +50,7 @@ export default async function PractitionerSettingsPage({
               manageErrorCode={manageError}
             />
             <UsernameSection initialUsername={practitionerProfile?.username ?? null} />
+            <EmergencyContactField initialContact={emergencyContact} />
           </>
         }
       />
