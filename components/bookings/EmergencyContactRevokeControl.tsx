@@ -2,9 +2,21 @@
 
 import { useRef, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/Button";
 import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import { setBookingEmergencyContactRevoked } from "@/app/[locale]/practitioner-dashboard/emergency-contact-actions";
+
+// The revoke/restore action reads as an inline text link at the end of the
+// explanatory sentence — same accent-colored, borderless treatment as the
+// other inline links in this app (e.g. ClientTimezoneNotice), not a button.
+const linkStyle = {
+  background: "none",
+  border: "none",
+  padding: 0,
+  margin: 0,
+  font: "inherit",
+  color: "var(--accent)",
+  cursor: "pointer",
+} as const;
 
 // Per-booking, in-advance revocation of the emergency contact, shown on a
 // practitioner's upcoming online booking — but only rendered by BookingsList
@@ -18,43 +30,44 @@ export function EmergencyContactRevokeControl({ bookingId, revoked }: { bookingI
   const dialogRef = useRef<ConfirmDialogHandle>(null);
 
   return (
-    <div
-      style={{
-        marginTop: "var(--space-3)",
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        gap: "var(--space-2)",
-        font: "var(--text-body-sm)",
-        color: "var(--text-tertiary)",
-      }}
-    >
-      <span>{revoked ? t("emergencyContactRevokedForSession") : t("emergencyContactAvailableForSession")}</span>
-      {revoked ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={pending}
-          onClick={() => startTransition(() => setBookingEmergencyContactRevoked(bookingId, false).then(() => {}))}
-        >
-          {t("emergencyContactRestore")}
-        </Button>
-      ) : (
-        <>
-          <Button type="button" variant="ghost" size="sm" onClick={() => dialogRef.current?.open()}>
+    <>
+      <p
+        style={{
+          margin: "var(--space-3) 0 0",
+          font: "var(--text-body-sm)",
+          color: "var(--text-tertiary)",
+        }}
+      >
+        {revoked ? t("emergencyContactRevokedForSession") : t("emergencyContactAvailableForSession")}{" "}
+        {revoked ? (
+          <button
+            type="button"
+            className="focus-ring"
+            disabled={pending}
+            onClick={() => startTransition(() => setBookingEmergencyContactRevoked(bookingId, false).then(() => {}))}
+            style={{ ...linkStyle, cursor: pending ? "default" : "pointer", opacity: pending ? 0.6 : 1 }}
+          >
+            {t("emergencyContactRestore")}
+          </button>
+        ) : (
+          <button type="button" className="focus-ring" onClick={() => dialogRef.current?.open()} style={linkStyle}>
             {t("emergencyContactRevoke")}
-          </Button>
-          <ConfirmDialog
-            ref={dialogRef}
-            title={t("emergencyContactRevokeTitle")}
-            message={t("emergencyContactRevokeWarning")}
-            confirmLabel={t("emergencyContactRevoke")}
-            cancelLabel={t("emergencyContactRevokeCancel")}
-            action={() => setBookingEmergencyContactRevoked(bookingId, true).then(() => {})}
-          />
-        </>
+          </button>
+        )}
+      </p>
+      {/* Native <dialog> must sit outside the <p> — it's flow content and
+          would otherwise auto-close the paragraph. The ref wires it to the
+          inline link above. */}
+      {!revoked && (
+        <ConfirmDialog
+          ref={dialogRef}
+          title={t("emergencyContactRevokeTitle")}
+          message={t("emergencyContactRevokeWarning")}
+          confirmLabel={t("emergencyContactRevoke")}
+          cancelLabel={t("emergencyContactRevokeCancel")}
+          action={() => setBookingEmergencyContactRevoked(bookingId, true).then(() => {})}
+        />
       )}
-    </div>
+    </>
   );
 }
