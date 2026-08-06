@@ -1,5 +1,5 @@
 import { getTranslations, getLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
 import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
 import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancelAction";
@@ -241,27 +241,14 @@ export default async function ClientUpcomingPage({
                     line. Full width on mobile via .tile, content-sized
                     on desktop. */}
                 {nextBooking.deliveryType === "online" ? (
-                  // Online sessions always use the in-app video room — same
-                  // tab, seamless. The session route itself gates on the
-                  // join window (countdown if early), so linking any time
-                  // before the session is fine.
-                  <Link
-                    href={`/session/${nextBooking.id}`}
-                    className={rowStyles.tile}
-                    style={{
-                      alignSelf: "flex-start",
-                      display: "inline-block",
-                      textAlign: "center",
-                      padding: "var(--button-padding-md)",
-                      borderRadius: "var(--radius-md)",
-                      background: "var(--accent)",
-                      color: "var(--text-on-accent)",
-                      font: "var(--text-button-md)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {t("agenda.joinSession")}
-                  </Link>
+                  // Same shared join/rejoin affordance the sessions list
+                  // uses, so the hero and the list read identically.
+                  <JoinSessionLink
+                    bookingId={nextBooking.id}
+                    startUtc={nextBooking.startUtc}
+                    endUtc={nextBooking.endUtc}
+                    savedTimezone={savedTz}
+                  />
                 ) : nextBooking.deliveryInfo ? (
                   <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                     {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}

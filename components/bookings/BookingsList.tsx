@@ -2,7 +2,6 @@
 
 import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
 import { PastSessionsSection } from "./PastSessionsSection";
@@ -10,7 +9,8 @@ import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboa
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
 import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@/lib/booking-time";
 import { splitTextAndUrls } from "@/lib/linkify";
-import { sessionTimeState, withinJoinWindow } from "@/lib/video/sessionWindow";
+import { sessionTimeState } from "@/lib/video/sessionWindow";
+import { JoinSessionLink } from "./JoinSessionLink";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -511,31 +511,20 @@ export function BookingsList({
             const isLive = timeState === "in_progress" && ACTIVE_STATUSES.has(booking.status);
             const statusLabel = isLive ? t("statusInProgress") : t(statusKeys[booking.status]);
 
-            // In-app video join/rejoin for online sessions — visible across
-            // the whole live window [start-early, end+grace], for both
-            // parties, covering the first join AND every reconnect. The
-            // room route does the exact gating.
+            // In-app video join/rejoin for online sessions. Same shared
+            // affordance the dashboard "next session" hero uses, so the two
+            // surfaces stay identical: always shown for an active online
+            // booking (the /session route gates the room and shows a live
+            // countdown when opened early), reading "opens at HH:MM" before
+            // the window and "in progress" while live.
             const isVideoSession = booking.deliveryType === "online";
-            const isJoinable = nowMs !== null && withinJoinWindow(booking.startUtc, booking.endUtc, nowMs);
-            const joinSlot = isVideoSession && ACTIVE_STATUSES.has(booking.status) && isJoinable && (
-              <Link
-                href={`/session/${booking.id}`}
-                className="focus-ring"
-                style={{
-                  marginTop: "var(--space-3)",
-                  alignSelf: "flex-start",
-                  display: "inline-block",
-                  textAlign: "center",
-                  padding: "var(--button-padding-md)",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--accent)",
-                  color: "var(--text-on-accent)",
-                  font: "var(--text-button-md)",
-                  textDecoration: "none",
-                }}
-              >
-                {t("joinVideoSession")}
-              </Link>
+            const joinSlot = isVideoSession && ACTIVE_STATUSES.has(booking.status) && (
+              <JoinSessionLink
+                bookingId={booking.id}
+                startUtc={booking.startUtc}
+                endUtc={booking.endUtc}
+                savedTimezone={timezone ?? null}
+              />
             );
 
             // Practitioner-only marker: the client used the emergency

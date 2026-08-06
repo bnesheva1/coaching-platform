@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { GreetingText } from "@/components/dashboard/GreetingText";
 import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
-import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
 import { notPastEndCutoffIso, isSessionLive } from "@/lib/video/sessionWindow";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -372,25 +372,14 @@ export default async function PractitionerHomePage() {
               footer={
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                   {nextBooking.deliveryType === "online" ? (
-                    // Online sessions always use the in-app video room —
-                    // same tab. The session route gates on the join window.
-                    <Link
-                      href={`/session/${nextBooking.id}`}
-                      className={rowStyles.tile}
-                      style={{
-                        display: "inline-block",
-                        textAlign: "center",
-                        padding: "var(--button-padding-md)",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--accent)",
-                        color: "var(--text-on-accent)",
-                        font: "var(--text-button-md)",
-                        textDecoration: "none",
-                        alignSelf: "flex-start",
-                      }}
-                    >
-                      {t("agenda.joinSession")}
-                    </Link>
+                    // Same shared join/rejoin affordance the sessions list
+                    // uses, so the two surfaces read identically.
+                    <JoinSessionLink
+                      bookingId={nextBooking.id}
+                      startUtc={nextBooking.startUtc}
+                      endUtc={nextBooking.endUtc}
+                      savedTimezone={timezone}
+                    />
                   ) : nextBooking.deliveryInfo ? (
                     <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                       {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
