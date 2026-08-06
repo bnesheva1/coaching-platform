@@ -46,11 +46,10 @@ function buildAgendaView(upcoming: AgendaBooking[]) {
   const missingLinkBookings = upcoming.filter(
     (b) => b.deliveryType !== "online" && new Date(b.startUtc).getTime() - now <= MISSING_LINK_WINDOW_MS && !b.deliveryInfo,
   );
-  const [nextBooking, ...restUpcoming] = upcoming;
-  const upcomingThisWeek = restUpcoming.filter(
-    (b) => new Date(b.startUtc).getTime() - now <= 7 * 24 * 60 * 60 * 1000,
-  );
-  return { missingLinkBookings, nextBooking, upcomingThisWeek };
+  // The home shows only the single next/in-progress session; the full list
+  // lives in the Sessions tab, reached via the "manage bookings" button.
+  const [nextBooking] = upcoming;
+  return { missingLinkBookings, nextBooking };
 }
 
 // Auth/role guard already ran in layout.tsx — this page can assume
@@ -308,7 +307,7 @@ export default async function PractitionerHomePage() {
     endUtc: b.end_utc,
   }));
 
-  const { missingLinkBookings, nextBooking, upcomingThisWeek } = buildAgendaView(upcoming);
+  const { missingLinkBookings, nextBooking } = buildAgendaView(upcoming);
   const nextIsLive = nextBooking ? isSessionLive(nextBooking.startUtc, nextBooking.endUtc) : false;
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
@@ -386,13 +385,9 @@ export default async function PractitionerHomePage() {
                     </p>
                   ) : null}
 
-                  {/* This card is the only place a practitioner with
-                      exactly one upcoming booking ever sees it — the
-                      upcoming-this-week list below deliberately excludes
-                      whichever booking is shown here (buildAgendaView's
-                      own [nextBooking, ...restUpcoming] split), to avoid
-                      showing it twice. Without this, that common case had
-                      no way to cancel at all. */}
+                  {/* The home shows only this one session, so its cancel
+                      action has to live here — the rest of the list is in
+                      the Sessions tab. */}
                   <div style={{ alignSelf: "flex-end" }}>
                     <CancelSessionDialog
                       counterpartName={nextBooking.clientName}
@@ -407,33 +402,9 @@ export default async function PractitionerHomePage() {
           </div>
         )}
 
-        <h2 style={{ font: "var(--text-heading-md)", margin: "0 0 var(--space-4)" }}>{t("agenda.upcomingWeekHeading")}</h2>
-        {upcomingThisWeek.length === 0 ? (
-          <p style={{ color: "var(--text-secondary)" }}>{t("agenda.noUpcomingThisWeek")}</p>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {upcomingThisWeek.map((b) => (
-              <li
-                key={b.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-4)",
-                  padding: "var(--space-4) 0",
-                  borderBottom: "1px solid var(--border-subtle)",
-                }}
-              >
-                <span>
-                  <strong>{formatter.format(new Date(b.startUtc))}</strong> — {tBooking("withClient", { name: b.clientName })} · {b.serviceName} ·{" "}
-                  {tPublicProfile("serviceDuration", { minutes: b.durationMinutes })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div style={{ marginTop: "var(--space-4)" }}>
+        <div>
           <Button href="/practitioner-dashboard/bookings" variant="secondary">
-            {t("agenda.showAllSessions")}
+            {t("agenda.manageBookings")}
           </Button>
         </div>
       </div>

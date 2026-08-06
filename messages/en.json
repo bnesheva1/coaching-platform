@@ -210,12 +210,10 @@
       "addLink": "Add",
       "nextSessionEyebrow": "Next session",
       "inProgressEyebrow": "Session in progress",
-      "upcomingWeekHeading": "Upcoming this week",
-      "noUpcomingThisWeek": "No upcoming sessions this week.",
       "timezoneNotice": "Times shown in {timezone}",
       "timezoneChangeLink": "Change in settings",
       "timezoneTooltip": "Select your timezone in settings",
-      "showAllSessions": "Show all booked sessions"
+      "manageBookings": "Manage your bookings"
     },
     "clientEmptyState": {
       "title": "You haven't booked a session yet",

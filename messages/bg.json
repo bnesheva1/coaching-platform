@@ -208,12 +208,10 @@
       "addLink": "Добави",
       "nextSessionEyebrow": "Следваща сесия",
       "inProgressEyebrow": "Сесията тече",
-      "upcomingWeekHeading": "Предстоящи тази седмица",
-      "noUpcomingThisWeek": "Няма предстоящи сесии тази седмица.",
       "timezoneNotice": "Часовете са показани в {timezone}",
       "timezoneChangeLink": "Промени в настройките",
       "timezoneTooltip": "Избери своята часова зона в настройките",
-      "showAllSessions": "Покажи всички резервирани сесии"
+      "manageBookings": "Управлявай резервациите си"
     },
     "clientEmptyState": {
       "title": "Все още нямаш запазена консултация",
