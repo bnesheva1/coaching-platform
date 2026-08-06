@@ -217,20 +217,22 @@ export function NavBar({
         </div>
       </ContentContainer>
 
-      {/* A real off-canvas drawer, same mechanism as DashboardShell's
-          mobile sidebar (fixed, full height, left-anchored, width-
-          animated). Always mounted once mobile (width animates 0 →
-          open) so it slides rather than just appearing. */}
+      {/* A real off-canvas drawer, anchored to the RIGHT edge and slid in
+          with a transform (translateX 100% → 0) so it enters and leaves
+          from the right. Always mounted once mobile; `inert` when closed
+          keeps its off-screen links out of the tab order and untouchable. */}
       {isMobile && (
         <div
+          inert={!menuOpen}
           style={{
             position: "fixed",
             top: 0,
             bottom: 0,
-            left: 0,
-            width: menuOpen ? "min(260px, 80vw)" : 0,
+            right: 0,
+            width: "min(260px, 80vw)",
             overflow: "hidden",
-            transition: "width var(--duration-base) var(--ease-standard)",
+            transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform var(--duration-base) var(--ease-standard)",
             background: "var(--bg-surface)",
             boxShadow: menuOpen ? "var(--shadow-lg)" : "none",
             zIndex: 41,
