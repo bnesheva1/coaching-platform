@@ -8,7 +8,7 @@ import { PastSessionsSection } from "./PastSessionsSection";
 import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboard/cancel-booking-actions";
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
 import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@/lib/booking-time";
-import { splitTextAndUrls, toExternalHref } from "@/lib/linkify";
+import { splitTextAndUrls } from "@/lib/linkify";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -477,12 +477,10 @@ export function BookingsList({
               </div>
             );
 
-            // Lighter affordance than a filled block, deliberately: on a
-            // premium card the imminent session already has "Join
-            // session" as a real button in the dashboard hero, so this
-            // is a quiet reference line on every other card, not a
-            // second competing CTA.
-            const deliverySlot = booking.deliveryInfo && (
+            // In-person address reference line. Online sessions no longer
+            // show a delivery line here — they always use the in-app video
+            // room (the join button below), never an external link.
+            const deliverySlot = booking.deliveryType === "in_person" && booking.deliveryInfo && (
               <p
                 style={{
                   margin: `${premium ? "var(--space-2)" : "var(--space-3)"} 0 0`,
@@ -490,34 +488,15 @@ export function BookingsList({
                   color: "var(--text-secondary)",
                 }}
               >
-                <span style={{ color: "var(--text-tertiary)" }}>
-                  {booking.deliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson")}:
-                </span>{" "}
-                {booking.deliveryType === "online" ? (
-                  // For an online session the whole value IS the meeting
-                  // link — render it clickable with an absolute href, even
-                  // when the practitioner pasted it without a scheme
-                  // ("www.myroom.com"), which a bare href would treat as a
-                  // relative path (a 404). In-person addresses stay as
-                  // linkified text below.
-                  <a
-                    href={toExternalHref(booking.deliveryInfo)}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    {booking.deliveryInfo}
-                  </a>
-                ) : (
-                  <LinkifiedText text={booking.deliveryInfo} />
-                )}
+                <span style={{ color: "var(--text-tertiary)" }}>{t("deliveryLabelInPerson")}:</span>{" "}
+                <LinkifiedText text={booking.deliveryInfo} />
               </p>
             );
 
-            // In-app video join for online sessions with no external link
-            // (LiveKit). Shown only around the session window; the room
-            // route does the exact gating. Both parties reach the same room.
-            const isVideoSession = booking.deliveryType === "online" && !booking.deliveryInfo;
+            // In-app video join for online sessions. Shown only around the
+            // session window; the room route does the exact gating. Both
+            // parties reach the same room, same tab.
+            const isVideoSession = booking.deliveryType === "online";
             const withinJoinWindow =
               nowMs !== null &&
               nowMs >= new Date(booking.startUtc).getTime() - JOIN_LEAD_MS &&

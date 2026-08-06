@@ -7,7 +7,6 @@ import { GreetingText } from "@/components/dashboard/GreetingText";
 import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
-import { toExternalHref } from "@/lib/linkify";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -364,11 +363,11 @@ export default async function PractitionerHomePage() {
               description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
               footer={
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-                  {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
-                    <a
-                      href={toExternalHref(nextBooking.deliveryInfo)}
-                      target="_blank"
-                      rel="noreferrer"
+                  {nextBooking.deliveryType === "online" ? (
+                    // Online sessions always use the in-app video room —
+                    // same tab. The session route gates on the join window.
+                    <Link
+                      href={`/session/${nextBooking.id}`}
                       className={rowStyles.tile}
                       style={{
                         display: "inline-block",
@@ -383,7 +382,7 @@ export default async function PractitionerHomePage() {
                       }}
                     >
                       {t("agenda.joinSession")}
-                    </a>
+                    </Link>
                   ) : nextBooking.deliveryInfo ? (
                     <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                       {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}

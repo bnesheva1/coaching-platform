@@ -6,7 +6,6 @@ import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancel
 import { GreetingText } from "@/components/dashboard/GreetingText";
 import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
-import { toExternalHref } from "@/lib/linkify";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
@@ -238,52 +237,27 @@ export default async function ClientUpcomingPage({
                     line. Full width on mobile via .tile, content-sized
                     on desktop. */}
                 {nextBooking.deliveryType === "online" ? (
-                  nextBooking.deliveryInfo ? (
-                    // Legacy online booking with an external meeting link
-                    // (a pre-LiveKit Zoom-style URL) — keep opening it
-                    // directly. New online bookings snapshot no
-                    // deliveryInfo and route to the in-app video room below.
-                    <a
-                      href={toExternalHref(nextBooking.deliveryInfo)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={rowStyles.tile}
-                      style={{
-                        alignSelf: "flex-start",
-                        display: "inline-block",
-                        textAlign: "center",
-                        padding: "var(--button-padding-md)",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--accent)",
-                        color: "var(--text-on-accent)",
-                        font: "var(--text-button-md)",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {t("agenda.joinSession")}
-                    </a>
-                  ) : (
-                    // In-app LiveKit video room. The session route gates on
-                    // the join window itself (shows a countdown if early),
-                    // so it's safe to link at any time before the session.
-                    <Link
-                      href={`/session/${nextBooking.id}`}
-                      className={rowStyles.tile}
-                      style={{
-                        alignSelf: "flex-start",
-                        display: "inline-block",
-                        textAlign: "center",
-                        padding: "var(--button-padding-md)",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--accent)",
-                        color: "var(--text-on-accent)",
-                        font: "var(--text-button-md)",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {t("agenda.joinSession")}
-                    </Link>
-                  )
+                  // Online sessions always use the in-app video room — same
+                  // tab, seamless. The session route itself gates on the
+                  // join window (countdown if early), so linking any time
+                  // before the session is fine.
+                  <Link
+                    href={`/session/${nextBooking.id}`}
+                    className={rowStyles.tile}
+                    style={{
+                      alignSelf: "flex-start",
+                      display: "inline-block",
+                      textAlign: "center",
+                      padding: "var(--button-padding-md)",
+                      borderRadius: "var(--radius-md)",
+                      background: "var(--accent)",
+                      color: "var(--text-on-accent)",
+                      font: "var(--text-button-md)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {t("agenda.joinSession")}
+                  </Link>
                 ) : nextBooking.deliveryInfo ? (
                   <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                     {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}
