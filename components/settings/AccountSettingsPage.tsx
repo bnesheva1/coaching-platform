@@ -21,11 +21,16 @@ export async function AccountSettingsPage({
   marketingConsent,
   marketingConsentUpdatedAt,
   practitionerOnlyContent,
+  timezoneSection,
 }: {
   displayName: string;
   marketingConsent: boolean;
   marketingConsentUpdatedAt: string | null;
   practitionerOnlyContent?: ReactNode;
+  // The client settings page passes its timezone picker here; the
+  // practitioner page never does (a practitioner's timezone lives on the
+  // Schedule tab, tied to their availability, not here).
+  timezoneSection?: ReactNode;
 }) {
   const t = await getTranslations("AccountSettings");
   const locale = await getLocale();
@@ -35,6 +40,8 @@ export async function AccountSettingsPage({
       <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("title")}</h1>
 
       {practitionerOnlyContent}
+
+      {timezoneSection}
 
       <ChangePasswordSection />
 

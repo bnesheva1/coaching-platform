@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettingsPage } from "@/components/settings/AccountSettingsPage";
+import { ClientTimezoneField } from "@/components/settings/ClientTimezoneField";
+import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 
 // Auth/role guard already ran in the shared layout.tsx.
 export default async function ClientSettingsPage() {
@@ -12,6 +14,8 @@ export default async function ClientSettingsPage() {
     .select("display_name, marketing_consent, marketing_consent_updated_at")
     .eq("id", user!.id)
     .single();
+  // timezone is excluded from the client column grant — read via service role.
+  const savedTimezone = await getSavedTimezone(user!.id);
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -19,6 +23,7 @@ export default async function ClientSettingsPage() {
         displayName={profile?.display_name ?? ""}
         marketingConsent={profile?.marketing_consent ?? false}
         marketingConsentUpdatedAt={profile?.marketing_consent_updated_at ?? null}
+        timezoneSection={<ClientTimezoneField initialTimezone={savedTimezone} />}
       />
     </main>
   );

@@ -30,11 +30,6 @@ type AgendaBooking = {
   deliveryType: "online" | "in_person" | null;
   deliveryInfo: string | null;
   startUtc: string;
-  // Placeholder — there is no messaging feature anywhere in this app yet
-  // (no `messages` table, nothing in the approved design either). Always
-  // 0 for now; wired up here so the UI has a real place to plug real
-  // data into once that feature exists, rather than a fake nonzero count.
-  messageCount: number;
 };
 
 // Date.now() can't be called directly inside a component body — this
@@ -304,7 +299,6 @@ export default async function PractitionerHomePage() {
     deliveryType: serviceById.get(b.service_id)?.delivery_type ?? null,
     deliveryInfo: deliveryInfoByServiceId.get(b.service_id) ?? null,
     startUtc: b.start_utc,
-    messageCount: 0,
   }));
 
   const { missingLinkBookings, nextBooking, upcomingThisWeek } = buildAgendaView(upcoming);
@@ -369,22 +363,6 @@ export default async function PractitionerHomePage() {
               description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
               footer={
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-                  {/* Placeholder — see the identical note on the
-                      upcoming-this-week rows below; messageCount is
-                      always 0 until a real messaging feature exists. */}
-                  <span
-                    aria-label={t("agenda.messagesFromClient", { count: nextBooking.messageCount })}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "var(--space-1)",
-                      font: "var(--text-body-sm)",
-                      color: "var(--text-tertiary)",
-                    }}
-                  >
-                    <span aria-hidden style={{ font: "var(--text-icon)" }}>💬</span>
-                    {nextBooking.messageCount}
-                  </span>
                   {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
                     <a
                       href={nextBooking.deliveryInfo}
@@ -418,7 +396,7 @@ export default async function PractitionerHomePage() {
                       own [nextBooking, ...restUpcoming] split), to avoid
                       showing it twice. Without this, that common case had
                       no way to cancel at all. */}
-                  <div style={{ alignSelf: "flex-start" }}>
+                  <div style={{ alignSelf: "flex-end" }}>
                     <CancelSessionDialog
                       counterpartName={nextBooking.clientName}
                       sessionTimeLabel={formatter.format(new Date(nextBooking.startUtc))}
@@ -443,7 +421,6 @@ export default async function PractitionerHomePage() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
                   gap: "var(--space-4)",
                   padding: "var(--space-4) 0",
                   borderBottom: "1px solid var(--border-subtle)",
@@ -452,27 +429,6 @@ export default async function PractitionerHomePage() {
                 <span>
                   <strong>{formatter.format(new Date(b.startUtc))}</strong> — {tBooking("withClient", { name: b.clientName })} · {b.serviceName} ·{" "}
                   {tPublicProfile("serviceDuration", { minutes: b.durationMinutes })}
-                </span>
-                {/* Placeholder — no messaging feature exists anywhere in
-                    this app yet (no `messages` table, nothing in the
-                    approved design either); messageCount is always 0.
-                    Kept visible (not hidden at 0) since the icon+count is
-                    itself the placeholder for functionality landing
-                    later, per your standing "show placeholders for 2nd-
-                    phase functionality" instruction. */}
-                <span
-                  aria-label={t("agenda.messagesFromClient", { count: b.messageCount })}
-                  style={{
-                    flexShrink: 0,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "var(--space-1)",
-                    font: "var(--text-body-sm)",
-                    color: "var(--text-tertiary)",
-                  }}
-                >
-                  <span aria-hidden style={{ font: "var(--text-icon)" }}>💬</span>
-                  {b.messageCount}
                 </span>
               </li>
             ))}

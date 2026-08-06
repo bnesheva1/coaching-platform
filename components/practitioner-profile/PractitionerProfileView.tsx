@@ -49,6 +49,11 @@ export type PractitionerProfileViewProps = {
   // — shown under the facts card's "next available time" so a seeker
   // knows what that value actually means before they even get there.
   timezone: string;
+  // The VIEWING client's own saved timezone (profiles.timezone), threaded
+  // straight through to SlotPicker so booking slots render in the client's
+  // zone, not the practitioner's. Null for guests / clients who haven't
+  // set one — SlotPicker then falls back to browser-detected, then UTC.
+  viewerSavedTimezone?: string | null;
   specialties: string[];
   topics: string[];
   services: ProfileService[];
@@ -129,6 +134,7 @@ export function PractitionerProfileView({
   ownBookings,
   bookingWindowDays,
   viewerRole,
+  viewerSavedTimezone,
   isOwnProfile,
   isBookable,
   justBooked,
@@ -538,6 +544,7 @@ export function PractitionerProfileView({
                           viewerRole={viewerRole}
                           isOwnProfile={isOwnProfile}
                           windowDays={bookingWindowDays}
+                          viewerSavedTimezone={viewerSavedTimezone}
                           headerAction={
                             <button
                               type="button"

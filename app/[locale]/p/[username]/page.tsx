@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
+import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 
@@ -74,6 +75,10 @@ export default async function PublicProfilePage({
   const { data: viewerProfile } = authData.user
     ? await supabase.from("profiles").select("role").eq("id", authData.user.id).single()
     : { data: null };
+  // The viewing client's own saved timezone, if any — passed down so slot
+  // times render in the client's zone, not the practitioner's. Read via
+  // service role since timezone is excluded from the client column grant.
+  const viewerSavedTimezone = authData.user ? await getSavedTimezone(authData.user.id) : null;
   const viewerRole: "client" | "practitioner" | null =
     viewerProfile?.role === "client" || viewerProfile?.role === "practitioner"
       ? viewerProfile.role
@@ -172,6 +177,7 @@ export default async function PublicProfilePage({
           ownBookings={ownBookings}
           bookingWindowDays={BOOKING_WINDOW_DAYS}
           viewerRole={viewerRole}
+          viewerSavedTimezone={viewerSavedTimezone}
           isOwnProfile={isOwnProfile}
           isBookable={isBookable ?? false}
           justBooked={justBooked}

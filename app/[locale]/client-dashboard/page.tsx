@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
 import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancelAction";
 import { GreetingText } from "@/components/dashboard/GreetingText";
+import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
+import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
@@ -13,11 +15,6 @@ import { ClientActivationState } from "./ClientActivationState";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
-
-const INTL_LOCALES: Record<string, string> = {
-  bg: "bg-BG",
-  en: "en-US",
-};
 
 // Auth/role guard already ran in layout.tsx. The "no bookings yet"
 // activation branch used to run there too, unconditionally substituting
@@ -34,7 +31,6 @@ export default async function ClientUpcomingPage({
   const tBooking = await getTranslations("Booking");
   const tPublicProfile = await getTranslations("PublicProfile");
   const locale = (await getLocale()) as "bg" | "en";
-  const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
   const {
@@ -124,7 +120,13 @@ export default async function ClientUpcomingPage({
   // that's actually still happening.
   const nextBooking = upcoming.find((b) => ACTIVE_STATUSES.has(b.status)) ?? null;
 
-  const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short" });
+  // The client's own timezone for display: their saved profiles.timezone
+  // wins, resolved client-side (falling back to the browser guess, then
+  // UTC) inside ClientLocalTime/ClientTimezoneNotice — never formatted
+  // server-side, which rendered in the server's zone (UTC on Vercel).
+  // Read via service role because timezone is excluded from the client
+  // column grant (see getSavedTimezone).
+  const savedTz = await getSavedTimezone(userId);
 
   const justCancelled = resolvedSearchParams.cancelled === "1";
   const cancelErrorCode = typeof resolvedSearchParams.cancelError === "string" ? resolvedSearchParams.cancelError : null;
@@ -170,7 +172,8 @@ export default async function ClientUpcomingPage({
       <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
         <GreetingText name={profile?.display_name ?? ""} />
       </p>
-      <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-6)" }}>{t("agenda.heading")}</h1>
+      <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-2)" }}>{t("agenda.heading")}</h1>
+      <ClientTimezoneNotice savedTimezone={savedTz} />
 
       {justCancelled && (
         <p style={{ color: "green", marginBottom: "var(--space-4)" }}>{tBooking("cancelledMessage")}</p>
@@ -226,26 +229,9 @@ export default async function ClientUpcomingPage({
                   <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} />
                 </div>
                 <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                  {formatter.format(new Date(nextBooking.startUtc))} ·{" "}
+                  <ClientLocalTime iso={nextBooking.startUtc} savedTimezone={savedTz} /> ·{" "}
                   {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
                 </p>
-
-                {/* Placeholder — no messaging feature exists anywhere in
-                    this app yet, same reasoning as the identical spot on
-                    the practitioner dashboard; always 0 for now. */}
-                <span
-                  aria-label={t("agenda.messagesFromPractitioner", { count: 0 })}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "var(--space-1)",
-                    font: "var(--text-body-sm)",
-                    color: "var(--text-tertiary)",
-                  }}
-                >
-                  <span aria-hidden style={{ font: "var(--text-icon)" }}>💬</span>
-                  0
-                </span>
 
                 {/* Join button/location sits directly under the message
                     line. Full width on mobile via .tile, content-sized
@@ -308,7 +294,7 @@ export default async function ClientUpcomingPage({
                     upcoming list deliberately excludes whichever booking
                     is shown here, to avoid showing it twice. Without this,
                     that common case had no way to cancel at all. */}
-                <div style={{ alignSelf: "flex-start" }}>
+                <div style={{ alignSelf: "flex-end" }}>
                   <NextSessionCancelAction
                     bookingId={nextBooking.id}
                     counterpartName={nextBooking.counterpartName}
@@ -334,6 +320,7 @@ export default async function ClientUpcomingPage({
         past={past}
         perspective="client"
         premium
+        timezone={savedTz ?? undefined}
         nextSessionShownSeparately={nextBooking !== null}
         pastSectionId="past"
       />

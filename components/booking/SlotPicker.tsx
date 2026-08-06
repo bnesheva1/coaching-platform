@@ -62,6 +62,11 @@ export type SlotPickerProps = {
   // in this app (SlotList.tsx before it) deliberately sticks to plain
   // Date/Intl to avoid pulling luxon into the client bundle at all.
   windowDays: number;
+  // The viewing client's own saved timezone (profiles.timezone), if any.
+  // Takes precedence over the browser guess so a client who picked a zone
+  // in settings sees slots in it. Null/undefined for guests and the common
+  // "never set one" case, which fall back to browser-detected then UTC.
+  viewerSavedTimezone?: string | null;
   // Rendered inline beside this component's own heading/timezone
   // caption (top-right) — the practitioner-profile 2a handoff's
   // "Скрий свободните часове" toggle lives in the caller (it owns the
@@ -99,6 +104,7 @@ export function SlotPicker({
   viewerRole,
   isOwnProfile,
   windowDays,
+  viewerSavedTimezone,
   headerAction,
 }: SlotPickerProps) {
   const t = useTranslations("Booking");
@@ -107,8 +113,10 @@ export function SlotPicker({
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const isMobile = useIsMobile();
 
-  const clientTimezone =
-    useSyncExternalStore(subscribeToNothing, getDetectedTimezone, getServerTimezoneSnapshot) ?? "UTC";
+  // Saved (from settings) wins over the browser guess, then UTC — the one
+  // client-facing resolution order used across the app.
+  const detectedTimezone = useSyncExternalStore(subscribeToNothing, getDetectedTimezone, getServerTimezoneSnapshot);
+  const clientTimezone = viewerSavedTimezone ?? detectedTimezone ?? "UTC";
 
   const [selectedStartUtc, setSelectedStartUtc] = useState<string | null>(null);
   const [desktopPageStart, setDesktopPageStart] = useState(0);
