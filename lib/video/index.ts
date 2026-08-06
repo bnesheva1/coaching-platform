@@ -96,6 +96,46 @@ type VideoAccessRow = {
   caller_role: VideoParticipantRole;
 };
 
+export type VideoRoomAccess = {
+  // too_early/open/ended are computed from now vs the window; unavailable
+  // means the RPC returned nothing (not a party, not online, not confirmed).
+  state: "too_early" | "open" | "ended" | "unavailable";
+  opensAt: string | null;
+  closesAt: string | null;
+  callerRole: VideoParticipantRole | null;
+  roomName: string | null;
+};
+
+// Server-side read for the session page's first paint — same access RPC
+// as the token flow, but returns the window + a computed state (no token
+// minted; that happens on the Join tap). Lets the page render the right
+// screen (countdown / device-check / ended) without a client round-trip
+// or any polling: the client gets opensAt/closesAt and counts down itself.
+export async function getVideoRoomAccess(bookingId: string): Promise<VideoRoomAccess> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("get_my_booking_video_access", { target_booking_id: bookingId })
+    .single();
+  if (error || !data) {
+    return { state: "unavailable", opensAt: null, closesAt: null, callerRole: null, roomName: null };
+  }
+  const row = data as VideoAccessRow;
+  const now = Date.now();
+  const state =
+    now < new Date(row.opens_at).getTime()
+      ? "too_early"
+      : now > new Date(row.closes_at).getTime()
+        ? "ended"
+        : "open";
+  return {
+    state,
+    opensAt: row.opens_at,
+    closesAt: row.closes_at,
+    callerRole: row.caller_role,
+    roomName: row.provider_room_name,
+  };
+}
+
 // Called from the token route (next slice) under the caller's own session.
 // Authorization is entirely the get_my_booking_video_access RPC: a user
 // can only get a token for an online, confirmed booking they're a party

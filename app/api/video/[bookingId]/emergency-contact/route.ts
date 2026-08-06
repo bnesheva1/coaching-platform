@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, videoFallbackLimiter } from "@/lib/rate-limit";
 import { revealEmergencyContact } from "@/lib/video";
+import { sendEmergencyContactRevealedNotice } from "@/lib/email";
 
 // The "having trouble connecting" fallback: reveals the practitioner's
 // emergency contact to the CLIENT during an active session window, if one
@@ -36,6 +37,18 @@ export async function POST(_request: Request, { params }: { params: Promise<{ bo
     // a practitioner has an emergency contact configured.
     return NextResponse.json({ error: "unavailable" }, { status: 404 });
   }
+
+  // Notify the practitioner post-response (they get an email; the reveal
+  // is already logged in video_fallback_reveals, which the practitioner
+  // dashboard surfaces as a marker). after() so the client's contact
+  // reveal isn't held up by the email send.
+  after(async () => {
+    try {
+      await sendEmergencyContactRevealedNotice(bookingId);
+    } catch (err) {
+      console.error("emergency-contact route: practitioner notice failed", { bookingId, err });
+    }
+  });
 
   return NextResponse.json({ contact: result.contact });
 }

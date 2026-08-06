@@ -1,0 +1,359 @@
+/* Full-screen video session shell. Rendered as a fixed overlay covering
+   the site chrome (SiteHeader/SiteFooter render underneath but are hidden)
+   — the pragmatic full-screen approach chosen over a route-group refactor.
+   Everything here is what inline styles can't express: 100dvh, safe-area
+   insets, the fixed control bar, the PiP self-view, and the 640px reflow. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  /* Above the cookie-consent banner (also position:fixed z-index:100) and
+     any other site chrome — a full-screen call takes over the viewport, so
+     nothing should paint over its control bar. The overlay is opaque, so it
+     hides the chrome underneath rather than fighting it. */
+  z-index: 1000;
+  height: 100dvh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* Centered message screens: countdown, ended, device-check, connecting,
+   reconnect. Scrolls internally if content is tall on a short viewport. */
+.center {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  text-align: center;
+  padding: calc(env(safe-area-inset-top) + var(--space-6)) var(--space-6)
+    calc(env(safe-area-inset-bottom) + var(--space-6));
+  overflow-y: auto;
+}
+
+.panel {
+  width: 100%;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.bigIcon {
+  font: var(--text-display-sm);
+  line-height: 1;
+}
+
+.title {
+  margin: 0;
+  font: var(--text-heading-md);
+}
+
+.subtle {
+  margin: 0;
+  font: var(--text-body-md);
+  color: var(--text-secondary);
+}
+
+.countdown {
+  font: var(--font-display);
+  font-size: clamp(2.5rem, 12vw, 4rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* ---- device check ---- */
+
+.preview {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 48vh;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-sunken);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror own preview, the expected self-view feel */
+}
+
+.previewPlaceholder {
+  font: var(--text-body-sm);
+  color: var(--text-tertiary);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.meter {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-2);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform 80ms linear;
+}
+
+.deviceRow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: left;
+}
+
+.deviceLabel {
+  font: var(--text-label);
+  color: var(--text-tertiary);
+}
+
+.select {
+  width: 100%;
+  padding: var(--field-padding);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: var(--text-body-sm);
+}
+
+.toggleRow {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.toggle {
+  flex: 1;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: var(--text-body-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.toggleOff {
+  background: var(--bg-sunken);
+  color: var(--text-tertiary);
+  border-color: var(--border-subtle);
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ---- in-room ---- */
+
+.roomContainer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #000;
+}
+
+.remoteTile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.remoteTile :global(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.waiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--text-on-inverse, #fff);
+  text-align: center;
+  padding: var(--space-6);
+}
+
+.selfView {
+  position: absolute;
+  right: var(--space-4);
+  bottom: calc(env(safe-area-inset-bottom) + var(--space-4));
+  width: 28vw;
+  max-width: 132px;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: var(--bg-sunken);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+}
+
+.selfView :global(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.controlBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-4));
+  background: var(--bg-page);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.controlButton {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.controlButtonOff {
+  background: var(--bg-sunken);
+  color: var(--text-tertiary);
+}
+
+.leaveButton {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: #c0392b;
+  color: #fff;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* reconnecting toast overlay */
+.toast {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--bg-inverse);
+  color: var(--text-on-inverse);
+  font: var(--text-body-sm);
+  box-shadow: var(--shadow-md);
+}
+
+/* the "having trouble connecting?" affordance */
+.troubleLink {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font: var(--text-body-sm);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: var(--space-2);
+}
+
+/* Opened trouble panel is a fixed modal so it reads the same whether it
+   was triggered from the device-check column or over live video. */
+.troubleModal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--overlay-scrim);
+}
+
+.troublePanel {
+  width: 100%;
+  max-width: 26rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.contactValue {
+  font: var(--text-heading-sm);
+  color: var(--accent);
+}
+
+.instructions {
+  text-align: left;
+  width: 100%;
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+@media (min-width: 641px) {
+  /* On a wider viewport the self-view can be a touch larger and the
+     device-check preview needn't dominate. */
+  .selfView {
+    width: 180px;
+    max-width: 180px;
+  }
+  .preview {
+    aspect-ratio: 16 / 10;
+  }
+}

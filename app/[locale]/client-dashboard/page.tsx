@@ -1,4 +1,5 @@
 import { getTranslations, getLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
 import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancelAction";
@@ -249,26 +250,53 @@ export default async function ClientUpcomingPage({
                 {/* Join button/location sits directly under the message
                     line. Full width on mobile via .tile, content-sized
                     on desktop. */}
-                {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
-                  <a
-                    href={nextBooking.deliveryInfo}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={rowStyles.tile}
-                    style={{
-                      alignSelf: "flex-start",
-                      display: "inline-block",
-                      textAlign: "center",
-                      padding: "var(--button-padding-md)",
-                      borderRadius: "var(--radius-md)",
-                      background: "var(--accent)",
-                      color: "var(--text-on-accent)",
-                      font: "var(--text-button-md)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {t("agenda.joinSession")}
-                  </a>
+                {nextBooking.deliveryType === "online" ? (
+                  nextBooking.deliveryInfo ? (
+                    // Legacy online booking with an external meeting link
+                    // (a pre-LiveKit Zoom-style URL) — keep opening it
+                    // directly. New online bookings snapshot no
+                    // deliveryInfo and route to the in-app video room below.
+                    <a
+                      href={nextBooking.deliveryInfo}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={rowStyles.tile}
+                      style={{
+                        alignSelf: "flex-start",
+                        display: "inline-block",
+                        textAlign: "center",
+                        padding: "var(--button-padding-md)",
+                        borderRadius: "var(--radius-md)",
+                        background: "var(--accent)",
+                        color: "var(--text-on-accent)",
+                        font: "var(--text-button-md)",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {t("agenda.joinSession")}
+                    </a>
+                  ) : (
+                    // In-app LiveKit video room. The session route gates on
+                    // the join window itself (shows a countdown if early),
+                    // so it's safe to link at any time before the session.
+                    <Link
+                      href={`/session/${nextBooking.id}`}
+                      className={rowStyles.tile}
+                      style={{
+                        alignSelf: "flex-start",
+                        display: "inline-block",
+                        textAlign: "center",
+                        padding: "var(--button-padding-md)",
+                        borderRadius: "var(--radius-md)",
+                        background: "var(--accent)",
+                        color: "var(--text-on-accent)",
+                        font: "var(--text-button-md)",
+                        textDecoration: "none",
+                      }}
+                    >
+                      {t("agenda.joinSession")}
+                    </Link>
+                  )
                 ) : nextBooking.deliveryInfo ? (
                   <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
                     {tBooking("deliveryLabelInPerson")}: {nextBooking.deliveryInfo}

@@ -87,7 +87,13 @@ export default async function LocaleLayout({
       // not a bug being silenced.
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      {/* Browser extensions (ColorZilla's cz-shortcut-listen, Grammarly's
+          data-gr-*, etc.) inject attributes onto <body> before React
+          hydrates, which otherwise surfaces as a hydration warning that
+          isn't ours. suppressHydrationWarning here covers only <body>'s own
+          attributes/text, never its descendants — a real hydration bug in
+          any child component still warns. */}
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
           <NextIntlClientProvider>
             {/* Mounted once, here — not per-page — so every route gets

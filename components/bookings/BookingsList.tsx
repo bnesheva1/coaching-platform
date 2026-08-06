@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { PastSessionsSection } from "./PastSessionsSection";
 import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboard/cancel-booking-actions";
@@ -89,6 +90,10 @@ export type SessionBooking = {
   createdAt: string;
   minNoticeHours?: number;
   hasReview?: boolean;
+  // Practitioner path only: when the client used the emergency-contact
+  // fallback during this session's video call (get_my_practitioner_video_
+  // reveals). Renders a marker on the card; left undefined elsewhere.
+  fallbackRevealedAt?: string | null;
   // Only ever populated on the client path (a client's counterpart is a
   // practitioner, who has a public-facing photo). Left undefined on the
   // practitioner path — a client's own avatar isn't fetched there today,
@@ -116,6 +121,9 @@ function getDetectedTimezone(): string | null {
 function getServerTimezoneSnapshot(): string | null {
   return null;
 }
+
+const JOIN_LEAD_MS = 5 * 60 * 1000;
+const JOIN_GRACE_MS = 10 * 60 * 1000;
 
 function LinkifiedText({ text }: { text: string }) {
   return (
@@ -392,6 +400,20 @@ export function BookingsList({
   const detectedTimezone = useSyncExternalStore(subscribeToNothing, getDetectedTimezone, getServerTimezoneSnapshot);
   const effectiveTimezone = timezone ?? detectedTimezone ?? "UTC";
 
+  // Client-only "now" (ms), null on the server so SSR and the first client
+  // render agree (no join button), then updated on mount and every 30s so
+  // the button appears once a session enters its window. NOT
+  // useSyncExternalStore — a getSnapshot returning Date.now() changes every
+  // call and loops forever. The room route enforces the exact window; this
+  // is just a generous visibility gate.
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   const formatter = new Intl.DateTimeFormat(intlLocale, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -475,6 +497,52 @@ export function BookingsList({
               </p>
             );
 
+            // In-app video join for online sessions with no external link
+            // (LiveKit). Shown only around the session window; the room
+            // route does the exact gating. Both parties reach the same room.
+            const isVideoSession = booking.deliveryType === "online" && !booking.deliveryInfo;
+            const withinJoinWindow =
+              nowMs !== null &&
+              nowMs >= new Date(booking.startUtc).getTime() - JOIN_LEAD_MS &&
+              nowMs <= new Date(booking.endUtc).getTime() + JOIN_GRACE_MS;
+            const joinSlot = isVideoSession && ACTIVE_STATUSES.has(booking.status) && withinJoinWindow && (
+              <Link
+                href={`/session/${booking.id}`}
+                className="focus-ring"
+                style={{
+                  marginTop: "var(--space-3)",
+                  alignSelf: "flex-start",
+                  display: "inline-block",
+                  textAlign: "center",
+                  padding: "var(--button-padding-md)",
+                  borderRadius: "var(--radius-md)",
+                  background: "var(--accent)",
+                  color: "var(--text-on-accent)",
+                  font: "var(--text-button-md)",
+                  textDecoration: "none",
+                }}
+              >
+                {t("joinVideoSession")}
+              </Link>
+            );
+
+            // Practitioner-only marker: the client used the emergency
+            // contact during this session's call.
+            const revealMarker = perspective === "practitioner" && booking.fallbackRevealedAt && (
+              <p
+                style={{
+                  margin: "var(--space-3) 0 0",
+                  font: "var(--text-body-sm)",
+                  color: "var(--text-secondary)",
+                  display: "flex",
+                  gap: "var(--space-2)",
+                }}
+              >
+                <span aria-hidden>⚠️</span>
+                <span>{t("emergencyContactUsedNote", { when: formatter.format(new Date(booking.fallbackRevealedAt)) })}</span>
+              </p>
+            );
+
             if (premium) {
               // Same structural pattern as the client dashboard's next-
               // session hero (image, then time/name/identity stacked) —
@@ -520,6 +588,8 @@ export function BookingsList({
                     </div>
                     {/* Join link/location sits directly under that row. */}
                     {deliverySlot}
+                    {joinSlot}
+                    {revealMarker}
                     <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                     {cancelSlot}
                   </div>
@@ -545,6 +615,8 @@ export function BookingsList({
                   {booking.serviceName} · {t(statusKeys[booking.status])}
                 </p>
                 {deliverySlot}
+                {joinSlot}
+                {revealMarker}
                 <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
                 {cancelSlot}
               </div>

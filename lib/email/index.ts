@@ -413,6 +413,52 @@ export async function sendPaymentRefundedNotice({
   }
 }
 
+// Notifies the PRACTITIONER that their client used the emergency-contact
+// fallback during a session (the "having trouble connecting" flow). A
+// side effect of the client's reveal, so it never throws — logged and
+// swallowed like the other transactional sends. Uses the service-role
+// get_booking_payment_context (no auth.uid(), same as the paid-booking
+// send) because it runs from the reveal route's after() with no reliable
+// session, and reuses CancellationNoticeEmail's shape — same "here's what
+// happened to a session you expected" notice family as the refund one.
+export async function sendEmergencyContactRevealedNotice(bookingId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: context, error } = await supabase
+    .rpc("get_booking_payment_context", { target_booking_id: bookingId })
+    .single<BookingEmailContext>();
+
+  if (error || !context) {
+    console.error("sendEmergencyContactRevealedNotice: context fetch failed", { bookingId, error });
+    return;
+  }
+  if (!context.practitioner_email) {
+    console.error("sendEmergencyContactRevealedNotice: practitioner_email is null, skipping", { bookingId });
+    return;
+  }
+
+  const locale = normalizeLocale(context.practitioner_locale);
+  const t = translator(locale);
+  const sessionTime = formatSessionTime(context.start_utc, context.practitioner_timezone, locale, false);
+
+  const result = await provider.send({
+    to: context.practitioner_email,
+    subject: t("emergencyContactRevealedSubject", { serviceName: context.service_name }),
+    react: CancellationNoticeEmail({
+      heading: t("emergencyContactRevealedHeading"),
+      body: t("emergencyContactRevealedBody", {
+        recipientName: context.practitioner_display_name ?? "",
+        counterpartyName: context.client_display_name ?? "",
+        serviceName: context.service_name,
+        sessionTime,
+      }),
+      footer: t("footer"),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendEmergencyContactRevealedNotice: email failed", { bookingId, error: result.error });
+  }
+}
+
 // Unlike every other function in this file, the send IS the point of
 // the caller's action (the /contact form), not a side effect of one
 // that already succeeded — so this returns the real SendEmailResult

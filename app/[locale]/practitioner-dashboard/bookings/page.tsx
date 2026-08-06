@@ -40,17 +40,23 @@ export default async function BookingsPage({
   // from the general column grant, same as before — this RPC is the
   // only way to read it, now keyed by booking_id and no longer status-
   // scoped, so it also covers this page's past-bookings list.
-  const [{ data: clients }, { data: contactInfoRows }] = await Promise.all([
+  const [{ data: clients }, { data: contactInfoRows }, { data: revealRows }] = await Promise.all([
     clientIds.length > 0
       ? supabase.from("profiles").select("id, display_name").in("id", clientIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
     supabase.rpc("get_my_confirmed_bookings_contact_info") as unknown as Promise<{
       data: { booking_id: string; phone_number: string | null; meeting_link: string | null; delivery_info: string | null }[] | null;
     }>,
+    // Emergency-contact reveals on this practitioner's own bookings, so
+    // each card can show that (and when) the client used the fallback.
+    supabase.rpc("get_my_practitioner_video_reveals") as unknown as Promise<{
+      data: { booking_id: string; revealed_at: string }[] | null;
+    }>,
   ]);
 
   const clientNameById = new Map((clients ?? []).map((c) => [c.id, c.display_name ?? ""]));
   const contactInfoByBookingId = new Map((contactInfoRows ?? []).map((row) => [row.booking_id, row]));
+  const revealedAtByBookingId = new Map((revealRows ?? []).map((row) => [row.booking_id, row.revealed_at]));
 
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
@@ -71,6 +77,7 @@ export default async function BookingsPage({
     priceCents: b.price_cents,
     currency: b.currency,
     createdAt: b.created_at,
+    fallbackRevealedAt: revealedAtByBookingId.get(b.id) ?? null,
   }));
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);
