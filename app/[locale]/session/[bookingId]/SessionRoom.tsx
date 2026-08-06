@@ -170,16 +170,37 @@ export function SessionRoom({
   // phase === "window"
   return (
     <div className={styles.overlay}>
+      {/* A quiet way out of the otherwise header-less overlay — only on the
+          waiting screen; the ended/unavailable states carry their own
+          "back to dashboard" button. */}
+      {windowState === "too_early" && (
+        <div className={styles.topBar}>
+          <button type="button" className={`${styles.backLink} focus-ring`} onClick={leave}>
+            <span aria-hidden>←</span> {t("backToBookings")}
+          </button>
+        </div>
+      )}
       <div className={styles.center}>
         <div className={styles.panel}>
           {windowState === "too_early" && (
-            <>
-              <span className={styles.bigIcon} aria-hidden>🕐</span>
+            // A defined, calm card rather than content adrift in the
+            // viewport: a "waiting room" badge with a soft pulse, the
+            // opening time, then the countdown labelled as time remaining.
+            // The countdown effect auto-advances to the device check at
+            // zero — no reload, no stuck 00:00.
+            <div className={styles.waitCard}>
+              <span className={styles.waitBadge}>
+                <span className={styles.pulseDot} aria-hidden />
+                {t("waitingRoomLabel")}
+              </span>
               <h1 className={styles.title}>{t("opensAtTitle", { time: openTimeLabel ?? "…" })}</h1>
-              <p className={styles.countdown}>{remaining !== null ? formatCountdown(remaining) : "—"}</p>
+              <div className={styles.countdownBlock}>
+                <p className={styles.countdown}>{remaining !== null ? formatCountdown(remaining) : "—"}</p>
+                <p className={styles.countdownLabel}>{t("timeRemaining")}</p>
+              </div>
               <p className={styles.subtle}>{t("opensAtBody")}</p>
               {trouble}
-            </>
+            </div>
           )}
           {windowState === "ended" && (
             <>

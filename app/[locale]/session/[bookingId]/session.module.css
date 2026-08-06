@@ -70,6 +70,102 @@
   line-height: 1;
 }
 
+/* ---- waiting screen (too_early) ---- */
+
+/* A minimal header strip so the overlay isn't a headerless dead end: a
+   low-prominence way back to the dashboard, at the top-left. */
+.topBar {
+  display: flex;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top) + var(--space-3)) var(--space-4) 0;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  font: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.backLink:hover {
+  color: var(--text-secondary);
+}
+
+/* The waiting content lives in a defined surface card so it reads as an
+   intentional, calm panel rather than text floating in empty space. */
+.waitCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.waitBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Replaces the clock emoji: a soft accent pulse that reads as "waiting",
+   consistent across devices. */
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: waitPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes waitPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulseDot {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+.countdownBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.countdownLabel {
+  margin: 0;
+  font: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
 /* ---- device check ---- */
 
 .preview {
