@@ -11,6 +11,16 @@ export type TextSegment = { type: "text"; value: string } | { type: "url"; value
 // at; the practitioner can paste a full URL if they want it clickable.
 const URL_PATTERN = /https?:\/\/[^\s]+/g;
 
+// An online session's delivery_info is a meeting link a practitioner may
+// paste WITHOUT a scheme ("www.myroom.com"). A bare value in an href is
+// treated by the browser as a RELATIVE path (→ /<locale>/www.myroom.com,
+// a 404) rather than an external site, so force an absolute https:// href
+// when no scheme is present. Used by the dashboard "join" buttons.
+export function toExternalHref(url: string): string {
+  const trimmed = url.trim();
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export function splitTextAndUrls(text: string): TextSegment[] {
   const segments: TextSegment[] = [];
   let lastIndex = 0;

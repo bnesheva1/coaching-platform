@@ -6,6 +6,7 @@ import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancel
 import { GreetingText } from "@/components/dashboard/GreetingText";
 import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
+import { toExternalHref } from "@/lib/linkify";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
@@ -243,7 +244,7 @@ export default async function ClientUpcomingPage({
                     // directly. New online bookings snapshot no
                     // deliveryInfo and route to the in-app video room below.
                     <a
-                      href={nextBooking.deliveryInfo}
+                      href={toExternalHref(nextBooking.deliveryInfo)}
                       target="_blank"
                       rel="noreferrer"
                       className={rowStyles.tile}

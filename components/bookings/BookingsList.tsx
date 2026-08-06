@@ -8,7 +8,7 @@ import { PastSessionsSection } from "./PastSessionsSection";
 import { cancelBookingAsPractitioner } from "@/app/[locale]/practitioner-dashboard/cancel-booking-actions";
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
 import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@/lib/booking-time";
-import { splitTextAndUrls } from "@/lib/linkify";
+import { splitTextAndUrls, toExternalHref } from "@/lib/linkify";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -493,7 +493,24 @@ export function BookingsList({
                 <span style={{ color: "var(--text-tertiary)" }}>
                   {booking.deliveryType === "online" ? t("deliveryLabelOnline") : t("deliveryLabelInPerson")}:
                 </span>{" "}
-                <LinkifiedText text={booking.deliveryInfo} />
+                {booking.deliveryType === "online" ? (
+                  // For an online session the whole value IS the meeting
+                  // link — render it clickable with an absolute href, even
+                  // when the practitioner pasted it without a scheme
+                  // ("www.myroom.com"), which a bare href would treat as a
+                  // relative path (a 404). In-person addresses stay as
+                  // linkified text below.
+                  <a
+                    href={toExternalHref(booking.deliveryInfo)}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    {booking.deliveryInfo}
+                  </a>
+                ) : (
+                  <LinkifiedText text={booking.deliveryInfo} />
+                )}
               </p>
             );
 

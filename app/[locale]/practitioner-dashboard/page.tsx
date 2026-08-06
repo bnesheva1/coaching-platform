@@ -7,6 +7,7 @@ import { GreetingText } from "@/components/dashboard/GreetingText";
 import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import { toExternalHref } from "@/lib/linkify";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -365,7 +366,7 @@ export default async function PractitionerHomePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                   {nextBooking.deliveryType === "online" && nextBooking.deliveryInfo ? (
                     <a
-                      href={nextBooking.deliveryInfo}
+                      href={toExternalHref(nextBooking.deliveryInfo)}
                       target="_blank"
                       rel="noreferrer"
                       className={rowStyles.tile}
