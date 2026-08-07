@@ -402,6 +402,24 @@
   box-shadow: var(--shadow-md);
 }
 
+/* Countdown banner in the last 5 minutes — a clear "the session ends
+   soon" warning ahead of the hard-stop at end_utc. Sits just below the
+   reconnecting toast slot, prominent (accent) rather than neutral. */
+.endingBanner {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: var(--text-button-md);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+
 /* the "having trouble connecting?" affordance */
 .troubleLink {
   background: none;

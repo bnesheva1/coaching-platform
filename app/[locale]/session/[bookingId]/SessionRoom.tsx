@@ -33,11 +33,13 @@ export function SessionRoom({
   bookingId,
   initialState,
   opensAt,
+  closesAt,
   callerRole,
 }: {
   bookingId: string;
   initialState: ServerState;
   opensAt: string | null;
+  closesAt: string | null;
   callerRole: "client" | "practitioner" | null;
 }) {
   const t = useTranslations("Session");
@@ -129,8 +131,15 @@ export function SessionRoom({
           token={conn.token}
           url={conn.url}
           choice={choice}
+          endsAt={closesAt}
           onLeave={leave}
           onDropped={() => setPhase("disconnected")}
+          onEnded={() => {
+            // Hard-stop at end_utc: no grace, no reconnect screen — the
+            // session's time is simply up.
+            setWindowState("ended");
+            setPhase("window");
+          }}
           trouble={trouble}
         />
       </div>

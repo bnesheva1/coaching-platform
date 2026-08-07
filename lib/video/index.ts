@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { VIDEO_CONFIG, maxConcurrentConnectionUnits } from "./config";
 import { liveKitProvider as provider } from "./livekit/provider";
+import { resolveVideoAttendance } from "./attendance";
 import type { NormalisedAttendanceEvent, VideoParticipantRole } from "./types";
 
 // THE seam. Every other module in the app calls exactly these functions
@@ -285,7 +286,18 @@ export async function persistVideoEvent(normalised: NormalisedAttendanceEvent): 
       .eq("id", session.id)
       .is("room_created_at", null);
   } else if (normalised.eventType === "room_closed") {
-    await supabase.from("video_sessions").update({ status: "closed" }).eq("id", session.id);
+    // The room emptied. Only FINALISE the session when its time is actually
+    // up (now >= closes_at, which with no grace = end_utc). A room that
+    // empties mid-session (both stepped away) is not the end: leave it
+    // 'open' so a reconnect re-creates the room under the same booking, and
+    // don't resolve yet. When it closes at/after the end, mark it closed and
+    // resolve from ALL accumulated attendance events across every room
+    // instance for this booking.
+    const { data: s } = await supabase.from("video_sessions").select("closes_at").eq("id", session.id).single();
+    if (s && new Date(s.closes_at).getTime() <= normalised.occurredAt.getTime()) {
+      await supabase.from("video_sessions").update({ status: "closed" }).eq("id", session.id);
+      await resolveVideoAttendance(session.id);
+    }
   }
 }
 

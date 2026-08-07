@@ -685,6 +685,7 @@
     "noDevicesTitle": "No camera or microphone found",
     "noDevicesBody": "Check that a camera and microphone are connected, or join to see and hear the other person.",
     "waitingForOther": "Waiting for the other person to join…",
+    "endingInLabel": "Session ends in {time}",
     "connecting": "Connecting you…",
     "reconnecting": "Connection lost — reconnecting…",
     "leave": "Leave",

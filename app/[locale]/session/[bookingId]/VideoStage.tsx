@@ -1,7 +1,7 @@
 "use client";
 
 import "@livekit/components-styles";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Mic, MicOff, PhoneOff, User, Video, VideoOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
@@ -24,20 +24,26 @@ export function VideoStage({
   token,
   url,
   choice,
+  endsAt,
   onLeave,
   onDropped,
+  onEnded,
   trouble,
 }: {
   token: string;
   url: string;
   choice: JoinChoice;
+  endsAt: string | null;
   onLeave: () => void;
   onDropped: () => void;
+  onEnded: () => void;
   trouble: React.ReactNode;
 }) {
   // Distinguishes an intentional "leave" (navigate away) from a network
-  // drop (show the Reconnect screen) inside onDisconnected.
+  // drop (show the Reconnect screen) and from the hard-stop at end_utc,
+  // inside onDisconnected.
   const leavingRef = useRef(false);
+  const endingRef = useRef(false);
 
   const audio = choice.micOn ? (choice.audioDeviceId ? { deviceId: choice.audioDeviceId } : true) : false;
   const video = choice.camOn ? (choice.videoDeviceId ? { deviceId: choice.videoDeviceId } : true) : false;
@@ -51,28 +57,61 @@ export function VideoStage({
       video={video}
       className={styles.roomContainer}
       onDisconnected={(reason) => {
-        if (leavingRef.current || reason === DisconnectReason.CLIENT_INITIATED) onLeave();
+        if (endingRef.current) onEnded();
+        else if (leavingRef.current || reason === DisconnectReason.CLIENT_INITIATED) onLeave();
         else onDropped();
       }}
       onError={(err) => console.error("LiveKitRoom error", err)}
     >
       <RoomAudioRenderer />
-      <RoomInner leavingRef={leavingRef} trouble={trouble} />
+      <RoomInner leavingRef={leavingRef} endingRef={endingRef} endsAt={endsAt} trouble={trouble} />
     </LiveKitRoom>
   );
 }
 
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function RoomInner({
   leavingRef,
+  endingRef,
+  endsAt,
   trouble,
 }: {
   leavingRef: React.MutableRefObject<boolean>;
+  endingRef: React.MutableRefObject<boolean>;
+  endsAt: string | null;
   trouble: React.ReactNode;
 }) {
   const t = useTranslations("Session");
   const connectionState = useConnectionState();
   const room = useRoomContext();
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
+
+  // Hard-stop: each client counts down to end_utc and force-disconnects
+  // itself at the end — no grace. When both do, the room empties and is
+  // reaped; the webhook then resolves the outcome. endingRef flags this as
+  // an intentional end (not a drop) for onDisconnected above.
+  const endMs = endsAt ? new Date(endsAt).getTime() : null;
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    if (endMs === null || nowMs === null || nowMs < endMs) return;
+    endingRef.current = true;
+    room.disconnect();
+  }, [nowMs, endMs, room, endingRef]);
+
+  const msLeft = endMs !== null && nowMs !== null ? endMs - nowMs : null;
+  const showCountdown = msLeft !== null && msLeft > 0 && msLeft <= 5 * 60_000;
 
   const cameraTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], { onlySubscribed: false });
   const remote = cameraTracks.find((tr) => !tr.participant.isLocal);
@@ -105,6 +144,11 @@ function RoomInner({
         )}
 
         {reconnecting && <div className={styles.toast}>{t("reconnecting")}</div>}
+        {showCountdown && msLeft !== null && (
+          <div className={styles.endingBanner} role="status">
+            {t("endingInLabel", { time: formatCountdown(msLeft) })}
+          </div>
+        )}
         {trouble}
       </div>
 

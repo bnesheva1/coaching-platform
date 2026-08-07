@@ -38,7 +38,10 @@ export function maxConcurrentConnectionUnits(): number {
 export const VIDEO_CONFIG = {
   // Not plan-dependent — product decisions, identical on every tier.
   EARLY_JOIN_MINUTES: 5,
-  POST_SESSION_GRACE_MINUTES: 10,
+  // No grace: the room's window ends exactly at end_utc. The client
+  // hard-stop disconnects both parties at end_utc, and the join window /
+  // outcome resolution both key off this. (Was 10.)
+  POST_SESSION_GRACE_MINUTES: 0,
   CONNECTION_UNITS_PER_1TO1_SESSION: 2,
   MAX_PARTICIPANTS_PER_SESSION: 2,
 
@@ -56,7 +59,7 @@ export const VIDEO_CONFIG = {
   // PRIMARY close for the normal path (both participants leave), needing
   // no cron at all. Belt-and-braces with the token's own expiry (no new
   // joins after closes_at) and the safety sweep below.
-  EMPTY_ROOM_TIMEOUT_SECONDS: 300,
+  EMPTY_ROOM_TIMEOUT_SECONDS: 60,
 
   // Safety-sweep backstop: the reconcile cron force-closes any provider
   // room still open past closes_at + this margin, independent of any

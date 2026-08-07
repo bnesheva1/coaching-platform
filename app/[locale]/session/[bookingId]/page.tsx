@@ -28,6 +28,7 @@ export default async function SessionPage({ params }: { params: Promise<{ bookin
       bookingId={bookingId}
       initialState={access.state}
       opensAt={access.opensAt}
+      closesAt={access.closesAt}
       callerRole={access.callerRole}
     />
   );
