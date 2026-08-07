@@ -8,6 +8,8 @@ import { SiteHeader } from "@/components/header/SiteHeader";
 import { SiteFooter } from "@/components/footer/SiteFooter";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { CookieConsentBanner } from "@/components/cookie-consent/CookieConsentBanner";
+import { SessionCallPrompt } from "@/components/session/SessionCallPrompt";
+import { getImminentCallSession } from "@/app/session-call-actions";
 import { getCookieConsent } from "@/lib/cookieConsent";
 import { SITE_URL } from "@/lib/seo";
 import "../globals.css";
@@ -74,6 +76,9 @@ export default async function LocaleLayout({
   // never sees the banner flash before disappearing — it's simply never
   // rendered in that case, not rendered-then-hidden client-side.
   const consent = await getCookieConsent();
+  // Seeds the global call prompt from the server render; the client then
+  // polls to stay current across client-side navigation.
+  const callSession = await getImminentCallSession();
 
   return (
     <html
@@ -108,6 +113,7 @@ export default async function LocaleLayout({
             <div style={{ flex: 1 }}>{children}</div>
             <SiteFooter />
             {consent === null && <CookieConsentBanner />}
+            <SessionCallPrompt initialSession={callSession} />
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

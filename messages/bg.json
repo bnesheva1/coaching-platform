@@ -442,6 +442,12 @@
     "expandAllReviews": "Виж всички отзиви ({count})",
     "collapseReviews": "Покажи по-малко"
   },
+  "SessionPrompt": {
+    "startingSoonEyebrow": "Сесията започва скоро",
+    "inProgressEyebrow": "Сесията тече",
+    "withCounterpart": "с {name}",
+    "dismiss": "Затвори"
+  },
   "Booking": {
     "availableTimes": "Свободни часове",
     "timesShownIn": "Часовете са показани в {timezone}",

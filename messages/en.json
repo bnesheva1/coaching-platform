@@ -444,6 +444,12 @@
     "expandAllReviews": "See all reviews ({count})",
     "collapseReviews": "Show less"
   },
+  "SessionPrompt": {
+    "startingSoonEyebrow": "Session starting soon",
+    "inProgressEyebrow": "Session in progress",
+    "withCounterpart": "with {name}",
+    "dismiss": "Dismiss"
+  },
   "Booking": {
     "availableTimes": "Available times",
     "timesShownIn": "Times shown in {timezone}",
