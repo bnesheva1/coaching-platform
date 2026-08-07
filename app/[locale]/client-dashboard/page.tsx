@@ -79,10 +79,24 @@ export default async function ClientUpcomingPage({
   };
   const contactInfoByBookingId = new Map((contactInfoRows ?? []).map((row) => [row.booking_id, row]));
 
-  const { data: reviewedBookingRows } = (await supabase.rpc("get_my_reviewed_booking_ids")) as {
-    data: { booking_id: string }[] | null;
+  // Per-booking outcome, the client's own review rating, and refund info —
+  // all live behind a narrow SECURITY DEFINER RPC (each underlying column
+  // is grant-excluded from clients). Resilient to the RPC not existing yet
+  // (migration not applied): falls back to an empty map so the page still
+  // renders its base booking data.
+  const { data: pastMetaRows } = (await supabase.rpc("get_my_client_past_session_meta")) as {
+    data:
+      | {
+          booking_id: string;
+          outcome: string | null;
+          review_rating: number | null;
+          refunded: boolean;
+          refund_amount_cents: number | null;
+          refund_currency: string | null;
+        }[]
+      | null;
   };
-  const reviewedBookingIds = new Set((reviewedBookingRows ?? []).map((row) => row.booking_id));
+  const pastMetaByBookingId = new Map((pastMetaRows ?? []).map((row) => [row.booking_id, row]));
 
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
   const practitionerAvatarById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.avatar_url ?? null]));
@@ -107,7 +121,11 @@ export default async function ClientUpcomingPage({
     currency: b.currency,
     createdAt: b.created_at,
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
-    hasReview: reviewedBookingIds.has(b.id),
+    hasReview: pastMetaByBookingId.get(b.id)?.review_rating != null,
+    reviewRating: pastMetaByBookingId.get(b.id)?.review_rating ?? null,
+    sessionOutcome: (pastMetaByBookingId.get(b.id)?.outcome ?? null) as SessionBooking["sessionOutcome"],
+    refundAmountCents: pastMetaByBookingId.get(b.id)?.refunded ? (pastMetaByBookingId.get(b.id)?.refund_amount_cents ?? null) : null,
+    refundCurrency: pastMetaByBookingId.get(b.id)?.refund_currency ?? null,
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
     serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
   }));
@@ -289,6 +307,7 @@ export default async function ClientUpcomingPage({
         timezone={savedTz ?? undefined}
         nextSessionShownSeparately={nextBooking !== null}
         pastSectionId="past"
+        upcomingRebookHref="/browse"
       />
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">

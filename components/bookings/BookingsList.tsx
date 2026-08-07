@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
 import { PastSessionsSection } from "./PastSessionsSection";
@@ -93,6 +94,14 @@ export type SessionBooking = {
   createdAt: string;
   minNoticeHours?: number;
   hasReview?: boolean;
+  // Client past-sessions view only (from get_my_client_past_session_meta).
+  // The resolved video outcome, the client's own review rating (null =
+  // not yet reviewed), and refund info when a no-show/outage triggered an
+  // automatic refund. All left undefined on the practitioner path.
+  reviewRating?: number | null;
+  sessionOutcome?: "both_attended" | "client_no_show" | "practitioner_no_show" | "neither_attended" | "manual_review" | null;
+  refundAmountCents?: number | null;
+  refundCurrency?: string | null;
   // Practitioner path only: when the client used the emergency-contact
   // fallback during this session's video call. Renders a marker on the
   // card; left undefined elsewhere.
@@ -392,6 +401,12 @@ export function BookingsList({
   // contact set at all. When false there's nothing to revoke, so the
   // per-booking revoke control isn't shown.
   hasEmergencyContact = false,
+  // Client dashboard only: where the "book again" CTA in the empty
+  // upcoming state points (e.g. /browse). When set, a client with no
+  // upcoming sessions gets a rebooking prompt instead of a blank space —
+  // they have history, so a dead end is the wrong call. Left undefined on
+  // the practitioner path (unchanged empty state there).
+  upcomingRebookHref,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -404,6 +419,7 @@ export function BookingsList({
   showPastSection?: boolean;
   pastStartsExpanded?: boolean;
   pastSectionId?: string;
+  upcomingRebookHref?: string;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -446,7 +462,27 @@ export function BookingsList({
         <>
           <h3 style={{ margin: "var(--space-6) 0 var(--space-3)", font: "var(--text-heading-sm)" }}>{t("upcomingHeading")}</h3>
           {upcoming.length === 0 ? (
-        nextSessionShownSeparately ? null : (
+        upcomingRebookHref ? (
+          // A client with history but nothing booked — prompt a rebooking
+          // rather than leaving a dead end.
+          <div
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-lg)",
+              padding: "var(--space-5)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: "var(--space-3)",
+            }}
+          >
+            <p style={{ margin: 0, color: "var(--text-secondary)" }}>{t("noUpcomingRebookPrompt")}</p>
+            <Button href={upcomingRebookHref} variant="secondary">
+              {t("noUpcomingRebookCta")}
+            </Button>
+          </div>
+        ) : nextSessionShownSeparately ? null : (
           <p style={{ color: "var(--text-secondary)" }}>{t("noUpcomingBookings")}</p>
         )
       ) : (

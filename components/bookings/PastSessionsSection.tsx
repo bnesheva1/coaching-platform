@@ -11,10 +11,24 @@ import {
   type SessionBooking,
 } from "./BookingsList";
 import { LeaveReviewForm } from "./LeaveReviewForm";
+import { StarRating } from "@/components/ui/StarRating";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
   en: "en-US",
+};
+
+// Resolved video outcomes the client should see spelled out, rather than
+// the generic booking status. 'manual_review' is intentionally absent — it
+// isn't a client-facing outcome, so those rows fall back to "completed".
+const OUTCOME_LABEL_KEY: Record<
+  string,
+  "outcomeBothAttended" | "outcomeClientNoShow" | "outcomePractitionerNoShow" | "outcomeNeitherAttended"
+> = {
+  both_attended: "outcomeBothAttended",
+  client_no_show: "outcomeClientNoShow",
+  practitioner_no_show: "outcomePractitionerNoShow",
+  neither_attended: "outcomeNeitherAttended",
 };
 
 type Filter = "all" | "completed" | "cancelled";
@@ -57,6 +71,9 @@ export function PastSessionsSection({
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [filter, setFilter] = useState<Filter>("all");
+  // Which session's review form is expanded — one at a time, so the past
+  // list stays a compact scannable column rather than a wall of forms.
+  const [openReviewId, setOpenReviewId] = useState<string | null>(null);
 
   // Fixed at the full past list's length — must NOT shift as the filter
   // changes, per the request ("N ... should not change as filters are
@@ -126,12 +143,40 @@ export function PastSessionsSection({
           <ul style={{ listStyle: "none", padding: 0, marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             {filteredBookings.map((booking) => {
               const isCancelled = CANCELLED_STATUSES.has(booking.status);
-              // Client-only: a completed session either already has a
-              // review (a quiet note, matching the cancelled rows'
-              // muted tone) or gets the review form inline — practitioner
-              // rows never show either, there's nothing for them to do
-              // with a past session.
-              const showReviewSlot = perspective === "client" && booking.status === "completed";
+              // Past & not cancelled = the time has passed and it wasn't
+              // called off, so it's effectively completed for display even
+              // if the daily completion cron hasn't flipped the stored
+              // status yet.
+              const effectivelyCompleted = !isCancelled;
+
+              // Prefer the resolved video outcome ("what actually
+              // happened") over the generic booking status; fall back to
+              // the (time-derived) completed/status label otherwise.
+              const outcomeKey = booking.sessionOutcome ? OUTCOME_LABEL_KEY[booking.sessionOutcome] : undefined;
+              const statusText = outcomeKey
+                ? t(outcomeKey)
+                : effectivelyCompleted
+                  ? t("statusCompleted")
+                  : t(statusKeys[booking.status]);
+
+              // A review needs the booking ACTUALLY completed (the DB
+              // rejects a review on any other status) and the session to
+              // have taken place — no point rating a no-show.
+              const reviewable =
+                perspective === "client" &&
+                booking.status === "completed" &&
+                (!booking.sessionOutcome ||
+                  booking.sessionOutcome === "both_attended" ||
+                  booking.sessionOutcome === "manual_review");
+              const reviewed = perspective === "client" && booking.reviewRating != null;
+
+              const refundLabel =
+                booking.refundAmountCents != null
+                  ? new Intl.NumberFormat(intlLocale, {
+                      style: "currency",
+                      currency: booking.refundCurrency ?? booking.currency,
+                    }).format(booking.refundAmountCents / 100)
+                  : null;
 
               return (
                 <li
@@ -152,15 +197,85 @@ export function PastSessionsSection({
                     {booking.serviceName}
                   </span>
                   {" · "}
-                  {t(statusKeys[booking.status])}
+                  {statusText}
+
+                  {refundLabel && (
+                    <div style={{ marginTop: "var(--space-1)" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "2px 10px",
+                          borderRadius: "var(--radius-pill)",
+                          background: "var(--accent-subtle)",
+                          color: "var(--accent-subtle-text)",
+                          font: "var(--text-label)",
+                        }}
+                      >
+                        {t("refundedNote", { amount: refundLabel })}
+                      </span>
+                    </div>
+                  )}
+
                   <BookingDetailsDisclosure booking={booking} timezone={timezone} />
-                  {showReviewSlot &&
-                    (booking.hasReview ? (
-                      <p style={{ margin: "var(--space-1) 0 0", color: "var(--text-tertiary)", font: "var(--text-body-sm)" }}>
-                        {tReviews("alreadyReviewedNote")}
-                      </p>
+
+                  {reviewed && (
+                    <p
+                      style={{
+                        margin: "var(--space-1) 0 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--space-2)",
+                        font: "var(--text-body-sm)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      {tReviews("yourRatingLabel")}
+                      <span aria-label={tReviews("ratingAriaLabel", { rating: booking.reviewRating! })} style={{ color: "var(--accent)" }}>
+                        <StarRating rating={booking.reviewRating!} size={15} />
+                      </span>
+                    </p>
+                  )}
+
+                  {reviewable &&
+                    !reviewed &&
+                    (openReviewId === booking.id ? (
+                      <div style={{ marginTop: "var(--space-2)" }}>
+                        <LeaveReviewForm bookingId={booking.id} />
+                        <button
+                          type="button"
+                          className="focus-ring"
+                          onClick={() => setOpenReviewId(null)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: "var(--space-2) 0 0",
+                            font: "var(--text-body-sm)",
+                            color: "var(--text-tertiary)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {tReviews("rateSessionCancel")}
+                        </button>
+                      </div>
                     ) : (
-                      <LeaveReviewForm bookingId={booking.id} />
+                      <div style={{ marginTop: "var(--space-2)" }}>
+                        <button
+                          type="button"
+                          className="focus-ring"
+                          onClick={() => setOpenReviewId(booking.id)}
+                          style={{
+                            font: "var(--text-label)",
+                            padding: "6px 14px",
+                            borderRadius: "var(--radius-pill)",
+                            border: "1px solid var(--border-default)",
+                            background: "var(--bg-surface)",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {tReviews("rateSessionButton")}
+                        </button>
+                      </div>
                     ))}
                 </li>
               );
