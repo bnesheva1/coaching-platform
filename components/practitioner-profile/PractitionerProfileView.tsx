@@ -164,7 +164,16 @@ export function PractitionerProfileView({
   // initialExpandedServiceId, not always null — a fresh page load right
   // after a bookSlot redirect should land with that service's tile
   // already open, not collapsed.
-  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(initialExpandedServiceId);
+  // Timetables start COLLAPSED on load. The hero "See availability" CTA
+  // expands them all and scrolls to the first; each can also be toggled
+  // individually. Seeded expanded only for a service arrived at via
+  // ?service=<id> (a bookSlot redirect), so that one lands open.
+  const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(
+    () => new Set(initialExpandedServiceId ? [initialExpandedServiceId] : []),
+  );
+  // Deferred scroll target: set alongside an expand so the effect below can
+  // scroll only after the newly-expanded timetable has actually rendered.
+  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
   const [reviewsExpanded, setReviewsExpanded] = useState(false);
   // Placeholder only — local, optimistic, not persisted anywhere yet.
   // No auth gate either: there's no real save/favourite backend to gate
@@ -180,10 +189,32 @@ export function PractitionerProfileView({
   // with, never changes afterward, so there's nothing to re-run this on.
   useEffect(() => {
     if (initialExpandedServiceId) {
-      document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      (
+        document.getElementById(`availability-${initialExpandedServiceId}`) ?? document.getElementById("services")
+      )?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Scroll to a just-expanded timetable only after it has rendered — a
+  // freshly-expanded service's element doesn't exist until the state update
+  // commits, so the scroll is deferred to this effect rather than fired
+  // inline in the click handler.
+  useEffect(() => {
+    if (!pendingScrollId) return;
+    document.getElementById(`availability-${pendingScrollId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPendingScrollId(null);
+  }, [pendingScrollId]);
+
+  // The hero "See availability" CTA: expand every service's timetable, then
+  // scroll to the first one.
+  function scrollToFirstAvailability() {
+    const first = services[0];
+    if (!first) return;
+    setExpandedServiceIds(new Set(services.map((s) => s.id)));
+    setPendingScrollId(first.id);
+  }
 
   const dedupedDeliveryTypes = Array.from(new Set(services.map((s) => s.deliveryType))) as (
     | "online"
@@ -452,6 +483,7 @@ export function PractitionerProfileView({
                 city={location}
                 nextSlotLabel={nextSlotLabel}
                 timezone={timezone}
+                onSeeAvailability={scrollToFirstAvailability}
               />
             </div>
           )}
@@ -507,7 +539,7 @@ export function PractitionerProfileView({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {services.map((service) => {
-                const isSelected = service.id === expandedServiceId;
+                const isExpanded = expandedServiceIds.has(service.id);
                 return (
                   <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)", padding: 20 }}>
                     <div className={rowStyles.row} style={{ gap: 20 }}>
@@ -539,8 +571,8 @@ export function PractitionerProfileView({
                       </div>
                     </div>
 
-                    {isSelected ? (
-                      <div style={{ marginTop: 20 }}>
+                    {isExpanded ? (
+                      <div id={`availability-${service.id}`} style={{ marginTop: 20 }}>
                         <SlotPicker
                           slots={slotsByServiceId[service.id] ?? []}
                           ownBookings={ownBookings}
@@ -554,7 +586,13 @@ export function PractitionerProfileView({
                           headerAction={
                             <button
                               type="button"
-                              onClick={() => setExpandedServiceId(null)}
+                              onClick={() =>
+                                setExpandedServiceIds((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(service.id);
+                                  return next;
+                                })
+                              }
                               aria-expanded="true"
                               aria-controls={`slotpicker-${service.id}`}
                               style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
@@ -568,7 +606,7 @@ export function PractitionerProfileView({
                       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
                         <button
                           type="button"
-                          onClick={() => setExpandedServiceId(service.id)}
+                          onClick={() => setExpandedServiceIds((prev) => new Set(prev).add(service.id))}
                           aria-expanded="false"
                           aria-controls={`slotpicker-${service.id}`}
                           style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}
@@ -671,6 +709,7 @@ function FactsCard({
   city,
   nextSlotLabel,
   timezone,
+  onSeeAvailability,
 }: {
   averageRating: number | null;
   reviewCount: number;
@@ -678,6 +717,7 @@ function FactsCard({
   city: string;
   nextSlotLabel: string | null;
   timezone: string;
+  onSeeAvailability: () => void;
 }) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
@@ -736,7 +776,7 @@ function FactsCard({
         {nextSlotLabel && <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>{timezone}</span>}
       </div>
 
-      <Button href="#services" variant="primary" size="lg" fullWidth>
+      <Button onClick={onSeeAvailability} variant="primary" size="lg" fullWidth>
         {t("seeAvailability")}
       </Button>
     </div>

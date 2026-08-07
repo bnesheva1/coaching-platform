@@ -23,6 +23,14 @@ export async function getBookableSlots({
 }): Promise<Slot[]> {
   const supabase = await createClient();
 
+  // TEMPORARY (testing): bookings TO one specific test practitioner may be
+  // made with no lead time, so QA can create a session starting momentarily.
+  // This is the single chokepoint for both the slots shown on the profile
+  // AND the server-side booking re-validation, so gating here covers both.
+  // Keyed by the practitioner being booked. Remove once done.
+  const IMMEDIATE_BOOKING_PRACTITIONER_ID = "01e1e650-32a3-42d7-b714-1c4440b4f6d2"; // test3@test.com
+  const bypassMinNotice = practitionerId === IMMEDIATE_BOOKING_PRACTITIONER_ID;
+
   const now = new Date();
   const windowEnd = new Date(now.getTime() + (BOOKING_WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000);
 
@@ -115,6 +123,6 @@ export async function getBookableSlots({
     existingBookings,
     blockedDates,
     blockedRanges,
-    minNoticeHours: profile.min_notice_hours,
+    minNoticeHours: bypassMinNotice ? 0 : profile.min_notice_hours,
   });
 }
