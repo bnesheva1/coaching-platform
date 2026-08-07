@@ -107,17 +107,38 @@ export async function signup(
   // implicit flow (tokens in the URL #fragment), which never reaches
   // the server at all, so /auth/callback's ?code= handling would never
   // find anything to exchange.
-  const sendResult = await sendEmailConfirmationEmail({
-    to: email,
-    actionLink: data.properties.action_link,
-    locale: normalizeLocale(locale),
-  });
-  if (!sendResult.success) {
-    // The account genuinely exists at this point regardless — a failed
-    // send just means they land on check-email with nothing coming.
-    // Logged loudly since, unlike a booking notification, there's no
-    // other way for this account to ever become usable without it.
-    console.error("signup: sendEmailConfirmationEmail failed", { email, error: sendResult.error });
+  // Only attempt to send if email delivery is actually configured —
+  // otherwise the send is a guaranteed failure and we skip straight to
+  // the fallback below.
+  const emailDeliveryConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
+  let confirmationSent = false;
+  if (emailDeliveryConfigured) {
+    const sendResult = await sendEmailConfirmationEmail({
+      to: email,
+      actionLink: data.properties.action_link,
+      locale: normalizeLocale(locale),
+    });
+    confirmationSent = sendResult.success;
+    if (!sendResult.success) {
+      console.error("signup: sendEmailConfirmationEmail failed", { email, error: sendResult.error });
+    }
+  }
+
+  // TEMPORARY (until Resend is configured): if no confirmation email could
+  // be delivered, the account would otherwise be permanently unusable — no
+  // link to click, and login rejects an unconfirmed email. So confirm it
+  // immediately and send them to log in. This is entirely self-disabling:
+  // the moment RESEND_API_KEY + RESEND_FROM_EMAIL are set and a send
+  // succeeds, confirmationSent is true and the normal check-email flow
+  // resumes with no code change. Remove this branch once email delivery is
+  // solid if you want to hard-require confirmation again.
+  if (!confirmationSent) {
+    if (data.user) {
+      await supabase.auth.admin.updateUserById(data.user.id, { email_confirm: true });
+    }
+    console.warn("signup: email delivery unavailable — auto-confirmed account so it isn't stranded", { email });
+    redirect({ href: "/login", locale });
+    return null;
   }
 
   redirect({ href: "/signup/check-email", locale });
