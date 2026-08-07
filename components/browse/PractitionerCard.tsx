@@ -1,5 +1,6 @@
 "use client";
 
+import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
@@ -75,7 +76,9 @@ export function PractitionerCard({ practitioner }: { practitioner: PractitionerC
             font: "var(--text-micro)",
           }}
         >
-          <span aria-hidden="true">★ {practitioner.averageRating.toFixed(1)}</span>
+          <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+            <Star size={12} fill="currentColor" /> {practitioner.averageRating.toFixed(1)}
+          </span>
         </span>
       )}
 

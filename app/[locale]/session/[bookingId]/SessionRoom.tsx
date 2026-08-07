@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Ban, CircleCheck, Unplug } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
@@ -141,7 +142,7 @@ export function SessionRoom({
       <div className={styles.overlay}>
         <div className={styles.center}>
           <div className={styles.panel}>
-            <span className={styles.bigIcon} aria-hidden>🔌</span>
+            <Unplug size={32} aria-hidden />
             <h1 className={styles.title}>{t("disconnectedTitle")}</h1>
             <p className={styles.subtle}>{t("disconnectedBody")}</p>
             <div className={styles.actions}>
@@ -204,7 +205,7 @@ export function SessionRoom({
           )}
           {windowState === "ended" && (
             <>
-              <span className={styles.bigIcon} aria-hidden>✅</span>
+              <CircleCheck size={32} aria-hidden />
               <h1 className={styles.title}>{t("endedTitle")}</h1>
               <p className={styles.subtle}>{t("endedBody")}</p>
               <Button variant="secondary" onClick={leave}>
@@ -214,7 +215,7 @@ export function SessionRoom({
           )}
           {windowState === "unavailable" && (
             <>
-              <span className={styles.bigIcon} aria-hidden>🚫</span>
+              <Ban size={32} aria-hidden />
               <h1 className={styles.title}>{t("unavailableTitle")}</h1>
               <p className={styles.subtle}>{t("unavailableBody")}</p>
               <Button variant="secondary" onClick={leave}>

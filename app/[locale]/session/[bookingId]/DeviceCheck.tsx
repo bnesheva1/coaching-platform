@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Headphones, Mic, MicOff, TriangleAlert, Video, VideoOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import styles from "./session.module.css";
@@ -166,7 +167,7 @@ export function DeviceCheck({
     return (
       <div className={styles.center}>
         <div className={styles.panel}>
-          <span className={styles.bigIcon} aria-hidden>🎥</span>
+          <Video size={32} aria-hidden />
           <h1 className={styles.title}>{t("deviceCheckRequestingTitle")}</h1>
           <p className={styles.subtle}>{t("deviceCheckRequestingBody")}</p>
           {trouble}
@@ -179,7 +180,7 @@ export function DeviceCheck({
     return (
       <div className={styles.center}>
         <div className={styles.panel}>
-          <span className={styles.bigIcon} aria-hidden>⚠️</span>
+          <TriangleAlert size={32} aria-hidden />
           <h1 className={styles.title}>{t("deviceBlockedTitle")}</h1>
           <p className={styles.subtle}>{t("deviceBlockedBody")}</p>
           <div className={styles.instructions}>
@@ -207,7 +208,7 @@ export function DeviceCheck({
     return (
       <div className={styles.center}>
         <div className={styles.panel}>
-          <span className={styles.bigIcon} aria-hidden>🎧</span>
+          <Headphones size={32} aria-hidden />
           <h1 className={styles.title}>{t("noDevicesTitle")}</h1>
           <p className={styles.subtle}>{t("noDevicesBody")}</p>
           <div className={styles.actions}>
@@ -251,7 +252,7 @@ export function DeviceCheck({
             aria-pressed={micOn}
             onClick={() => setMicOn((v) => !v)}
           >
-            <span aria-hidden>{micOn ? "🎤" : "🔇"}</span> {t("micLabel")}
+            {micOn ? <Mic size={18} aria-hidden /> : <MicOff size={18} aria-hidden />} {t("micLabel")}
           </button>
           <button
             type="button"
@@ -260,7 +261,7 @@ export function DeviceCheck({
             disabled={audioOnly}
             onClick={() => setCamOn((v) => !v)}
           >
-            <span aria-hidden>{camOn ? "🎥" : "🚫"}</span> {t("cameraLabel")}
+            {camOn ? <Video size={18} aria-hidden /> : <VideoOff size={18} aria-hidden />} {t("cameraLabel")}
           </button>
         </div>
 

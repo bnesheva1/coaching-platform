@@ -46,9 +46,21 @@
   gap: var(--space-4);
 }
 
-.bigIcon {
-  font: var(--text-display-sm);
-  line-height: 1;
+/* The connecting spinner (Lucide LoaderCircle). */
+.spin {
+  animation: sessionSpin 1s linear infinite;
+}
+
+@keyframes sessionSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
 }
 
 .title {

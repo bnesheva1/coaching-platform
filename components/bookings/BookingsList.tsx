@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
+import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
@@ -539,7 +540,7 @@ export function BookingsList({
                   gap: "var(--space-2)",
                 }}
               >
-                <span aria-hidden>⚠️</span>
+                <TriangleAlert size={16} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>{t("emergencyContactUsedNote", { when: formatter.format(new Date(booking.fallbackRevealedAt)) })}</span>
               </p>
             );

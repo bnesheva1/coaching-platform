@@ -2,6 +2,7 @@
 
 import "@livekit/components-styles";
 import { useRef } from "react";
+import { LoaderCircle, Mic, MicOff, PhoneOff, User, Video, VideoOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   LiveKitRoom,
@@ -88,9 +89,11 @@ function RoomInner({
           <ParticipantTile trackRef={remote} className={styles.remoteTile} />
         ) : (
           <div className={styles.waiting}>
-            <span className={styles.bigIcon} aria-hidden>
-              {connecting ? "⏳" : "👤"}
-            </span>
+            {connecting ? (
+              <LoaderCircle className={styles.spin} size={32} aria-hidden />
+            ) : (
+              <User size={32} aria-hidden />
+            )}
             <p>{connecting ? t("connecting") : t("waitingForOther")}</p>
           </div>
         )}
@@ -113,7 +116,7 @@ function RoomInner({
           className={`${styles.controlButton} ${isMicrophoneEnabled ? "" : styles.controlButtonOff}`}
           onClick={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}
         >
-          <span aria-hidden>{isMicrophoneEnabled ? "🎤" : "🔇"}</span>
+          {isMicrophoneEnabled ? <Mic size={24} aria-hidden /> : <MicOff size={24} aria-hidden />}
         </button>
         <button
           type="button"
@@ -122,7 +125,7 @@ function RoomInner({
           className={`${styles.controlButton} ${isCameraEnabled ? "" : styles.controlButtonOff}`}
           onClick={() => localParticipant.setCameraEnabled(!isCameraEnabled)}
         >
-          <span aria-hidden>{isCameraEnabled ? "🎥" : "🚫"}</span>
+          {isCameraEnabled ? <Video size={24} aria-hidden /> : <VideoOff size={24} aria-hidden />}
         </button>
         <button
           type="button"
@@ -133,7 +136,7 @@ function RoomInner({
             room.disconnect();
           }}
         >
-          <span aria-hidden>📞</span>
+          <PhoneOff size={24} aria-hidden />
         </button>
       </div>
     </div>

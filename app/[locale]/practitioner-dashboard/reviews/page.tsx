@@ -2,6 +2,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
+import { StarRating } from "@/components/ui/StarRating";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -70,11 +71,8 @@ export default async function ReviewsPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-2)" }}>
-                    <span aria-label={t("ratingAriaLabel", { rating: review.rating })} style={{ font: "var(--text-body-md)" }}>
-                      <span aria-hidden="true">
-                        {"★".repeat(review.rating)}
-                        {"☆".repeat(5 - review.rating)}
-                      </span>
+                    <span aria-label={t("ratingAriaLabel", { rating: review.rating })}>
+                      <StarRating rating={review.rating} size={16} />
                     </span>
                     <span style={{ color: "var(--text-tertiary)", font: "var(--text-body-sm)" }}>
                       {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.created_at))}

@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { StarRating } from "@/components/ui/StarRating";
 import { SlotPicker } from "@/components/booking/SlotPicker";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
@@ -598,9 +599,8 @@ export function PractitionerProfileView({
               <div className={styles.reviewsGrid}>
                 {reviews.slice(0, 6).map((review) => (
                   <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
-                    <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 12 }}>
-                      {"★".repeat(review.rating)}
-                      {"☆".repeat(5 - review.rating)}
+                    <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)" }}>
+                      <StarRating rating={review.rating} size={14} />
                     </span>
                     <span style={{ flex: 1, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{review.reviewText}</span>
                     <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
@@ -623,9 +623,8 @@ export function PractitionerProfileView({
                 {reviews.map((review) => (
                   <div key={review.id} style={{ padding: "14px 0", borderTop: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: 5 }}>
                     <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
-                      <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)", letterSpacing: 1 }}>
-                        {"★".repeat(review.rating)}
-                        {"☆".repeat(5 - review.rating)}
+                      <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)" }}>
+                        <StarRating rating={review.rating} size={14} />
                       </span>{" "}
                       — {tReviews("verifiedUser")} · {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
                     </span>
@@ -683,8 +682,8 @@ function FactsCard({
     <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
       {averageRating !== null && (
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span aria-hidden="true" style={{ color: "var(--accent)", letterSpacing: 1, fontSize: 13 }}>
-            ★★★★★
+          <span aria-hidden="true" style={{ color: "var(--accent)" }}>
+            <StarRating rating={5} size={14} />
           </span>
           <span aria-hidden="true" style={{ font: "700 18px var(--font-ui)", color: "var(--text-primary)" }}>
             {averageRating.toFixed(1)}
