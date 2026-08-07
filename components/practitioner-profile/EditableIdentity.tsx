@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { updateProfileText, type ProfileFormState } from "@/app/[locale]/practitioner-dashboard/actions";
 import { EditPencilButton } from "./EditPencilButton";
+import { RenameLimitNote } from "@/components/settings/RenameLimitNote";
+import type { RenameUsage } from "@/lib/rename-limits";
 
 const initialState: ProfileFormState = null;
 
@@ -28,10 +30,15 @@ export function EditableIdentity({
   displayName,
   headline,
   location,
+  nameUsage,
 }: {
   displayName: string;
   headline: string;
   location: string;
+  // Always provided by the owner profile page (the only place this
+  // renders); optional only so the type doesn't force the public view,
+  // which never mounts this editor, to compute it.
+  nameUsage?: RenameUsage;
 }) {
   const t = useTranslations("Profile");
   const [isEditing, setIsEditing] = useState(false);
@@ -80,6 +87,10 @@ export function EditableIdentity({
 
   return (
     <form key={formKey} action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxWidth: 400 }}>
+      {/* The name limit note appears as soon as the identity editor opens
+          — the name is public, indexed, and shown on reviews, so its
+          change budget is worth stating up front, not after a failed save. */}
+      {nameUsage && <RenameLimitNote usage={nameUsage} kind="name" />}
       <label>
         {t("displayNameLabel")}
         <input name="displayName" type="text" defaultValue={state?.values?.displayName ?? displayName} maxLength={MAX_DISPLAY_NAME_LENGTH} className="form-field" style={{ width: "100%" }} />

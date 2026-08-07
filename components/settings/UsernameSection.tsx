@@ -4,7 +4,9 @@ import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { EditPencilButton } from "@/components/practitioner-profile/EditPencilButton";
+import { RenameLimitNote } from "./RenameLimitNote";
 import { updateUsername, checkUsernameAvailability, type ProfileFormState } from "@/app/[locale]/practitioner-dashboard/actions";
+import type { RenameUsage } from "@/lib/rename-limits";
 
 const initialState: ProfileFormState = null;
 
@@ -29,7 +31,7 @@ const MAX_USERNAME_LENGTH = 30;
 // not as permanent noise next to the read-only common case.
 type CheckResult = { username: string; available: boolean; reason?: string };
 
-export function UsernameSection({ initialUsername }: { initialUsername: string | null }) {
+export function UsernameSection({ initialUsername, usage }: { initialUsername: string | null; usage: RenameUsage }) {
   const t = useTranslations("Profile");
   const tSettings = useTranslations("AccountSettings");
   const [isEditing, setIsEditing] = useState(false);
@@ -96,19 +98,10 @@ export function UsernameSection({ initialUsername }: { initialUsername: string |
         </div>
       ) : (
         <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxWidth: 400 }}>
-          <p
-            style={{
-              margin: 0,
-              padding: "var(--space-3) var(--space-4)",
-              borderRadius: "var(--radius-md)",
-              background: "rgba(220, 20, 60, 0.08)",
-              border: "1px solid rgba(220, 20, 60, 0.3)",
-              font: "var(--text-body-sm)",
-              color: "crimson",
-            }}
-          >
-            {tSettings("usernameChangeWarning")}
-          </p>
+          {/* Shown as soon as the field opens: the limit + how many changes
+              remain (or the date it can change again at the limit), and —
+              for usernames — that the old address keeps redirecting. */}
+          <RenameLimitNote usage={usage} kind="username" />
           <label>
             {t("usernameLabel")}
             <input
@@ -130,7 +123,7 @@ export function UsernameSection({ initialUsername }: { initialUsername: string |
           {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
           {state?.success && <p style={{ color: "green", margin: 0 }}>{t("savedMessage")}</p>}
           <div style={{ display: "flex", gap: "var(--space-2)" }}>
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" size="sm" disabled={pending || usage.remaining <= 0}>
               {pending ? t("saveButtonPending") : t("saveButton")}
             </Button>
             <Button

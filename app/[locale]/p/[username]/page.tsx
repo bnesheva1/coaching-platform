@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
@@ -31,9 +33,17 @@ export default async function PublicProfilePage({
     .eq("username", normalizedUsername)
     .single();
 
-  // No matching username — including a practitioner who hasn't set one
-  // yet — means there is simply no live page here.
+  // No live match — but the handle may be a practitioner's PREVIOUS
+  // username. If so, redirect to their current one so old links, bookmarks,
+  // and stale search results keep resolving instead of 404-ing. Only a true
+  // dead end (never-used handle) falls through to notFound().
   if (!practitionerProfile) {
+    const { data: currentUsername } = await supabase.rpc("resolve_username_redirect", {
+      candidate: normalizedUsername,
+    });
+    if (currentUsername) {
+      redirect({ href: `/p/${currentUsername}`, locale: await getLocale() });
+    }
     notFound();
   }
 

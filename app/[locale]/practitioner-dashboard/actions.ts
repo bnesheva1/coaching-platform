@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUsernameFormat } from "@/lib/validation/username";
+import { getRenameUsage, recordRename, formatRenameDate } from "@/lib/rename-limits";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -84,10 +86,28 @@ export async function updateProfileText(
     if (displayName.length > MAX_DISPLAY_NAME_LENGTH) {
       return { error: t("displayNameTooLong", { max: MAX_DISPLAY_NAME_LENGTH }), values: submittedValues };
     }
-    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
-    if (error) {
-      console.error("updateProfileText: failed to update display_name:", error);
-      return { error: t("saveFailed"), values: submittedValues };
+    // Only a real change counts against the limit / is logged — re-saving
+    // the identity form after editing only the headline must not burn a
+    // name-change slot.
+    const { data: currentProfile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+    const currentName = currentProfile?.display_name ?? "";
+    if (displayName !== currentName) {
+      const usage = await getRenameUsage(user.id, "practitioner_display_name");
+      if (usage.remaining <= 0) {
+        const locale = await getLocale();
+        return {
+          error: usage.nextAllowedAt
+            ? t("renameLimitReached", { date: formatRenameDate(usage.nextAllowedAt, locale) })
+            : t("saveFailed"),
+          values: submittedValues,
+        };
+      }
+      const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
+      if (error) {
+        console.error("updateProfileText: failed to update display_name:", error);
+        return { error: t("saveFailed"), values: submittedValues };
+      }
+      await recordRename(user.id, "display_name", currentName || null, displayName);
     }
   }
 
@@ -205,13 +225,35 @@ export async function updateUsername(
     return { error: t("usernameTooShort", { min: 3 }) };
   }
 
+  // Format + reserved-word + profanity checks — the SAME validation the
+  // signup/creation path runs, deliberately re-run here so a username
+  // CHANGE can't slip a reserved or profane handle past.
   const usernameResult = await validateUsernameFormat(rawUsername);
   if (!usernameResult.valid) {
     return { error: usernameResult.reason };
   }
 
-  // Exclude our own row — re-saving your own unchanged username must
-  // not report itself as taken.
+  // An unchanged resubmit is a no-op — no limit consumed, no log entry.
+  const { data: currentRow } = await supabase.from("practitioner_profiles").select("username").eq("id", user.id).single();
+  const current = currentRow?.username ?? null;
+  if (current === usernameResult.normalized) {
+    return { success: true };
+  }
+
+  // Server-side rate limit (1 / 90 days), before any mutation.
+  const usage = await getRenameUsage(user.id, "username");
+  if (usage.remaining <= 0) {
+    const locale = await getLocale();
+    return {
+      error: usage.nextAllowedAt
+        ? t("renameLimitReached", { date: formatRenameDate(usage.nextAllowedAt, locale) })
+        : t("saveFailed"),
+    };
+  }
+
+  // Taken by another practitioner — live, or a still-redirecting past
+  // handle of theirs (the reclaim guard). exclude_id lets us reclaim our
+  // own old handle.
   const { data: taken } = await supabase.rpc("is_username_taken", {
     candidate: usernameResult.normalized,
     exclude_id: user.id,
@@ -219,6 +261,26 @@ export async function updateUsername(
   if (taken) {
     return { error: t("usernameAlreadyTaken") };
   }
+
+  // Park the old handle in history first (so it keeps redirecting even if
+  // the update below fails — the old handle stays live in that case, which
+  // is harmless), reclaim the new handle from our own history if we'd
+  // parked it before, then set the live username. username_history is a
+  // locked table, so these go through the service role.
+  const admin = createServiceRoleClient();
+  if (current) {
+    const { error: histError } = await admin
+      .from("username_history")
+      .upsert(
+        { practitioner_id: user.id, username: current, released_at: new Date().toISOString() },
+        { onConflict: "username" },
+      );
+    if (histError) {
+      console.error("updateUsername: history upsert failed:", histError);
+      return { error: t("saveFailed") };
+    }
+  }
+  await admin.from("username_history").delete().eq("practitioner_id", user.id).eq("username", usernameResult.normalized);
 
   const { error } = await supabase
     .from("practitioner_profiles")
@@ -229,6 +291,7 @@ export async function updateUsername(
     return { error: t("saveFailed") };
   }
 
+  await recordRename(user.id, "username", current, usernameResult.normalized);
   revalidateDashboard();
   return { success: true };
 }

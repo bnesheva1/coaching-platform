@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
+import type { RenameUsage } from "@/lib/rename-limits";
 import { SlotPicker } from "@/components/booking/SlotPicker";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
@@ -106,6 +107,9 @@ export type PractitionerProfileViewProps = {
   // this component's own isEditing state, is what makes that structurally
   // impossible now — the public route simply never passes this prop.
   ownerOnlyContent?: ReactNode;
+  // Owner-only: the practitioner's remaining name-change budget, shown in
+  // the identity editor. Undefined on the public view (never edits).
+  nameUsage?: RenameUsage;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -143,6 +147,7 @@ export function PractitionerProfileView({
   paymentStatus,
   initialExpandedServiceId,
   ownerOnlyContent,
+  nameUsage,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
@@ -345,7 +350,7 @@ export function PractitionerProfileView({
 
               {isEditing ? (
                 <div style={{ paddingBottom: 12, flex: 1, minWidth: 0 }}>
-                  <EditableIdentity displayName={displayName} headline={headline} location={location} />
+                  <EditableIdentity displayName={displayName} headline={headline} location={location} nameUsage={nameUsage} />
                 </div>
               ) : (
                 <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>

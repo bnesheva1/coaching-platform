@@ -4,6 +4,7 @@ import { StripeConnectSection } from "@/components/practitioner-profile/StripeCo
 import { UsernameSection } from "@/components/settings/UsernameSection";
 import { EmergencyContactField } from "@/components/settings/EmergencyContactField";
 import { getEmergencyContact } from "@/lib/profile/emergencyContact";
+import { getRenameUsage } from "@/lib/rename-limits";
 
 // Auth/role guard already ran in the shared layout.tsx.
 export default async function PractitionerSettingsPage({
@@ -49,7 +50,10 @@ export default async function PractitionerSettingsPage({
               errorCode={connectError}
               manageErrorCode={manageError}
             />
-            <UsernameSection initialUsername={practitionerProfile?.username ?? null} />
+            <UsernameSection
+              initialUsername={practitionerProfile?.username ?? null}
+              usage={await getRenameUsage(userId, "username")}
+            />
             <EmergencyContactField initialContact={emergencyContact} />
           </>
         }

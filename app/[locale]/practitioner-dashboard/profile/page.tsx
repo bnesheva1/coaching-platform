@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
+import { getRenameUsage } from "@/lib/rename-limits";
 import styles from "./page.module.css";
 
 // Auth/role guard already ran in the shared layout.tsx. isOwner is
@@ -71,6 +72,7 @@ export default async function ProfilePage() {
         <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("nav.profile")}</h1>
         <PractitionerProfileView
           isOwner
+          nameUsage={await getRenameUsage(userId, "practitioner_display_name")}
           practitionerId={userId}
           username={practitionerProfile?.username ?? null}
           displayName={profile?.display_name ?? ""}
