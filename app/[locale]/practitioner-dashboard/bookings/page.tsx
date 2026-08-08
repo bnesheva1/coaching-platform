@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BookingsList, type SessionBooking } from "@/components/bookings/BookingsList";
 import { splitUpcomingPast } from "@/lib/booking-time";
 import { getEmergencyContact } from "@/lib/profile/emergencyContact";
+import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 
 // Auth/role guard already ran in the shared layout.tsx. Full history
 // (upcoming, past, cancelled) — the new 6th nav item ("Резервации") that
@@ -22,6 +23,11 @@ export default async function BookingsPage({
     data: { user },
   } = await supabase.auth.getUser();
   const userId = user!.id;
+
+  // Cron-independent: resolve any of this practitioner's overdue-but-
+  // unresolved sessions before display (covers room-never-created no-shows
+  // the webhook can't). Idempotent; never throws.
+  await resolveOverdueSessionsForUser(userId).catch(() => {});
 
   const [{ data: practitionerProfile }, { data: bookings }] = await Promise.all([
     supabase.from("practitioner_profiles").select("timezone").eq("id", userId).single(),

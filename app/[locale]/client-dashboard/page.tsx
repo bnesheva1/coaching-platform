@@ -8,6 +8,7 @@ import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/Cl
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import { isSessionLive } from "@/lib/video/sessionWindow";
+import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
@@ -39,6 +40,12 @@ export default async function ClientUpcomingPage({
   } = await supabase.auth.getUser();
   // Guaranteed non-null by the layout guard.
   const userId = user!.id;
+
+  // Resolve any overdue-but-unresolved sessions before we read their
+  // outcomes below, so the display is never built on a NULL outcome —
+  // independent of the webhook (which can't fire for a room that was never
+  // created) or the daily cron. Idempotent; never throws.
+  await resolveOverdueSessionsForUser(userId).catch(() => {});
 
   const [{ data: profile }, { data: bookings }] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", userId).single(),
@@ -84,7 +91,7 @@ export default async function ClientUpcomingPage({
   // is grant-excluded from clients). Resilient to the RPC not existing yet
   // (migration not applied): falls back to an empty map so the page still
   // renders its base booking data.
-  const { data: pastMetaRows } = (await supabase.rpc("get_my_client_past_session_meta")) as {
+  const { data: pastMetaRows } = (await supabase.rpc("get_my_client_past_session_details")) as {
     data:
       | {
           booking_id: string;
@@ -93,6 +100,14 @@ export default async function ClientUpcomingPage({
           refunded: boolean;
           refund_amount_cents: number | null;
           refund_currency: string | null;
+          payment_status: string | null;
+          has_video_session: boolean;
+          room_created: boolean;
+          fallback_revealed: boolean;
+          client_joined_at: string | null;
+          practitioner_joined_at: string | null;
+          connected_from: string | null;
+          connected_to: string | null;
         }[]
       | null;
   };
@@ -126,6 +141,14 @@ export default async function ClientUpcomingPage({
     sessionOutcome: (pastMetaByBookingId.get(b.id)?.outcome ?? null) as SessionBooking["sessionOutcome"],
     refundAmountCents: pastMetaByBookingId.get(b.id)?.refunded ? (pastMetaByBookingId.get(b.id)?.refund_amount_cents ?? null) : null,
     refundCurrency: pastMetaByBookingId.get(b.id)?.refund_currency ?? null,
+    hasVideoSession: pastMetaByBookingId.get(b.id)?.has_video_session ?? false,
+    roomCreated: pastMetaByBookingId.get(b.id)?.room_created ?? false,
+    fallbackRevealed: pastMetaByBookingId.get(b.id)?.fallback_revealed ?? false,
+    paymentStatus: (pastMetaByBookingId.get(b.id)?.payment_status ?? null) as SessionBooking["paymentStatus"],
+    clientJoinedAt: pastMetaByBookingId.get(b.id)?.client_joined_at ?? null,
+    practitionerJoinedAt: pastMetaByBookingId.get(b.id)?.practitioner_joined_at ?? null,
+    connectedFrom: pastMetaByBookingId.get(b.id)?.connected_from ?? null,
+    connectedTo: pastMetaByBookingId.get(b.id)?.connected_to ?? null,
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
     serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
   }));

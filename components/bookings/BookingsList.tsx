@@ -102,6 +102,19 @@ export type SessionBooking = {
   sessionOutcome?: "both_attended" | "client_no_show" | "practitioner_no_show" | "neither_attended" | "manual_review" | null;
   refundAmountCents?: number | null;
   refundCurrency?: string | null;
+  // "What actually happened", from get_my_client_past_session_details (client
+  // past-sessions only). hasVideoSession distinguishes an online session
+  // from one that never had a room; roomCreated says whether a room was ever
+  // actually created (false = nobody ever joined). Attendance is summarised:
+  // first join per role, and the connected span (first join -> last leave).
+  hasVideoSession?: boolean;
+  roomCreated?: boolean;
+  fallbackRevealed?: boolean;
+  paymentStatus?: "succeeded" | "refunded" | null;
+  clientJoinedAt?: string | null;
+  practitionerJoinedAt?: string | null;
+  connectedFrom?: string | null;
+  connectedTo?: string | null;
   // Practitioner path only: when the client used the emergency-contact
   // fallback during this session's video call. Renders a marker on the
   // card; left undefined elsewhere.
@@ -294,13 +307,25 @@ const OUTCOME_LABEL_KEYS: Record<
   neither_attended: "outcomeNeitherAttended",
 };
 
-export function BookingDetailsDisclosure({ booking, timezone }: { booking: SessionBooking; timezone: string }) {
+export function BookingDetailsDisclosure({
+  booking,
+  timezone,
+  // Past sessions get a "What happened" section (outcome, attendance,
+  // connected time, payment, refund, fallback). Left off elsewhere — an
+  // upcoming session hasn't happened yet.
+  isPast = false,
+}: {
+  booking: SessionBooking;
+  timezone: string;
+  isPast?: boolean;
+}) {
   const t = useTranslations("Booking");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
 
   const priceFormatter = new Intl.NumberFormat(intlLocale, { style: "currency", currency: booking.currency });
   const createdAtFormatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
+  const timeFormatter = new Intl.DateTimeFormat(intlLocale, { hour: "2-digit", minute: "2-digit", timeZone: timezone });
 
   const deliveryTypeLabel =
     booking.deliveryType === "online"
@@ -336,9 +361,44 @@ export function BookingDetailsDisclosure({ booking, timezone }: { booking: Sessi
         }).format(booking.refundAmountCents / 100)
       : null;
 
+  // Attendance summary from video_attendance_events.
+  const clientJoined = booking.clientJoinedAt ? timeFormatter.format(new Date(booking.clientJoinedAt)) : null;
+  const practitionerJoined = booking.practitionerJoinedAt ? timeFormatter.format(new Date(booking.practitionerJoinedAt)) : null;
+  const connectedMinutes =
+    booking.connectedFrom && booking.connectedTo
+      ? Math.max(0, Math.round((new Date(booking.connectedTo).getTime() - new Date(booking.connectedFrom).getTime()) / 60000))
+      : null;
+  const connectedSpan =
+    booking.connectedFrom && booking.connectedTo
+      ? `${timeFormatter.format(new Date(booking.connectedFrom))}–${timeFormatter.format(new Date(booking.connectedTo))}`
+      : null;
+
+  // Payment state: no row at all vs. paid vs. refunded.
+  const paymentValue =
+    booking.paymentStatus === "refunded"
+      ? t("paymentRefunded")
+      : booking.paymentStatus === "succeeded"
+        ? t("paymentPaid", { amount: priceFormatter.format(booking.priceCents / 100) })
+        : t("paymentNone");
+
+  // The "What happened" section only makes sense for a session that has
+  // (a video session or a payment/refund/outcome record).
+  const showWhatHappened =
+    isPast &&
+    (booking.hasVideoSession || booking.sessionOutcome != null || booking.paymentStatus != null || booking.refundAmountCents != null);
+
   const rowStyle = { display: "flex", gap: "var(--space-3)" } as const;
   const labelStyle = { margin: 0, minWidth: 140, flexShrink: 0, color: "var(--text-tertiary)" } as const;
   const valueStyle = { margin: 0, color: "var(--text-secondary)" } as const;
+
+  const sectionHeadingStyle = {
+    margin: "var(--space-3) 0 var(--space-1)",
+    font: "var(--text-label)",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    color: "var(--text-tertiary)",
+  } as const;
+  const dlStyle = { margin: 0, display: "flex", flexDirection: "column", gap: "var(--space-1)", font: "var(--text-body-sm)" } as const;
 
   return (
     <details style={{ marginTop: "var(--space-2)" }}>
@@ -348,7 +408,64 @@ export function BookingDetailsDisclosure({ booking, timezone }: { booking: Sessi
       >
         {t("detailsToggle")}
       </summary>
-      <dl style={{ margin: "var(--space-2) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-1)", font: "var(--text-body-sm)" }}>
+
+      {/* What actually happened — primary. */}
+      {showWhatHappened && (
+        <>
+          <p style={{ ...sectionHeadingStyle, marginTop: "var(--space-2)" }}>{t("whatHappenedHeading")}</p>
+          <dl style={dlStyle}>
+            {outcomeKey && (
+              <div style={rowStyle}>
+                <dt style={labelStyle}>{t("detailsOutcomeLabel")}</dt>
+                <dd style={{ ...valueStyle, color: "var(--text-primary)" }}>{t(outcomeKey)}</dd>
+              </div>
+            )}
+            {booking.hasVideoSession && (
+              <div style={rowStyle}>
+                <dt style={labelStyle}>{t("detailsAttendanceLabel")}</dt>
+                <dd style={valueStyle}>
+                  {!booking.roomCreated
+                    ? t("attendanceRoomNeverCreated")
+                    : clientJoined || practitionerJoined
+                      ? [
+                          clientJoined && t("attendanceClientJoined", { time: clientJoined }),
+                          practitionerJoined && t("attendancePractitionerJoined", { time: practitionerJoined }),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : t("attendanceNobodyJoined")}
+                </dd>
+              </div>
+            )}
+            {connectedMinutes != null && (
+              <div style={rowStyle}>
+                <dt style={labelStyle}>{t("detailsConnectedLabel")}</dt>
+                <dd style={valueStyle}>{t("connectedValue", { minutes: connectedMinutes, span: connectedSpan ?? "" })}</dd>
+              </div>
+            )}
+            <div style={rowStyle}>
+              <dt style={labelStyle}>{t("detailsPaymentLabel")}</dt>
+              <dd style={valueStyle}>{paymentValue}</dd>
+            </div>
+            {refundLabel && (
+              <div style={rowStyle}>
+                <dt style={labelStyle}>{t("detailsRefundLabel")}</dt>
+                <dd style={valueStyle}>{refundLabel}</dd>
+              </div>
+            )}
+            {booking.fallbackRevealed && (
+              <div style={rowStyle}>
+                <dt style={labelStyle}>{t("detailsFallbackLabel")}</dt>
+                <dd style={valueStyle}>{t("fallbackRevealedValue")}</dd>
+              </div>
+            )}
+          </dl>
+        </>
+      )}
+
+      {/* What was agreed — snapshot, secondary. */}
+      {showWhatHappened && <p style={sectionHeadingStyle}>{t("agreedHeading")}</p>}
+      <dl style={{ ...dlStyle, marginTop: showWhatHappened ? 0 : "var(--space-2)" }}>
         <div style={rowStyle}>
           <dt style={labelStyle}>{t("detailsServiceLabel")}</dt>
           <dd style={valueStyle}>{booking.serviceName}</dd>
@@ -357,18 +474,6 @@ export function BookingDetailsDisclosure({ booking, timezone }: { booking: Sessi
           <dt style={labelStyle}>{t("detailsPriceLabel")}</dt>
           <dd style={valueStyle}>{priceFormatter.format(booking.priceCents / 100)}</dd>
         </div>
-        {refundLabel && (
-          <div style={rowStyle}>
-            <dt style={labelStyle}>{t("detailsRefundLabel")}</dt>
-            <dd style={valueStyle}>{refundLabel}</dd>
-          </div>
-        )}
-        {outcomeKey && (
-          <div style={rowStyle}>
-            <dt style={labelStyle}>{t("detailsOutcomeLabel")}</dt>
-            <dd style={valueStyle}>{t(outcomeKey)}</dd>
-          </div>
-        )}
         <div style={rowStyle}>
           <dt style={labelStyle}>{t("detailsDurationLabel")}</dt>
           <dd style={valueStyle}>{t("detailsDurationValue", { minutes: booking.durationMinutes })}</dd>

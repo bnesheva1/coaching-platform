@@ -216,7 +216,7 @@ export function PastSessionsSection({
                     </div>
                   )}
 
-                  <BookingDetailsDisclosure booking={booking} timezone={timezone} />
+                  <BookingDetailsDisclosure booking={booking} timezone={timezone} isPast />
 
                   {reviewed && (
                     <p
