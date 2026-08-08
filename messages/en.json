@@ -533,6 +533,8 @@
     "detailsToggle": "Details",
     "detailsServiceLabel": "Service",
     "detailsPriceLabel": "Price paid",
+    "detailsRefundLabel": "Refunded",
+    "detailsOutcomeLabel": "Outcome",
     "detailsDurationLabel": "Duration",
     "detailsDurationValue": "{minutes} min",
     "detailsDeliveryTypeLabel": "How it's held",

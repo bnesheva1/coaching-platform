@@ -281,6 +281,19 @@ export function PractitionerChip({ name, avatarUrl }: { name: string; avatarUrl?
 // in, which each page maps from bookings' own snapshot columns (or, for
 // duration, from the booking's own immutable start/end) — never from a
 // second services query.
+// Resolved video outcomes the client sees spelled out in a session's
+// details. 'manual_review' is absent on purpose (not a client-facing
+// outcome). Shared shape with PastSessionsSection's own map.
+const OUTCOME_LABEL_KEYS: Record<
+  string,
+  "outcomeBothAttended" | "outcomeClientNoShow" | "outcomePractitionerNoShow" | "outcomeNeitherAttended" | undefined
+> = {
+  both_attended: "outcomeBothAttended",
+  client_no_show: "outcomeClientNoShow",
+  practitioner_no_show: "outcomePractitionerNoShow",
+  neither_attended: "outcomeNeitherAttended",
+};
+
 export function BookingDetailsDisclosure({ booking, timezone }: { booking: SessionBooking; timezone: string }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -309,6 +322,20 @@ export function BookingDetailsDisclosure({ booking, timezone }: { booking: Sessi
 
   const deliveryDetailsValue = booking.deliveryType === "phone" ? booking.phoneNumber : booking.deliveryInfo;
 
+  // The resolved video outcome ("what actually happened") + any refund,
+  // shown for the client's past sessions (both populated only on the client
+  // path). 'manual_review' is intentionally omitted — not a client-facing
+  // outcome. Refund is shown whenever a payment was refunded (a no-show or a
+  // practitioner cancellation), so the details reflect the real record.
+  const outcomeKey = booking.sessionOutcome ? OUTCOME_LABEL_KEYS[booking.sessionOutcome] : undefined;
+  const refundLabel =
+    booking.refundAmountCents != null
+      ? new Intl.NumberFormat(intlLocale, {
+          style: "currency",
+          currency: booking.refundCurrency ?? booking.currency,
+        }).format(booking.refundAmountCents / 100)
+      : null;
+
   const rowStyle = { display: "flex", gap: "var(--space-3)" } as const;
   const labelStyle = { margin: 0, minWidth: 140, flexShrink: 0, color: "var(--text-tertiary)" } as const;
   const valueStyle = { margin: 0, color: "var(--text-secondary)" } as const;
@@ -330,6 +357,18 @@ export function BookingDetailsDisclosure({ booking, timezone }: { booking: Sessi
           <dt style={labelStyle}>{t("detailsPriceLabel")}</dt>
           <dd style={valueStyle}>{priceFormatter.format(booking.priceCents / 100)}</dd>
         </div>
+        {refundLabel && (
+          <div style={rowStyle}>
+            <dt style={labelStyle}>{t("detailsRefundLabel")}</dt>
+            <dd style={valueStyle}>{refundLabel}</dd>
+          </div>
+        )}
+        {outcomeKey && (
+          <div style={rowStyle}>
+            <dt style={labelStyle}>{t("detailsOutcomeLabel")}</dt>
+            <dd style={valueStyle}>{t(outcomeKey)}</dd>
+          </div>
+        )}
         <div style={rowStyle}>
           <dt style={labelStyle}>{t("detailsDurationLabel")}</dt>
           <dd style={valueStyle}>{t("detailsDurationValue", { minutes: booking.durationMinutes })}</dd>

@@ -531,6 +531,8 @@
     "detailsToggle": "Детайли",
     "detailsServiceLabel": "Услуга",
     "detailsPriceLabel": "Платена цена",
+    "detailsRefundLabel": "Възстановена сума",
+    "detailsOutcomeLabel": "Резултат",
     "detailsDurationLabel": "Продължителност",
     "detailsDurationValue": "{minutes} мин.",
     "detailsDeliveryTypeLabel": "Как се провежда",
