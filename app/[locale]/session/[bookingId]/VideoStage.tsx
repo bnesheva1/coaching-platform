@@ -25,6 +25,7 @@ export function VideoStage({
   token,
   url,
   choice,
+  startsAt,
   endsAt,
   onLeave,
   onDropped,
@@ -34,6 +35,7 @@ export function VideoStage({
   token: string;
   url: string;
   choice: JoinChoice;
+  startsAt: string | null;
   endsAt: string | null;
   onLeave: () => void;
   onDropped: () => void;
@@ -65,7 +67,7 @@ export function VideoStage({
       onError={(err) => console.error("LiveKitRoom error", err)}
     >
       <RoomAudioRenderer />
-      <RoomInner leavingRef={leavingRef} endingRef={endingRef} endsAt={endsAt} trouble={trouble} />
+      <RoomInner leavingRef={leavingRef} endingRef={endingRef} startsAt={startsAt} endsAt={endsAt} trouble={trouble} />
     </LiveKitRoom>
   );
 }
@@ -73,11 +75,13 @@ export function VideoStage({
 function RoomInner({
   leavingRef,
   endingRef,
+  startsAt,
   endsAt,
   trouble,
 }: {
   leavingRef: React.MutableRefObject<boolean>;
   endingRef: React.MutableRefObject<boolean>;
+  startsAt: string | null;
   endsAt: string | null;
   trouble: React.ReactNode;
 }) {
@@ -106,6 +110,11 @@ function RoomInner({
 
   const msLeft = endMs !== null && nowMs !== null ? endMs - nowMs : null;
   const showCountdown = msLeft !== null && msLeft > 0 && msLeft <= 5 * 60_000;
+
+  // State 2: someone is already in the room during the early-join window,
+  // before the scheduled start — count down to the start, in seconds.
+  const startMs = startsAt ? new Date(startsAt).getTime() : null;
+  const showStartsIn = startMs !== null && nowMs !== null && nowMs < startMs;
 
   const cameraTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], { onlySubscribed: false });
   const remote = cameraTracks.find((tr) => !tr.participant.isLocal);
@@ -138,6 +147,11 @@ function RoomInner({
         )}
 
         {reconnecting && <div className={styles.toast}>{t("reconnecting")}</div>}
+        {showStartsIn && startMs !== null && nowMs !== null && (
+          <div className={styles.startsBanner}>
+            {t("sessionStartsInPrefix")} <Countdown targetMs={startMs} mode="clock" nowMs={nowMs} />
+          </div>
+        )}
         {showCountdown && endMs !== null && nowMs !== null && (
           // No role="status" on the banner: the inner Countdown is a
           // role="timer" (aria-live off), so it won't be re-announced every

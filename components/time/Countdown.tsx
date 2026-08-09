@@ -16,6 +16,10 @@ const UNIT_KEY: Record<CountdownUnit, "day" | "hour" | "minute"> = {
 // "clock" mode = seconds (H:MM:SS / M:SS); "relative" mode = the units-and-
 // plurals form ("1 ден 3 ч"), which ticks once a MINUTE.
 //
+// `countUp` flips the direction: down to `targetMs` (default), or up since it
+// (the "session running for 12 min" timer, measured from the scheduled
+// start). Either way the value handed to the formatter is clamped at zero.
+//
 // It self-ticks when standalone, but accepts a controlled `nowMs`: the two
 // session views already tick every second (for their hard-stop / auto-
 // advance side effects), so they pass that same clock in and this adds no
@@ -24,11 +28,13 @@ const UNIT_KEY: Record<CountdownUnit, "day" | "hour" | "minute"> = {
 export function Countdown({
   targetMs,
   mode,
+  countUp = false,
   nowMs,
   className,
 }: {
   targetMs: number;
   mode: "clock" | "relative";
+  countUp?: boolean;
   nowMs?: number | null;
   className?: string;
 }) {
@@ -54,11 +60,11 @@ export function Countdown({
     return <span className={className} role="timer" aria-live="off" />;
   }
 
-  const msLeft = targetMs - now;
+  const ms = countUp ? now - targetMs : targetMs - now;
   const text =
     mode === "clock"
-      ? formatClock(msLeft)
-      : relativeParts(msLeft)
+      ? formatClock(ms)
+      : relativeParts(ms)
           .map((p) => t(UNIT_KEY[p.unit], { value: p.value }))
           .join(" ");
 

@@ -8,7 +8,7 @@ import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
 import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
-import { notPastEndCutoffIso, isSessionLive } from "@/lib/video/sessionWindow";
+import { notPastEndCutoffIso } from "@/lib/video/sessionWindow";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -309,7 +309,6 @@ export default async function PractitionerHomePage() {
   }));
 
   const { missingLinkBookings, nextBooking } = buildAgendaView(upcoming);
-  const nextIsLive = nextBooking ? isSessionLive(nextBooking.startUtc, nextBooking.endUtc) : false;
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
 
@@ -366,14 +365,16 @@ export default async function PractitionerHomePage() {
         {nextBooking && (
           <div style={{ marginBottom: "var(--space-6)" }}>
             <Card
-              eyebrow={nextIsLive ? t("agenda.inProgressEyebrow") : t("agenda.nextSessionEyebrow")}
-              title={`${nextBooking.serviceName} — ${nextBooking.clientName}`}
-              description={
-                <>
-                  <NextSessionWhen startUtc={nextBooking.startUtc} savedTimezone={timezone} />{" "}
-                  · {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
-                </>
+              eyebrow={
+                <NextSessionWhen
+                  startUtc={nextBooking.startUtc}
+                  endUtc={nextBooking.endUtc}
+                  savedTimezone={timezone}
+                  fallback={t("agenda.nextSessionEyebrow")}
+                />
               }
+              title={`${nextBooking.serviceName} — ${nextBooking.clientName}`}
+              description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
               footer={
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                   {nextBooking.deliveryType === "online" ? (

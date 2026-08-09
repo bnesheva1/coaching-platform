@@ -5,6 +5,7 @@ import { Ban, CircleCheck, Unplug } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
+import { EARLY_JOIN_MS } from "@/lib/video/sessionWindow";
 import { Countdown } from "@/components/time/Countdown";
 import { DeviceCheck, type JoinChoice } from "./DeviceCheck";
 import { VideoStage } from "./VideoStage";
@@ -49,6 +50,11 @@ export function SessionRoom({
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [openTimeLabel, setOpenTimeLabel] = useState<string | null>(null);
   const opensAtMs = opensAt ? new Date(opensAt).getTime() : null;
+  // The scheduled start is one early-join window after the room opens
+  // (opens_at = start − EARLY_JOIN). Recovered here to drive the in-room
+  // "session starts in M:SS" countdown, since the access read only exposes
+  // opens_at/closes_at, not the raw start.
+  const startsAt = opensAtMs !== null ? new Date(opensAtMs + EARLY_JOIN_MS).toISOString() : null;
   const [conn, setConn] = useState<{ token: string; url: string } | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   // State, not a ref: it's read during render (passed to VideoStage) and
@@ -124,6 +130,7 @@ export function SessionRoom({
           token={conn.token}
           url={conn.url}
           choice={choice}
+          startsAt={startsAt}
           endsAt={closesAt}
           onLeave={leave}
           onDropped={() => setPhase("disconnected")}

@@ -420,6 +420,25 @@
   white-space: nowrap;
 }
 
+/* "Session starts in M:SS" — shown to someone already in the room during
+   the early-join window, before the scheduled start. Same top slot as the
+   ending banner (the two never overlap), but neutral rather than the
+   ending banner's accent warning tone. */
+.startsBanner {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--bg-inverse);
+  color: var(--text-on-inverse);
+  font: var(--text-body-sm);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+
 /* the "having trouble connecting?" affordance */
 .troubleLink {
   background: none;
