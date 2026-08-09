@@ -7,6 +7,7 @@ import { GreetingText } from "@/components/dashboard/GreetingText";
 import { CancelSessionDialog } from "@/components/bookings/CancelSessionDialog";
 import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
+import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { notPastEndCutoffIso, isSessionLive } from "@/lib/video/sessionWindow";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -367,7 +368,12 @@ export default async function PractitionerHomePage() {
             <Card
               eyebrow={nextIsLive ? t("agenda.inProgressEyebrow") : t("agenda.nextSessionEyebrow")}
               title={`${nextBooking.serviceName} — ${nextBooking.clientName}`}
-              description={`${formatter.format(new Date(nextBooking.startUtc))} · ${tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}`}
+              description={
+                <>
+                  <NextSessionWhen startUtc={nextBooking.startUtc} savedTimezone={timezone} />{" "}
+                  · {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
+                </>
+              }
               footer={
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                   {nextBooking.deliveryType === "online" ? (

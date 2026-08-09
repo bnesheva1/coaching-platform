@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { BookingsList, ServiceImageSquare, PractitionerChip, type SessionBooking } from "@/components/bookings/BookingsList";
 import { NextSessionCancelAction } from "@/components/bookings/NextSessionCancelAction";
 import { GreetingText } from "@/components/dashboard/GreetingText";
-import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
+import { ClientTimezoneNotice } from "@/components/dashboard/ClientTimezone";
+import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import { isSessionLive } from "@/lib/video/sessionWindow";
@@ -274,7 +275,7 @@ export default async function ClientUpcomingPage({
                   <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} />
                 </div>
                 <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                  <ClientLocalTime iso={nextBooking.startUtc} savedTimezone={savedTz} /> ·{" "}
+                  <NextSessionWhen startUtc={nextBooking.startUtc} savedTimezone={savedTz} /> ·{" "}
                   {tPublicProfile("serviceDuration", { minutes: nextBooking.durationMinutes })}
                 </p>
 

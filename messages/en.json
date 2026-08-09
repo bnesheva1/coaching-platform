@@ -155,6 +155,11 @@
     "title": "Your account has been deleted",
     "body": "We're sorry to see you go. Your account has been permanently deleted and you've been signed out."
   },
+  "Countdown": {
+    "day": "{value, plural, one {# day} other {# days}}",
+    "hour": "{value} hr",
+    "minute": "{value} min"
+  },
   "Dashboard": {
     "practitionerTitle": "Practitioner Dashboard",
     "clientTitle": "Client Dashboard",
@@ -213,6 +218,7 @@
       "missingLinkNudge": "Missing meeting link in the next 48 hours",
       "addLink": "Add",
       "nextSessionEyebrow": "Next session",
+      "nextSessionIn": "Your next session in",
       "inProgressEyebrow": "Session in progress",
       "timezoneNotice": "Times shown in {timezone}",
       "timezoneChangeLink": "Change in settings",
@@ -718,6 +724,7 @@
     "noDevicesBody": "Check that a camera and microphone are connected, or join to see and hear the other person.",
     "waitingForOther": "Waiting for the other person to join…",
     "endingInLabel": "Session ends in {time}",
+    "endingInPrefix": "The session ends in",
     "connecting": "Connecting you…",
     "reconnecting": "Connection lost — reconnecting…",
     "leave": "Leave",

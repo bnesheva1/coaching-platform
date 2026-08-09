@@ -14,6 +14,7 @@ import {
   useRoomContext,
 } from "@livekit/components-react";
 import { Track, ConnectionState, DisconnectReason } from "livekit-client";
+import { Countdown } from "@/components/time/Countdown";
 import type { JoinChoice } from "./DeviceCheck";
 import styles from "./session.module.css";
 
@@ -67,13 +68,6 @@ export function VideoStage({
       <RoomInner leavingRef={leavingRef} endingRef={endingRef} endsAt={endsAt} trouble={trouble} />
     </LiveKitRoom>
   );
-}
-
-function formatCountdown(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function RoomInner({
@@ -144,9 +138,12 @@ function RoomInner({
         )}
 
         {reconnecting && <div className={styles.toast}>{t("reconnecting")}</div>}
-        {showCountdown && msLeft !== null && (
-          <div className={styles.endingBanner} role="status">
-            {t("endingInLabel", { time: formatCountdown(msLeft) })}
+        {showCountdown && endMs !== null && nowMs !== null && (
+          // No role="status" on the banner: the inner Countdown is a
+          // role="timer" (aria-live off), so it won't be re-announced every
+          // second. The banner is read on navigation when it appears.
+          <div className={styles.endingBanner}>
+            {t("endingInPrefix")} <Countdown targetMs={endMs} mode="clock" nowMs={nowMs} />
           </div>
         )}
         {trouble}

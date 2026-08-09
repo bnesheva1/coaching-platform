@@ -9,7 +9,9 @@ export type CardProps = {
   // string, which is itself valid ReactNode, so this is additive.
   eyebrow?: ReactNode;
   title?: string;
-  description?: string;
+  // ReactNode for the same reason as eyebrow — lets the next-session card
+  // pass a live <NextSessionWhen> countdown, not just a static string.
+  description?: ReactNode;
   footer?: ReactNode;
   tone?: CardTone;
 };

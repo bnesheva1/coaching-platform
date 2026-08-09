@@ -5,6 +5,7 @@ import { Ban, CircleCheck, Unplug } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
+import { Countdown } from "@/components/time/Countdown";
 import { DeviceCheck, type JoinChoice } from "./DeviceCheck";
 import { VideoStage } from "./VideoStage";
 import { TroubleButton } from "./TroubleButton";
@@ -14,15 +15,6 @@ type ServerState = "too_early" | "open" | "ended" | "unavailable";
 type Phase = "window" | "device_check" | "in_room" | "disconnected";
 
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
-
-function formatCountdown(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-}
 
 // The full-screen session orchestrator. Renders a fixed overlay (covering
 // the site chrome) and drives the window → device-check → in-room →
@@ -54,8 +46,9 @@ export function SessionRoom({
   // time formatted in the viewer's local zone) differs between the server
   // render and the client and would hydrate-mismatch. The effect fills
   // them in on the client only.
-  const [remaining, setRemaining] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const [openTimeLabel, setOpenTimeLabel] = useState<string | null>(null);
+  const opensAtMs = opensAt ? new Date(opensAt).getTime() : null;
   const [conn, setConn] = useState<{ token: string; url: string } | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   // State, not a ref: it's read during render (passed to VideoStage) and
@@ -80,7 +73,7 @@ export function SessionRoom({
         setPhase("device_check");
         return false;
       }
-      setRemaining(left);
+      setNowMs(Date.now());
       return true;
     };
     if (!update()) return; // already open by the time the client mounted
@@ -205,7 +198,13 @@ export function SessionRoom({
               </span>
               <h1 className={styles.title}>{t("opensAtTitle", { time: openTimeLabel ?? "…" })}</h1>
               <div className={styles.countdownBlock}>
-                <p className={styles.countdown}>{remaining !== null ? formatCountdown(remaining) : "—"}</p>
+                <p className={styles.countdown}>
+                  {nowMs !== null && opensAtMs !== null ? (
+                    <Countdown targetMs={opensAtMs} mode="clock" nowMs={nowMs} />
+                  ) : (
+                    "—"
+                  )}
+                </p>
                 <p className={styles.countdownLabel}>{t("timeRemaining")}</p>
               </div>
               <p className={styles.subtle}>{t("opensAtBody")}</p>
