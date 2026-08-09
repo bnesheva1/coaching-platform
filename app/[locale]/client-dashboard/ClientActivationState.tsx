@@ -55,6 +55,54 @@ export async function ClientActivationState({ displayName }: { displayName: stri
         }
       />
 
+      {/* A brief, ordered "how it works" — a genuine sequence, so numbered
+          steps are meaningful rather than decorative. Stacks on narrow
+          screens, sits in a row when there's room. */}
+      <section aria-labelledby="how-it-works-heading" style={{ marginTop: "var(--space-8)" }}>
+        <h2 id="how-it-works-heading" style={{ font: "var(--text-heading-md)", margin: "0 0 var(--space-4)" }}>
+          {t("clientEmptyState.howHeading")}
+        </h2>
+        <ol
+          style={{
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: "var(--space-4)",
+          }}
+        >
+          {[
+            t("clientEmptyState.step1"),
+            t("clientEmptyState.step2"),
+            t("clientEmptyState.step3"),
+            t("clientEmptyState.step4"),
+          ].map((label, i) => (
+            <li key={label} style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+              <span
+                aria-hidden
+                style={{
+                  flexShrink: 0,
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "var(--accent-subtle)",
+                  color: "var(--accent-subtle-text)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  font: "var(--text-button-sm)",
+                  fontWeight: 700,
+                }}
+              >
+                {i + 1}
+              </span>
+              <span style={{ font: "var(--text-body-md)", color: "var(--text-primary)" }}>{label}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {suggested.length > 0 && (
         <section style={{ marginTop: "var(--space-8)" }}>
           <h2 style={{ font: "var(--text-heading-md)", margin: "0 0 var(--space-4)" }}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/Button";
@@ -551,6 +551,13 @@ export function BookingsList({
   // they have history, so a dead end is the wrong call. Left undefined on
   // the practitioner path (unchanged empty state there).
   upcomingRebookHref,
+  // Client dashboard only: a caller-supplied node rendered in place of the
+  // default empty-upcoming message/rebook card. Lets the page own a richer
+  // empty state (its "nothing upcoming, here's the way back" block) without
+  // baking client-specific content into this shared list. Takes precedence
+  // over upcomingRebookHref / the default message when the upcoming list is
+  // empty.
+  emptyUpcomingContent,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -564,6 +571,7 @@ export function BookingsList({
   pastStartsExpanded?: boolean;
   pastSectionId?: string;
   upcomingRebookHref?: string;
+  emptyUpcomingContent?: ReactNode;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -606,7 +614,9 @@ export function BookingsList({
         <>
           <h3 style={{ margin: "var(--space-6) 0 var(--space-3)", font: "var(--text-heading-sm)" }}>{t("upcomingHeading")}</h3>
           {upcoming.length === 0 ? (
-        upcomingRebookHref ? (
+        emptyUpcomingContent !== undefined ? (
+          emptyUpcomingContent
+        ) : upcomingRebookHref ? (
           // A client with history but nothing booked — prompt a rebooking
           // rather than leaving a dead end.
           <div

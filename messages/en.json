@@ -228,12 +228,20 @@
       "timezoneNotice": "Times shown in {timezone}",
       "timezoneChangeLink": "Change in settings",
       "timezoneTooltip": "Select your timezone in settings",
-      "manageBookings": "Manage your bookings"
+      "manageBookings": "Manage your bookings",
+      "noUpcomingTitle": "No upcoming sessions",
+      "noUpcomingRebookLine": "Book again with one of the practitioners you've seen before.",
+      "noUpcomingBrowse": "Find someone new"
     },
     "clientEmptyState": {
       "title": "You haven't booked a session yet",
       "body": "Browse the practitioners on the platform and book your first session.",
       "cta": "Find a practitioner",
+      "howHeading": "How it works",
+      "step1": "Find a practitioner",
+      "step2": "Choose a time",
+      "step3": "Pay securely",
+      "step4": "Join the session",
       "suggestedHeading": "Suggested practitioners"
     },
     "bookedWith": {

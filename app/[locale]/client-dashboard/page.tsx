@@ -209,6 +209,53 @@ export default async function ClientUpcomingPage({
       reviewCount: p.reviewCount,
     }));
 
+  // State 2 empty state — they have history but nothing upcoming. Not
+  // patronising with a "how it works" explainer (they know); a route back
+  // instead: rebooking with someone known is the likeliest next action, so
+  // the primary points at the "My practitioners" section below (already on
+  // this page, id="practitioners"), with browsing for someone new secondary.
+  // Native <a> for the in-page anchor — Button uses the locale-aware Link,
+  // which would mangle a bare "#practitioners".
+  const noUpcomingBlock = (
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-lg)",
+        padding: "var(--space-6)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: "var(--space-3)",
+      }}
+    >
+      <h3 style={{ margin: 0, font: "var(--text-heading-sm)" }}>{t("agenda.noUpcomingTitle")}</h3>
+      <p style={{ margin: 0, color: "var(--text-secondary)", font: "var(--text-body-md)" }}>
+        {t("agenda.noUpcomingRebookLine")}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginTop: "var(--space-1)" }}>
+        <a
+          href="#practitioners"
+          className="focus-ring"
+          style={{
+            display: "inline-block",
+            padding: "var(--button-padding-md)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--accent)",
+            color: "var(--text-on-accent)",
+            font: "var(--text-button-md)",
+            textDecoration: "none",
+          }}
+        >
+          {t("nav.clientPractitioners")}
+        </a>
+        <Button href="/browse" variant="ghost">
+          {t("agenda.noUpcomingBrowse")}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
@@ -332,7 +379,7 @@ export default async function ClientUpcomingPage({
         timezone={savedTz ?? undefined}
         nextSessionShownSeparately={nextBooking !== null}
         pastSectionId="past"
-        upcomingRebookHref="/browse"
+        emptyUpcomingContent={nextBooking ? undefined : noUpcomingBlock}
       />
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">
