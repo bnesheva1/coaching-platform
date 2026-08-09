@@ -23,19 +23,18 @@ export async function getBookableSlots({
 }): Promise<Slot[]> {
   const supabase = await createClient();
 
-  // TEMPORARY (testing): bookings TO one specific test practitioner may be
-  // made with no lead time, so QA can create a session starting momentarily.
-  // This is the single chokepoint for both the slots shown on the profile
-  // AND the server-side booking re-validation, so gating here covers both.
-  // Keyed by the practitioner being booked. Remove once done.
-  const IMMEDIATE_BOOKING_PRACTITIONER_ID = "01e1e650-32a3-42d7-b714-1c4440b4f6d2"; // test3@test.com
-  const bypassMinNotice = practitionerId === IMMEDIATE_BOOKING_PRACTITIONER_ID;
-
   // Platform-wide FLOOR on booking lead time (hours), from
   // MIN_BOOKING_NOTICE_HOURS. A practitioner may require MORE notice than
   // this but never less — the effective notice is max(floor, their own).
-  // Unset/blank -> no floor, so each practitioner's own setting stands. The
-  // test-practitioner bypass above books immediately, ignoring the floor.
+  // Unset/blank -> no floor, so each practitioner's own setting stands.
+  //
+  // Note: this is a SCHEDULED-booking concept only. Genuine "book now" /
+  // "who's online" sessions are a separate feature on their own path and do
+  // not flow through here. An earlier per-practitioner 0-notice bypass lived
+  // here for QA, but it made the profile offer sub-floor slots that expired
+  // between page render and click (re-validation in booking-actions.ts
+  // recomputes against a fresh `now`), so they showed as bookable but
+  // weren't. Removed — immediate sessions belong to the separate feature.
   const rawFloor = process.env.MIN_BOOKING_NOTICE_HOURS;
   const minNoticeFloorHours = rawFloor && rawFloor.trim() !== "" && Number.isFinite(Number(rawFloor)) ? Number(rawFloor) : 0;
 
@@ -131,6 +130,6 @@ export async function getBookableSlots({
     existingBookings,
     blockedDates,
     blockedRanges,
-    minNoticeHours: bypassMinNotice ? 0 : Math.max(minNoticeFloorHours, profile.min_notice_hours),
+    minNoticeHours: Math.max(minNoticeFloorHours, profile.min_notice_hours),
   });
 }
