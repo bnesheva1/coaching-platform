@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headphones, Mic, MicOff, TriangleAlert, Video, VideoOff } from "lucide-react";
+import { ExternalLink, Headphones, Mic, MicOff, ShieldCheck, TriangleAlert, Video, VideoOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import styles from "./session.module.css";
@@ -17,27 +17,80 @@ export type JoinChoice = {
   videoDeviceId?: string;
 };
 
-type Phase = "requesting" | "ready" | "blocked" | "nodevices";
+// "intro" is the priming step: we explain WHY before ever calling
+// getUserMedia, and only fire the prompt on a deliberate tap. This is the
+// prevention that matters on iOS Safari, where a denied prompt cannot be
+// re-triggered programmatically — the user would have to change Safari's
+// site settings and reload. "unsupported" is for in-app webviews that expose
+// no getUserMedia at all.
+type Phase = "intro" | "requesting" | "ready" | "blocked" | "nodevices" | "unsupported";
 
-function isNotAllowed(e: unknown): boolean {
-  return e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError");
-}
 function isNotFound(e: unknown): boolean {
   return e instanceof DOMException && (e.name === "NotFoundError" || e.name === "OverconstrainedError");
 }
 
-// Coarse UA sniff purely to show the RIGHT re-enable steps — never used for
-// any behavioural gate, only which instruction string to render.
-function detectBrowserKey(): string {
-  if (typeof navigator === "undefined") return "generic";
-  const ua = navigator.userAgent;
-  const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if (iOS) return "iosSafari";
-  if (/Android/.test(ua) && /Chrome/.test(ua)) return "androidChrome";
-  if (/Firefox/.test(ua)) return "firefox";
-  if (/Chrome/.test(ua)) return "desktopChrome";
-  if (/Safari/.test(ua)) return "safari";
-  return "generic";
+type StepsKey =
+  | "iosSafari"
+  | "iosChrome"
+  | "iosFirefox"
+  | "inApp"
+  | "androidChrome"
+  | "desktopChrome"
+  | "firefox"
+  | "safari"
+  | "generic";
+
+type DeviceEnv = {
+  // Which re-enable instructions to show. Never a behavioural gate — only
+  // picks a string.
+  stepsKey: StepsKey;
+  isIOS: boolean;
+  // An embedded webview (Instagram / Facebook / TikTok / etc.). These often
+  // can't reach camera/mic and have no site-settings UI, so the only real
+  // fix is "open in Safari".
+  inApp: boolean;
+  // getUserMedia actually exists in this context. False in some in-app
+  // webviews and any non-secure context.
+  supported: boolean;
+};
+
+const GENERIC_ENV: DeviceEnv = { stepsKey: "generic", isIOS: false, inApp: false, supported: true };
+
+// Coarse UA sniff purely to show the RIGHT re-enable steps and detect
+// webviews — never a behavioural gate. Runs on the client only (guarded by
+// the `mounted` flag) so SSR and first client render agree.
+function detectEnv(): DeviceEnv {
+  if (typeof navigator === "undefined") return GENERIC_ENV;
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // In-app webview markers. `; wv)` is the Android WebView tag; the rest are
+  // the common social apps whose in-app browser clients arrive from a link.
+  const inApp =
+    /FBAN|FBAV|FB_IAB|Instagram|Line\/|LinkedInApp|Twitter|Snapchat|Pinterest|musical_ly|Bytedance|TikTok|; wv\)|GSA\//.test(
+      ua,
+    );
+  const supported = typeof navigator.mediaDevices?.getUserMedia === "function";
+
+  let stepsKey: StepsKey = "generic";
+  if (inApp) {
+    stepsKey = "inApp";
+  } else if (isIOS) {
+    // Every iOS browser is WebKit, but the re-enable path differs. Only
+    // Safari has the "AA" site-settings menu; Chrome/Firefox on iOS don't,
+    // so we steer them to Safari where our steps are known-correct.
+    if (/CriOS/.test(ua)) stepsKey = "iosChrome";
+    else if (/FxiOS/.test(ua)) stepsKey = "iosFirefox";
+    else stepsKey = "iosSafari";
+  } else if (/Android/.test(ua) && /Chrome/.test(ua)) {
+    stepsKey = "androidChrome";
+  } else if (/Firefox/.test(ua)) {
+    stepsKey = "firefox";
+  } else if (/Edg|Chrome/.test(ua)) {
+    stepsKey = "desktopChrome";
+  } else if (/Safari/.test(ua)) {
+    stepsKey = "safari";
+  }
+  return { stepsKey, isIOS, inApp, supported };
 }
 
 export function DeviceCheck({
@@ -55,7 +108,9 @@ export function DeviceCheck({
   errorMessage?: string | null;
 }) {
   const t = useTranslations("Session");
-  const [phase, setPhase] = useState<Phase>("requesting");
+  // Start on the intro: nothing touches the camera until the user taps
+  // "Enable" (a real user gesture). This is the whole prevention strategy.
+  const [phase, setPhase] = useState<Phase>("intro");
   const [audioOnly, setAudioOnly] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -64,6 +119,9 @@ export function DeviceCheck({
   const [audioDeviceId, setAudioDeviceId] = useState<string | undefined>();
   const [videoDeviceId, setVideoDeviceId] = useState<string | undefined>();
   const [level, setLevel] = useState(0);
+  // UA-derived detail (steps text, in-app/unsupported) must not diverge
+  // between SSR and first client paint, so it stays generic until mounted.
+  const [mounted, setMounted] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -124,6 +182,13 @@ export function DeviceCheck({
 
   const acquire = useCallback(
     async (opts?: { videoId?: string; audioId?: string }) => {
+      // Some in-app webviews expose no getUserMedia — calling it throws a
+      // bare TypeError that looks like a permission block. Detect and route
+      // to the "open in Safari" screen instead of mislabelling it.
+      if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
+        setPhase("unsupported");
+        return;
+      }
       stopStream();
       setPhase("requesting");
       const videoConstraint = opts?.videoId ? { deviceId: { exact: opts.videoId } } : true;
@@ -138,30 +203,78 @@ export function DeviceCheck({
           const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: audioConstraint });
           onGotStream(stream, true);
         } catch (e2) {
-          setPhase(isNotFound(e) && isNotFound(e2) ? "nodevices" : isNotAllowed(e) || isNotAllowed(e2) ? "blocked" : "blocked");
+          // Only NotFound on BOTH attempts means "no hardware"; every other
+          // failure (denied, busy, transient) shows the blocked screen,
+          // which now leads with the join-anyway escape hatch.
+          setPhase(isNotFound(e) && isNotFound(e2) ? "nodevices" : "blocked");
         }
       }
     },
     [onGotStream, stopStream],
   );
 
+  // Mark mounted so UA-derived rendering (steps text, in-app warnings) is
+  // client-only. No camera access happens here — that waits for a tap.
   useEffect(() => {
-    // Requesting media on mount is exactly the "synchronize with an
-    // external system" case effects are for; the synchronous phase set
-    // inside acquire() is intentional (and redundant with the initial
-    // state on first mount, meaningful on retries).
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    acquire();
+    setMounted(true);
     return stopStream;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stopStream]);
 
   // Keep the preview element bound if it mounts after the stream arrives.
   useEffect(() => {
     if (videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
   }, [phase, camOn]);
 
-  const browserKey = detectBrowserKey();
+  const env = mounted ? detectEnv() : GENERIC_ENV;
+  const joinDeviceless = () => onJoin({ micOn: false, camOn: false });
+
+  if (phase === "intro") {
+    // Explain first; prompt only on the deliberate tap below. If the webview
+    // can't do getUserMedia at all, don't offer a button that would fail —
+    // send them straight to the open-in-Safari guidance.
+    const canPrompt = env.supported;
+    return (
+      <div className={styles.center}>
+        <div className={styles.panel}>
+          <Video size={32} aria-hidden />
+          <h1 className={styles.title}>{t("deviceIntroTitle")}</h1>
+          <p className={styles.subtle}>{t("deviceIntroBody")}</p>
+          <p className={styles.privacyNote}>
+            <ShieldCheck size={16} aria-hidden /> {t("deviceIntroPrivacy")}
+          </p>
+
+          {mounted && env.inApp && (
+            <div className={styles.calloutBox}>
+              <p className={styles.calloutLead}>
+                <ExternalLink size={16} aria-hidden /> {t("openInBrowserLead")}
+              </p>
+              <div className={styles.instructions}>
+                {t(`deviceBlockedSteps.${env.stepsKey}` as Parameters<typeof t>[0])
+                  .split("\n")
+                  .map((line, i) => (
+                    <span key={i}>{line}</span>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.actions}>
+            {canPrompt && (
+              <Button variant="primary" fullWidth onClick={() => acquire()}>
+                {t("enableDevices")}
+              </Button>
+            )}
+            <Button variant={canPrompt ? "ghost" : "primary"} fullWidth onClick={joinDeviceless}>
+              {t("joinWithoutDevices")}
+            </Button>
+            <p className={styles.escapeHint}>{t("joinWithoutDevicesHint")}</p>
+          </div>
+          {trouble}
+        </div>
+      </div>
+    );
+  }
 
   if (phase === "requesting") {
     return (
@@ -176,27 +289,71 @@ export function DeviceCheck({
     );
   }
 
-  if (phase === "blocked") {
+  if (phase === "unsupported") {
     return (
       <div className={styles.center}>
         <div className={styles.panel}>
-          <TriangleAlert size={32} aria-hidden />
-          <h1 className={styles.title}>{t("deviceBlockedTitle")}</h1>
-          <p className={styles.subtle}>{t("deviceBlockedBody")}</p>
+          <ExternalLink size={32} aria-hidden />
+          <h1 className={styles.title}>{t("deviceUnsupportedTitle")}</h1>
+          <p className={styles.subtle}>{t("deviceUnsupportedBody")}</p>
           <div className={styles.instructions}>
-            {t(`deviceBlockedSteps.${browserKey}` as Parameters<typeof t>[0])
+            {t(`deviceBlockedSteps.${env.inApp ? "inApp" : env.stepsKey}` as Parameters<typeof t>[0])
               .split("\n")
               .map((line, i) => (
                 <span key={i}>{line}</span>
               ))}
           </div>
           <div className={styles.actions}>
-            <Button variant="primary" fullWidth onClick={() => acquire()}>
-              {t("deviceTryAgain")}
-            </Button>
-            <Button variant="ghost" fullWidth onClick={() => onJoin({ micOn: false, camOn: false })}>
+            <Button variant="primary" fullWidth onClick={joinDeviceless}>
               {t("joinWithoutDevices")}
             </Button>
+            <p className={styles.escapeHint}>{t("joinWithoutDevicesHint")}</p>
+          </div>
+          {trouble}
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "blocked") {
+    return (
+      <div className={styles.center}>
+        <div className={styles.panel}>
+          <TriangleAlert size={32} aria-hidden />
+          <h1 className={styles.title}>{t("deviceBlockedTitle")}</h1>
+
+          {/* Escape hatch FIRST and prominent: a denied user still has a paid
+              session to attend, and can join to see/hear the other person. */}
+          <div className={styles.escapeBox}>
+            <p className={styles.escapeLead}>{t("deviceBlockedEscapeLead")}</p>
+            <Button variant="primary" fullWidth onClick={joinDeviceless}>
+              {t("joinWithoutDevices")}
+            </Button>
+            <p className={styles.escapeHint}>{t("joinWithoutDevicesHint")}</p>
+          </div>
+
+          {/* Recovery is secondary: browser- and version-aware steps, then a
+              reload (iOS needs a reload after changing site settings). */}
+          <p className={styles.stepsLead}>{t("deviceBlockedFixLead")}</p>
+          <div className={styles.instructions}>
+            {t(`deviceBlockedSteps.${env.stepsKey}` as Parameters<typeof t>[0])
+              .split("\n")
+              .map((line, i) => (
+                <span key={i}>{line}</span>
+              ))}
+          </div>
+          <div className={styles.actions}>
+            {env.isIOS ? (
+              // iOS can't re-prompt in place; a reload after the settings
+              // change is the only path back to the intro's Enable button.
+              <Button variant="secondary" fullWidth onClick={() => window.location.reload()}>
+                {t("reloadPage")}
+              </Button>
+            ) : (
+              <Button variant="secondary" fullWidth onClick={() => acquire()}>
+                {t("deviceTryAgain")}
+              </Button>
+            )}
           </div>
           {trouble}
         </div>
@@ -212,11 +369,11 @@ export function DeviceCheck({
           <h1 className={styles.title}>{t("noDevicesTitle")}</h1>
           <p className={styles.subtle}>{t("noDevicesBody")}</p>
           <div className={styles.actions}>
-            <Button variant="primary" fullWidth onClick={() => acquire()}>
-              {t("deviceTryAgain")}
-            </Button>
-            <Button variant="ghost" fullWidth onClick={() => onJoin({ micOn: false, camOn: false })}>
+            <Button variant="primary" fullWidth onClick={joinDeviceless}>
               {t("joinWithoutDevices")}
+            </Button>
+            <Button variant="ghost" fullWidth onClick={() => acquire()}>
+              {t("deviceTryAgain")}
             </Button>
           </div>
           {trouble}

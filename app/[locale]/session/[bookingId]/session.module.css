@@ -472,6 +472,78 @@
   gap: var(--space-1);
 }
 
+/* ---- device-check intro + blocked escape hatch ---- */
+
+/* Reassurance line under the intro explanation — quiet, with a small shield
+   glyph aligned to the text. */
+.privacyNote {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-body-sm);
+  color: var(--text-tertiary);
+}
+
+/* The "join anyway" rescue, given real visual weight in the blocked state so
+   it never reads as an afterthought below the recovery steps. */
+.escapeBox {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.escapeLead {
+  margin: 0;
+  font: var(--text-body-md);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.escapeHint {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* Label above the (secondary) recovery steps. */
+.stepsLead {
+  width: 100%;
+  margin: var(--space-2) 0 0;
+  font: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: left;
+}
+
+/* In-app-browser / open-in-Safari callout on the intro screen. */
+.calloutBox {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.calloutLead {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-body-md);
+  color: var(--text-primary);
+}
+
 @media (min-width: 641px) {
   /* On a wider viewport the self-view can be a touch larger and the
      device-check preview needn't dominate. */
