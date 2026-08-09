@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { EARLY_JOIN_MS } from "@/lib/video/sessionWindow";
+import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { getImminentCallSession, type CallPromptSession } from "@/app/session-call-actions";
 
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
@@ -134,7 +135,18 @@ export function SessionCallPrompt({ initialSession }: { initialSession: CallProm
             }}
           >
             <span aria-hidden style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />
-            {t(live ? "inProgressEyebrow" : "startingSoonEyebrow")}
+            {/* Same live timer as the next-session card: counts down to the
+                start while upcoming ("Следваща сесия след 4 мин"), then up
+                from the start while running ("Сесията тече от 12 мин"). The
+                modal always sits inside [start−early-join, end], so
+                NextSessionWhen never hits its idle branch; the fallback only
+                covers its first pre-mount tick. */}
+            <NextSessionWhen
+              startUtc={session.startUtc}
+              endUtc={session.endUtc}
+              savedTimezone={null}
+              fallback={t(live ? "inProgressEyebrow" : "startingSoonEyebrow")}
+            />
           </span>
           <strong style={{ font: "var(--text-heading-md)" }}>{session.serviceName}</strong>
           <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
