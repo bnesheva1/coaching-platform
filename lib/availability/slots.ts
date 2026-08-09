@@ -31,6 +31,14 @@ export async function getBookableSlots({
   const IMMEDIATE_BOOKING_PRACTITIONER_ID = "01e1e650-32a3-42d7-b714-1c4440b4f6d2"; // test3@test.com
   const bypassMinNotice = practitionerId === IMMEDIATE_BOOKING_PRACTITIONER_ID;
 
+  // Platform-wide FLOOR on booking lead time (hours), from
+  // MIN_BOOKING_NOTICE_HOURS. A practitioner may require MORE notice than
+  // this but never less — the effective notice is max(floor, their own).
+  // Unset/blank -> no floor, so each practitioner's own setting stands. The
+  // test-practitioner bypass above books immediately, ignoring the floor.
+  const rawFloor = process.env.MIN_BOOKING_NOTICE_HOURS;
+  const minNoticeFloorHours = rawFloor && rawFloor.trim() !== "" && Number.isFinite(Number(rawFloor)) ? Number(rawFloor) : 0;
+
   const now = new Date();
   const windowEnd = new Date(now.getTime() + (BOOKING_WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000);
 
@@ -123,6 +131,6 @@ export async function getBookableSlots({
     existingBookings,
     blockedDates,
     blockedRanges,
-    minNoticeHours: bypassMinNotice ? 0 : profile.min_notice_hours,
+    minNoticeHours: bypassMinNotice ? 0 : Math.max(minNoticeFloorHours, profile.min_notice_hours),
   });
 }

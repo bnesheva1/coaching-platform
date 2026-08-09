@@ -102,43 +102,40 @@ export async function signup(
     return { error: error.message, values };
   }
 
-  // Straight to /signup/confirm, NOT through /auth/callback — same
-  // reasoning as requestPasswordReset: generateLink()'s links use the
-  // implicit flow (tokens in the URL #fragment), which never reaches
-  // the server at all, so /auth/callback's ?code= handling would never
-  // find anything to exchange.
-  // Only attempt to send if email delivery is actually configured —
-  // otherwise the send is a guaranteed failure and we skip straight to
-  // the fallback below.
-  const emailDeliveryConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
-  let confirmationSent = false;
-  if (emailDeliveryConfigured) {
-    const sendResult = await sendEmailConfirmationEmail({
-      to: email,
-      actionLink: data.properties.action_link,
-      locale: normalizeLocale(locale),
-    });
-    confirmationSent = sendResult.success;
-    if (!sendResult.success) {
-      console.error("signup: sendEmailConfirmationEmail failed", { email, error: sendResult.error });
-    }
-  }
+  // Whether email confirmation is enforced is a config flag, not a code
+  // edit — off for testing, on at launch. Default OFF: only the explicit
+  // string "true" turns it on, so an unset/typo'd var never accidentally
+  // gates signups.
+  const requireConfirmation = process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
 
-  // TEMPORARY (until Resend is configured): if no confirmation email could
-  // be delivered, the account would otherwise be permanently unusable — no
-  // link to click, and login rejects an unconfirmed email. So confirm it
-  // immediately and send them to log in. This is entirely self-disabling:
-  // the moment RESEND_API_KEY + RESEND_FROM_EMAIL are set and a send
-  // succeeds, confirmationSent is true and the normal check-email flow
-  // resumes with no code change. Remove this branch once email delivery is
-  // solid if you want to hard-require confirmation again.
-  if (!confirmationSent) {
+  if (!requireConfirmation) {
+    // Confirmation not required: auto-confirm so the account is immediately
+    // usable and send them to log in. No confirmation email, no
+    // check-email step — regardless of whether a send would have succeeded.
     if (data.user) {
       await supabase.auth.admin.updateUserById(data.user.id, { email_confirm: true });
     }
-    console.warn("signup: email delivery unavailable — auto-confirmed account so it isn't stranded", { email });
     redirect({ href: "/login", locale });
     return null;
+  }
+
+  // Confirmation required: send the confirmation email through our own
+  // Resend seam (generateLink created the user unconfirmed above), then land
+  // on check-email. The link uses the implicit flow (tokens in the URL
+  // #fragment), so it goes to /signup/confirm directly, never /auth/callback.
+  //
+  // A send FAILURE is surfaced as an error, never auto-confirmed. Silently
+  // confirming an account because the email didn't send is an auth bypass —
+  // benign only while delivery always failed; once Resend fails
+  // intermittently it would let through an account that should be held.
+  const sendResult = await sendEmailConfirmationEmail({
+    to: email,
+    actionLink: data.properties.action_link,
+    locale: normalizeLocale(locale),
+  });
+  if (!sendResult.success) {
+    console.error("signup: sendEmailConfirmationEmail failed", { email, error: sendResult.error });
+    return { error: t("confirmationEmailFailed"), values };
   }
 
   redirect({ href: "/signup/check-email", locale });
