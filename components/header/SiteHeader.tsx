@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
-import { NavBar } from "@/components/ui/NavBar";
+import { NavBar, type NavLink } from "@/components/ui/NavBar";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
 import { getViewer } from "@/lib/auth/getViewer";
+import { signOut } from "@/app/actions";
 
 // The one header, mounted once in app/[locale]/layout.tsx — every route
 // gets it by construction, not by each page/layout remembering to
@@ -34,16 +35,44 @@ export async function SiteHeader() {
     { label: tFooter("contactLink"), href: "/contact" },
   ];
 
-  const dashboardHref = viewer.status === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard";
-  // Mutually exclusive with authLinks below — exactly one is non-null.
   const isLoggedIn = viewer.status !== "logged-out";
-  const dashboardLink = isLoggedIn ? { label: tHeader("dashboardLink"), href: dashboardHref } : null;
-  // Falls back to the plain dashboard label on the (rare, already-
-  // handled-elsewhere) case of a missing display_name, rather than
-  // rendering "Привет, " with nothing after it.
+  const isPractitioner = viewer.status === "practitioner";
+  const dashboardHref = isPractitioner ? "/practitioner-dashboard" : "/client-dashboard";
+
+  // The always-visible link to their own area. Role-specific wording:
+  // "Моите сесии" describes what's actually there for a client, whereas
+  // "Dashboard" is the wrong word for them; the practitioner keeps a
+  // dashboard framing. Mutually exclusive with authLinks — exactly one of
+  // the two is non-null.
+  const dashboardLink = isLoggedIn
+    ? { label: isPractitioner ? tHeader("dashboardLinkPractitioner") : tHeader("dashboardLinkClient"), href: dashboardHref }
+    : null;
+
+  // The greeting is now the account-menu trigger; it still does identity
+  // work (whose account you're in). Falls back to the plain dashboard label
+  // on the rare missing-display_name case rather than "Привет, " with
+  // nothing after it.
   const greetingText = isLoggedIn
     ? tHeader("greeting", { name: viewer.displayName ?? tHeader("dashboardLink") })
     : null;
+
+  // Account-level only, never content navigation. Practitioners also get a
+  // link to their own public profile (/p/{username}); if they haven't set a
+  // username yet, point at the dashboard profile editor so it never 404s.
+  const accountLinks: NavLink[] | null = !isLoggedIn
+    ? null
+    : isPractitioner
+      ? [
+          {
+            label: tHeader("myProfile"),
+            href: viewer.username ? `/p/${viewer.username}` : "/practitioner-dashboard/profile",
+          },
+          { label: tHeader("settings"), href: "/practitioner-dashboard/settings" },
+        ]
+      : [{ label: tHeader("settings"), href: "/client-dashboard/settings" }];
+
+  const signOutItem = isLoggedIn ? { label: tHeader("signOut"), action: signOut } : null;
+
   const authLinks = isLoggedIn
     ? null
     : [
@@ -59,6 +88,8 @@ export async function SiteHeader() {
       infoLinks={infoLinks}
       dashboardLink={dashboardLink}
       greetingText={greetingText}
+      accountLinks={accountLinks}
+      signOut={signOutItem}
       authLinks={authLinks}
       langToggle={<LangToggle />}
       themeToggle={<ThemeToggle compact switchToLightLabel={tHeader("switchToLight")} switchToDarkLabel={tHeader("switchToDark")} />}

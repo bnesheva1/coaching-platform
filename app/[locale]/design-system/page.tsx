@@ -62,6 +62,8 @@ export default function DesignSystemPage() {
         ]}
         dashboardLink={null}
         greetingText={null}
+        accountLinks={null}
+        signOut={null}
         authLinks={[
           { label: "Log in", href: "/login", variant: "ghost" },
           { label: "Sign up", href: "/signup", variant: "primary" },

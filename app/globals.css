@@ -84,6 +84,20 @@ body {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Header dropdowns (info + account menus in NavBar.tsx). Real :hover, same
+   "inline styles can't express :hover" reasoning as .form-field/.slot-chip:
+   the trigger shifts toward the accent so the greeting reads as interactive,
+   and menu items get a hover surface so the panel reads as a real menu. */
+.nav-menu-trigger {
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+.nav-menu-trigger:hover {
+  color: var(--accent);
+}
+.nav-menu-item:hover {
+  background: var(--bg-surface-2);
+}
+
 /* Client-facing availability slot picker (components/booking/SlotPicker.tsx).
    Hover is a real CSS pseudo-class here (not JS-tracked state like
    Button.tsx's HOVER map) because these are plain style-only variants

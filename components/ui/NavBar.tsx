@@ -27,9 +27,16 @@ export type NavBarProps = {
   // the same destination, which is why both travel separately rather
   // than one prop trying to serve both layouts).
   dashboardLink: NavLink | null;
-  // "Привет, {name}" — desktop-only visible text for the signed-in
-  // far-right link. Null exactly when dashboardLink is null.
+  // "Привет, {name}" — the account-menu trigger's visible text (desktop) and
+  // the identity it shows. Null exactly when dashboardLink is null.
   greetingText: string | null;
+  // Account-menu contents (Настройки, and Моят профил for practitioners) —
+  // account-level links only, never content navigation. Null when signed out.
+  accountLinks: NavLink[] | null;
+  // Sign-out lives in the account menu (desktop) and the mobile drawer's
+  // bottom cluster. A server action passed straight through to a <form>.
+  // Null when signed out.
+  signOut: { label: string; action: () => void | Promise<void> } | null;
   // Login (ghost) + Register (primary), null when signed in.
   authLinks: AuthLink[] | null;
   // Both optional and rendered independently — dropping either one (or
@@ -70,7 +77,7 @@ function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
     <div ref={ref} style={{ position: "relative" }}>
       <button
         type="button"
-        className="focus-ring"
+        className="focus-ring nav-menu-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -108,10 +115,92 @@ function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
           }}
         >
           {links.map((l) => (
-            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} style={dropdownItemStyle}>
+            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
               {l.label}
             </Link>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The signed-in account menu — the greeting turned into a real dropdown,
+// same mechanism as InfoDropdown (button + chevron + aria-haspopup/expanded,
+// role="menu"/menuitem, click-outside/Escape). Account-level only: the links
+// the caller passes, then Sign out via a <form> so it stays a real POST to
+// the server action, not a client-side navigation. Anchored to the right
+// edge since it lives in the far-right cluster.
+function AccountMenu({
+  greeting,
+  links,
+  signOut,
+}: {
+  greeting: string;
+  links: NavLink[];
+  signOut: { label: string; action: () => void | Promise<void> };
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutsideAndEscape(ref, open, () => setOpen(false));
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="focus-ring nav-menu-trigger"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+          color: "var(--text-primary)",
+          font: "var(--text-nav)",
+        }}
+      >
+        {greeting}
+        <span aria-hidden="true" style={{ fontSize: "10px", transform: open ? "rotate(180deg)" : "none" }}>
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute",
+            top: "calc(100% + var(--space-2))",
+            right: 0,
+            minWidth: 200,
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-md)",
+            padding: "var(--space-2)",
+            zIndex: 45,
+          }}
+        >
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
+              {l.label}
+            </Link>
+          ))}
+          <form action={signOut.action} style={{ margin: 0, marginTop: "var(--space-1)", paddingTop: "var(--space-1)", borderTop: "1px solid var(--border-subtle)" }}>
+            <button
+              type="submit"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="nav-menu-item"
+              style={{ ...dropdownItemStyle, width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer" }}
+            >
+              {signOut.label}
+            </button>
+          </form>
         </div>
       )}
     </div>
@@ -130,6 +219,8 @@ export function NavBar({
   infoLinks,
   dashboardLink,
   greetingText,
+  accountLinks,
+  signOut,
   authLinks,
   langToggle,
   themeToggle,
@@ -164,25 +255,27 @@ export function NavBar({
 
           {!isMobile && (
             <>
-              {/* Center-left: browse + the info dropdown. */}
+              {/* Center-left, in order: their own area first (the primary
+                  destination — rendered in primary text so it leads), then
+                  browse, then the info dropdown. */}
               <div style={{ display: "flex", alignItems: "center", gap: 28, color: "var(--text-secondary)", marginLeft: 40 }}>
+                {dashboardLink && (
+                  <Link href={dashboardLink.href} className="nav-menu-trigger" style={{ ...navLinkStyle, color: "var(--text-primary)" }}>
+                    {dashboardLink.label}
+                  </Link>
+                )}
                 <Link href={browseLink.href} style={navLinkStyle}>
                   {browseLink.label}
                 </Link>
                 <InfoDropdown label={infoDropdownLabel} links={infoLinks} />
               </div>
 
-              {/* Far right: greeting-or-auth, then lang, then theme. */}
+              {/* Far right: the account menu (or the login/register
+                  buttons), then lang + theme. The visible link to their own
+                  area now leads the left nav group above. */}
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginLeft: "auto" }}>
-                {dashboardLink && (
-                  <Link
-                    href={dashboardLink.href}
-                    title={dashboardLink.label}
-                    aria-label={dashboardLink.label}
-                    style={{ font: "var(--text-nav)", color: "var(--text-primary)", textDecoration: "none" }}
-                  >
-                    {greetingText}
-                  </Link>
+                {greetingText && accountLinks && signOut && (
+                  <AccountMenu greeting={greetingText} links={accountLinks} signOut={signOut} />
                 )}
                 {authLinks?.map((l) => (
                   <Button key={l.href} variant={l.variant} size="sm" href={l.href}>
@@ -310,6 +403,32 @@ export function NavBar({
                     {l.label}
                   </Button>
                 ))}
+              </div>
+            )}
+
+            {/* Signed-in account cluster — Моят профил (practitioner) /
+                Настройки, then Изход — at the bottom by the toggles, no
+                dropdown (the hamburger is the consolidation). */}
+            {accountLinks && signOut && (
+              <div style={{ marginTop: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-1)", alignItems: "flex-start" }}>
+                {accountLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMenuOpen(false)}
+                    style={{ font: "var(--text-nav)", color: "var(--text-secondary)", textDecoration: "none", padding: "var(--space-2) 0" }}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+                <form action={signOut.action} onSubmit={() => setMenuOpen(false)} style={{ margin: 0 }}>
+                  <button
+                    type="submit"
+                    style={{ font: "var(--text-nav)", color: "var(--text-secondary)", background: "none", border: "none", padding: "var(--space-2) 0", cursor: "pointer", textAlign: "left" }}
+                  >
+                    {signOut.label}
+                  </button>
+                </form>
               </div>
             )}
           </div>
