@@ -633,6 +633,14 @@ export function BookingsList({
         <div style={{ display: "flex", flexDirection: "column", gap: premium ? "var(--space-4)" : "var(--space-3)" }}>
           {upcoming.map((booking) => {
             const sessionTimeLabel = formatter.format(new Date(booking.startUtc));
+            // Time state (upcoming / in-progress / past), from the same
+            // config-driven window the room uses. Computed here (before the
+            // cancel action) because a live session must not offer the
+            // client a cancel control — see cancelAction below. Also drives
+            // the "Сесията тече" label and the join button further down.
+            const timeState = nowMs !== null ? sessionTimeState(booking.startUtc, booking.endUtc, nowMs) : null;
+            const isLive = timeState === "in_progress" && ACTIVE_STATUSES.has(booking.status);
+
             const isPastCutoff =
               perspective === "client" &&
               isPastCancellationCutoff(booking.startUtc, booking.minNoticeHours ?? 24);
@@ -650,7 +658,7 @@ export function BookingsList({
                   perspective="practitioner"
                   action={cancelBookingAsPractitioner.bind(null, booking.id)}
                 />
-              ) : isPastCutoff ? (
+              ) : isLive ? null : isPastCutoff ? (
                 <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
                   {t("cancelWindowNote", { hours: booking.minNoticeHours ?? 24 })}
                 </span>
@@ -685,11 +693,8 @@ export function BookingsList({
               </p>
             );
 
-            // Time state (upcoming / in-progress / past), from the same
-            // config-driven window the room uses. Drives both the "Сесията
-            // тече" label and the join/rejoin button's visibility.
-            const timeState = nowMs !== null ? sessionTimeState(booking.startUtc, booking.endUtc, nowMs) : null;
-            const isLive = timeState === "in_progress" && ACTIVE_STATUSES.has(booking.status);
+            // isLive (computed above) also drives the "Сесията тече" label
+            // and the join/rejoin button's visibility.
             const statusLabel = isLive ? t("statusInProgress") : t(statusKeys[booking.status]);
 
             // In-app video join/rejoin for online sessions. Same shared

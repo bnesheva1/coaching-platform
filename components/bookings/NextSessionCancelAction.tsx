@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { cancelBookingAsClient } from "@/app/[locale]/client-dashboard/cancel-booking-actions";
-import { isPastCancellationCutoff } from "@/lib/booking-time";
+import { hasSessionStarted, isPastCancellationCutoff } from "@/lib/booking-time";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -56,6 +56,12 @@ export function NextSessionCancelAction({
     timeStyle: "short",
     timeZone: effectiveTimezone,
   }).format(new Date(startUtc));
+
+  // Session already in progress — no cancel affordance at all (not even the
+  // notice text): it's happening, not something to cancel.
+  if (hasSessionStarted(startUtc)) {
+    return null;
+  }
 
   if (isPastCancellationCutoff(startUtc, minNoticeHours)) {
     return (

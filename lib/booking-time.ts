@@ -40,6 +40,15 @@ export function isPastCancellationCutoff(startUtc: string, minNoticeHours: numbe
   return new Date(startUtc).getTime() < cutoff;
 }
 
+// Once a session has actually started it is in progress, not something to
+// "cancel" — so the client cancel control is hidden regardless of the notice
+// window (which, for a practitioner with a low/zero min_notice_hours, would
+// otherwise still offer it during a live session). Plain function for the
+// same react-hooks/purity reason as the checks above.
+export function hasSessionStarted(startUtc: string): boolean {
+  return Date.now() >= new Date(startUtc).getTime();
+}
+
 // Lives here rather than in BookingsList.tsx (which re-exports both,
 // unchanged, for its existing "use client" importers) because a plain
 // const exported from a "use client" module still gets replaced with a
