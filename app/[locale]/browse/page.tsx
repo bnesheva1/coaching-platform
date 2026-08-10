@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { localizedAlternates } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
@@ -12,6 +14,20 @@ import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
 // checkboxes without a server round trip per click). This page only
 // ever fetches the SEARCH-filtered candidate set; `?specialty=` in the
 // URL is read just to seed the client's initial selection.
+// Distinct from the homepage's title/description, with its own canonical +
+// hreflang. Canonical deliberately points at the clean /browse (no query
+// params), so every filter/search combination consolidates onto one URL
+// rather than spawning duplicate-content variants.
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Browse" });
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+    alternates: localizedAlternates(locale, "/browse"),
+  };
+}
+
 export default async function BrowsePage({
   searchParams,
 }: {

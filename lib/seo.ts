@@ -25,3 +25,43 @@ export function localizedAlternates(locale: string, pathname: string) {
     languages,
   };
 }
+
+// Collapse whitespace and cut to a meta-description-friendly length at a
+// word boundary, adding an ellipsis when actually truncated. Used for
+// profile descriptions derived from free-text bios of unknown length.
+export function truncateForMeta(text: string, max = 160): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 40 ? lastSpace : max).trim()}…`;
+}
+
+// A practitioner profile's <title>. Keyword-first (name + their specialties,
+// the actual searchable terms) with the brand appended — so every profile is
+// distinct instead of the shared homepage title. No specialties yet → just
+// the name + brand.
+export function profileMetaTitle(name: string, specialtyLabels: string[], siteName: string): string {
+  const base = specialtyLabels.length > 0 ? `${name} — ${specialtyLabels.join(", ")}` : name;
+  return `${base} | ${siteName}`;
+}
+
+// A profile's meta description, degrading gracefully: their headline if set,
+// else the start of their bio, else a caller-supplied generic fallback — so a
+// practitioner with a thin or empty bio still gets a sensible, non-empty
+// description rather than inheriting the homepage's.
+export function profileMetaDescription({
+  headline,
+  bio,
+  fallback,
+}: {
+  headline?: string | null;
+  bio?: string | null;
+  fallback: string;
+}): string {
+  const h = headline?.trim();
+  if (h) return truncateForMeta(h);
+  const b = bio?.trim();
+  if (b) return truncateForMeta(b);
+  return fallback;
+}

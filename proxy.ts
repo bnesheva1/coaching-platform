@@ -67,6 +67,11 @@ export const config = {
     // cron endpoint, which was getting redirected to a locale-prefixed
     // path (breaking Vercel Cron's invocation, not just local curl
     // testing) before this exclusion existed.
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    //
+    // robots.txt / sitemap.xml excluded for the same reason: they're
+    // root-level files (Next's app/robots.ts + app/sitemap.ts), and
+    // localePrefix "always" was redirecting /robots.txt -> /bg/robots.txt,
+    // which crawlers fetching the root file never see — breaking both.
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

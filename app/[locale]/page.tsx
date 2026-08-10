@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { localizedAlternates } from "@/lib/seo";
 import { Hero } from "./Hero";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("HomePage");
-  return { title: t("title"), description: t("metaDescription") };
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "HomePage" });
+  return {
+    title: t("title"),
+    description: t("metaDescription"),
+    // Homepage path is just the locale root (pathname ""), so this yields
+    // canonical /{locale} + hreflang for each locale + x-default -> bg.
+    alternates: localizedAlternates(locale, ""),
+  };
 }
 
 // Header now comes from the root locale layout's SiteHeader, mounted

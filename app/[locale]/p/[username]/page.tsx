@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
@@ -8,6 +8,51 @@ import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
+import { localizedAlternates, profileMetaTitle, profileMetaDescription, SITE_URL } from "@/lib/seo";
+import specialtiesData from "@/data/specialties.json";
+
+// Per-profile metadata — the fix for every profile sharing the homepage's
+// generic <title>. Keyword-first title (name + specialties) + a description
+// from headline/bio (graceful when thin), plus canonical + hreflang. A
+// small dedicated fetch (not the page's full data load); an unknown/old
+// handle returns nothing here and the page itself handles the redirect/404.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; username: string }>;
+}): Promise<Metadata> {
+  const { locale, username } = await params;
+  const supabase = await createClient();
+  const { data: pp } = await supabase
+    .from("practitioner_profiles")
+    .select("id, headline, bio, specialties, username")
+    .eq("username", username.toLowerCase())
+    .single();
+  if (!pp) return {};
+
+  const [{ data: prof }, t, tHome] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", pp.id).single(),
+    getTranslations({ locale, namespace: "PublicProfile" }),
+    getTranslations({ locale, namespace: "HomePage" }),
+  ]);
+  const siteName = tHome("title");
+  const name = prof?.display_name || `@${pp.username}`;
+  const labelByKey = new Map(specialtiesData.map((s) => [s.key, (s as Record<string, string>)[locale] ?? s.en]));
+  const specialtyLabels = ((pp.specialties as string[] | null) ?? [])
+    .map((k) => labelByKey.get(k))
+    .filter((l): l is string => Boolean(l))
+    .slice(0, 3);
+
+  return {
+    title: profileMetaTitle(name, specialtyLabels, siteName),
+    description: profileMetaDescription({
+      headline: pp.headline,
+      bio: pp.bio,
+      fallback: t("metaDescriptionFallback", { name, site: siteName }),
+    }),
+    alternates: localizedAlternates(locale, `/p/${pp.username}`),
+  };
+}
 
 // isOwner is always false here — even the practitioner viewing their
 // own public link only ever sees the static view. Editing happens on
@@ -24,6 +69,7 @@ export default async function PublicProfilePage({
   const { username } = await params;
   const normalizedUsername = username.toLowerCase();
   const resolvedSearchParams = await searchParams;
+  const locale = (await getLocale()) as "bg" | "en";
 
   const supabase = await createClient();
 
@@ -42,7 +88,12 @@ export default async function PublicProfilePage({
       candidate: normalizedUsername,
     });
     if (currentUsername) {
-      redirect({ href: `/p/${currentUsername}`, locale: await getLocale() });
+      // PERMANENT (308) redirect, not the previous temporary one: the old
+      // handle is gone for good, so search engines should consolidate link
+      // equity onto the current URL and treat it as canonical. (Next's
+      // permanentRedirect emits 308, which Google treats as permanent, the
+      // same as 301.)
+      permanentRedirect(`/${locale}/p/${currentUsername}`);
     }
     notFound();
   }
@@ -144,8 +195,86 @@ export default async function PublicProfilePage({
       ? resolvedSearchParams.payment
       : null;
 
+  // ---- Structured data (schema.org JSON-LD) ----
+  // Built entirely from data already fetched/shown above; nothing invented.
+  const [tProfile, tHome] = await Promise.all([
+    getTranslations("PublicProfile"),
+    getTranslations("HomePage"),
+  ]);
+  const siteName = tHome("title");
+  const displayName = profile?.display_name || `@${practitionerProfile.username}`;
+  const canonicalUrl = `${SITE_URL}/${locale}/p/${practitionerProfile.username}`;
+  const specialtyLabelByKey = new Map(
+    specialtiesData.map((s) => [s.key, (s as Record<string, string>)[locale] ?? s.en]),
+  );
+  const specialtyLabels = ((practitionerProfile.specialties as string[] | null) ?? [])
+    .map((k) => specialtyLabelByKey.get(k))
+    .filter((l): l is string => Boolean(l));
+  const descriptionText = profileMetaDescription({
+    headline: practitionerProfile.headline,
+    bio: practitionerProfile.bio,
+    fallback: tProfile("metaDescriptionFallback", { name: displayName, site: siteName }),
+  });
+  const locationText = practitionerProfile.location?.trim();
+
+  // Person by default; LocalBusiness when a location exists (the star-
+  // eligible type). Both carry the same properties here.
+  const practitionerEntity = {
+    "@type": locationText ? "LocalBusiness" : "Person",
+    "@id": `${canonicalUrl}#practitioner`,
+    name: displayName,
+    url: canonicalUrl,
+    description: descriptionText,
+    ...(practitionerProfile.avatar_url ? { image: practitionerProfile.avatar_url } : {}),
+    ...(specialtyLabels.length > 0 ? { knowsAbout: specialtyLabels } : {}),
+    ...(locationText ? { address: { "@type": "PostalAddress", addressLocality: locationText } } : {}),
+    // ONLY from genuine reviews — omitted entirely when there are none, never
+    // a default or zero rating.
+    ...(averageRating !== null && reviews && reviews.length > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: Number(averageRating.toFixed(1)),
+            reviewCount: reviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+    // Price maps cleanly onto Offer; schema.org has no standard session-
+    // length field on Service/Offer, so duration stays in the visible page
+    // text rather than being forced into an invented property.
+    ...((services ?? []).length > 0
+      ? {
+          makesOffer: (services ?? []).map((s) => ({
+            "@type": "Offer",
+            priceCurrency: s.currency,
+            price: (s.price_cents / 100).toFixed(2),
+            itemOffered: {
+              "@type": "Service",
+              name: s.name,
+              ...(s.description ? { description: s.description } : {}),
+            },
+          })),
+        }
+      : {}),
+  };
+
+  const breadcrumb = {
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: tProfile("breadcrumbHome"), item: `${SITE_URL}/${locale}` },
+      { "@type": "ListItem", position: 2, name: tProfile("breadcrumbBrowse"), item: `${SITE_URL}/${locale}/browse` },
+      { "@type": "ListItem", position: 3, name: displayName, item: canonicalUrl },
+    ],
+  };
+
+  const jsonLd = { "@context": "https://schema.org", "@graph": [practitionerEntity, breadcrumb] };
+  const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript }} />
       <ContentContainer maxWidth={"var(--content-max-width)"}>
         {/* Centered, capped-width reading column for the public route
             specifically — PractitionerProfileView itself no longer
