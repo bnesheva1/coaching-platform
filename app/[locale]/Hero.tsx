@@ -68,9 +68,12 @@ export async function Hero() {
         </span>
 
         <div className={styles.rotator} style={{ height: 130, width: "100%" }}>
-          {/* Visually hidden — holds the real heading text for assistive
-              tech. The animated lines below are aria-hidden. */}
-          <h1 className={styles.srOnly}>{questions[0]}</h1>
+          {/* Visually hidden — the accessible text for the aria-hidden
+              animated lines below (which are decorative). No longer the
+              page heading: the descriptive subheadline below is now the h1,
+              so this keeps its role for assistive tech without being a
+              heading. */}
+          <p className={styles.srOnly}>{questions[0]}</p>
           {questions.map((question, i) => (
             <div
               key={question}
@@ -92,7 +95,11 @@ export async function Hero() {
           ))}
         </div>
 
-        <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("heroSubhead")}</p>
+        {/* The page's single h1 — the descriptive line saying what the
+            platform does, for search engines and assistive tech. Same
+            styling as the subheadline it replaced: a tag swap, not a
+            visual change. */}
+        <h1 style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("heroSubhead")}</h1>
 
         <form action="/browse" method="get" style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           <Input search name="q" placeholder={t("heroSearchPlaceholder")} helperText={t("heroSearchHelper")} />
