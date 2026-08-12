@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUpcomingBookingCount } from "@/lib/services/bookingLock";
-import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
+import { isEnabled } from "@/lib/flags";
 
 // values echoes back whatever text fields were actually submitted, on an
 // error return only — React 19 resets a <form action={...}> after ANY
@@ -35,13 +35,11 @@ const DEFAULT_MAX_PRICE_CENTS = 50000;
 const MAX_DELIVERY_INFO_LENGTH = 500;
 const MAX_PHONE_LENGTH = 30;
 type DeliveryType = "online" | "in_person" | "phone";
-// "phone" always exists as a schema-level option regardless of the flag
-// (see lib/serviceDelivery.ts's own comment) — this is what actually
-// gates the server accepting it, not just the UI hiding the radio, so
-// hiding the option really does hide it end to end.
-const DELIVERY_TYPES: readonly DeliveryType[] = SHOW_PHONE_DELIVERY_OPTION
-  ? ["online", "in_person", "phone"]
-  : ["online", "in_person"];
+// All three are valid schema-level data regardless of any flag. Whether
+// "phone" is currently OFFERED is the showPhoneDelivery flag, enforced in the
+// action below (not just hidden in the UI) — so a disabled option is rejected
+// end to end, not just missing from the radio.
+const DELIVERY_TYPES: readonly DeliveryType[] = ["online", "in_person", "phone"];
 
 // Same bucket, same limits as the profile's avatar/banner upload
 // (uploadProfileImage in actions.ts) — services just get their own
@@ -189,7 +187,15 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
   // attend" info is a broken client experience. The DB's own NOT VALID
   // check constraint is the backstop against a direct-API bypass; this
   // is what gives a practitioner a clean, specific message instead.
-  if (!rawDeliveryType || !isDeliveryType(rawDeliveryType)) {
+  // Gate "phone" on the flag HERE, at the action — not just in the UI. A
+  // forged submission (or a stale form) with the option disabled is rejected,
+  // so turning showPhoneDelivery off closes the route too, not just the radio.
+  const showPhone = await isEnabled("showPhoneDelivery");
+  if (
+    !rawDeliveryType ||
+    !isDeliveryType(rawDeliveryType) ||
+    (rawDeliveryType === "phone" && !showPhone)
+  ) {
     return { ok: false, error: t("deliveryTypeRequired"), values };
   }
 

@@ -8,6 +8,7 @@ import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { sendEmailConfirmationEmail, normalizeLocale } from "@/lib/email";
 import { defaultBillingModel } from "@/lib/payments";
+import { isEnabled } from "@/lib/flags";
 
 // values echoes back displayName/email/role on a rejected submission —
 // deliberately EXCLUDES password (never echo a submitted password back
@@ -115,11 +116,10 @@ export async function signup(
       .eq("id", data.user.id);
   }
 
-  // Whether email confirmation is enforced is a config flag, not a code
-  // edit — off for testing, on at launch. Default OFF: only the explicit
-  // string "true" turns it on, so an unset/typo'd var never accidentally
-  // gates signups.
-  const requireConfirmation = process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
+  // Whether email confirmation is enforced — the requireEmailConfirmation
+  // flag (deploy scope, default off; see lib/flags/registry.ts for why it's
+  // not admin-toggleable). Off for testing, on at launch.
+  const requireConfirmation = await isEnabled("requireEmailConfirmation");
 
   if (!requireConfirmation) {
     // Confirmation not required: auto-confirm so the account is immediately

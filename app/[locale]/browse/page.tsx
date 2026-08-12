@@ -6,7 +6,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
-import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
+import { isEnabled } from "@/lib/flags";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -82,7 +82,7 @@ export default async function BrowsePage({
   // filtered by the same flag as the service-editing radio, so a hidden
   // phone option disappears from Browse too, not just the dashboard.
   const deliveryTypeOptions = (
-    SHOW_PHONE_DELIVERY_OPTION
+    (await isEnabled("showPhoneDelivery"))
       ? (["online", "in_person", "phone"] as const)
       : (["online", "in_person"] as const)
   ).map((key) => ({

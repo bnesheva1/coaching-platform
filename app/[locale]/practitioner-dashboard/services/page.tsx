@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVE_STATUSES } from "@/lib/booking-time";
+import { isEnabled } from "@/lib/flags";
 import { ServicesSection } from "../ServicesSection";
 
 // Auth/role guard already ran in the shared layout.tsx.
@@ -66,7 +67,7 @@ export default async function ServicesPage() {
           own service tiles (practitioner-dashboard/profile/page.tsx). */}
       <div style={{ maxWidth: 800 }}>
         <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{t("nav.services")}</h1>
-        <ServicesSection services={servicesWithDeliveryInfo} />
+        <ServicesSection services={servicesWithDeliveryInfo} showPhone={await isEnabled("showPhoneDelivery")} />
       </div>
     </main>
   );

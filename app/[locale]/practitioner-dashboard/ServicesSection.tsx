@@ -14,7 +14,6 @@ import {
   type ServiceFormState,
 } from "./services-actions";
 import { splitTextAndUrls } from "@/lib/linkify";
-import { SHOW_PHONE_DELIVERY_OPTION } from "@/lib/serviceDelivery";
 
 type DeliveryType = "online" | "in_person" | "phone";
 
@@ -221,6 +220,7 @@ function DeliveryFields({
   defaultInfo,
   defaultPhoneNumber,
   locked,
+  showPhone,
 }: {
   defaultType: Service["delivery_type"];
   defaultInfo: string;
@@ -231,6 +231,10 @@ function DeliveryFields({
   // explicit "still editable at any time: ...phone_number" list. Only
   // price/duration/deliveryType are structural enough to lock.
   locked: boolean;
+  // showPhoneDelivery flag, resolved server-side and threaded down — when
+  // off, the phone option is absent from the select (the server action
+  // rejects it too, so it's hidden end to end).
+  showPhone: boolean;
 }) {
   const t = useTranslations("Services");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>(defaultType ?? "online");
@@ -256,7 +260,7 @@ function DeliveryFields({
           >
             <option value="online">{t("deliveryTypeOnline")}</option>
             <option value="in_person">{t("deliveryTypeInPerson")}</option>
-            {SHOW_PHONE_DELIVERY_OPTION && <option value="phone">{t("deliveryTypePhone")}</option>}
+            {showPhone && <option value="phone">{t("deliveryTypePhone")}</option>}
           </select>
           <input type="hidden" name="deliveryType" value={deliveryType} />
         </label>
@@ -281,7 +285,7 @@ function DeliveryFields({
           >
             <option value="online">{t("deliveryTypeOnline")}</option>
             <option value="in_person">{t("deliveryTypeInPerson")}</option>
-            {SHOW_PHONE_DELIVERY_OPTION && <option value="phone">{t("deliveryTypePhone")}</option>}
+            {showPhone && <option value="phone">{t("deliveryTypePhone")}</option>}
           </select>
         </label>
       )}
@@ -377,7 +381,7 @@ const tileStyle = {
   background: "var(--bg-surface)",
 };
 
-function ServiceRow({ service }: { service: Service }) {
+function ServiceRow({ service, showPhone }: { service: Service; showPhone: boolean }) {
   const t = useTranslations("Services");
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateService, initialState);
@@ -468,6 +472,7 @@ function ServiceRow({ service }: { service: Service }) {
               defaultInfo={state?.values?.deliveryInfo ?? (service.delivery_info ?? "")}
               defaultPhoneNumber={state?.values?.phoneNumber ?? (service.phone_number ?? "")}
               locked={locked}
+              showPhone={showPhone}
             />
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
@@ -615,7 +620,7 @@ function ServiceRow({ service }: { service: Service }) {
   );
 }
 
-export function ServicesSection({ services }: { services: Service[] }) {
+export function ServicesSection({ services, showPhone }: { services: Service[]; showPhone: boolean }) {
   const t = useTranslations("Services");
   const [isAdding, setIsAdding] = useState(false);
   const [state, formAction, pending] = useActionState(createService, initialState);
@@ -635,7 +640,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
       {services.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, marginBottom: "var(--space-4)" }}>
           {services.map((service) => (
-            <ServiceRow key={service.id} service={service} />
+            <ServiceRow key={service.id} service={service} showPhone={showPhone} />
           ))}
         </ul>
       ) : (
@@ -679,6 +684,7 @@ export function ServicesSection({ services }: { services: Service[] }) {
               defaultInfo={state?.values?.deliveryInfo ?? ""}
               defaultPhoneNumber={state?.values?.phoneNumber ?? ""}
               locked={false}
+              showPhone={showPhone}
             />
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
