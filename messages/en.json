@@ -2,6 +2,22 @@
   "Brand": {
     "siteName": "Coaching Platform"
   },
+  "Admin": {
+    "heading": "Admin",
+    "alertsHeading": "Alerts",
+    "alertsEmpty": "No alerts. Failures needing attention will appear here.",
+    "controlsHeading": "Controls",
+    "controlsEmpty": "Kill switches will appear here.",
+    "numbersHeading": "Numbers",
+    "numbersEmpty": "Platform readouts will appear here.",
+    "auditHeading": "Audit log",
+    "auditEmpty": "No admin actions recorded yet.",
+    "auditColWhen": "When",
+    "auditColWho": "Who",
+    "auditColAction": "Action",
+    "auditColPrevious": "Previous",
+    "auditColNew": "New"
+  },
   "HomePage": {
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
     "heroEyebrow": "People are asking",
@@ -26,6 +42,7 @@
     "dashboardLink": "Dashboard",
     "dashboardLinkClient": "My sessions",
     "dashboardLinkPractitioner": "My dashboard",
+    "adminLink": "Admin",
     "myProfile": "My profile",
     "settings": "Settings",
     "login": "Log in",
@@ -43,7 +60,6 @@
     "loginButton": "Log in",
     "loginButtonPending": "Logging in…",
     "noAccountPrompt": "Don't have an account? <signup>Sign up</signup>",
-
     "signupTitle": "Sign up",
     "displayNameLabel": "Display name",
     "displayNameHint": "Your public name — any language or script is fine.",
@@ -58,7 +74,6 @@
     "tooManyAttempts": "Too many attempts. Please wait a few minutes and try again.",
     "captchaFailed": "CAPTCHA verification failed. Please try again.",
     "confirmationEmailFailed": "We couldn't send your confirmation email. Please try again in a moment.",
-
     "checkEmailTitle": "Check your email",
     "checkEmailBody": "We've sent a confirmation link to your email address. Click it to activate your account, then come back and log in.",
     "confirmEmailTitle": "Confirming your email",

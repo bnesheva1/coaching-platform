@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Viewer =
   | { status: "logged-out" }
+  | { status: "admin"; displayName: string | null }
   | { status: "client"; displayName: string | null }
   | { status: "practitioner"; displayName: string | null; username: string | null };
 
@@ -26,6 +27,10 @@ export async function getViewer(): Promise<Viewer> {
     .select("role, display_name")
     .eq("id", user.id)
     .single();
+
+  if (profile?.role === "admin") {
+    return { status: "admin", displayName: profile.display_name };
+  }
 
   if (profile?.role === "practitioner") {
     // Username drives the header's "My profile" link to their public page

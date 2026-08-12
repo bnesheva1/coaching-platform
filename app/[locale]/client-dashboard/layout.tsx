@@ -41,7 +41,9 @@ export default async function ClientDashboardLayout({ children }: { children: Re
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 
   if (profile?.role !== "client") {
-    redirect({ href: "/practitioner-dashboard", locale });
+    // An admin bounced here would otherwise loop between the two dashboards
+    // (each rejects the other's role) — send them to their own surface.
+    redirect({ href: profile?.role === "admin" ? "/admin" : "/practitioner-dashboard", locale });
     return null;
   }
 

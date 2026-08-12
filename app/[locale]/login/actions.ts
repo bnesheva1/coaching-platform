@@ -47,7 +47,12 @@ export async function login(
 
   const locale = await getLocale();
   redirect({
-    href: profile?.role === "practitioner" ? "/practitioner-dashboard" : "/client-dashboard",
+    href:
+      profile?.role === "admin"
+        ? "/admin"
+        : profile?.role === "practitioner"
+          ? "/practitioner-dashboard"
+          : "/client-dashboard",
     locale,
   });
   return null;

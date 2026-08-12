@@ -2,6 +2,22 @@
   "Brand": {
     "siteName": "Платформа за консултации"
   },
+  "Admin": {
+    "heading": "Админ",
+    "alertsHeading": "Сигнали",
+    "alertsEmpty": "Няма сигнали. Тук ще се появяват проблеми, изискващи внимание.",
+    "controlsHeading": "Контроли",
+    "controlsEmpty": "Тук ще се появят превключвателите.",
+    "numbersHeading": "Числа",
+    "numbersEmpty": "Тук ще се появят показателите на платформата.",
+    "auditHeading": "Одит дневник",
+    "auditEmpty": "Все още няма записани админ действия.",
+    "auditColWhen": "Кога",
+    "auditColWho": "Кой",
+    "auditColAction": "Действие",
+    "auditColPrevious": "Предишна",
+    "auditColNew": "Нова"
+  },
   "HomePage": {
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
     "heroEyebrow": "Хората питат",
@@ -26,6 +42,7 @@
     "dashboardLink": "Табло",
     "dashboardLinkClient": "Моите сесии",
     "dashboardLinkPractitioner": "Моето табло",
+    "adminLink": "Админ",
     "myProfile": "Моят профил",
     "settings": "Настройки",
     "login": "Вход",

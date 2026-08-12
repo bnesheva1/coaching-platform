@@ -38,6 +38,7 @@ export async function SiteHeader() {
 
   const isLoggedIn = viewer.status !== "logged-out";
   const isPractitioner = viewer.status === "practitioner";
+  const isAdmin = viewer.status === "admin";
   const dashboardHref = isPractitioner ? "/practitioner-dashboard" : "/client-dashboard";
 
   // The always-visible link to their own area. Role-specific wording:
@@ -45,9 +46,12 @@ export async function SiteHeader() {
   // "Dashboard" is the wrong word for them; the practitioner keeps a
   // dashboard framing. Mutually exclusive with authLinks — exactly one of
   // the two is non-null.
-  const dashboardLink = isLoggedIn
-    ? { label: isPractitioner ? tHeader("dashboardLinkPractitioner") : tHeader("dashboardLinkClient"), href: dashboardHref }
-    : null;
+  // An admin has no client/practitioner area, so no visible top-nav link —
+  // /admin is reachable from the account menu only (see accountLinks).
+  const dashboardLink =
+    isLoggedIn && !isAdmin
+      ? { label: isPractitioner ? tHeader("dashboardLinkPractitioner") : tHeader("dashboardLinkClient"), href: dashboardHref }
+      : null;
 
   // The greeting is now the account-menu trigger; it still does identity
   // work (whose account you're in). Falls back to the plain dashboard label
@@ -62,15 +66,19 @@ export async function SiteHeader() {
   // username yet, point at the dashboard profile editor so it never 404s.
   const accountLinks: NavLink[] | null = !isLoggedIn
     ? null
-    : isPractitioner
-      ? [
-          {
-            label: tHeader("myProfile"),
-            href: viewer.username ? `/p/${viewer.username}` : "/practitioner-dashboard/profile",
-          },
-          { label: tHeader("settings"), href: "/practitioner-dashboard/settings" },
-        ]
-      : [{ label: tHeader("settings"), href: "/client-dashboard/settings" }];
+    : isAdmin
+      ? // Admin: the /admin link lives here in the account menu, shown only to
+        // admins — never in public nav.
+        [{ label: tHeader("adminLink"), href: "/admin" }]
+      : isPractitioner
+        ? [
+            {
+              label: tHeader("myProfile"),
+              href: viewer.username ? `/p/${viewer.username}` : "/practitioner-dashboard/profile",
+            },
+            { label: tHeader("settings"), href: "/practitioner-dashboard/settings" },
+          ]
+        : [{ label: tHeader("settings"), href: "/client-dashboard/settings" }];
 
   const signOutItem = isLoggedIn ? { label: tHeader("signOut"), action: signOut } : null;
 
