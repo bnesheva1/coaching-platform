@@ -190,11 +190,14 @@ function AccountMenu({
               {l.label}
             </Link>
           ))}
+          {/* No onClick to close the menu here: setOpen(false) unmounts this
+              form ({open && …}) before the server action dispatches, silently
+              cancelling sign-out. The action redirects to /login, so the menu
+              never needs closing — the page navigates away. */}
           <form action={signOut.action} style={{ margin: 0, marginTop: "var(--space-1)", paddingTop: "var(--space-1)", borderTop: "1px solid var(--border-subtle)" }}>
             <button
               type="submit"
               role="menuitem"
-              onClick={() => setOpen(false)}
               className="nav-menu-item"
               style={{ ...dropdownItemStyle, width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer" }}
             >
@@ -421,7 +424,11 @@ export function NavBar({
                     {l.label}
                   </Link>
                 ))}
-                <form action={signOut.action} onSubmit={() => setMenuOpen(false)} style={{ margin: 0 }}>
+                {/* No onSubmit to close the drawer: the action redirects to
+                    /login, so the drawer never needs closing, and closing it
+                    (inert) mid-submit could interfere with the in-flight
+                    server action. */}
+                <form action={signOut.action} style={{ margin: 0 }}>
                   <button
                     type="submit"
                     style={{ font: "var(--text-nav)", color: "var(--text-secondary)", background: "none", border: "none", padding: "var(--space-2) 0", cursor: "pointer", textAlign: "left" }}
