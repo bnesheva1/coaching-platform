@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { localizedAlternates } from "@/lib/seo";
 import { Hero } from "./Hero";
@@ -7,7 +8,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "HomePage" });
   return {
-    title: t("title"),
+    title: await getSiteName(locale),
     description: t("metaDescription"),
     // Homepage path is just the locale root (pathname ""), so this yields
     // canonical /{locale} + hreflang for each locale + x-default -> bg.

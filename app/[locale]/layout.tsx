@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { PT_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -52,7 +53,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "HomePage" });
   return {
     metadataBase: new URL(SITE_URL),
-    title: t("title"),
+    title: await getSiteName(locale),
     description: t("metaDescription"),
   };
 }

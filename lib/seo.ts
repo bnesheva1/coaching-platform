@@ -1,9 +1,14 @@
 import { routing } from "@/i18n/routing";
 
-// Vercel's own domain — this project has no custom domain configured yet
-// (confirmed via `vercel domains ls`: none). Swap this one constant if
-// that changes; every hreflang/canonical URL in the app flows through it.
-export const SITE_URL = "https://coaching-platform-tau.vercel.app";
+// The deployment's public origin — feeds every canonical, hreflang, sitemap
+// entry and JSON-LD URL. Deployment-scoped config (SITE_URL env), so a second
+// brand on a different domain sets it once rather than silently attributing
+// all SEO signals to this domain. The fallback is this deployment's own
+// domain, so the primary keeps working if the var is unset — but a second
+// deployment MUST set SITE_URL or its URLs will point here. Server-only (no
+// NEXT_PUBLIC): every consumer is server-side (metadata, sitemap, robots,
+// JSON-LD).
+export const SITE_URL = process.env.SITE_URL ?? "https://coaching-platform-tau.vercel.app";
 
 // Every static/marketing page's generateMetadata calls this with its own
 // locale + locale-agnostic pathname (e.g. "/how-it-works", no leading

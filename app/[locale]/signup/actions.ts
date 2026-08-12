@@ -7,6 +7,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { sendEmailConfirmationEmail, normalizeLocale } from "@/lib/email";
+import { defaultBillingModel } from "@/lib/payments";
 
 // values echoes back displayName/email/role on a rejected submission —
 // deliberately EXCLUDES password (never echo a submitted password back
@@ -100,6 +101,18 @@ export async function signup(
     // registered") aren't ours to translate — see the same note in
     // login/actions.ts.
     return { error: error.message, values };
+  }
+
+  // A new practitioner inherits this deployment's default billing model,
+  // set explicitly here at creation. The DB trigger already created the
+  // practitioner_profiles row with the column default; this overrides it
+  // per deployment (DEFAULT_BILLING_MODEL env) without a migration. The
+  // per-practitioner field can still be changed afterwards.
+  if (role === "practitioner" && data.user) {
+    await supabase
+      .from("practitioner_profiles")
+      .update({ billing_model: defaultBillingModel() })
+      .eq("id", data.user.id);
   }
 
   // Whether email confirmation is enforced is a config flag, not a code

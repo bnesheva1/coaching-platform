@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
-import { provider, translator, normalizeLocale, formatSessionTime } from "./shared";
+import { provider, translator, footerText, normalizeLocale, formatSessionTime } from "./shared";
 import type { SendEmailResult } from "./types";
 import { ReminderEmail } from "./templates/ReminderEmail";
 
@@ -96,7 +96,7 @@ async function sendReminderTo(params: {
         serviceName: params.serviceName,
         sessionTime,
       }),
-      footer: t("footer"),
+      footer: footerText(locale),
       deliveryLabel: deliveryLabel(t, params.serviceDeliveryType),
       deliveryInfo: deliveryValue(params.serviceDeliveryType, params.serviceDeliveryInfo, params.servicePhoneNumber),
     }),

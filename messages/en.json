@@ -1,6 +1,8 @@
 {
+  "Brand": {
+    "siteName": "Coaching Platform"
+  },
   "HomePage": {
-    "title": "Coaching Platform",
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
     "heroEyebrow": "People are asking",
     "heroQuestion1": "What is my life purpose?",
@@ -612,6 +614,13 @@
     "connectError": "Something went wrong starting Stripe setup. Please try again.",
     "manageError": "Something went wrong opening your Stripe account. Please try again."
   },
+  "Taxonomy": {
+    "metaTitle": "{category} in Bulgaria — verified practitioners",
+    "metaDescription": "Find and book verified {category} practitioners across Bulgaria. Compare specialties, reviews and availability, and book online.",
+    "heading": "{category} practitioners in Bulgaria",
+    "emptyBody": "No one is offering {category} online right now. Browse all practitioners instead.",
+    "browseAll": "Browse all practitioners"
+  },
   "Browse": {
     "title": "Find a practitioner",
     "metaTitle": "Browse practitioners — tarot, astrology & spiritual guidance",
@@ -698,7 +707,7 @@
     "emailConfirmationHeading": "Confirm your email address",
     "emailConfirmationBody": "Click the button below to confirm your email address and activate your account. This link will expire soon.",
     "emailConfirmationButton": "Confirm email",
-    "footer": "This is an automated message from the coaching platform."
+    "footer": "This is an automated message from {siteName}."
   },
   "Session": {
     "deviceCheckRequestingTitle": "Getting ready…",

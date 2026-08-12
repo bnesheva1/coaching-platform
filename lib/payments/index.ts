@@ -5,6 +5,16 @@ import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, Billin
 
 export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, RefundResult } from "./types";
 
+// Deployment-scope default for a newly-created practitioner's billing_model,
+// read at creation (see signup/actions.ts). Lets a brand declare "all new
+// practitioners are commission" via the DEFAULT_BILLING_MODEL env var, with
+// no migration and no per-practitioner setting. Only the explicit string
+// "commission" switches it; anything else (incl. unset) keeps the DB
+// default. The per-practitioner column still overrides this afterwards.
+export function defaultBillingModel(): BillingModel {
+  return process.env.DEFAULT_BILLING_MODEL === "commission" ? "commission" : "software_provider";
+}
+
 // THE seam. Every other module in this app calls exactly these two
 // functions and nothing else — no caller outside lib/payments/ imports
 // the Stripe SDK, knows what a Checkout Session is, or knows Connect

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
@@ -11,8 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "About" });
-  const tHome = await getTranslations({ locale, namespace: "HomePage" });
-  const siteName = tHome("title");
+  const siteName = await getSiteName(locale);
   return {
     title: t("metaTitle", { siteName }),
     description: t("metaDescription", { siteName }),
@@ -22,10 +22,9 @@ export async function generateMetadata({
 
 export default async function AboutPage() {
   const t = await getTranslations("About");
-  const tHome = await getTranslations("HomePage");
   const tHeader = await getTranslations("Header");
   const tBrowse = await getTranslations("Browse");
-  const siteName = tHome("title");
+  const siteName = await getSiteName();
 
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>

@@ -25,6 +25,15 @@ export function translator(locale: Locale) {
   return createTranslator({ locale, messages: MESSAGES[locale], namespace: "Email" });
 }
 
+// The email footer, with the brand name (Brand.siteName) interpolated in the
+// recipient's locale — the sync-translator counterpart to lib/brand.ts's
+// getSiteName, resolving the same dedicated brand key. Every send passes its
+// footer through here so the brand lives in one place, not in each template.
+export function footerText(locale: Locale): string {
+  const brand = createTranslator({ locale, messages: MESSAGES[locale], namespace: "Brand" })("siteName");
+  return translator(locale)("footer", { siteName: brand });
+}
+
 // A duration relative to an instant, formatted for display — same
 // underlying instant (start_utc) shown two ways for client-facing
 // emails, since the client's saved timezone is a best-known value

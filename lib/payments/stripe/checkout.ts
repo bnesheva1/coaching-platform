@@ -35,7 +35,13 @@ export async function createBookingCheckoutSession(
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    payment_method_types: ["card"],
+    // No payment_method_types: omitting it makes a Checkout Session use the
+    // methods enabled in the Stripe Dashboard (Settings -> Payment methods) —
+    // Checkout's equivalent of automatic_payment_methods (which is a
+    // PaymentIntent-level param, not a Checkout Session one). So a deployment
+    // can enable Revolut Pay (wanted for the Bulgarian market), Apple/Google
+    // Pay, etc. from the Dashboard with no code change. Checkout is a hosted
+    // redirect flow, so redirect-based methods work out of the box.
     line_items: [
       {
         price_data: {

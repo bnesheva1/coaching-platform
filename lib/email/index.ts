@@ -5,7 +5,7 @@ import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
 import { ContactMessageEmail } from "./templates/ContactMessageEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
-import { provider, translator, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
+import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
 import type { SendEmailResult } from "./types";
 
 export type { Locale } from "./shared";
@@ -125,7 +125,7 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
           serviceName: context.service_name,
           sessionTime: clientTime,
         }),
-        footer: tClient("footer"),
+        footer: footerText(clientLocale),
         deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
         deliveryInfo: deliveryValue(context),
       }),
@@ -165,7 +165,7 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
         serviceName: context.service_name,
         sessionTime: practitionerTime,
       }),
-      footer: tPractitioner("footer"),
+      footer: footerText(practitionerLocale),
       deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
       deliveryInfo: deliveryValue(context),
     }),
@@ -239,7 +239,7 @@ export async function sendCancellationNoticeEmail(
         serviceName: context.service_name,
         sessionTime,
       }),
-      footer: t("footer"),
+      footer: footerText(recipient.locale),
       noteLabel: note ? t("cancellationNoticeNoteLabel") : undefined,
       note,
     }),
@@ -295,7 +295,7 @@ export async function sendPaidBookingConfirmationEmails(
           serviceName: context.service_name,
           sessionTime: clientTime,
         }),
-        footer: tClient("footer"),
+        footer: footerText(clientLocale),
         deliveryLabel: deliveryLabel(tClient, context.service_delivery_type),
         deliveryInfo: deliveryValue(context),
         amountPaidLine: tClient("amountPaidLine", { amount: formatMoney(amountPaidCents, currency, clientLocale) }),
@@ -331,7 +331,7 @@ export async function sendPaidBookingConfirmationEmails(
         serviceName: context.service_name,
         sessionTime: practitionerTime,
       }),
-      footer: tPractitioner("footer"),
+      footer: footerText(practitionerLocale),
       deliveryLabel: deliveryLabel(tPractitioner, context.service_delivery_type),
       deliveryInfo: deliveryValue(context),
       amountPaidLine: tPractitioner("amountPaidLine", {
@@ -405,7 +405,7 @@ export async function sendPaymentRefundedNotice({
         counterpartyName: practitioner?.display_name ?? "",
         amount,
       }),
-      footer: t("footer"),
+      footer: footerText(locale),
     }),
   });
   if (!result.success) {
@@ -451,7 +451,7 @@ export async function sendEmergencyContactRevealedNotice(bookingId: string): Pro
         serviceName: context.service_name,
         sessionTime,
       }),
-      footer: t("footer"),
+      footer: footerText(locale),
     }),
   });
   if (!result.success) {
@@ -527,7 +527,7 @@ export async function sendPasswordResetEmail({
       buttonLabel: t("passwordResetButton"),
       actionLink,
       ignoreNote: t("passwordResetIgnoreNote"),
-      footer: t("footer"),
+      footer: footerText(locale),
     }),
   });
   if (!result.success) {
@@ -563,7 +563,7 @@ export async function sendEmailConfirmationEmail({
       body: t("emailConfirmationBody"),
       buttonLabel: t("emailConfirmationButton"),
       actionLink,
-      footer: t("footer"),
+      footer: footerText(locale),
     }),
   });
   if (!result.success) {

@@ -3,6 +3,7 @@ import { NavBar, type NavLink } from "@/components/ui/NavBar";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
 import { getViewer } from "@/lib/auth/getViewer";
+import { getSiteName } from "@/lib/brand";
 import { signOut } from "@/app/actions";
 
 // The one header, mounted once in app/[locale]/layout.tsx — every route
@@ -12,7 +13,7 @@ import { signOut } from "@/app/actions";
 // auth-agnostic; it just reshapes whatever structured data it's given
 // into the desktop 3-zone layout vs the mobile flat list.
 export async function SiteHeader() {
-  const tHome = await getTranslations("HomePage");
+  const siteName = await getSiteName();
   const tBrowse = await getTranslations("Browse");
   const tHeader = await getTranslations("Header");
   const tFooter = await getTranslations("Footer");
@@ -82,7 +83,7 @@ export async function SiteHeader() {
 
   return (
     <NavBar
-      wordmark={tHome("title")}
+      wordmark={siteName}
       browseLink={browseLink}
       infoDropdownLabel={tHeader("infoDropdownLabel")}
       infoLinks={infoLinks}

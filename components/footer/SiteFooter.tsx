@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { getSiteName } from "@/lib/brand";
 import { Link } from "@/i18n/navigation";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 
@@ -10,8 +11,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 // site," which doesn't change per role).
 export async function SiteFooter() {
   const t = await getTranslations("Footer");
-  const tHome = await getTranslations("HomePage");
-  const siteName = tHome("title");
+  const siteName = await getSiteName();
   const year = new Date().getFullYear();
 
   const links: { href: string; label: string }[] = [

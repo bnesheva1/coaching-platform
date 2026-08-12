@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
@@ -30,14 +31,13 @@ export async function generateMetadata({
     .single();
   if (!pp) return {};
 
-  const [{ data: prof }, t, tHome] = await Promise.all([
+  const [{ data: prof }, t, siteName] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", pp.id).single(),
     getTranslations({ locale, namespace: "PublicProfile" }),
-    getTranslations({ locale, namespace: "HomePage" }),
+    getSiteName(locale),
   ]);
-  const siteName = tHome("title");
   const name = prof?.display_name || `@${pp.username}`;
-  const labelByKey = new Map(specialtiesData.map((s) => [s.key, (s as Record<string, string>)[locale] ?? s.en]));
+  const labelByKey = new Map(specialtiesData.map((s) => [s.key, locale === "en" ? s.en : s.bg]));
   const specialtyLabels = ((pp.specialties as string[] | null) ?? [])
     .map((k) => labelByKey.get(k))
     .filter((l): l is string => Boolean(l))
@@ -197,15 +197,14 @@ export default async function PublicProfilePage({
 
   // ---- Structured data (schema.org JSON-LD) ----
   // Built entirely from data already fetched/shown above; nothing invented.
-  const [tProfile, tHome] = await Promise.all([
+  const [tProfile, siteName] = await Promise.all([
     getTranslations("PublicProfile"),
-    getTranslations("HomePage"),
+    getSiteName(locale),
   ]);
-  const siteName = tHome("title");
   const displayName = profile?.display_name || `@${practitionerProfile.username}`;
   const canonicalUrl = `${SITE_URL}/${locale}/p/${practitionerProfile.username}`;
   const specialtyLabelByKey = new Map(
-    specialtiesData.map((s) => [s.key, (s as Record<string, string>)[locale] ?? s.en]),
+    specialtiesData.map((s) => [s.key, locale === "en" ? s.en : s.bg]),
   );
   const specialtyLabels = ((practitionerProfile.specialties as string[] | null) ?? [])
     .map((k) => specialtyLabelByKey.get(k))

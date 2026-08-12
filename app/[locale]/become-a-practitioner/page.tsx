@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
@@ -11,8 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "BecomePractitioner" });
-  const tHome = await getTranslations({ locale, namespace: "HomePage" });
-  const siteName = tHome("title");
+  const siteName = await getSiteName(locale);
   return {
     title: t("metaTitle", { siteName }),
     description: t("metaDescription"),
@@ -22,8 +22,7 @@ export async function generateMetadata({
 
 export default async function BecomePractitionerPage() {
   const t = await getTranslations("BecomePractitioner");
-  const tHome = await getTranslations("HomePage");
-  const siteName = tHome("title");
+  const siteName = await getSiteName();
 
   const benefits = [
     { title: t("benefit1Title"), body: t("benefit1Body") },

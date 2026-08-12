@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteName } from "@/lib/brand";
 import { getTranslations, getLocale } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { MarkdownContent } from "@/components/content/MarkdownContent";
@@ -14,8 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Privacy" });
-  const tHome = await getTranslations({ locale, namespace: "HomePage" });
-  const siteName = tHome("title");
+  const siteName = await getSiteName(locale);
   return {
     title: t("metaTitle", { siteName }),
     description: t("metaDescription", { siteName }),
