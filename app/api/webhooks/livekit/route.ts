@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { verifyAndNormaliseVideoEvent, persistVideoEvent } from "@/lib/video";
+import { recordWebhookFailure } from "@/lib/alerts/webhook";
 
 // Deliberately thin, exactly like app/api/webhooks/stripe/route.ts — the
 // only route-handler-specific jobs are reading the RAW body (never
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       // LiveKit-visible failure. Logged for follow-up; the reconcile sweep
       // is the real backstop for a dropped event.
       console.error("LiveKit webhook handler failed", { bookingId: normalised.bookingId, err });
+      await recordWebhookFailure("livekit", `handler (booking ${normalised.bookingId}): ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 

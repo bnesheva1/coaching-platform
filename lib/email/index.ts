@@ -6,6 +6,7 @@ import { ContactMessageEmail } from "./templates/ContactMessageEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
 import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
+import { raiseAlert } from "@/lib/alerts";
 import type { SendEmailResult } from "./types";
 
 export type { Locale } from "./shared";
@@ -136,6 +137,13 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
         recipient: context.client_email,
         error: clientResult.error,
       });
+      await raiseAlert({
+        type: "failed_email",
+        subject: `${bookingId}:client`,
+        message: "Booking confirmed but the client's confirmation email wasn't delivered.",
+        context: { bookingId, recipient: context.client_email, error: clientResult.error },
+        immediate: true,
+      });
     }
   }
 
@@ -175,6 +183,13 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
       bookingId,
       recipient: context.practitioner_email,
       error: practitionerResult.error,
+    });
+    await raiseAlert({
+      type: "failed_email",
+      subject: `${bookingId}:practitioner`,
+      message: "Booking confirmed but the practitioner's confirmation email wasn't delivered.",
+      context: { bookingId, recipient: context.practitioner_email, error: practitionerResult.error },
+      immediate: true,
     });
   }
 }

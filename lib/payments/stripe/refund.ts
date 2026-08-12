@@ -1,5 +1,6 @@
 import { getStripeClient } from "./client";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import { raiseAlert } from "@/lib/alerts";
 
 // A direct server-to-server call — WE ask Stripe to refund, and trust
 // its synchronous response, unlike the original charge (which only
@@ -32,11 +33,32 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
   }
 
   const stripe = getStripeClient();
-  const refund = await stripe.refunds.create({
-    payment_intent: paymentIntentId,
-    reverse_transfer: true,
-    refund_application_fee: true,
-  });
+  let refund;
+  try {
+    refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reverse_transfer: true,
+      refund_application_fee: true,
+    });
+  } catch (err) {
+    // Stripe rejected the refund — the client is owed money and doesn't have
+    // it. Inline raise point (raised at the failure); a warning, so it lands
+    // on the dashboard + daily digest, not Telegram. Re-thrown to preserve the
+    // caller's existing behaviour (this used to throw straight through).
+    await raiseAlert({
+      type: "failed_refund",
+      subject: bookingId,
+      message: "Stripe rejected a refund — the client is owed money and doesn't have it.",
+      context: {
+        bookingId,
+        paymentId: payment.id,
+        paymentIntentId,
+        error: err instanceof Error ? err.message : String(err),
+      },
+      immediate: true,
+    });
+    throw err;
+  }
 
   const { error } = await supabase
     .from("payments")

@@ -12,6 +12,7 @@
     "numbersEmpty": "Platform readouts will appear here.",
     "auditHeading": "Audit log",
     "auditEmpty": "No admin actions recorded yet.",
+    "dismiss": "Dismiss",
     "auditColWhen": "When",
     "auditColWho": "Who",
     "auditColAction": "Action",

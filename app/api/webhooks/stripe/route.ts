@@ -6,6 +6,7 @@ import {
   handleCheckoutSessionCompleted,
 } from "@/lib/payments/stripe/webhook";
 import { handleAccountUpdated } from "@/lib/payments/stripe/connect";
+import { recordWebhookFailure } from "@/lib/alerts/webhook";
 
 // Deliberately thin — every decision lives in lib/payments/stripe/
 // webhook.ts, this file only does the two things that genuinely belong
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
         await handleAccountUpdated(accountId);
       } catch (err) {
         console.error("Stripe webhook handler failed", { accountId, err });
+        await recordWebhookFailure("stripe", `account.updated handler: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
 
@@ -96,6 +98,7 @@ export async function POST(request: Request) {
       // manual follow-up; the cron reconciliation sweep is the actual
       // safety net for a dropped event, not a Stripe redelivery.
       console.error("Stripe webhook handler failed", { eventType: event.type, err });
+      await recordWebhookFailure("stripe", `${event.type} handler: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 

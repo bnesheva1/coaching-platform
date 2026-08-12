@@ -12,6 +12,7 @@
     "numbersEmpty": "Тук ще се появят показателите на платформата.",
     "auditHeading": "Одит дневник",
     "auditEmpty": "Все още няма записани админ действия.",
+    "dismiss": "Отхвърли",
     "auditColWhen": "Кога",
     "auditColWho": "Кой",
     "auditColAction": "Действие",

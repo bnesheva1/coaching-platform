@@ -3,6 +3,7 @@ import { sendReminderBatch } from "@/lib/email/reminders";
 import { completePastBookings } from "@/lib/bookings/completePastBookings";
 import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
 import { reconcileVideoRooms } from "@/lib/video/reconcile";
+import { runAlertSweep } from "@/lib/alerts/sweep";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
 // env var (locally AND in the Vercel project dashboard — Vercel's
@@ -40,5 +41,12 @@ export async function GET(request: Request) {
   // outcomes for closed-but-unresolved sessions — the reconcile analog to
   // the Stripe sweep above, and independent of any LiveKit webhook.
   const videoResult = await reconcileVideoRooms();
-  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult });
+  // Alert sweep runs LAST, after reconciliation has recovered what it can (a
+  // paid session's missing booking, an unresolved outcome) — so it only flags
+  // what's genuinely still broken, not what this same run just fixed. Called
+  // as a standalone function (its own schedule config lives in lib/alerts/
+  // sweep.ts): Vercel Hobby allows one daily cron, so it folds in here; on a
+  // paid plan, give it its own tighter cron and delete this one line.
+  const alertResult = await runAlertSweep();
+  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult, ...alertResult });
 }
