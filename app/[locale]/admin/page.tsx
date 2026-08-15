@@ -102,6 +102,11 @@ export default async function AdminPage() {
     high: "#a15c00",
     breaker: "#c0392b",
   };
+  const minutesPct = Math.round(videoUsage.minutesUtilization * 100);
+  const dataPct = Math.round(videoUsage.dataUtilization * 100);
+  // Colour a usage row by how close it is to its ceiling — amber past 80%, red
+  // once over — so an approaching limit reads before it turns into overage cost.
+  const utilColor = (u: number) => (u >= 1 ? "#c0392b" : u >= 0.8 ? "#a15c00" : "var(--text-secondary)");
 
   const emptyStyle = { margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" } as const;
   const cellStyle = {
@@ -381,12 +386,29 @@ export default async function AdminPage() {
                     breaker: eurFmt.format(breakerEur),
                   })}
                 </span>
-                <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", fontVariantNumeric: "tabular-nums" }}>
-                  {t("numVideoMinutes", {
-                    projected: numberFmt.format(videoUsage.projectedMinutes),
-                    allowance: numberFmt.format(videoUsage.allowanceMinutes),
-                    committed: numberFmt.format(videoUsage.committedMinutes),
-                  })}
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "var(--space-1) var(--space-6)",
+                    font: "var(--text-body-sm)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {/* Data first — it's the constraint that binds. Each row is
+                      coloured by its own utilisation, so an approaching ceiling
+                      shows even before any overage cost accrues. */}
+                  <span style={{ color: utilColor(videoUsage.dataUtilization) }}>
+                    {t("numVideoDataLabel")}: {numberFmt.format(videoUsage.projectedGb)} / {numberFmt.format(videoUsage.dataAllowanceGb)} GB ({dataPct}%)
+                    {videoUsage.binding === "data" && ` · ${t("numVideoBinding")}`}
+                  </span>
+                  <span style={{ color: utilColor(videoUsage.minutesUtilization) }}>
+                    {t("numVideoMinutesLabel")}: {numberFmt.format(videoUsage.projectedMinutes)} / {numberFmt.format(videoUsage.minutesAllowance)} ({minutesPct}%)
+                    {videoUsage.binding === "minutes" && ` · ${t("numVideoBinding")}`}
+                  </span>
+                </div>
+                <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                  {t("numVideoCommitted", { committed: numberFmt.format(videoUsage.committedMinutes) })}
                 </span>
               </div>
             </div>

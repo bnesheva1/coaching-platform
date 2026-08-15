@@ -67,7 +67,11 @@
     "turningOn": "Turning on…",
     "turningOff": "Turning off…",
     "costOverrideOnBody": "The automatic {amount}/month cost breaker won't turn video off. You'll need to watch the projected cost yourself.",
-    "costOverrideOffBody": "The automatic {amount}/month breaker is active again — video turns off if projected cost passes {amount}."
+    "costOverrideOffBody": "The automatic {amount}/month breaker is active again — video turns off if projected cost passes {amount}.",
+    "numVideoDataLabel": "Data",
+    "numVideoMinutesLabel": "Minutes",
+    "numVideoBinding": "binding",
+    "numVideoCommitted": "{committed} participant-min already booked ahead this month"
   },
   "HomePage": {
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",

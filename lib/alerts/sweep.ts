@@ -167,6 +167,12 @@ async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
 
   if (cost < earlyAlertEur) return "none";
 
+  // The binding dimension (data, in practice) is what's driving the cost — name
+  // it in the alert so the operator knows which ceiling they're hitting. It's
+  // stable enough to sit in the fingerprint (it changes far more slowly than the
+  // live figure), so notify-once-per-level still holds.
+  const binding = usage.binding;
+
   // Below the breaker: a plain escalating alert, warning severity (digest).
   if (cost < breakerEur) {
     const high = cost >= highAlertEur;
@@ -175,9 +181,9 @@ async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
       subject: month,
       severity: "warning",
       message: high
-        ? `Projected monthly video cost crossed the €${highAlertEur} threshold.`
-        : `Projected monthly video cost crossed the €${earlyAlertEur} threshold.`,
-      context: { month, thresholdEur: high ? highAlertEur : earlyAlertEur },
+        ? `Projected monthly video cost crossed the €${highAlertEur} threshold (${binding} is the binding constraint).`
+        : `Projected monthly video cost crossed the €${earlyAlertEur} threshold (${binding} is the binding constraint).`,
+      context: { month, thresholdEur: high ? highAlertEur : earlyAlertEur, binding },
     });
     return high ? "high" : "early";
   }
@@ -189,8 +195,8 @@ async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
       type: "video_cost",
       subject: month,
       severity: "critical",
-      message: `Projected monthly video cost is over €${breakerEur}, but the cost override is ON — video is being kept running deliberately.`,
-      context: { month, thresholdEur: breakerEur, action: "overridden" },
+      message: `Projected monthly video cost is over €${breakerEur} (${binding}-bound), but the cost override is ON — video is being kept running deliberately.`,
+      context: { month, thresholdEur: breakerEur, action: "overridden", binding },
     });
     return "breaker_overridden";
   }
@@ -203,8 +209,8 @@ async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
       type: "video_cost",
       subject: month,
       severity: "critical",
-      message: `Projected monthly video cost is over €${breakerEur}. Video is already off.`,
-      context: { month, thresholdEur: breakerEur, action: "already_off" },
+      message: `Projected monthly video cost is over €${breakerEur} (${binding}-bound). Video is already off.`,
+      context: { month, thresholdEur: breakerEur, action: "already_off", binding },
     });
     return "breaker_already_off";
   }
@@ -222,8 +228,8 @@ async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
     type: "video_cost",
     subject: month,
     severity: "critical",
-    message: `Cost breaker tripped: projected monthly video cost is over €${breakerEur}. Video has been automatically turned OFF. Turn on the cost override in /admin to keep it running.`,
-    context: { month, thresholdEur: breakerEur, action: "video_disabled" },
+    message: `Cost breaker tripped: projected monthly video cost is over €${breakerEur} (${binding} is the binding constraint). Video has been automatically turned OFF. Turn on the cost override in /admin to keep it running.`,
+    context: { month, thresholdEur: breakerEur, action: "video_disabled", binding },
   });
   return "breaker_tripped";
 }

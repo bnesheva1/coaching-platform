@@ -35,37 +35,50 @@ export function maxConcurrentConnectionUnits(): number {
   return MAX_CONCURRENT_CONNECTION_UNITS_BY_PLAN[liveKitPlan()];
 }
 
-// ── WebRTC minutes: allowance, cost estimate, and the cost breaker ──────────
-// Feeds the /admin Numbers readout AND the automatic cost breaker in the alert
-// sweep. Denominated in PARTICIPANT-minutes (LiveKit bills per connected
-// participant, so a 1:1 session of N minutes = N * CONNECTION_UNITS_PER_1TO1).
+// ── WebRTC usage: allowances, cost estimates, and the cost breaker ──────────
+// TWO metered dimensions, because they run out at very different rates and the
+// one that BINDS is data, not minutes:
+//   - connection MINUTES  (participant-minutes; a 1:1 of N min = N units)
+//   - downstream DATA     (GB; both participants receive the other's stream)
 //
-// Every value is a PLACEHOLDER estimate, marked as such, exactly like the
-// concurrency caps above — confirm each against your actual LiveKit plan/invoice
-// on upgrade. The point of routing them through config is that correcting an
-// estimate, or moving to a paid tier, is a one-line change here, never a code
-// change at the call sites.
-const FREE_MONTHLY_WEBRTC_MINUTES_BY_PLAN: Record<LiveKitPlan, number> = {
-  // Build tier's included monthly connection minutes. PLACEHOLDER — confirm
-  // against LiveKit's current free allowance.
-  build: 5000,
-  // Ship tier includes a far larger bundle; PLACEHOLDER until you upgrade.
-  ship: 150000,
-};
+// Anchor (from the plan): a 60-min 1:1 session ≈ 120 participant-minutes and
+// ~1.3–1.8 GB downstream. Build gives 5,000 min + 50 GB; Ship gives 150,000 min
+// + 250 GB. By minutes Ship allows ~1,250 sessions; by DATA only ~150 — so a
+// minutes-only projection would never fire the breaker for the constraint that
+// actually binds. lib/video/usage.ts therefore models BOTH and drives the
+// cost/breaker off whichever dimension is closer to its ceiling.
+//
+// These are estimates to confirm against a real LiveKit invoice — but grounded
+// in the plan's figures now, not arbitrary placeholders. Correcting one, or
+// moving to a paid tier, stays a one-line change here.
+const MINUTES_ALLOWANCE_BY_PLAN: Record<LiveKitPlan, number> = { build: 5000, ship: 150000 };
+const DATA_GB_ALLOWANCE_BY_PLAN: Record<LiveKitPlan, number> = { build: 50, ship: 250 };
 
-// Estimated marginal cost per participant-minute ABOVE the free allowance, in
-// EUR. PLACEHOLDER — set from your LiveKit rate card / invoice.
-const ESTIMATED_EUR_PER_WEBRTC_MINUTE_BY_PLAN: Record<LiveKitPlan, number> = {
-  build: 0.004,
-  ship: 0.003,
-};
+// Downstream GB per participant-minute. ~1.6 GB for a 120-participant-minute
+// hour-long session (mid of the 1.3–1.8 range; also what two ~2 Mbps streams
+// work out to) => 1.6 / 120 ≈ 0.0133 GB per participant-minute.
+const DATA_GB_PER_PARTICIPANT_MINUTE = 0.0133;
 
-export function freeMonthlyWebrtcMinutes(): number {
-  return FREE_MONTHLY_WEBRTC_MINUTES_BY_PLAN[liveKitPlan()];
+// Overage rates once an allowance is exceeded (USD ≈ EUR at this precision):
+// $0.0005/min and $0.12/GB — so an hour-long session in overage is ~€0.06 of
+// minutes + ~€0.19 of data ≈ €0.25, data dominating, exactly as expected.
+const EUR_PER_OVERAGE_MINUTE = 0.0005;
+const EUR_PER_OVERAGE_GB = 0.12;
+
+export function webrtcMinutesAllowance(): number {
+  return MINUTES_ALLOWANCE_BY_PLAN[liveKitPlan()];
 }
-
-export function estimatedEurPerWebrtcMinute(): number {
-  return ESTIMATED_EUR_PER_WEBRTC_MINUTE_BY_PLAN[liveKitPlan()];
+export function webrtcDataAllowanceGb(): number {
+  return DATA_GB_ALLOWANCE_BY_PLAN[liveKitPlan()];
+}
+export function dataGbPerParticipantMinute(): number {
+  return DATA_GB_PER_PARTICIPANT_MINUTE;
+}
+export function eurPerOverageMinute(): number {
+  return EUR_PER_OVERAGE_MINUTE;
+}
+export function eurPerOverageGb(): number {
+  return EUR_PER_OVERAGE_GB;
 }
 
 // The cost breaker's escalating thresholds, in EUR of PROJECTED monthly WebRTC
