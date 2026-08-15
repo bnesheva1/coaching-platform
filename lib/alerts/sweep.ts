@@ -2,6 +2,8 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { provider } from "@/lib/email/shared";
 import { AlertDigestEmail } from "@/lib/email/templates/AlertDigestEmail";
+import { projectVideoUsage } from "@/lib/video";
+import { isEnabled } from "@/lib/flags";
 import { raiseAlert, pushToAdapters } from "./index";
 import type { Alert } from "./types";
 
@@ -29,14 +31,18 @@ export async function runAlertSweep(): Promise<{
   sessionFailed: number;
   paymentMismatches: number;
   webhookRepeats: number;
+  videoCostAction: VideoCostAction;
   digested: number;
 }> {
   const unresolvedOutcomes = await sweepUnresolvedOutcomes();
   const sessionFailed = await sweepSessionFailed();
   const paymentMismatches = await sweepPaymentBookingMismatches();
   const webhookRepeats = await sweepRepeatedWebhookFailures();
+  // Runs BEFORE deliverPendingAlerts so a video_cost alert raised this pass is
+  // delivered in this same run's digest/push, not next day.
+  const videoCostAction = await sweepVideoCostBreaker();
   const { digested } = await deliverPendingAlerts();
-  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, digested };
+  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, videoCostAction, digested };
 }
 
 function isoMinutesAgo(minutes: number): string {
@@ -137,6 +143,89 @@ async function sweepRepeatedWebhookFailures(): Promise<number> {
     }
   }
   return raised;
+}
+
+// The automatic video cost breaker. Projects this month's WebRTC cost and, on
+// the daily cadence, escalates through the configured EUR thresholds:
+//   early  -> warning alert (heads-up)
+//   high   -> warning alert (getting expensive)
+//   breaker-> auto-flip the `video` switch OFF, unless videoCostOverride is on
+//             (real growth — the operator lifts it by hand, no deploy). Raised
+//             critical so it reaches the adapters via the batched push.
+// The alert's fingerprint is the LEVEL, not the live figure, so it notifies
+// once per level change rather than every day the number drifts (the live
+// figure lives in the /admin Numbers readout). Returns what it did, for the
+// cron's response payload.
+export type VideoCostAction = "none" | "early" | "high" | "breaker_tripped" | "breaker_overridden" | "breaker_already_off";
+
+async function sweepVideoCostBreaker(): Promise<VideoCostAction> {
+  const usage = await projectVideoUsage();
+  const { earlyAlertEur, highAlertEur, breakerEur } = usage.thresholds;
+  const cost = usage.projectedCostEur;
+  // Stable per-month subject so each calendar month is its own alert lifecycle.
+  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+  if (cost < earlyAlertEur) return "none";
+
+  // Below the breaker: a plain escalating alert, warning severity (digest).
+  if (cost < breakerEur) {
+    const high = cost >= highAlertEur;
+    await raiseAlert({
+      type: "video_cost",
+      subject: month,
+      severity: "warning",
+      message: high
+        ? `Projected monthly video cost crossed the €${highAlertEur} threshold.`
+        : `Projected monthly video cost crossed the €${earlyAlertEur} threshold.`,
+      context: { month, thresholdEur: high ? highAlertEur : earlyAlertEur },
+    });
+    return high ? "high" : "early";
+  }
+
+  // At/over the breaker.
+  const overrideOn = await isEnabled("videoCostOverride");
+  if (overrideOn) {
+    await raiseAlert({
+      type: "video_cost",
+      subject: month,
+      severity: "critical",
+      message: `Projected monthly video cost is over €${breakerEur}, but the cost override is ON — video is being kept running deliberately.`,
+      context: { month, thresholdEur: breakerEur, action: "overridden" },
+    });
+    return "breaker_overridden";
+  }
+
+  const videoOn = await isEnabled("video");
+  if (!videoOn) {
+    // Already off (an admin flipped it, or a prior sweep tripped it) — nothing
+    // to do, and no need to re-alert the flip.
+    await raiseAlert({
+      type: "video_cost",
+      subject: month,
+      severity: "critical",
+      message: `Projected monthly video cost is over €${breakerEur}. Video is already off.`,
+      context: { month, thresholdEur: breakerEur, action: "already_off" },
+    });
+    return "breaker_already_off";
+  }
+
+  // Trip it: write the runtime override directly (this runs in the cron, not a
+  // Server Action, so it can't call invalidateFlags/updateTag — the resolver's
+  // 60s revalidate makes the flip visible within a minute, which is ample for a
+  // cost breaker). updated_by null marks it a SYSTEM flip, distinct from an
+  // admin's own toggle.
+  const supabase = createServiceRoleClient();
+  await supabase
+    .from("feature_flags")
+    .upsert({ key: "video", enabled: false, updated_by: null, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  await raiseAlert({
+    type: "video_cost",
+    subject: month,
+    severity: "critical",
+    message: `Cost breaker tripped: projected monthly video cost is over €${breakerEur}. Video has been automatically turned OFF. Turn on the cost override in /admin to keep it running.`,
+    context: { month, thresholdEur: breakerEur, action: "video_disabled" },
+  });
+  return "breaker_tripped";
 }
 
 // The daily batch delivery: everything recorded but not yet notified

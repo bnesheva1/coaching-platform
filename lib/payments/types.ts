@@ -43,7 +43,13 @@ export type InitiatePaymentResult =
   // false) — the normal state mid-onboarding, not a configuration error.
   // Distinct from "error" so the caller can show a specific, honest
   // message instead of a generic one.
-  | { type: "practitioner_not_ready" };
+  | { type: "practitioner_not_ready" }
+  // The admin `checkout` kill switch is off — Stripe Checkout is
+  // deliberately paused (provider outage / suspected abuse). Distinct from
+  // "error" (nothing failed) so the caller shows an honest "payments are
+  // temporarily paused" message. Only the commission path can hit this;
+  // software_provider bookings never create a Checkout session.
+  | { type: "payments_disabled" };
 
 export type RefundResult =
   | { refunded: true }

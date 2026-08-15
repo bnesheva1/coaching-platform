@@ -3,8 +3,8 @@ import { unstable_cache, updateTag } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { FLAGS, type FlagKey } from "./registry";
 
-export { FLAGS } from "./registry";
-export type { FlagKey, FlagScope, FlagDef } from "./registry";
+export { FLAGS, KILL_SWITCHES, ADMIN_TOGGLEABLE } from "./registry";
+export type { FlagKey, FlagScope, FlagDef, KillSwitchKey, AdminToggleableKey } from "./registry";
 
 // The cache tag for the runtime-override table. The admin toggle action (next
 // slice) calls invalidateFlags() after writing, so a change is visible on the

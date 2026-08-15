@@ -13,6 +13,7 @@ import type { NormalisedAttendanceEvent, VideoParticipantRole } from "./types";
 // are LATER slices — this slice just makes the seam real and typed.
 
 export { VIDEO_CONFIG, maxConcurrentConnectionUnits, liveKitPlan } from "./config";
+export { projectVideoUsage, type VideoUsageProjection } from "./usage";
 
 // ---------------------------------------------------------------------------
 // Session creation

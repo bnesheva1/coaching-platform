@@ -6,7 +6,8 @@ export type AlertType =
   | "failed_email"
   | "webhook_failure"
   | "session_failed"
-  | "unresolved_outcome";
+  | "unresolved_outcome"
+  | "video_cost";
 
 // What a call site hands to an adapter — what happened and how urgent, never
 // how it's delivered.
@@ -53,5 +54,11 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
   unresolved_outcome: {
     severity: "warning",
     description: "A session is past its window with outcome still null (would have caught the resolver bug weeks earlier).",
+  },
+  video_cost: {
+    // Default severity; the raise point escalates to critical when the breaker
+    // actually fires (or is only held off by the manual override).
+    severity: "warning",
+    description: "Projected monthly WebRTC cost crossed an alert/breaker threshold.",
   },
 };

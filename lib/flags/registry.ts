@@ -44,6 +44,74 @@ export const FLAGS = {
     envVar: "IMMEDIATE_BOOKING_ENABLED",
     description: "Enable 'book now / who's online' immediate sessions (feature not shipped yet).",
   },
+
+  // ── Admin kill switches (all runtime, default ON = normal operation) ──
+  // Emergency stops an admin flips from /admin. Each is enforced at its own
+  // call site (see KILL_SWITCHES below for the map); a switch with no
+  // enforcement point is theatre, so every one here has exactly one.
+  newBookings: {
+    scope: "runtime",
+    default: true,
+    envVar: "NEW_BOOKINGS_ENABLED",
+    description: "Accept new bookings. Off = emergency stop; existing bookings are untouched.",
+  },
+  clientRegistration: {
+    scope: "runtime",
+    default: true,
+    envVar: "CLIENT_REGISTRATION_ENABLED",
+    description: "Allow new CLIENT sign-ups. Off = the client signup path is closed.",
+  },
+  practitionerRegistration: {
+    scope: "runtime",
+    default: true,
+    envVar: "PRACTITIONER_REGISTRATION_ENABLED",
+    description: "Allow new PRACTITIONER sign-ups. Off = the practitioner signup path is closed.",
+  },
+  checkout: {
+    scope: "runtime",
+    default: true,
+    envVar: "CHECKOUT_ENABLED",
+    description: "Create Stripe Checkout sessions. Off = commission-model bookings can't pay (provider outage / suspected abuse).",
+  },
+  video: {
+    scope: "runtime",
+    default: true,
+    envVar: "VIDEO_ENABLED",
+    description: "Take new ONLINE bookings. Off = no new video sessions; already-booked sessions keep their rooms.",
+  },
+  // The manual override for the automatic cost breaker. When ON, the daily
+  // sweep will NOT auto-flip `video` off at the €300 projection — so you can
+  // keep video running through genuine growth without a deploy. It does NOT
+  // turn video on by itself; it only suppresses the automatic shut-off.
+  videoCostOverride: {
+    scope: "runtime",
+    default: false,
+    envVar: "VIDEO_COST_OVERRIDE",
+    description: "Suppress the automatic €300 video cost breaker (keep video on through real growth).",
+  },
 } as const satisfies Record<string, FlagDef>;
 
 export type FlagKey = keyof typeof FLAGS;
+
+// The kill switches surfaced in the /admin Controls section, in display order.
+// A deliberately curated subset of the runtime flags — showPhoneDelivery and
+// immediateBooking are product config, not operational emergency stops, so they
+// stay out of the operator surface. videoCostOverride is grouped with `video`
+// in the UI, so it's not a standalone row here.
+export const KILL_SWITCHES = [
+  "newBookings",
+  "clientRegistration",
+  "practitionerRegistration",
+  "checkout",
+  "video",
+] as const satisfies readonly FlagKey[];
+
+export type KillSwitchKey = (typeof KILL_SWITCHES)[number];
+
+// Every flag an admin is allowed to toggle from the dashboard. The setFlag
+// action allow-lists against this, so a forged request can't flip a deploy-scope
+// flag or an unknown key. videoCostOverride is toggleable but rendered inline
+// with video rather than as its own switch.
+export const ADMIN_TOGGLEABLE = [...KILL_SWITCHES, "videoCostOverride"] as const satisfies readonly FlagKey[];
+
+export type AdminToggleableKey = (typeof ADMIN_TOGGLEABLE)[number];

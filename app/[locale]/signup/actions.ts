@@ -59,6 +59,17 @@ export async function signup(
     return { error: t("tooManyAttempts"), values };
   }
 
+  // Admin kill switch: registration closed for this role. Per-role so
+  // practitioner onboarding can be paused while still taking clients (or vice
+  // versa). role is validated against the two known values — anything else is
+  // treated as a client signup by the hardened handle_new_user trigger anyway,
+  // so it's gated by the client switch here too. Checked before any account is
+  // created; an existing account is unaffected.
+  const registrationFlag = role === "practitioner" ? "practitionerRegistration" : "clientRegistration";
+  if (!(await isEnabled(registrationFlag))) {
+    return { error: t("registrationClosed"), values };
+  }
+
   if (password.length < 12) {
     return { error: t("passwordTooShort"), values };
   }

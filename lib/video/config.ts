@@ -35,6 +35,59 @@ export function maxConcurrentConnectionUnits(): number {
   return MAX_CONCURRENT_CONNECTION_UNITS_BY_PLAN[liveKitPlan()];
 }
 
+// ── WebRTC minutes: allowance, cost estimate, and the cost breaker ──────────
+// Feeds the /admin Numbers readout AND the automatic cost breaker in the alert
+// sweep. Denominated in PARTICIPANT-minutes (LiveKit bills per connected
+// participant, so a 1:1 session of N minutes = N * CONNECTION_UNITS_PER_1TO1).
+//
+// Every value is a PLACEHOLDER estimate, marked as such, exactly like the
+// concurrency caps above — confirm each against your actual LiveKit plan/invoice
+// on upgrade. The point of routing them through config is that correcting an
+// estimate, or moving to a paid tier, is a one-line change here, never a code
+// change at the call sites.
+const FREE_MONTHLY_WEBRTC_MINUTES_BY_PLAN: Record<LiveKitPlan, number> = {
+  // Build tier's included monthly connection minutes. PLACEHOLDER — confirm
+  // against LiveKit's current free allowance.
+  build: 5000,
+  // Ship tier includes a far larger bundle; PLACEHOLDER until you upgrade.
+  ship: 150000,
+};
+
+// Estimated marginal cost per participant-minute ABOVE the free allowance, in
+// EUR. PLACEHOLDER — set from your LiveKit rate card / invoice.
+const ESTIMATED_EUR_PER_WEBRTC_MINUTE_BY_PLAN: Record<LiveKitPlan, number> = {
+  build: 0.004,
+  ship: 0.003,
+};
+
+export function freeMonthlyWebrtcMinutes(): number {
+  return FREE_MONTHLY_WEBRTC_MINUTES_BY_PLAN[liveKitPlan()];
+}
+
+export function estimatedEurPerWebrtcMinute(): number {
+  return ESTIMATED_EUR_PER_WEBRTC_MINUTE_BY_PLAN[liveKitPlan()];
+}
+
+// The cost breaker's escalating thresholds, in EUR of PROJECTED monthly WebRTC
+// cost (consumed this month + committed future bookings). Evaluated daily by
+// the alert sweep:
+//   >= earlyAlertEur   -> a warning alert (early heads-up)
+//   >= highAlertEur    -> a critical alert (getting expensive)
+//   >= breakerEur      -> auto-flip the `video` switch OFF, unless the
+//                         videoCostOverride flag is on (real growth, lift by
+//                         hand — see lib/flags/registry.ts)
+//
+// NB the brief framed the first as a "€30 WEEKLY" alert. It's modeled here as a
+// €30 MONTHLY-projection early-warning floor, because (a) the allowance is a
+// monthly bucket, so a standalone weekly cost is ill-defined, and (b) Vercel
+// Hobby's one daily cron can't do weekly cadence anyway. Same early-warning
+// intent, expressed against the figure the breaker actually acts on.
+export const VIDEO_COST_THRESHOLDS_EUR = {
+  earlyAlertEur: 30,
+  highAlertEur: 150,
+  breakerEur: 300,
+} as const;
+
 export const VIDEO_CONFIG = {
   // Not plan-dependent — product decisions, identical on every tier.
   EARLY_JOIN_MINUTES: 5,

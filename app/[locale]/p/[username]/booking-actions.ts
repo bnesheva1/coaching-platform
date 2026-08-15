@@ -10,6 +10,7 @@ import { getBookableSlots } from "@/lib/availability/slots";
 import { sendBookingConfirmationEmails, normalizeLocale } from "@/lib/email";
 import { initiateBookingPayment } from "@/lib/payments";
 import { ensureVideoSession, videoCapacityAvailable } from "@/lib/video";
+import { isEnabled } from "@/lib/flags";
 import { siteOrigin } from "@/lib/siteOrigin";
 
 // Bound via .bind() from the button, not editable form fields — but
@@ -77,6 +78,15 @@ export async function bookSlot(
     return;
   }
 
+  // Admin kill switch: new bookings paused (emergency stop). Checked after
+  // auth/role so it's a clean "we're not taking bookings right now" for a
+  // real client, and BEFORE any slot/capacity/payment work. Existing bookings
+  // are entirely untouched — this only refuses to create new ones.
+  if (!(await isEnabled("newBookings"))) {
+    await redirectWithError("bookingsPaused");
+    return;
+  }
+
   // Service-role, not the client's own session — phone_number/
   // meeting_link are excluded from the general column grant (same
   // sensitivity as delivery_info), so a client's own RLS-scoped select
@@ -117,6 +127,16 @@ export async function bookSlot(
   // check covers both paths because both flow through here before the
   // paths diverge. endUtc mirrors the booking's own duration.
   if (service.delivery_type === "online") {
+    // Admin kill switch: online sessions paused (or the cost breaker fired).
+    // Gates only NEW online bookings — no new room will ever be needed.
+    // Already-booked sessions are never touched: their rooms are created lazily
+    // on join (ensureProviderRoom), which is deliberately NOT gated, so a
+    // client with a paid session can always get in. This is why the switch is
+    // enforced here at booking time, not at room creation.
+    if (!(await isEnabled("video"))) {
+      await redirectWithError("videoUnavailable");
+      return;
+    }
     const endUtc = new Date(new Date(startUtc).getTime() + service.duration_minutes * 60 * 1000).toISOString();
     if (!(await videoCapacityAvailable(startUtc, endUtc))) {
       await redirectWithError("videoCapacityReached");
@@ -157,6 +177,14 @@ export async function bookSlot(
     // the software_provider path below and insert a booking with no
     // payment ever collected for a commission-model practitioner.
     await redirectWithError("bookingFailed");
+    return;
+  }
+
+  if (paymentResult.type === "payments_disabled") {
+    // The checkout kill switch is off — payments are deliberately paused.
+    // Nothing failed and nothing was booked; the client sees an honest
+    // "temporarily paused" message rather than a generic error.
+    await redirectWithError("checkoutPaused");
     return;
   }
 

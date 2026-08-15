@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import { isEnabled } from "@/lib/flags";
 import { createBookingCheckoutSession } from "./stripe/checkout";
 import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
@@ -54,6 +55,14 @@ export async function initiateBookingPayment(request: BookingPaymentRequest): Pr
     // Distinct from "error" below so the caller can show a specific,
     // honest message rather than a generic "couldn't book" one.
     return { type: "practitioner_not_ready" };
+  }
+
+  // Admin kill switch: Stripe Checkout paused. Checked here, the single
+  // chokepoint every commission-model payment flows through, and only AFTER
+  // the practitioner-readiness branch — so "payments paused" is a distinct,
+  // deliberate state, not conflated with an onboarding gap or a Stripe error.
+  if (!(await isEnabled("checkout"))) {
+    return { type: "payments_disabled" };
   }
 
   try {
