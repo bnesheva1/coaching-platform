@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { setModeration, setPayoutsFreeze } from "@/app/[locale]/admin/practitioners/actions";
 import { Button } from "@/components/ui/Button";
 
@@ -117,6 +118,12 @@ export function PractitionerControls({
         <Button type="button" variant="ghost" size="sm" onClick={() => openPay(!payoutsFrozen)}>
           {payoutsFrozen ? t("practPayoutsRelease") : t("practPayoutsFreeze")}
         </Button>
+        <Link
+          href={`/admin/practitioners/${practitionerId}/cancel`}
+          style={{ font: "var(--text-body-sm)", color: "#c0392b", alignSelf: "center", fontWeight: 600 }}
+        >
+          {t("bulkLink")} →
+        </Link>
       </div>
 
       {/* Moderation reason dialog */}

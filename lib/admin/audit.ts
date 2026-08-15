@@ -13,6 +13,9 @@ export async function recordAdminAction(entry: {
   action: string;
   previousValue?: string | null;
   newValue?: string | null;
+  // Structured extra context (e.g. bulk cancel's per-booking outcomes) — stored
+  // in admin_audit_log.detail jsonb alongside the text summary in new_value.
+  detail?: unknown;
 }): Promise<void> {
   const { error } = await createServiceRoleClient()
     .from("admin_audit_log")
@@ -22,6 +25,7 @@ export async function recordAdminAction(entry: {
       action: entry.action,
       previous_value: entry.previousValue ?? null,
       new_value: entry.newValue ?? null,
+      detail: entry.detail ?? null,
     });
   if (error) {
     console.error("recordAdminAction failed", { action: entry.action, error });

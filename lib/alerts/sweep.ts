@@ -4,6 +4,7 @@ import { provider } from "@/lib/email/shared";
 import { AlertDigestEmail } from "@/lib/email/templates/AlertDigestEmail";
 import { projectVideoUsage } from "@/lib/video";
 import { isEnabled } from "@/lib/flags";
+import { CANCELLED_STATUSES } from "@/lib/booking-time";
 import { raiseAlert, pushToAdapters } from "./index";
 import type { Alert } from "./types";
 
@@ -49,6 +50,23 @@ function isoMinutesAgo(minutes: number): string {
   return new Date(Date.now() - minutes * 60_000).toISOString();
 }
 
+// A cancelled booking's video_session is left behind (no cancel path deletes
+// it), so without this a bulk cancel-and-refund of a dozen online sessions
+// would, a day later, fire a dozen spurious session_failed / unresolved_outcome
+// alerts. Drop any candidate whose booking is cancelled before alerting.
+async function excludeCancelledBookings<T extends { booking_id: unknown }>(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  rows: T[],
+): Promise<T[]> {
+  if (rows.length === 0) return rows;
+  const ids = rows.map((r) => r.booking_id as string);
+  const { data } = await supabase.from("bookings").select("id, status").in("id", ids);
+  const cancelled = new Set(
+    (data ?? []).filter((b) => CANCELLED_STATUSES.has(b.status as string)).map((b) => b.id as string),
+  );
+  return rows.filter((r) => !cancelled.has(r.booking_id as string));
+}
+
 // A session past its window with a null outcome that DID open / got a room —
 // the resolver never finished. (Never-provisioned rooms are session_failed
 // below; splitting them keeps the two from double-alerting the same session.)
@@ -60,7 +78,8 @@ async function sweepUnresolvedOutcomes(): Promise<number> {
     .select("booking_id, closes_at, status, room_created_at")
     .is("outcome", null)
     .lt("closes_at", cutoff);
-  const stuck = (data ?? []).filter((s) => s.room_created_at !== null || s.status !== "scheduled");
+  const candidates = (data ?? []).filter((s) => s.room_created_at !== null || s.status !== "scheduled");
+  const stuck = await excludeCancelledBookings(supabase, candidates);
   for (const s of stuck) {
     await raiseAlert({
       type: "unresolved_outcome",
@@ -84,7 +103,8 @@ async function sweepSessionFailed(): Promise<number> {
     .is("room_created_at", null)
     .eq("status", "scheduled")
     .lt("closes_at", cutoff);
-  for (const s of data ?? []) {
+  const rows = await excludeCancelledBookings(supabase, data ?? []);
+  for (const s of rows) {
     await raiseAlert({
       type: "session_failed",
       subject: s.booking_id as string,
@@ -92,7 +112,7 @@ async function sweepSessionFailed(): Promise<number> {
       context: { bookingId: s.booking_id, closesAt: s.closes_at },
     });
   }
-  return (data ?? []).length;
+  return rows.length;
 }
 
 // A succeeded payment with no booking. booking_id is nullable exactly for this

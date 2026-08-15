@@ -128,7 +128,34 @@
     "practConsequence_payouts_release": "Изплащанията се възобновяват по нормалния график; натрупаният баланс се изплаща.",
     "practError_REASON_REQUIRED": "Изисква се причина.",
     "practError_STRIPE_FAILED": "Неуспешна промяна на изплащанията в Stripe. Опитайте отново.",
-    "practError_INVALID": "Невалидно действие."
+    "practError_INVALID": "Невалидно действие.",
+    "bulkLink": "Отмени и възстанови предстоящите",
+    "bulkHeading": "Отмяна и възстановяване — {name}",
+    "bulkNone": "Този специалист няма предстоящи записвания за отмяна.",
+    "bulkBookings": "записвания",
+    "bulkToRefund": "за възстановяване",
+    "bulkNoPaymentCount": "{count} без запис за плащане",
+    "bulkColClient": "Клиент",
+    "bulkColWhen": "Кога",
+    "bulkColAmount": "Сума",
+    "bulkNoPayment": "Няма плащане",
+    "bulkAlreadyRefunded": "Вече възстановено",
+    "bulkWarning": "Това отменя платените сесии на тези клиенти и им възстановява сумите. Действието е необратимо.",
+    "bulkReasonLabel": "Причина (показва се на клиентите)",
+    "bulkReasonPlaceholder": "напр. Практикуващият не е на разположение",
+    "bulkTypeToConfirm": "Въведете {username}, за да потвърдите",
+    "bulkConfirm": "Отмени всички и възстанови",
+    "bulkRunning": "Отмяна и възстановяване…",
+    "bulkError_REASON_REQUIRED": "Изисква се причина.",
+    "bulkError_USERNAME_MISMATCH": "Потребителското име не съвпада.",
+    "bulkReportHeading": "Готово",
+    "bulkReportSummary": "{refunded} възстановени · {failed} неуспешни · {noPayment} без възстановяване.",
+    "bulkReportIncomplete": "Останаха записвания — стартирайте отново, за да завършите (вече обработените се пропускат).",
+    "bulkReportFailedNote": "Неуспешно възстановяване подаде сигнал — клиентът дължи пари и е нужна ръчна намеса.",
+    "bulkOutcome_refunded": "Възстановено",
+    "bulkOutcome_refund_failed": "Неуспешно възстановяване",
+    "bulkOutcome_no_payment": "Няма плащане",
+    "bulkOutcome_already_refunded": "Вече възстановено"
   },
   "HomePage": {
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
@@ -726,7 +753,8 @@
     "bookingsPaused": "Записванията са временно спрени. Моля, опитай отново малко по-късно.",
     "videoUnavailable": "Онлайн сесиите са временно недостъпни. Моля, избери друг час или друг тип сесия.",
     "checkoutPaused": "Плащанията са временно спрени. Моля, опитай отново малко по-късно.",
-    "practitionerUnavailable": "Този специалист в момента не приема записвания. Моля, изберете друг."
+    "practitionerUnavailable": "Този специалист в момента не приема записвания. Моля, изберете друг.",
+    "statusCancelledByPlatform": "Отменено от платформата"
   },
   "StripeConnect": {
     "title": "Плащания",
@@ -839,7 +867,12 @@
     "emailConfirmationHeading": "Потвърди своя имейл адрес",
     "emailConfirmationBody": "Натисни бутона отдолу, за да потвърдиш своя имейл адрес и да активираш профила си. Този линк ще изтече скоро.",
     "emailConfirmationButton": "Потвърди имейла",
-    "footer": "Това е автоматично съобщение от {siteName}."
+    "footer": "Това е автоматично съобщение от {siteName}.",
+    "cancellationNoticeBodyByPlatform": "Здравейте, {recipientName}. Съжаляваме да Ви съобщим, че сесията Ви „{serviceName}“ на {sessionTime} беше отменена от платформата. Сумата ще Ви бъде възстановена изцяло — не е необходимо да предприемате нищо.",
+    "bulkCancellationSummarySubject": "Записвания, отменени от Ваше име",
+    "bulkCancellationSummaryHeading": "Отменихме част от предстоящите Ви записвания",
+    "bulkCancellationSummaryIntro": "Наложи се да отменим {count} от предстоящите Ви записвания и да възстановим сумите на клиентите. Това е извършено от Ваше име.",
+    "bulkCancellationSummaryReasonLabel": "Причина:"
   },
   "Session": {
     "deviceCheckRequestingTitle": "Подготовка…",

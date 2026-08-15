@@ -128,7 +128,34 @@
     "practConsequence_payouts_release": "Payouts resume on the normal schedule; the accumulated balance pays out.",
     "practError_REASON_REQUIRED": "A reason is required.",
     "practError_STRIPE_FAILED": "Couldn't update Stripe payouts. Please try again.",
-    "practError_INVALID": "Invalid action."
+    "practError_INVALID": "Invalid action.",
+    "bulkLink": "Cancel & refund upcoming",
+    "bulkHeading": "Cancel & refund — {name}",
+    "bulkNone": "This practitioner has no upcoming bookings to cancel.",
+    "bulkBookings": "bookings",
+    "bulkToRefund": "to refund",
+    "bulkNoPaymentCount": "{count} with no payment record",
+    "bulkColClient": "Client",
+    "bulkColWhen": "When",
+    "bulkColAmount": "Amount",
+    "bulkNoPayment": "No payment",
+    "bulkAlreadyRefunded": "Already refunded",
+    "bulkWarning": "This cancels these clients' paid sessions and refunds them. It can't be undone.",
+    "bulkReasonLabel": "Reason (shown to clients)",
+    "bulkReasonPlaceholder": "e.g. The practitioner is unavailable",
+    "bulkTypeToConfirm": "Type {username} to confirm",
+    "bulkConfirm": "Cancel all & refund",
+    "bulkRunning": "Cancelling & refunding…",
+    "bulkError_REASON_REQUIRED": "A reason is required.",
+    "bulkError_USERNAME_MISMATCH": "The username doesn't match.",
+    "bulkReportHeading": "Done",
+    "bulkReportSummary": "{refunded} refunded · {failed} refund failed · {noPayment} with nothing to refund.",
+    "bulkReportIncomplete": "Some bookings remain — re-run to finish (already-done ones are skipped).",
+    "bulkReportFailedNote": "A failed refund raised an alert — the client is owed money and needs manual follow-up.",
+    "bulkOutcome_refunded": "Refunded",
+    "bulkOutcome_refund_failed": "Refund failed",
+    "bulkOutcome_no_payment": "No payment",
+    "bulkOutcome_already_refunded": "Already refunded"
   },
   "HomePage": {
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
@@ -726,7 +753,8 @@
     "bookingsPaused": "Bookings are temporarily paused. Please check back a little later.",
     "videoUnavailable": "Online sessions are temporarily unavailable. Please try another time or a different session type.",
     "checkoutPaused": "Payments are temporarily paused. Please try again a little later.",
-    "practitionerUnavailable": "This practitioner isn't accepting bookings right now. Please try another."
+    "practitionerUnavailable": "This practitioner isn't accepting bookings right now. Please try another.",
+    "statusCancelledByPlatform": "Cancelled by the platform"
   },
   "StripeConnect": {
     "title": "Payments",
@@ -839,7 +867,12 @@
     "emailConfirmationHeading": "Confirm your email address",
     "emailConfirmationBody": "Click the button below to confirm your email address and activate your account. This link will expire soon.",
     "emailConfirmationButton": "Confirm email",
-    "footer": "This is an automated message from {siteName}."
+    "footer": "This is an automated message from {siteName}.",
+    "cancellationNoticeBodyByPlatform": "Hello {recipientName}, we're sorry to tell you your {serviceName} session on {sessionTime} has been cancelled by our platform. Your payment is being refunded in full — you don't need to do anything.",
+    "bulkCancellationSummarySubject": "Bookings cancelled on your behalf",
+    "bulkCancellationSummaryHeading": "We've cancelled some of your upcoming bookings",
+    "bulkCancellationSummaryIntro": "We've had to cancel {count} of your upcoming bookings and refund the clients. This was done on your behalf.",
+    "bulkCancellationSummaryReasonLabel": "Reason:"
   },
   "Session": {
     "deviceCheckRequestingTitle": "Getting ready…",

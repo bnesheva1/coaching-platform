@@ -58,4 +58,4 @@ export function hasSessionStarted(startUtc: string): boolean {
 // no directive, so both server pages and client components can import
 // it safely.
 export const ACTIVE_STATUSES = new Set(["pending", "confirmed"]);
-export const CANCELLED_STATUSES = new Set(["cancelled_by_client", "cancelled_by_practitioner"]);
+export const CANCELLED_STATUSES = new Set(["cancelled_by_client", "cancelled_by_practitioner", "cancelled_by_admin"]);

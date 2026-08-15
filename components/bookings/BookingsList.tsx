@@ -39,6 +39,7 @@ export const STATUS_KEYS = {
     completed: "statusCompleted",
     cancelled_by_client: "statusCancelledByClient",
     cancelled_by_practitioner: "statusCancelledByYou",
+    cancelled_by_admin: "statusCancelledByPlatform",
   },
   client: {
     pending: "statusPending",
@@ -46,6 +47,7 @@ export const STATUS_KEYS = {
     completed: "statusCompleted",
     cancelled_by_client: "statusCancelledByYou",
     cancelled_by_practitioner: "statusCancelledByPractitioner",
+    cancelled_by_admin: "statusCancelledByPlatform",
   },
 } as const;
 
@@ -82,7 +84,7 @@ export type SessionBooking = {
   durationMinutes: number;
   startUtc: string;
   endUtc: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled_by_client" | "cancelled_by_practitioner";
+  status: "pending" | "confirmed" | "completed" | "cancelled_by_client" | "cancelled_by_practitioner" | "cancelled_by_admin";
   deliveryType: "online" | "in_person" | "phone" | null;
   deliveryInfo: string | null;
   // Phone-type bookings carry their contact number here instead of

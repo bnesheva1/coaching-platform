@@ -5,6 +5,7 @@ import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
 import { ContactMessageEmail } from "./templates/ContactMessageEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
+import { BulkCancellationSummaryEmail } from "./templates/BulkCancellationSummaryEmail";
 import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
 import { raiseAlert } from "@/lib/alerts";
 import type { SendEmailResult } from "./types";
@@ -89,6 +90,46 @@ async function fetchBookingEmailContext(bookingId: string): Promise<BookingEmail
     return null;
   }
   return data as BookingEmailContext;
+}
+
+// Service-role context fetch for PLATFORM-initiated sends (admin bulk cancel):
+// the auth-scoped get_booking_email_context RPC deliberately only returns to a
+// party of the booking, so an admin — who is neither client nor practitioner —
+// would get nothing from it. This reads the same fields directly under the
+// service role (which bypasses the column grants), so admin-initiated
+// cancellation notices actually reach the client.
+async function fetchBookingEmailContextAdmin(bookingId: string): Promise<BookingEmailContext | null> {
+  const supabase = createServiceRoleClient();
+  const { data: b } = await supabase
+    .from("bookings")
+    .select("client_id, practitioner_id, service_name, start_utc, end_utc, status, delivery_type, delivery_info, phone_number, meeting_link")
+    .eq("id", bookingId)
+    .single();
+  if (!b) return null;
+  const [{ data: profs }, { data: ppr }] = await Promise.all([
+    supabase.from("profiles").select("id, email, display_name, locale, timezone").in("id", [b.client_id as string, b.practitioner_id as string]),
+    supabase.from("practitioner_profiles").select("timezone").eq("id", b.practitioner_id as string).single(),
+  ]);
+  const client = (profs ?? []).find((p) => p.id === b.client_id);
+  const prac = (profs ?? []).find((p) => p.id === b.practitioner_id);
+  return {
+    client_email: (client?.email as string | null) ?? null,
+    client_display_name: (client?.display_name as string | null) ?? null,
+    client_locale: (client?.locale as string) ?? "bg",
+    client_timezone: (client?.timezone as string | null) ?? null,
+    practitioner_email: (prac?.email as string | null) ?? null,
+    practitioner_display_name: (prac?.display_name as string | null) ?? null,
+    practitioner_locale: (prac?.locale as string) ?? "bg",
+    practitioner_timezone: (ppr?.timezone as string) ?? "UTC",
+    service_name: (b.service_name as string) ?? "—",
+    service_delivery_type: b.delivery_type as string,
+    service_delivery_info: (b.delivery_info as string | null) ?? null,
+    service_phone_number: (b.phone_number as string | null) ?? null,
+    service_meeting_link: (b.meeting_link as string | null) ?? null,
+    start_utc: b.start_utc as string,
+    end_utc: b.end_utc as string,
+    status: b.status as string,
+  };
 }
 
 // Sends both copies of a booking confirmation — one to the client (who
@@ -206,15 +247,23 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
 // client is live.
 export async function sendCancellationNoticeEmail(
   bookingId: string,
-  cancelledBy: "client" | "practitioner",
-  // Optional free-text reason typed into the cancel confirm dialog —
-  // currently only the practitioner-cancel flow ever passes one (see
-  // cancel-booking-actions.ts). A line on this existing email, not a
-  // new messaging system: no thread, no reply-to-it, just shown once.
+  // "platform" = an admin cancelled on the practitioner's behalf (bulk
+  // cancel-and-refund) — notifies the CLIENT, like "practitioner" does, but with
+  // distinct "the platform cancelled" wording. Returns whether the send
+  // succeeded, so the bulk-cancel loop can set its per-booking idempotency
+  // marker only on success (never notifying a client twice, nor marking a
+  // failed send as done).
+  cancelledBy: "client" | "practitioner" | "platform",
+  // Optional free-text reason typed into the cancel confirm dialog — the
+  // practitioner-cancel flow and the bulk platform-cancel both pass one. A line
+  // on this existing email, not a new messaging system.
   note?: string,
-): Promise<void> {
-  const context = await fetchBookingEmailContext(bookingId);
-  if (!context) return;
+): Promise<boolean> {
+  // Platform (admin) sends can't use the auth-scoped context RPC — the admin
+  // isn't a party to the booking — so they read it under the service role.
+  const context =
+    cancelledBy === "platform" ? await fetchBookingEmailContextAdmin(bookingId) : await fetchBookingEmailContext(bookingId);
+  if (!context) return false;
 
   const recipient =
     cancelledBy === "client"
@@ -237,7 +286,7 @@ export async function sendCancellationNoticeEmail(
 
   if (!recipient.email) {
     console.error("sendCancellationNoticeEmail: recipient email is null, skipping", { bookingId, cancelledBy });
-    return;
+    return false;
   }
 
   const t = translator(recipient.locale);
@@ -247,7 +296,12 @@ export async function sendCancellationNoticeEmail(
     recipient.locale,
     recipient.includeUtcBracket,
   );
-  const bodyKey = cancelledBy === "client" ? "cancellationNoticeBodyByClient" : "cancellationNoticeBodyByPractitioner";
+  const bodyKey =
+    cancelledBy === "client"
+      ? "cancellationNoticeBodyByClient"
+      : cancelledBy === "platform"
+        ? "cancellationNoticeBodyByPlatform"
+        : "cancellationNoticeBodyByPractitioner";
 
   const result = await provider.send({
     to: recipient.email,
@@ -273,6 +327,62 @@ export async function sendCancellationNoticeEmail(
       error: result.error,
     });
   }
+  return result.success;
+}
+
+// One summary to the practitioner after a bulk cancel-and-refund: what was
+// cancelled on their behalf, and why. Reads their own contact/locale directly
+// from profiles (service role). Sent exactly once per operation by the executor.
+export async function sendBulkCancellationSummaryEmail(
+  practitionerId: string,
+  batchId: string,
+  reason: string,
+): Promise<boolean> {
+  const supabase = createServiceRoleClient();
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("email, locale, display_name")
+    .eq("id", practitionerId)
+    .single();
+  if (!prof?.email) {
+    console.error("sendBulkCancellationSummaryEmail: practitioner email is null", { practitionerId });
+    return false;
+  }
+  const { data: ppr } = await supabase.from("practitioner_profiles").select("timezone").eq("id", practitionerId).single();
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("start_utc, service_name, client_id")
+    .eq("cancellation_batch_id", batchId)
+    .order("start_utc", { ascending: true });
+  const clientIds = [...new Set((bookings ?? []).map((b) => b.client_id as string))];
+  const { data: clients } = await supabase.from("profiles").select("id, display_name").in("id", clientIds);
+  const nameById = new Map((clients ?? []).map((c) => [c.id as string, (c.display_name as string) ?? "—"]));
+
+  const locale = normalizeLocale(prof.locale as string);
+  const t = translator(locale);
+  const tz = (ppr?.timezone as string | null) ?? null;
+  const items = (bookings ?? []).map((b) => ({
+    client: nameById.get(b.client_id as string) ?? "—",
+    service: (b.service_name as string) ?? "—",
+    when: formatSessionTime(b.start_utc as string, tz, locale, false),
+  }));
+
+  const result = await provider.send({
+    to: prof.email as string,
+    subject: t("bulkCancellationSummarySubject"),
+    react: BulkCancellationSummaryEmail({
+      heading: t("bulkCancellationSummaryHeading"),
+      intro: t("bulkCancellationSummaryIntro", { count: items.length }),
+      reasonLabel: t("bulkCancellationSummaryReasonLabel"),
+      reason,
+      items,
+      footer: footerText(locale),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendBulkCancellationSummaryEmail: email failed", { practitionerId, batchId, error: result.error });
+  }
+  return result.success;
 }
 
 // The Stripe-webhook counterpart to sendBookingConfirmationEmails —
