@@ -31,10 +31,28 @@ export class ResendEmailProvider implements EmailProvider {
       return { success: false, error: "RESEND_FROM_EMAIL is not configured" };
     }
 
+    // Test/staging recipient redirect. While `from` is Resend's shared
+    // onboarding@resend.dev (or any not-yet-verified domain), Resend only
+    // DELIVERS to the account owner's own address and 422s every other
+    // recipient. Setting DEV_EMAIL_OVERRIDE routes EVERY email to that one
+    // address instead, so real flows (bookings, reminders, confirmations, the
+    // alert digest, the contact form) can be exercised end-to-end before a
+    // sending domain is verified. Applied HERE — the single send chokepoint
+    // every path funnels through — so no path can bypass it. Unset it once a
+    // real RESEND_FROM_EMAIL domain is verified and the app sends to real
+    // recipients again.
+    const override = process.env.DEV_EMAIL_OVERRIDE?.trim();
+    const recipient = override || to;
+    // When redirected, keep the intended recipient visible in the subject so a
+    // shared test inbox can tell who each message was actually meant for.
+    const finalSubject = override && override !== to ? `[→ ${to}] ${subject}` : subject;
+
     try {
-      const result = await getResendClient().emails.send({ from, to, subject, react });
+      const result = await getResendClient().emails.send({ from, to: recipient, subject: finalSubject, react });
       if (result.error) {
-        return { success: false, error: result.error.message };
+        // Surface Resend's full reason (name + message), not just the message —
+        // a bare "Invalid `to` field" hides that it's a validation_error/422.
+        return { success: false, error: `${result.error.name}: ${result.error.message}` };
       }
       return { success: true };
     } catch (error) {
