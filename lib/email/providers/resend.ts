@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { EmailProvider, SendEmailInput, SendEmailResult } from "../types";
+import { type ConnectionResult, errorMessage } from "@/lib/health/types";
 
 // Lazily instantiated on first actual send, not at module load. The
 // Resend SDK throws *synchronously* in its constructor if given no API
@@ -62,6 +63,23 @@ export class ResendEmailProvider implements EmailProvider {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error sending email",
       };
+    }
+  }
+
+  // Lists domains — a cheap authenticated GET that confirms RESEND_API_KEY is
+  // valid without sending anything. Confirms the credential works; it can't
+  // confirm the app will actually deliver (that also depends on RESEND_FROM_EMAIL
+  // and the sandbox-sender restriction, surfaced separately as config state).
+  async checkConnection(): Promise<ConnectionResult> {
+    if (!process.env.RESEND_API_KEY) {
+      return { ok: false, detail: "RESEND_API_KEY is not configured" };
+    }
+    try {
+      const { error } = await getResendClient().domains.list();
+      if (error) return { ok: false, detail: "API key rejected", error: error.message };
+      return { ok: true, detail: "API key valid" };
+    } catch (e) {
+      return { ok: false, detail: "Could not reach Resend", error: errorMessage(e) };
     }
   }
 }

@@ -1,5 +1,17 @@
 import { getRoomServiceClient } from "./client";
 import type { CreateRoomInput, VideoRoomHandle } from "../types";
+import { type ConnectionResult, errorMessage } from "@/lib/health/types";
+
+// A cheap authenticated call (list rooms) proving the LiveKit API key/secret
+// work right now, for the admin health page. Creates nothing.
+export async function checkConnection(): Promise<ConnectionResult> {
+  try {
+    await getRoomServiceClient().listRooms();
+    return { ok: true, detail: "API credentials valid" };
+  } catch (e) {
+    return { ok: false, detail: "Could not reach LiveKit", error: errorMessage(e) };
+  }
+}
 
 export async function createRoom(input: CreateRoomInput): Promise<VideoRoomHandle> {
   const room = await getRoomServiceClient().createRoom({

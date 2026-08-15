@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import type { ConnectionResult } from "@/lib/health/types";
 
 // The seam: everything outside lib/email/providers/ talks to this
 // interface, never to a specific provider's SDK. Swapping Resend for
@@ -15,4 +16,7 @@ export type SendEmailResult = { success: true } | { success: false; error: strin
 
 export interface EmailProvider {
   send(input: SendEmailInput): Promise<SendEmailResult>;
+  // A cheap authenticated call confirming the API credentials work right now —
+  // for the admin health page. Never sends an email.
+  checkConnection(): Promise<ConnectionResult>;
 }

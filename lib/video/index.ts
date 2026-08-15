@@ -15,6 +15,12 @@ import type { NormalisedAttendanceEvent, VideoParticipantRole } from "./types";
 export { VIDEO_CONFIG, maxConcurrentConnectionUnits, liveKitPlan } from "./config";
 export { projectVideoUsage, type VideoUsageProjection } from "./usage";
 
+// Health-check pass-through: the admin health page asks the seam, never the
+// LiveKit SDK, whether video credentials are live.
+export function checkVideoConnection() {
+  return provider.checkConnection();
+}
+
 // ---------------------------------------------------------------------------
 // Session creation
 // ---------------------------------------------------------------------------

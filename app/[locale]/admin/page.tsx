@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link } from "@/i18n/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
@@ -137,7 +138,12 @@ export default async function AdminPage() {
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <ContentContainer>
-        <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{t("heading")}</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-4)", flexWrap: "wrap", margin: "0 0 var(--space-6)" }}>
+          <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("heading")}</h1>
+          <Link href="/admin/health" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+            {t("healthLink")} →
+          </Link>
+        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
           {/* ── Alerts ────────────────────────────────────────────────── */}

@@ -12,6 +12,12 @@ import type { SendEmailResult } from "./types";
 export type { Locale } from "./shared";
 export { normalizeLocale } from "./shared";
 
+// Health-check pass-through: the admin health page asks the seam, never the
+// Resend SDK, whether email credentials are live.
+export function checkEmailConnection() {
+  return provider.checkConnection();
+}
+
 type BookingEmailContext = {
   // Nullable in practice, not just in principle — a pre-existing
   // account from before profiles.email existed (and hasn't been

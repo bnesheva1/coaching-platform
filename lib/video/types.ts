@@ -5,6 +5,8 @@
 // means rewriting lib/video/livekit/ and nothing else. Mirrors the intent
 // of lib/payments/types.ts.
 
+import type { ConnectionResult } from "@/lib/health/types";
+
 export type VideoParticipantRole = "client" | "practitioner";
 
 // Our own event vocabulary. A provider's richer event set (track
@@ -79,4 +81,8 @@ export interface VideoProvider {
     rawBody: string,
     authHeader: string | null,
   ): Promise<NormalisedAttendanceEvent | null>;
+
+  // A cheap authenticated call (list rooms) confirming the API credentials
+  // work right now — for the admin health page. Creates nothing.
+  checkConnection(): Promise<ConnectionResult>;
 }

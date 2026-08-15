@@ -4,6 +4,7 @@ import { completePastBookings } from "@/lib/bookings/completePastBookings";
 import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
 import { reconcileVideoRooms } from "@/lib/video/reconcile";
 import { runAlertSweep } from "@/lib/alerts/sweep";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
 // env var (locally AND in the Vercel project dashboard — Vercel's
@@ -48,5 +49,17 @@ export async function GET(request: Request) {
   // sweep.ts): Vercel Hobby allows one daily cron, so it folds in here; on a
   // paid plan, give it its own tighter cron and delete this one line.
   const alertResult = await runAlertSweep();
-  return NextResponse.json({ ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult, ...alertResult });
+
+  const summary = { ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult, ...alertResult };
+
+  // Heartbeat: record that this run happened, so the admin health page can tell
+  // a stopped cron from a quiet one. Best-effort and LAST — a heartbeat write
+  // failure must never fail the run whose real work already completed above.
+  try {
+    await createServiceRoleClient().from("cron_runs").insert({ summary });
+  } catch (err) {
+    console.error("cron heartbeat write failed", err);
+  }
+
+  return NextResponse.json(summary);
 }

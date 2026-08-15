@@ -1,9 +1,23 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { type ConnectionResult, errorMessage } from "@/lib/health/types";
 
 // Reads UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN from the
 // environment automatically.
 const redis = Redis.fromEnv();
+
+// A PING confirming Upstash is reachable, for the admin health page. This
+// matters more than the other checks look: every checkRateLimit() call fails
+// OPEN, so if Upstash is down the app keeps working with NO rate limiting and
+// nothing else surfaces it — a genuinely degraded (not failed) state.
+export async function checkRateLimitConnection(): Promise<ConnectionResult> {
+  try {
+    const pong = await redis.ping();
+    return { ok: pong === "PONG", detail: "Upstash Redis reachable" };
+  } catch (e) {
+    return { ok: false, detail: "Upstash unreachable — rate limiting is failing open (no protection)", error: errorMessage(e) };
+  }
+}
 
 export type RateLimiter = {
   upstash: Ratelimit;

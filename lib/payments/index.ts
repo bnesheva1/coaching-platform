@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { isEnabled } from "@/lib/flags";
+import { type ConnectionResult, errorMessage } from "@/lib/health/types";
+import { getStripeClient } from "./stripe/client";
 import { createBookingCheckoutSession } from "./stripe/checkout";
 import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
@@ -14,6 +16,26 @@ export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, Refund
 // default. The per-practitioner column still overrides this afterwards.
 export function defaultBillingModel(): BillingModel {
   return process.env.DEFAULT_BILLING_MODEL === "commission" ? "commission" : "software_provider";
+}
+
+// Mode is derived from the key prefix — no call needed — but the call itself
+// (a cheap balance.retrieve) is what proves the key is actually VALID right now,
+// not merely present. Both are reported: the mode always, the validity from the
+// live call. Kept here in the payments seam so the health page never imports the
+// Stripe SDK.
+export function stripeMode(): "test" | "live" | "unknown" {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  return key.startsWith("sk_live_") ? "live" : key.startsWith("sk_test_") ? "test" : "unknown";
+}
+
+export async function checkStripeConnection(): Promise<ConnectionResult> {
+  const mode = stripeMode();
+  try {
+    await getStripeClient().balance.retrieve();
+    return { ok: true, detail: `API key valid — ${mode} mode` };
+  } catch (e) {
+    return { ok: false, detail: `Stripe call failed (${mode} key)`, error: errorMessage(e) };
+  }
 }
 
 // THE seam. Every other module in this app calls exactly these two

@@ -1,5 +1,5 @@
 import type { VideoProvider } from "../types";
-import { createRoom, closeRoom } from "./rooms";
+import { createRoom, closeRoom, checkConnection } from "./rooms";
 import { issueJoinCredential } from "./tokens";
 import { verifyLiveKitWebhookEvent } from "./webhook";
 import { normaliseLiveKitEvent } from "./events";
@@ -13,6 +13,7 @@ export const liveKitProvider: VideoProvider = {
   createRoom,
   closeRoom,
   issueJoinCredential,
+  checkConnection,
   async verifyAndNormaliseEvent(rawBody, authHeader) {
     const event = await verifyLiveKitWebhookEvent(rawBody, authHeader); // throws on bad signature
     return normaliseLiveKitEvent(event);
