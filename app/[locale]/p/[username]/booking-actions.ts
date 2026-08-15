@@ -87,6 +87,21 @@ export async function bookSlot(
     return;
   }
 
+  // Per-practitioner controls, enforced server-side (not merely hidden from a
+  // button): a frozen or suspended practitioner is not bookable. This reuses
+  // the SINGLE bookable derivation (practitioner_bookable_flags, which now folds
+  // in moderation_status) rather than a competing check — so it also correctly
+  // refuses a practitioner who became unbookable for any other reason between
+  // page render and this click. A HIDDEN practitioner stays bookable here (by
+  // design: bookable-by-URL), since hidden doesn't affect is_bookable.
+  const { data: practitionerBookable } = await supabase.rpc("is_practitioner_bookable", {
+    target_practitioner_id: practitionerId,
+  });
+  if (!practitionerBookable) {
+    await redirectWithError("practitionerUnavailable");
+    return;
+  }
+
   // Service-role, not the client's own session — phone_number/
   // meeting_link are excluded from the general column grant (same
   // sensitivity as delivery_info), so a client's own RLS-scoped select

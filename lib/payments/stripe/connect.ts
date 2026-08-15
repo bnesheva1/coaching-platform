@@ -142,6 +142,20 @@ export async function createExpressDashboardLoginLink(accountId: string): Promis
   return link.url;
 }
 
+// Freeze or release a connected account's payouts to its bank by flipping its
+// payout SCHEDULE (verified working on this platform's v2 Express/recipient
+// accounts): "manual" holds funds in the account's Stripe balance indefinitely;
+// "daily" resumes the normal schedule, at which point the accumulated balance
+// pays out. Destination charges are untouched, so bookings and payments keep
+// working while frozen — money accumulates rather than failing, exactly the
+// intended "freeze payouts" behaviour. Used by the admin freeze-payouts control.
+export async function setPayoutsHold(accountId: string, held: boolean): Promise<void> {
+  const stripe = getStripeClient();
+  await stripe.accounts.update(accountId, {
+    settings: { payouts: { schedule: held ? { interval: "manual" } : { interval: "daily" } } },
+  });
+}
+
 // Called from the webhook route for both v2.core.account.updated and
 // v2.core.account[configuration.recipient].capability_status_updated —
 // deliberately re-fetches the account's current state rather than

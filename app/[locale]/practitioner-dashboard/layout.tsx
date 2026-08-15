@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { ModerationNotice } from "@/components/dashboard/ModerationNotice";
 import { DashboardSidebar } from "./DashboardSidebar";
 
 // UTC calendar week (Monday 00:00 through the following Monday), not the
@@ -69,10 +70,27 @@ export default async function PractitionerDashboardLayout({ children }: { childr
       .gte("start_utc", now),
   ]);
 
+  // Moderation state for the practitioner-facing notice (owner-scoped RPC).
+  const { data: moderation } = await supabase.rpc("get_my_moderation_status").single();
+  const mod = moderation as {
+    moderation_status: "active" | "hidden" | "bookings_frozen" | "suspended";
+    moderation_reason: string | null;
+    payouts_frozen: boolean;
+    payouts_reason: string | null;
+  } | null;
+
   return (
     <DashboardShell
       sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
     >
+      {mod && (
+        <ModerationNotice
+          moderationStatus={mod.moderation_status}
+          moderationReason={mod.moderation_reason}
+          payoutsFrozen={mod.payouts_frozen}
+          payoutsReason={mod.payouts_reason}
+        />
+      )}
       {children}
     </DashboardShell>
   );

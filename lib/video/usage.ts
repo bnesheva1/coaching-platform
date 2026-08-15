@@ -72,7 +72,10 @@ export async function projectVideoUsage(now = new Date()): Promise<VideoUsagePro
     .from("bookings")
     .select("start_utc, end_utc, status")
     .eq("delivery_type", "online")
-    .neq("status", "cancelled")
+    // Non-cancelled bookings. NB the real statuses are cancelled_by_client /
+    // cancelled_by_practitioner — a .neq("status","cancelled") matches nothing
+    // and silently keeps cancelled bookings in the projection.
+    .in("status", ["pending", "confirmed", "completed"])
     .gte("start_utc", start)
     .lt("start_utc", end);
   if (error) {

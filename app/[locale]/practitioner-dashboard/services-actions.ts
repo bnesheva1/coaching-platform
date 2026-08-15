@@ -436,6 +436,17 @@ export async function setServiceActive(
     return;
   }
 
+  // Suspend = no publishing/selling, enforced server-side. A suspended
+  // practitioner can't ACTIVATE a service (they can still deactivate). The
+  // dashboard's suspension banner explains why the toggle didn't take, so this
+  // isn't a silent no-op from the practitioner's point of view.
+  if (isActive) {
+    const { data: mod } = await supabase.rpc("get_my_moderation_status").single();
+    if ((mod as { moderation_status?: string } | null)?.moderation_status === "suspended") {
+      return;
+    }
+  }
+
   const { error } = await supabase
     .from("services")
     .update({ is_active: isActive })

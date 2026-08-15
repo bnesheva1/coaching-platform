@@ -7,6 +7,7 @@ import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
 
 export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, RefundResult } from "./types";
+export { setPayoutsHold, getConnectedAccountId } from "./stripe/connect";
 
 // Deployment-scope default for a newly-created practitioner's billing_model,
 // read at creation (see signup/actions.ts). Lets a brand declare "all new

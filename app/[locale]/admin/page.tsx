@@ -66,11 +66,11 @@ export default async function AdminPage() {
       .order("created_at", { ascending: false })
       .limit(20),
     Promise.all(ADMIN_TOGGLEABLE.map(async (k) => [k, await isEnabled(k)] as const)),
-    supabase.from("bookings").select("id", { count: "exact", head: true }).neq("status", "cancelled").gte("start_utc", nowIso),
+    supabase.from("bookings").select("id", { count: "exact", head: true }).in("status", ["pending", "confirmed"]).gte("start_utc", nowIso),
     supabase
       .from("bookings")
       .select("id", { count: "exact", head: true })
-      .neq("status", "cancelled")
+      .in("status", ["pending", "confirmed"])
       .gte("start_utc", nowIso)
       .lt("start_utc", weekEnd),
     supabase.from("bookings").select("id", { count: "exact", head: true }),
@@ -140,9 +140,14 @@ export default async function AdminPage() {
       <ContentContainer>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-4)", flexWrap: "wrap", margin: "0 0 var(--space-6)" }}>
           <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("heading")}</h1>
-          <Link href="/admin/health" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
-            {t("healthLink")} →
-          </Link>
+          <div style={{ display: "flex", gap: "var(--space-4)" }}>
+            <Link href="/admin/practitioners" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+              {t("practLink")} →
+            </Link>
+            <Link href="/admin/health" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+              {t("healthLink")} →
+            </Link>
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
