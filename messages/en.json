@@ -53,7 +53,21 @@
     "costLevel_ok": "OK",
     "costLevel_early": "Watch",
     "costLevel_high": "High",
-    "costLevel_breaker": "Breaker"
+    "costLevel_breaker": "Breaker",
+    "switchOn_newBookings": "The platform will start accepting new bookings again.",
+    "switchOn_clientRegistration": "New clients will be able to sign up again.",
+    "switchOn_practitionerRegistration": "New practitioners will be able to sign up again.",
+    "switchOn_checkout": "Card payments resume — commission-model bookings can be paid for again.",
+    "switchOn_video": "New online sessions can be booked again.",
+    "confirmTitleOn": "Turn on “{name}”?",
+    "confirmTitleOff": "Turn off “{name}”?",
+    "confirmCancel": "Cancel",
+    "confirmImmediate": "Takes effect immediately, for everyone.",
+    "confirmLogged": "Recorded in the audit log.",
+    "turningOn": "Turning on…",
+    "turningOff": "Turning off…",
+    "costOverrideOnBody": "The automatic {amount}/month cost breaker won't turn video off. You'll need to watch the projected cost yourself.",
+    "costOverrideOffBody": "The automatic {amount}/month breaker is active again — video turns off if projected cost passes {amount}."
   },
   "HomePage": {
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",

@@ -6,6 +6,7 @@ import { isEnabled, KILL_SWITCHES, ADMIN_TOGGLEABLE, type FlagKey } from "@/lib/
 import { projectVideoUsage } from "@/lib/video";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
+import { FlagToggle } from "@/components/admin/FlagToggle";
 import { dismissAlert, setFlag } from "./actions";
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -126,12 +127,7 @@ export default async function AdminPage() {
     color: "var(--text-tertiary)",
   };
 
-  // Each kill switch: its label + the one-line consequence shown when OFF.
-  const switchMeta = KILL_SWITCHES.map((key) => ({
-    key,
-    label: t(`switch_${key}` as Parameters<typeof t>[0]),
-    whenOff: t(`switchOff_${key}` as Parameters<typeof t>[0]),
-  }));
+  const greenDotStyle = { display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#2ea043", marginLeft: 6 } as const;
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -211,59 +207,105 @@ export default async function AdminPage() {
           <section>
             <h2 style={{ font: "var(--text-heading-sm)", margin: "0 0 var(--space-3)" }}>{t("controlsHeading")}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-              {switchMeta.map(({ key, label, whenOff }) => {
+              {KILL_SWITCHES.map((key) => {
                 const on = switchState[key];
+                const target = !on;
+                const name = t(`switch_${key}` as Parameters<typeof t>[0]);
                 return (
-                  <div key={key} style={{ ...cardStyle, gap: "var(--space-2)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "baseline" }}>
-                      <span style={{ font: "var(--text-body-md)", fontWeight: 600 }}>{label}</span>
-                      <span
-                        style={{
-                          font: "var(--text-label)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.06em",
-                          color: on ? "var(--text-secondary)" : "#c0392b",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {on ? t("stateOn") : t("stateOff")}
+                  <div
+                    key={key}
+                    style={{
+                      ...cardStyle,
+                      gap: "var(--space-2)",
+                      // off = the alarm state: a quiet red left edge, matching the pill
+                      borderLeft: on ? undefined : "3px solid #c0392b",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "center" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-3)" }}>
+                        <span style={{ font: "var(--text-body-md)", fontWeight: 600 }}>{name}</span>
+                        <span
+                          style={{
+                            font: "var(--text-label)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            color: on ? "var(--text-secondary)" : "#c0392b",
+                            whiteSpace: "nowrap",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          {on ? t("stateOn") : t("stateOff")}
+                          {on && <span aria-hidden="true" style={greenDotStyle} />}
+                        </span>
                       </span>
+                      <FlagToggle
+                        on={on}
+                        ariaLabel={name}
+                        action={setFlag.bind(null, key, target)}
+                        tone={target ? "accent" : "danger"}
+                        dialogTitle={t(target ? "confirmTitleOn" : "confirmTitleOff", { name })}
+                        dialogBody={t((target ? `switchOn_${key}` : `switchOff_${key}`) as Parameters<typeof t>[0])}
+                        confirmLabel={target ? t("turnOn") : t("turnOff")}
+                        confirmPendingLabel={target ? t("turningOn") : t("turningOff")}
+                        cancelLabel={t("confirmCancel")}
+                        immediateLabel={t("confirmImmediate")}
+                        loggedLabel={t("confirmLogged")}
+                      />
                     </div>
-                    {!on && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{whenOff}</p>}
-                    <form action={setFlag.bind(null, key, !on)} style={{ margin: 0, alignSelf: "flex-start" }}>
-                      <Button type="submit" variant={on ? "ghost" : "primary"} size="sm">
-                        {on ? t("turnOff") : t("turnOn")}
-                      </Button>
-                    </form>
+                    {!on && (
+                      <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                        {t(`switchOff_${key}` as Parameters<typeof t>[0])}
+                      </p>
+                    )}
 
                     {/* Cost override sits with the video switch — it governs the
-                        automatic €300 breaker, not video directly. */}
-                    {key === "video" && (
-                      <div style={{ marginTop: "var(--space-2)", paddingTop: "var(--space-2)", borderTop: "1px solid var(--border-subtle)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "baseline" }}>
-                          <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{t("costOverrideLabel")}</span>
-                          <span
-                            style={{
-                              font: "var(--text-label)",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.06em",
-                              color: switchState.videoCostOverride ? "#a15c00" : "var(--text-tertiary)",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {switchState.videoCostOverride ? t("stateOn") : t("stateOff")}
-                          </span>
-                        </div>
-                        <p style={{ margin: "var(--space-1) 0 var(--space-2)", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-                          {t("costOverrideHelp", { amount: eurFmt.format(breakerEur) })}
-                        </p>
-                        <form action={setFlag.bind(null, "videoCostOverride", !switchState.videoCostOverride)} style={{ margin: 0 }}>
-                          <Button type="submit" variant="ghost" size="sm">
-                            {switchState.videoCostOverride ? t("costOverrideDisable") : t("costOverrideEnable")}
-                          </Button>
-                        </form>
-                      </div>
-                    )}
+                        automatic breaker, not video directly. Its risky direction is
+                        ON (it suppresses the safety), so that's the amber one. */}
+                    {key === "video" &&
+                      (() => {
+                        const ov = switchState.videoCostOverride;
+                        const ovTarget = !ov;
+                        const amount = eurFmt.format(breakerEur);
+                        return (
+                          <div style={{ marginTop: "var(--space-2)", paddingTop: "var(--space-2)", borderTop: "1px solid var(--border-subtle)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "center" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2)" }}>
+                                <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{t("costOverrideLabel")}</span>
+                                <span
+                                  style={{
+                                    font: "var(--text-label)",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.06em",
+                                    color: ov ? "#a15c00" : "var(--text-tertiary)",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {ov ? t("stateOn") : t("stateOff")}
+                                </span>
+                              </span>
+                              <FlagToggle
+                                on={ov}
+                                small
+                                override
+                                ariaLabel={t("costOverrideLabel")}
+                                action={setFlag.bind(null, "videoCostOverride", ovTarget)}
+                                tone={ovTarget ? "warning" : "accent"}
+                                dialogTitle={t(ovTarget ? "confirmTitleOn" : "confirmTitleOff", { name: t("costOverrideLabel") })}
+                                dialogBody={t(ovTarget ? "costOverrideOnBody" : "costOverrideOffBody", { amount })}
+                                confirmLabel={ovTarget ? t("turnOn") : t("turnOff")}
+                                confirmPendingLabel={ovTarget ? t("turningOn") : t("turningOff")}
+                                cancelLabel={t("confirmCancel")}
+                                immediateLabel={t("confirmImmediate")}
+                                loggedLabel={t("confirmLogged")}
+                              />
+                            </div>
+                            <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+                              {t("costOverrideHelp", { amount })}
+                            </p>
+                          </div>
+                        );
+                      })()}
                   </div>
                 );
               })}

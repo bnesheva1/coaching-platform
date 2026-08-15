@@ -53,7 +53,21 @@
     "costLevel_ok": "ОК",
     "costLevel_early": "Внимание",
     "costLevel_high": "Висок",
-    "costLevel_breaker": "Прекъсвач"
+    "costLevel_breaker": "Прекъсвач",
+    "switchOn_newBookings": "Платформата отново ще приема нови записвания.",
+    "switchOn_clientRegistration": "Нови клиенти отново ще могат да се регистрират.",
+    "switchOn_practitionerRegistration": "Нови специалисти отново ще могат да се регистрират.",
+    "switchOn_checkout": "Плащанията с карта се възобновяват — записванията с комисиона отново могат да бъдат платени.",
+    "switchOn_video": "Отново могат да се записват нови онлайн сесии.",
+    "confirmTitleOn": "Да включа ли „{name}“?",
+    "confirmTitleOff": "Да изключа ли „{name}“?",
+    "confirmCancel": "Отказ",
+    "confirmImmediate": "Влиза в сила веднага, за всички.",
+    "confirmLogged": "Записва се в одит дневника.",
+    "turningOn": "Включване…",
+    "turningOff": "Изключване…",
+    "costOverrideOnBody": "Автоматичният прекъсвач при {amount}/месец няма да изключи видеото. Ще трябва сам да следиш прогнозния разход.",
+    "costOverrideOffBody": "Автоматичният прекъсвач при {amount}/месец отново е активен — видеото се изключва, ако прогнозният разход надхвърли {amount}."
   },
   "HomePage": {
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
