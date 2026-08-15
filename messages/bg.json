@@ -155,7 +155,14 @@
     "bulkOutcome_refunded": "Възстановено",
     "bulkOutcome_refund_failed": "Неуспешно възстановяване",
     "bulkOutcome_no_payment": "Няма плащане",
-    "bulkOutcome_already_refunded": "Вече възстановено"
+    "bulkOutcome_already_refunded": "Вече възстановено",
+    "filterFrom": "От",
+    "filterTo": "До",
+    "filterApply": "Приложи",
+    "filterClear": "Изчисти",
+    "paginationPrev": "Назад",
+    "paginationNext": "Напред",
+    "paginationPage": "Страница {page} от {total}"
   },
   "HomePage": {
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",

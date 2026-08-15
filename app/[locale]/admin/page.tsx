@@ -8,7 +8,16 @@ import { projectVideoUsage } from "@/lib/video";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { FlagToggle } from "@/components/admin/FlagToggle";
+import { AdminSection } from "@/components/admin/AdminSection";
 import { dismissAlert, setFlag } from "./actions";
+
+export const dynamic = "force-dynamic";
+
+const ALERTS_PAGE_SIZE = 10;
+const AUDIT_PAGE_SIZE = 20;
+function dayBounds(from?: string, to?: string) {
+  return { fromIso: from ? `${from}T00:00:00.000Z` : null, toIso: to ? `${to}T23:59:59.999Z` : null };
+}
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: "#c0392b",
@@ -21,10 +30,15 @@ const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 // The admin dashboard shell. Deliberately plain — an internal operator tool,
 // not a product surface: token-styled, no charts, no chrome. Alerts, Controls
 // (kill switches), Numbers (readouts), and the audit log.
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
   // Defense in depth: the layout already gated, but this page reads privileged
   // (service-role) data, so it re-asserts before doing so.
   await requireAdmin();
+  const sp = await searchParams;
   const t = await getTranslations("Admin");
   const locale = await getLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
@@ -39,12 +53,35 @@ export default async function AdminPage() {
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
   const nowIso = now.toISOString();
 
-  // Everything the page needs, in one fan-out. Alerts + audit (as before), the
-  // resolved state of every toggleable switch, the Numbers readouts, and the
-  // video cost projection.
+  // Alerts + audit are collapsible, date-filterable, and paginated — driven by
+  // per-section query params (alertsFrom/To/Page, auditFrom/To/Page). Build each
+  // query with its filters + range + an exact count for the pager, then fold
+  // them into the one fan-out below.
+  const alertsPage = Math.max(1, parseInt(sp.alertsPage ?? "", 10) || 1);
+  const auditPage = Math.max(1, parseInt(sp.auditPage ?? "", 10) || 1);
+  const aBounds = dayBounds(sp.alertsFrom, sp.alertsTo);
+  const uBounds = dayBounds(sp.auditFrom, sp.auditTo);
+
+  let alertsFilter = supabase.from("alerts").select("id, type, severity, message, context, first_seen_at", { count: "exact" }).eq("status", "active");
+  if (aBounds.fromIso) alertsFilter = alertsFilter.gte("first_seen_at", aBounds.fromIso);
+  if (aBounds.toIso) alertsFilter = alertsFilter.lte("first_seen_at", aBounds.toIso);
+  const alertsQuery = alertsFilter
+    .order("first_seen_at", { ascending: false })
+    .range((alertsPage - 1) * ALERTS_PAGE_SIZE, alertsPage * ALERTS_PAGE_SIZE - 1);
+
+  let auditFilter = supabase.from("admin_audit_log").select("id, actor_email, action, previous_value, new_value, created_at", { count: "exact" });
+  if (uBounds.fromIso) auditFilter = auditFilter.gte("created_at", uBounds.fromIso);
+  if (uBounds.toIso) auditFilter = auditFilter.lte("created_at", uBounds.toIso);
+  const auditQuery = auditFilter
+    .order("created_at", { ascending: false })
+    .range((auditPage - 1) * AUDIT_PAGE_SIZE, auditPage * AUDIT_PAGE_SIZE - 1);
+
+  // Everything the page needs, in one fan-out. Alerts + audit (filtered/paged
+  // above), the resolved state of every toggleable switch, the Numbers readouts,
+  // and the video cost projection.
   const [
-    { data: alerts },
-    { data: auditEntries },
+    { data: alerts, count: alertsTotal },
+    { data: auditEntries, count: auditTotal },
     switchPairs,
     bookingsUpcoming,
     bookingsThisWeek,
@@ -55,16 +92,8 @@ export default async function AdminPage() {
     { data: paymentRows },
     videoUsage,
   ] = await Promise.all([
-    supabase
-      .from("alerts")
-      .select("id, type, severity, message, context, first_seen_at")
-      .eq("status", "active")
-      .order("first_seen_at", { ascending: false }),
-    supabase
-      .from("admin_audit_log")
-      .select("id, actor_email, action, previous_value, new_value, created_at")
-      .order("created_at", { ascending: false })
-      .limit(20),
+    alertsQuery,
+    auditQuery,
     Promise.all(ADMIN_TOGGLEABLE.map(async (k) => [k, await isEnabled(k)] as const)),
     supabase.from("bookings").select("id", { count: "exact", head: true }).in("status", ["pending", "confirmed"]).gte("start_utc", nowIso),
     supabase
@@ -82,6 +111,8 @@ export default async function AdminPage() {
   ]);
 
   const switchState = Object.fromEntries(switchPairs) as Record<FlagKey, boolean>;
+  const alertsPageCount = Math.max(1, Math.ceil((alertsTotal ?? 0) / ALERTS_PAGE_SIZE));
+  const auditPageCount = Math.max(1, Math.ceil((auditTotal ?? 0) / AUDIT_PAGE_SIZE));
 
   // Bookable = has at least one active service (the activation gate a client
   // could actually book against). A registered practitioner who never got here
@@ -151,9 +182,8 @@ export default async function AdminPage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
-          {/* ── Alerts ────────────────────────────────────────────────── */}
-          <section>
-            <h2 style={{ font: "var(--text-heading-sm)", margin: "0 0 var(--space-3)" }}>{t("alertsHeading")}</h2>
+          {/* ── Alerts (collapsible · date-filtered · paginated) ───────── */}
+          <AdminSection prefix="alerts" title={t("alertsHeading")} count={alertsTotal ?? 0} page={alertsPage} pageCount={alertsPageCount}>
             {(alerts ?? []).length === 0 ? (
               <p style={emptyStyle}>{t("alertsEmpty")}</p>
             ) : (
@@ -217,7 +247,7 @@ export default async function AdminPage() {
                 })}
               </div>
             )}
-          </section>
+          </AdminSection>
 
           {/* ── Controls (kill switches) ──────────────────────────────── */}
           <section>
@@ -425,9 +455,8 @@ export default async function AdminPage() {
             </div>
           </section>
 
-          {/* ── Audit log ─────────────────────────────────────────────── */}
-          <section>
-            <h2 style={{ font: "var(--text-heading-sm)", margin: "0 0 var(--space-3)" }}>{t("auditHeading")}</h2>
+          {/* ── Audit log (collapsible · date-filtered · paginated) ────── */}
+          <AdminSection prefix="audit" title={t("auditHeading")} count={auditTotal ?? 0} page={auditPage} pageCount={auditPageCount}>
             {(auditEntries ?? []).length === 0 ? (
               <p style={emptyStyle}>{t("auditEmpty")}</p>
             ) : (
@@ -456,7 +485,7 @@ export default async function AdminPage() {
                 </table>
               </div>
             )}
-          </section>
+          </AdminSection>
         </div>
       </ContentContainer>
     </main>

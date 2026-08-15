@@ -155,7 +155,14 @@
     "bulkOutcome_refunded": "Refunded",
     "bulkOutcome_refund_failed": "Refund failed",
     "bulkOutcome_no_payment": "No payment",
-    "bulkOutcome_already_refunded": "Already refunded"
+    "bulkOutcome_already_refunded": "Already refunded",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterApply": "Apply",
+    "filterClear": "Clear",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationPage": "Page {page} of {total}"
   },
   "HomePage": {
     "metaDescription": "Find verified tarot readers, astrologers, and energy and spiritual practitioners across Bulgaria.",
