@@ -9,6 +9,8 @@ import { cancelBookingAsPractitioner } from "./cancel-booking-actions";
 import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
 import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { notPastEndCutoffIso } from "@/lib/video/sessionWindow";
+import { isEnabled } from "@/lib/flags";
+import { AvailabilityWidget } from "@/components/immediate/AvailabilityWidget";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -68,6 +70,14 @@ export default async function PractitionerHomePage() {
   // Guaranteed non-null by the layout guard — narrows the type for the
   // rest of this function without a redundant redirect.
   const userId = user!.id;
+
+  // Immediate-booking presence widget — only when the feature flag is on. The
+  // initial state is the DERIVED availability (fresh heartbeat), so a quick
+  // reload resumes it and a stale one reads offline.
+  const immediateEnabled = await isEnabled("immediateBooking");
+  const immediateAvailable = immediateEnabled
+    ? !!(await supabase.rpc("is_practitioner_available_now", { target: userId })).data
+    : false;
 
   const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: bookableStatus }] =
     await Promise.all([
@@ -319,6 +329,12 @@ export default async function PractitionerHomePage() {
           <GreetingText name={profile?.display_name ?? ""} />
         </p>
         <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-4)" }}>{t("agenda.heading")}</h1>
+
+        {immediateEnabled && (
+          <div style={{ marginBottom: "var(--space-6)" }}>
+            <AvailabilityWidget initialAvailable={immediateAvailable} />
+          </div>
+        )}
 
         {(upcoming.length > 0 || missingLinkBookings.length > 0) && (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginBottom: "var(--space-6)" }}>

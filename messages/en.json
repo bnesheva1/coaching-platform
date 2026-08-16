@@ -1087,5 +1087,27 @@
     "payouts_body": "Your payouts are temporarily on hold while we look into something. You can still hold sessions and take bookings; your money is safe and will be paid out once this is resolved.",
     "reasonLabel": "Reason from our team:",
     "contact": "Contact us"
+  },
+  "Immediate": {
+    "heading": "Available now",
+    "statusOn": "Available",
+    "statusOff": "Off",
+    "keepTabOpen": "Keep this tab open — close it and you stop appearing available. Best on desktop; a backgrounded phone tab will drop you offline.",
+    "goOffline": "Go offline",
+    "explainer": "Turn this on to take immediate sessions from clients who are ready now. You'll be alerted when someone requests you and have ~2 minutes to confirm.",
+    "goAvailable": "Go available now",
+    "requestLine": "{client} wants a “{service}” session now",
+    "respondWithin": "{seconds}s to respond",
+    "confirm": "Confirm",
+    "decline": "Decline",
+    "notifTitle": "New session request",
+    "notifBody": "{client} — {service}",
+    "error_noNotifications": "Your browser doesn't support notifications, which this needs.",
+    "error_permissionRequired": "Allow notifications to go available — you can't answer a request you're not alerted to.",
+    "error_offline": "Connection lost — you've been set to offline.",
+    "waiting": "Waiting for the practitioner to confirm… {seconds}s",
+    "confirmed": "Confirmed — the practitioner is ready for your session.",
+    "lapsed": "No response — please try again.",
+    "notAvailable": "Not available right now."
   }
 }
