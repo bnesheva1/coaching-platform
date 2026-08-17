@@ -102,6 +102,9 @@ export function BrowseClient({
   specialtyOptions,
   topicOptions,
   deliveryTypeOptions,
+  saveable,
+  viewerIsGuest,
+  savedPractitionerIds,
 }: {
   results: BrowseResult[];
   query: string;
@@ -111,6 +114,9 @@ export function BrowseClient({
   specialtyOptions: { key: string; label: string }[];
   topicOptions: { key: string; label: string }[];
   deliveryTypeOptions: { key: string; label: string }[];
+  saveable: boolean;
+  viewerIsGuest: boolean;
+  savedPractitionerIds: string[];
 }) {
   const t = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
@@ -127,6 +133,17 @@ export function BrowseClient({
   // If the last result went unavailable and the toggle vanished, don't let a
   // stuck-on `availableOnly` silently empty the grid.
   const effectiveAvailableOnly = availableOnly && anyAvailableNow;
+
+  // Track saves client-side over the server snapshot so a card that's re-mounted
+  // by a filter/sort change still reflects a just-toggled save.
+  const [savedSet, setSavedSet] = useState<Set<string>>(() => new Set(savedPractitionerIds));
+  const updateSaved = (id: string, saved: boolean) =>
+    setSavedSet((prev) => {
+      const next = new Set(prev);
+      if (saved) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   const [searchText, setSearchText] = useState(query);
   const [selectedModalities, setSelectedModalities] = useState<Set<string>>(new Set(initialSpecialties));
@@ -564,6 +581,10 @@ export function BrowseClient({
                       location: practitioner.location,
                       availableNow: practitioner.availableNow,
                     }}
+                    saveable={saveable}
+                    saved={savedSet.has(practitioner.id)}
+                    viewerIsGuest={viewerIsGuest}
+                    onToggleSave={(s) => updateSaved(practitioner.id, s)}
                   />
                 ))}
               </div>

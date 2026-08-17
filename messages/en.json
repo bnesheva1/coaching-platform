@@ -1140,5 +1140,15 @@
     "block_blocked": "This period is blocked in your schedule.",
     "block_next_too_soon": "Your shortest service is {minutes} min, and your next session starts in {startsIn} min.",
     "block_next_too_soon_free": "You'll be able to go available at {time}."
+  },
+  "Saved": {
+    "save": "Save practitioner",
+    "saved": "Saved",
+    "saveAria": "Save this practitioner",
+    "unsaveAria": "Remove from saved",
+    "sectionTitle": "Saved practitioners",
+    "emptyLine": "Save practitioners to keep them here and find them again easily — even ones you haven't booked yet.",
+    "emptyCta": "Browse practitioners",
+    "notBookable": "Not taking bookings right now"
   }
 }

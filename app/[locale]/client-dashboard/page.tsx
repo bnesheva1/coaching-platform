@@ -13,8 +13,10 @@ import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
+import { SavedPractitionersGrid } from "./SavedPractitionersGrid";
 import { ClientActivationState } from "./ClientActivationState";
 import { searchPractitioners } from "@/lib/practitioners/search";
+import { getSavedPractitionerCards } from "@/lib/practitioners/saved";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -32,6 +34,7 @@ export default async function ClientUpcomingPage({
   const t = await getTranslations("Dashboard");
   const tBooking = await getTranslations("Booking");
   const tPublicProfile = await getTranslations("PublicProfile");
+  const tSaved = await getTranslations("Saved");
   const locale = (await getLocale()) as "bg" | "en";
   const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
@@ -56,7 +59,12 @@ export default async function ClientUpcomingPage({
       .order("start_utc", { ascending: true }),
   ]);
 
-  if ((bookings ?? []).length === 0) {
+  // Saved practitioners are fetched before the activation gate: a client who has
+  // saved someone — even with no bookings yet — has engaged, and their saves must
+  // be surfaced rather than hidden behind the onboarding screen.
+  const savedCards = await getSavedPractitionerCards();
+
+  if ((bookings ?? []).length === 0 && savedCards.length === 0) {
     return <ClientActivationState displayName={profile?.display_name ?? ""} />;
   }
 
@@ -209,6 +217,24 @@ export default async function ClientUpcomingPage({
       reviewCount: p.reviewCount,
       availableNow: p.availableNow,
     }));
+
+  // Saved practitioners — a separate list from "worked with" (worked-with is
+  // derived from booking history; saved is a deliberate keep). Fetched above the
+  // activation gate; directly (not via search) so a saved-but-hidden/suspended
+  // practitioner still shows.
+  const savedPractitioners: PractitionerCardData[] = savedCards.map((p) => ({
+    id: p.id,
+    username: p.username,
+    displayName: p.displayName,
+    bio: p.bio,
+    avatarUrl: p.avatarUrl,
+    specialtyLabels: p.specialtyKeys.map((key) => specialtyLabelByKey.get(key) ?? key),
+    topicLabels: p.topicKeys.map((key) => topicLabelByKey.get(key) ?? key),
+    location: p.location,
+    averageRating: p.averageRating,
+    reviewCount: p.reviewCount,
+  }));
+  const unbookableSavedIds = savedCards.filter((p) => !p.bookable).map((p) => p.id);
 
   // State 2 empty state — they have history but nothing upcoming. Not
   // patronising with a "how it works" explainer (they know); a route back
@@ -391,6 +417,11 @@ export default async function ClientUpcomingPage({
             {t("clientEmptyState.cta")}
           </Button>
         </div>
+      </section>
+
+      <section style={{ marginTop: "var(--space-8)" }} id="saved">
+        <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{tSaved("sectionTitle")}</h2>
+        <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} />
       </section>
     </main>
   );

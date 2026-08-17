@@ -7,6 +7,7 @@ import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { isEnabled } from "@/lib/flags";
 import { computeImmediateAvailability } from "@/lib/immediate/fit";
+import { isPractitionerSaved } from "@/lib/practitioners/saved";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
@@ -198,6 +199,10 @@ export default async function PublicProfilePage({
     }
   }
 
+  // Whether the viewing client has already saved this practitioner (initial state
+  // for the save toggle). Only a client has a saved list.
+  const viewerHasSaved = viewerRole === "client" ? await isPractitionerSaved(practitionerProfile.id) : false;
+
   const justBooked = resolvedSearchParams.booked === "1";
   const bookingErrorCode =
     typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
@@ -346,6 +351,7 @@ export default async function PublicProfilePage({
           initialExpandedServiceId={initialExpandedServiceId}
           availableNow={availableNow}
           immediateFitByServiceId={immediateFitByServiceId}
+          viewerHasSaved={viewerHasSaved}
         />
         </div>
       </ContentContainer>
