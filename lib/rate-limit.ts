@@ -78,6 +78,11 @@ export const bookingLimiter = createLimiter("rl:booking", 10, "10 m", 10 * 60 * 
 // needs one genuine completed session per review). Keyed by user id,
 // same reasoning as bookingLimiter.
 export const reviewLimiter = createLimiter("rl:review", 10, "10 m", 10 * 60 * 1000);
+// The save/unsave toggle — keyed by user id, same reasoning as booking/review:
+// it already requires auth, so the account is the precise identifier. Generous
+// for real toggling (saving several practitioners while browsing) while bounding
+// a script flipping one save in a loop.
+export const saveLimiter = createLimiter("rl:save", 30, "10 m", 10 * 60 * 1000);
 // Keyed by user id, not IP — same reasoning as bookingLimiter/
 // reviewLimiter: this already requires an active session, so the
 // account itself is the more precise identifier. Deliberately as tight

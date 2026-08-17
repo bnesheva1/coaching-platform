@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localizedAlternates } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
+import { getSavedPractitionerIds } from "@/lib/practitioners/saved";
+import { createClient } from "@/lib/supabase/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
@@ -55,6 +57,23 @@ export default async function BrowsePage({
 
   const practitioners = await searchPractitioners({ searchText: query });
 
+  // Save affordance: offered to clients and guests (a guest is routed to log in on
+  // click), never to a practitioner-role viewer. A client's already-saved set
+  // seeds the toggles.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let viewerRole: "client" | "practitioner" | null = null;
+  let savedPractitionerIds: string[] = [];
+  if (user) {
+    const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    viewerRole = (prof?.role as "client" | "practitioner" | null) ?? null;
+    if (viewerRole === "client") savedPractitionerIds = await getSavedPractitionerIds();
+  }
+  const saveable = viewerRole !== "practitioner";
+  const viewerIsGuest = user === null;
+
   const results: BrowseResult[] = practitioners.map((p) => ({
     id: p.id,
     username: p.username,
@@ -107,6 +126,9 @@ export default async function BrowsePage({
           specialtyOptions={specialtyOptions}
           topicOptions={topicOptions}
           deliveryTypeOptions={deliveryTypeOptions}
+          saveable={saveable}
+          viewerIsGuest={viewerIsGuest}
+          savedPractitionerIds={savedPractitionerIds}
         />
       </ContentContainer>
     </main>

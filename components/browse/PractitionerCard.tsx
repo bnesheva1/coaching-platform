@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Avatar } from "@/components/ui/Avatar";
+import { SaveButton } from "@/components/practitioners/SaveButton";
 
 export type PractitionerCardData = {
   id: string;
@@ -37,10 +38,29 @@ const AVATAR_SIZE = 138; // Card 2a spec — a fixed decorative dimension, not a
 // One shared card for the whole Browse grid — no per-caller markup
 // variants, so every result renders identically regardless of which
 // filter/sort state produced it.
-export function PractitionerCard({ practitioner }: { practitioner: PractitionerCardData }) {
+export function PractitionerCard({
+  practitioner,
+  // Save affordance — rendered only when the viewer could save (a client, or a
+  // guest who'll be routed to log in). Omitted for a practitioner-role viewer.
+  saveable = false,
+  saved = false,
+  viewerIsGuest = false,
+  onToggleSave,
+  // A saved practitioner who has become unbookable/suspended still shows in the
+  // list, but with no booking action (defaults to bookable for the browse grid).
+  bookable = true,
+}: {
+  practitioner: PractitionerCardData;
+  saveable?: boolean;
+  saved?: boolean;
+  viewerIsGuest?: boolean;
+  onToggleSave?: (saved: boolean) => void;
+  bookable?: boolean;
+}) {
   const t = useTranslations("Reviews");
   const tBrowse = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
+  const tSaved = useTranslations("Saved");
   const profileHref = `/p/${practitioner.username}`;
 
   // A plain <div>, not a Link, at the top level — "Book a session" below
@@ -65,6 +85,17 @@ export function PractitionerCard({ practitioner }: { practitioner: PractitionerC
         padding: "var(--card-padding-feature)",
       }}
     >
+      {saveable && (
+        <SaveButton
+          practitionerId={practitioner.id}
+          username={practitioner.username}
+          initialSaved={saved}
+          viewerIsGuest={viewerIsGuest}
+          variant="compact"
+          onToggle={onToggleSave}
+        />
+      )}
+
       {practitioner.averageRating !== null && (
         // Omitted entirely when there's no rating yet (new practitioners)
         // — never a placeholder/zero, which would read as untrustworthy.
@@ -164,19 +195,34 @@ export function PractitionerCard({ practitioner }: { practitioner: PractitionerC
         )}
       </Link>
 
-      <Link
-        href={profileHref}
-        style={{
-          marginTop: "auto",
-          paddingTop: "var(--space-2)",
-          font: "var(--text-body-xs)",
-          fontWeight: 600,
-          color: "var(--accent)",
-          textDecoration: "underline",
-        }}
-      >
-        {tBrowse("bookSessionCta")}
-      </Link>
+      {bookable ? (
+        <Link
+          href={profileHref}
+          style={{
+            marginTop: "auto",
+            paddingTop: "var(--space-2)",
+            font: "var(--text-body-xs)",
+            fontWeight: 600,
+            color: "var(--accent)",
+            textDecoration: "underline",
+          }}
+        >
+          {tBrowse("bookSessionCta")}
+        </Link>
+      ) : (
+        // Saved-but-unbookable: keep the card (the client chose to keep them) but
+        // offer no booking action that would lead nowhere.
+        <span
+          style={{
+            marginTop: "auto",
+            paddingTop: "var(--space-2)",
+            font: "var(--text-body-xs)",
+            color: "var(--text-tertiary)",
+          }}
+        >
+          {tSaved("notBookable")}
+        </span>
+      )}
     </div>
   );
 }

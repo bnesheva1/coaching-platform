@@ -17,7 +17,11 @@ export function LoginForm() {
   // password change — this page doesn't distinguish "arrived here
   // fresh" from "just reset a password," so the confirmation lives in
   // the query string rather than component state.
-  const justResetPassword = useSearchParams().get("passwordReset") === "1";
+  const searchParams = useSearchParams();
+  const justResetPassword = searchParams.get("passwordReset") === "1";
+  // Where to return after login (e.g. the practitioner a guest was saving). The
+  // server re-validates this is a safe same-site path before honouring it.
+  const next = searchParams.get("next") ?? "";
 
   return (
     <main style={{ padding: "var(--space-16) 0" }}>
@@ -33,6 +37,7 @@ export function LoginForm() {
             action={formAction}
             style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}
           >
+            {next && <input type="hidden" name="next" value={next} />}
             <label>
               {t("emailLabel")}
               <input name="email" type="email" required className="form-field" style={{ width: "100%" }} />

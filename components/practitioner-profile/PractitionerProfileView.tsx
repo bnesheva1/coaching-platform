@@ -7,6 +7,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
 import { SlotPicker } from "@/components/booking/SlotPicker";
 import { ImmediateBookButton } from "@/components/immediate/ImmediateBookButton";
+import { SaveButton } from "@/components/practitioners/SaveButton";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
@@ -117,6 +118,9 @@ export type PractitionerProfileViewProps = {
   // fits their gap (drives the „Резервирай сега" action on that service card).
   availableNow?: boolean;
   immediateFitByServiceId?: Record<string, boolean>;
+  // Whether the viewing client has already saved this practitioner (initial state
+  // for the save toggle). Always false for a guest / non-client.
+  viewerHasSaved?: boolean;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -157,6 +161,7 @@ export function PractitionerProfileView({
   nameUsage,
   availableNow = false,
   immediateFitByServiceId,
+  viewerHasSaved = false,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
@@ -185,11 +190,6 @@ export function PractitionerProfileView({
   // scroll only after the newly-expanded timetable has actually rendered.
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
   const [reviewsExpanded, setReviewsExpanded] = useState(false);
-  // Placeholder only — local, optimistic, not persisted anywhere yet.
-  // No auth gate either: there's no real save/favourite backend to gate
-  // access to. Wire this up to a real table + server action when the
-  // feature itself is actually built.
-  const [isSaved, setIsSaved] = useState(false);
 
   // Scrolls the services section into view on mount when the page was
   // loaded with a specific service in mind (i.e. right after a bookSlot
@@ -492,14 +492,20 @@ export function PractitionerProfileView({
                 </div>
               )}
 
-              <div>
-                <Button variant="surface" size="lg" onClick={() => setIsSaved((v) => !v)}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <IconHeart filled={isSaved} />
-                    {tPublic("savePractitioner")}
-                  </span>
-                </Button>
-              </div>
+              {/* Save control — shown to a client viewer or a guest (who is
+                  routed to log in on click), never the owner or a practitioner
+                  viewer. */}
+              {!isOwnProfile && viewerRole !== "practitioner" && (
+                <div>
+                  <SaveButton
+                    practitionerId={practitionerId}
+                    username={username ?? ""}
+                    initialSaved={viewerHasSaved}
+                    viewerIsGuest={viewerRole === null}
+                    variant="full"
+                  />
+                </div>
+              )}
               </>
             )}
           </div>
@@ -920,14 +926,6 @@ function IconCalendar({ size = 17, color = "currentColor" }: { size?: number; co
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M8 3v4M16 3v4M3 10h18" />
-    </svg>
-  );
-}
-
-function IconHeart({ size = 15, filled = false }: { size?: number; filled?: boolean }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "var(--accent)" : "none"} stroke="var(--accent)" strokeWidth="2" aria-hidden="true" style={{ flex: "none" }}>
-      <path d="M20.8 8.6a5 5 0 0 0-8.8-3 5 5 0 0 0-8.8 3c0 5 8.8 10.4 8.8 10.4s8.8-5.4 8.8-10.4z" />
     </svg>
   );
 }

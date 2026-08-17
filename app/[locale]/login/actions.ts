@@ -46,6 +46,19 @@ export async function login(
     .single();
 
   const locale = await getLocale();
+
+  // Return-to support (e.g. a guest who clicked "save" on a profile): honour a
+  // `next` path ONLY when it's a same-site relative path — must start with a
+  // single "/" (rejecting "//"/protocol-relative and backslash tricks) so it
+  // can't become an open redirect. The locale prefix is added by redirect().
+  const rawNext = formData.get("next");
+  const next = typeof rawNext === "string" ? rawNext : "";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : null;
+  if (safeNext) {
+    redirect({ href: safeNext, locale });
+    return null;
+  }
+
   redirect({
     href:
       profile?.role === "admin"
