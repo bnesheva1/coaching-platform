@@ -1,11 +1,20 @@
 import { getStripeClient } from "./client";
 import type { BookingPaymentRequest } from "../types";
 
-// A setting, not a secret — fine as a plain constant (matches this
-// codebase's convention for business-logic knobs like MAX_BIO_LENGTH,
-// not something that needs env-var-level configurability). Change this
-// one line to change the platform's cut everywhere at once.
-export const COMMISSION_RATE = 0.15;
+// The platform's cut, per DEPLOYMENT — a single-practitioner brand sets
+// COMMISSION_RATE=0 (the practitioner keeps 100%, the platform's revenue is a
+// subscription rather than a cut), while the marketplace keeps the 0.15 default.
+// Deployment-scope, not per-practitioner: read once at module load, same for
+// every practitioner in this deployment. A malformed/negative value falls back
+// to the default rather than silently charging a nonsense fee.
+function resolveCommissionRate(): number {
+  const raw = process.env.COMMISSION_RATE;
+  if (raw === undefined || raw.trim() === "") return 0.15;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0.15;
+}
+
+export const COMMISSION_RATE = resolveCommissionRate();
 
 export function commissionCentsFor(priceCents: number): number {
   return Math.round(priceCents * COMMISSION_RATE);
@@ -53,7 +62,11 @@ export async function createBookingCheckoutSession(
       },
     ],
     payment_intent_data: {
-      application_fee_amount: commissionCents,
+      // Omit application_fee_amount entirely at a zero rate rather than passing
+      // 0 — Stripe has historically rejected an explicit 0, and omission is the
+      // idiomatic zero-fee destination charge (the full amount transfers to the
+      // connected account, the platform keeps nothing).
+      ...(commissionCents > 0 ? { application_fee_amount: commissionCents } : {}),
       transfer_data: { destination: connectedAccountId },
     },
     metadata: {
@@ -109,7 +122,8 @@ export async function createImmediateCheckoutSession(
       },
     ],
     payment_intent_data: {
-      application_fee_amount: commissionCents,
+      // Same zero-fee handling as the scheduled path — omit rather than pass 0.
+      ...(commissionCents > 0 ? { application_fee_amount: commissionCents } : {}),
       transfer_data: { destination: connectedAccountId },
     },
     metadata: {

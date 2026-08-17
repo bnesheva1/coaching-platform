@@ -190,19 +190,22 @@ async function refundUnconfirmablePayment(
 ): Promise<void> {
   const stripe = getStripeClient();
   const supabase = createServiceRoleClient();
+  // Zero at a zero commission rate — the charge carried no application fee, so
+  // there's nothing to reverse (and nothing but €0 to record).
+  const feeCents = commissionCentsFor(amountCents);
 
   try {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reverse_transfer: true,
-      refund_application_fee: true,
+      refund_application_fee: feeCents > 0,
     });
 
     const { error } = await supabase.from("payments").insert({
       booking_id: null,
       stripe_checkout_session_id: session.id,
       amount_cents: amountCents,
-      commission_cents: commissionCentsFor(amountCents),
+      commission_cents: feeCents,
       currency: (session.currency ?? "eur").toUpperCase(),
       status: "refunded",
       provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: failureReason },
@@ -243,19 +246,20 @@ async function refundLateImmediatePayment(
 ): Promise<void> {
   const stripe = getStripeClient();
   const supabase = createServiceRoleClient();
+  const feeCents = commissionCentsFor(amountCents);
 
   try {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reverse_transfer: true,
-      refund_application_fee: true,
+      refund_application_fee: feeCents > 0,
     });
 
     const { error } = await supabase.from("payments").insert({
       booking_id: null,
       stripe_checkout_session_id: session.id,
       amount_cents: amountCents,
-      commission_cents: commissionCentsFor(amountCents),
+      commission_cents: feeCents,
       currency: (session.currency ?? "eur").toUpperCase(),
       status: "refunded",
       provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: "immediate_window_lapsed" },
