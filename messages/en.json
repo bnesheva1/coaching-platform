@@ -1131,6 +1131,14 @@
     "immediateUnavailableHeading": "Not available right now",
     "immediateUnavailableBody": "The session couldn't be completed. If you were charged, it will be refunded.",
     "backToProfile": "Back to the profile",
-    "takingLonger": "Still setting things up…"
+    "takingLonger": "Still setting things up…",
+    "blockTitle": "Can't go available right now",
+    "blockDismiss": "Got it",
+    "block_no_services": "You don't have any active services.",
+    "block_no_services_cta": "Add a service",
+    "block_in_session": "You're in a session right now.",
+    "block_blocked": "This period is blocked in your schedule.",
+    "block_next_too_soon": "Your shortest service is {minutes} min, and your next session starts in {startsIn} min.",
+    "block_next_too_soon_free": "You'll be able to go available at {time}."
   }
 }

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { isEnabled } from "@/lib/flags";
-import { computeImmediateFit } from "@/lib/immediate/fit";
+import { computeImmediateAvailability } from "@/lib/immediate/fit";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
@@ -186,13 +186,15 @@ export default async function PublicProfilePage({
   let availableNow = false;
   let immediateFitByServiceId: Record<string, boolean> = {};
   if (immediateOn) {
-    const { data: avail } = await supabase.rpc("is_practitioner_available_now", { target: practitionerProfile.id });
-    availableNow = !!avail;
-    if (availableNow) {
-      const fits = await Promise.all(
-        (services ?? []).map(async (s) => [s.id, (await computeImmediateFit(practitionerProfile.id, s.duration_minutes)).fits] as const),
+    const { data: present } = await supabase.rpc("is_practitioner_available_now", { target: practitionerProfile.id });
+    if (present) {
+      // Bookability, not just presence — the marker and the per-service book-now
+      // both gate on a service actually fitting an immediate session right now.
+      const avail = await computeImmediateAvailability(practitionerProfile.id);
+      immediateFitByServiceId = Object.fromEntries(
+        (services ?? []).map((s) => [s.id, avail.bookableServiceIds.includes(s.id)]),
       );
-      immediateFitByServiceId = Object.fromEntries(fits);
+      availableNow = avail.bookableServiceIds.length > 0;
     }
   }
 

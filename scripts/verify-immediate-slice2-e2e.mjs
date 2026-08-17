@@ -148,16 +148,19 @@ async function setupPractitioner(prac, billing, uname) {
     check("commission confirm → availability switched OFF", (await isAvailable(pracComm.id)) === false);
 
     console.log("\n=== fit re-checked at confirm (before the billing branch) ===");
-    // A scheduled booking now overlaps the immediate window → confirm must
-    // decline, for either billing model (the fit gate runs before the split).
-    // Placed ~25min out: overlaps the fit window (now+3..now+38) but isn't
-    // imminent enough to raise the practitioner's "session starts soon" prompt.
-    await present(pracComm.id, true);
-    await db.from("bookings").insert({ practitioner_id: pracComm.id, client_id: client.id, service_id: svcComm, start_utc: iso(25 * 60000), end_utc: iso(55 * 60000), delivery_type: "online", service_name: "sched", price_cents: 5000, currency: "EUR" });
+    // The confirm-time fit re-check is now a server guard behind the toggle's
+    // auto-off: a practitioner is bookable when the request shows, THEN a conflict
+    // appears, and confirm (clicked before the next auto-off tick) must re-check
+    // and decline. Clean pracComm's prior hold/requests so it's freshly bookable.
+    await db.from("immediate_holds").delete().eq("practitioner_id", pracComm.id);
+    await db.from("immediate_requests").delete().eq("practitioner_id", pracComm.id);
     const pFit = await insertPending(client.id, pracComm.id, svcComm);
     await loginAs(pracComm.email);
-    await makeAvailableAndOpen(pracComm.id);
+    await makeAvailableAndOpen(pracComm.id); // no conflict yet → stays available, request shows
     await page.getByRole("button", { name: "Потвърди" }).first().waitFor({ timeout: 12000 });
+    // A scheduled session now overlaps the immediate window; confirm immediately,
+    // before the next 10s tick would auto-off availability.
+    await db.from("bookings").insert({ practitioner_id: pracComm.id, client_id: client.id, service_id: svcComm, start_utc: iso(2 * 60000), end_utc: iso(50 * 60000), delivery_type: "online", service_name: "sched", price_cents: 5000, currency: "EUR" });
     await page.getByRole("button", { name: "Потвърди" }).first().click();
     await page.waitForTimeout(2500);
     check("confirm that no longer fits → declined, NOT booked", (await reqStatus(pFit)) === "declined", await reqStatus(pFit));

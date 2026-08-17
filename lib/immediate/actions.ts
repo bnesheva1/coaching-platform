@@ -8,8 +8,10 @@ import { getConnectedAccountId } from "@/lib/payments";
 import { createImmediateCheckoutSession } from "@/lib/payments/stripe/checkout";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { IMMEDIATE_CONFIG } from "./config";
-import { computeImmediateFit } from "./fit";
+import { computeImmediateFit, computeImmediateAvailability, type ImmediateBlockReason } from "./fit";
 import { createImmediateBooking, releaseAndFree } from "./booking";
+
+export type { ImmediateBlockReason } from "./fit";
 
 // Every action opens with this: the feature doesn't exist while the flag is off
 // (notFound, not a hidden button), and each is scoped to the right role.
@@ -27,12 +29,23 @@ const nowIso = () => new Date().toISOString();
 
 // ── Presence (practitioner) ─────────────────────────────────────────────────
 
+export type SetAvailableResult = { ok: true } | { ok: false; reason: ImmediateBlockReason };
+
 // Turn "available now" on/off. Notification permission is enforced client-side
 // before this is called (the server can't see it); enabling stamps a fresh
-// heartbeat so the practitioner is immediately live.
-export async function setAvailableNow(available: boolean): Promise<{ ok: true }> {
+// heartbeat so the practitioner is immediately live. Enabling is GATED on
+// something actually being bookable right now (§2) — a practitioner must not be
+// able to declare themselves available and then silently deliver nothing; the
+// caller shows the returned reason and stays off.
+export async function setAvailableNow(available: boolean): Promise<SetAvailableResult> {
   const user = await gate("practitioner");
   const svc = createServiceRoleClient();
+  if (available) {
+    const avail = await computeImmediateAvailability(user.id);
+    if (avail.bookableServiceIds.length === 0) {
+      return { ok: false, reason: avail.reason ?? { kind: "blocked" } };
+    }
+  }
   await svc.from("immediate_presence").upsert(
     { practitioner_id: user.id, available_now: available, last_heartbeat_at: available ? nowIso() : null, updated_at: nowIso() },
     { onConflict: "practitioner_id" },
@@ -46,12 +59,23 @@ export type InboxRequest = { id: string; clientName: string; serviceName: string
 // the live pending inbox. Lazily lapses anything expired so the inbox and the
 // one-live-request index stay honest without a sweep. Returns available:false if
 // they've been turned off (the widget then stops ticking).
-export async function presenceTick(): Promise<{ available: boolean; requests: InboxRequest[] }> {
+export async function presenceTick(): Promise<{ available: boolean; requests: InboxRequest[]; staleReason?: ImmediateBlockReason }> {
   const user = await gate("practitioner");
   const svc = createServiceRoleClient();
 
   const { data: presence } = await svc.from("immediate_presence").select("available_now").eq("practitioner_id", user.id).maybeSingle();
   if (!presence?.available_now) return { available: false, requests: [] };
+
+  // Staleness (§4): availability can lapse while they're already on — e.g. a
+  // scheduled session drew close enough that even the shortest service no longer
+  // fits. Auto-switch off (keeping presence honest, so the client-facing marker
+  // everywhere stays truthful) and tell them why, rather than leaving them
+  // believing they're available when they aren't.
+  const avail = await computeImmediateAvailability(user.id);
+  if (avail.bookableServiceIds.length === 0) {
+    await svc.from("immediate_presence").update({ available_now: false, last_heartbeat_at: null, updated_at: nowIso() }).eq("practitioner_id", user.id);
+    return { available: false, requests: [], staleReason: avail.reason ?? undefined };
+  }
 
   await svc.from("immediate_presence").update({ last_heartbeat_at: nowIso() }).eq("practitioner_id", user.id);
   await svc.from("immediate_requests").update({ status: "lapsed" }).eq("practitioner_id", user.id).eq("status", "pending").lt("expires_at", nowIso());
