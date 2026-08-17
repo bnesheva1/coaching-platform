@@ -330,6 +330,30 @@ export async function sendCancellationNoticeEmail(
   return result.success;
 }
 
+// Tells a practitioner an immediate-booking client didn't complete payment in
+// the window — they were waiting, and they're free again. Reuses the
+// cancellation template (heading + body); no new email surface.
+export async function sendImmediatePaymentFailedEmail(requestId: string): Promise<boolean> {
+  const supabase = createServiceRoleClient();
+  const { data: req } = await supabase.from("immediate_requests").select("practitioner_id, service_id").eq("id", requestId).single();
+  if (!req) return false;
+  const { data: prof } = await supabase.from("profiles").select("email, locale, display_name").eq("id", req.practitioner_id as string).single();
+  if (!prof?.email) return false;
+  const { data: service } = await supabase.from("services").select("name").eq("id", req.service_id as string).single();
+  const locale = normalizeLocale(prof.locale as string);
+  const t = translator(locale);
+  const result = await provider.send({
+    to: prof.email as string,
+    subject: t("immediatePaymentFailedSubject"),
+    react: CancellationNoticeEmail({
+      heading: t("immediatePaymentFailedHeading"),
+      body: t("immediatePaymentFailedBody", { service: (service?.name as string) ?? "—" }),
+      footer: footerText(locale),
+    }),
+  });
+  return result.success;
+}
+
 // One summary to the practitioner after a bulk cancel-and-refund: what was
 // cancelled on their behalf, and why. Reads their own contact/locale directly
 // from profiles (service role). Sent exactly once per operation by the executor.

@@ -207,6 +207,7 @@ export default async function ClientUpcomingPage({
       topicLabels: p.topics.map((key) => topicLabelByKey.get(key) ?? key),
       averageRating: p.averageRating,
       reviewCount: p.reviewCount,
+      availableNow: p.availableNow,
     }));
 
   // State 2 empty state — they have history but nothing upcoming. Not

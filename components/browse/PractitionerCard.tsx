@@ -3,6 +3,7 @@
 import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { Avatar } from "@/components/ui/Avatar";
 
 export type PractitionerCardData = {
   id: string;
@@ -22,6 +23,10 @@ export type PractitionerCardData = {
   // rather than a placeholder, same as bio/avatar's existing null
   // handling on this card.
   location?: string | null;
+  // Whether this practitioner is available for an immediate session right now
+  // — drives the avatar's availability ring + label. Undefined/false when the
+  // immediate feature is off or they're not present; renders a plain avatar.
+  availableNow?: boolean;
 };
 
 const AVATAR_SIZE = 138; // Card 2a spec — a fixed decorative dimension, not a spacing value
@@ -35,7 +40,7 @@ const AVATAR_SIZE = 138; // Card 2a spec — a fixed decorative dimension, not a
 export function PractitionerCard({ practitioner }: { practitioner: PractitionerCardData }) {
   const t = useTranslations("Reviews");
   const tBrowse = useTranslations("Browse");
-  const initial = (practitioner.displayName || practitioner.username).charAt(0).toUpperCase();
+  const tImmediate = useTranslations("Immediate");
   const profileHref = `/p/${practitioner.username}`;
 
   // A plain <div>, not a Link, at the top level — "Book a session" below
@@ -86,48 +91,21 @@ export function PractitionerCard({ practitioner }: { practitioner: PractitionerC
         href={profileHref}
         style={{ color: "inherit", textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-3)" }}
       >
-        {practitioner.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={practitioner.avatarUrl}
-            alt=""
-            style={{
-              width: AVATAR_SIZE,
-              height: AVATAR_SIZE,
-              borderRadius: "50%",
-              overflow: "hidden",
-              objectFit: "cover",
-              // A softer, tighter lift than the card's own shadow —
-              // an element's own overflow:hidden (for the circular clip)
-              // doesn't clip its own box-shadow, so both can live on this
-              // one <img>.
-              boxShadow: "0 4px 14px hsl(var(--shadow-color) / .14)",
-            }}
-          />
-        ) : (
-          // Recessive, quiet treatment — a photo is the norm, so the
-          // fallback is deliberately muted rather than competing with
-          // photo cards in the same grid row.
-          <div
-            aria-hidden="true"
-            style={{
-              width: AVATAR_SIZE,
-              height: AVATAR_SIZE,
-              borderRadius: "50%",
-              background: "linear-gradient(160deg, var(--bg-sunken), var(--bg-surface-2))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--accent-subtle-text)",
-              opacity: 0.7,
-              // One-off, single-use initial-letter size — not a
-              // systemic role worth its own token.
-              font: "600 2.8125rem var(--font-display)",
-            }}
-          >
-            {initial}
-          </div>
-        )}
+        <Avatar
+          src={practitioner.avatarUrl}
+          name={practitioner.displayName || practitioner.username}
+          size={AVATAR_SIZE}
+          availableNow={practitioner.availableNow}
+          availableLabel={tImmediate("availableNowLabel")}
+          // A softer, tighter lift than the card's own shadow, matching the
+          // card's original avatar treatment; the gradient/muted fallback keeps
+          // photo cards from being out-competed by initials in the same row.
+          imageStyle={{ boxShadow: "0 4px 14px hsl(var(--shadow-color) / .14)" }}
+          fallbackBackground="linear-gradient(160deg, var(--bg-sunken), var(--bg-surface-2))"
+          fallbackColor="var(--accent-subtle-text)"
+          fallbackOpacity={0.7}
+          fallbackFont="600 2.8125rem var(--font-display)"
+        />
 
         <div>
           <div style={{ font: "var(--text-heading-sm)", fontWeight: 700, color: "var(--text-primary)" }}>

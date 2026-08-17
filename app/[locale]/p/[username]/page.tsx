@@ -5,6 +5,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
+import { isEnabled } from "@/lib/flags";
+import { computeImmediateFit } from "@/lib/immediate/fit";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
@@ -176,6 +178,24 @@ export default async function PublicProfilePage({
     ),
   ) as Record<string, { startUtc: string }[]>;
 
+  // Immediate booking discovery (behind the flag): is this practitioner
+  // available right now, and — if so — which of their services currently fit an
+  // immediate session's gap. Computed at request time; staleness across the
+  // page's lifetime is acceptable (a lapsed request costs the client nothing).
+  const immediateOn = await isEnabled("immediateBooking");
+  let availableNow = false;
+  let immediateFitByServiceId: Record<string, boolean> = {};
+  if (immediateOn) {
+    const { data: avail } = await supabase.rpc("is_practitioner_available_now", { target: practitionerProfile.id });
+    availableNow = !!avail;
+    if (availableNow) {
+      const fits = await Promise.all(
+        (services ?? []).map(async (s) => [s.id, (await computeImmediateFit(practitionerProfile.id, s.duration_minutes)).fits] as const),
+      );
+      immediateFitByServiceId = Object.fromEntries(fits);
+    }
+  }
+
   const justBooked = resolvedSearchParams.booked === "1";
   const bookingErrorCode =
     typeof resolvedSearchParams.bookingError === "string" ? resolvedSearchParams.bookingError : null;
@@ -322,6 +342,8 @@ export default async function PublicProfilePage({
           bookingErrorCode={bookingErrorCode}
           paymentStatus={paymentStatus}
           initialExpandedServiceId={initialExpandedServiceId}
+          availableNow={availableNow}
+          immediateFitByServiceId={immediateFitByServiceId}
         />
         </div>
       </ContentContainer>

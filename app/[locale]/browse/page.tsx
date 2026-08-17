@@ -68,6 +68,7 @@ export default async function BrowsePage({
     createdAt: p.createdAt,
     deliveryTypeKeys: p.deliveryTypes,
     location: p.location,
+    availableNow: p.availableNow,
   }));
 
   const specialtyOptions = specialtiesData.map((s) => ({

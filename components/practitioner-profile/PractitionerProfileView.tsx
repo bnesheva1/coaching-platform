@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
 import { SlotPicker } from "@/components/booking/SlotPicker";
+import { ImmediateBookButton } from "@/components/immediate/ImmediateBookButton";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
@@ -110,6 +111,12 @@ export type PractitionerProfileViewProps = {
   // Owner-only: the practitioner's remaining name-change budget, shown in
   // the identity editor. Undefined on the public view (never edits).
   nameUsage?: RenameUsage;
+  // Immediate booking (all undefined/false when the feature is off): whether
+  // this practitioner is available right now (drives the header ring + label),
+  // and, per service id, whether an immediate session of that duration currently
+  // fits their gap (drives the „Резервирай сега" action on that service card).
+  availableNow?: boolean;
+  immediateFitByServiceId?: Record<string, boolean>;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -148,10 +155,13 @@ export function PractitionerProfileView({
   initialExpandedServiceId,
   ownerOnlyContent,
   nameUsage,
+  availableNow = false,
+  immediateFitByServiceId,
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
   const tReviews = useTranslations("Reviews");
+  const tImmediate = useTranslations("Immediate");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -370,6 +380,15 @@ export function PractitionerProfileView({
                     {displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
+                {availableNow && !isEditing && (
+                  // Availability ring — sits just outside the portrait's own
+                  // page-coloured border, same indicator the Avatar component
+                  // carries on the browse/dashboard surfaces.
+                  <span
+                    aria-hidden="true"
+                    style={{ position: "absolute", inset: -5, borderRadius: "50%", border: "3px solid var(--accent)", pointerEvents: "none" }}
+                  />
+                )}
                 {isEditing && (
                   <div style={{ position: "absolute", bottom: 0, right: 0 }}>
                     <EditableImage kind="avatar" label={t("editPhoto")} removeLabel={t("removePhoto")} hasImage={!!avatarUrl}>
@@ -389,6 +408,26 @@ export function PractitionerProfileView({
                   {specialties.length > 0 && (
                     <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
                       {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}
+                    </span>
+                  )}
+                  {availableNow && (
+                    <span
+                      style={{
+                        marginTop: 4,
+                        alignSelf: "flex-start",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "var(--accent)",
+                        color: "var(--text-on-accent)",
+                        font: "var(--text-micro)",
+                        fontWeight: 600,
+                        padding: "var(--badge-padding-sm)",
+                        borderRadius: "var(--radius-pill)",
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--text-on-accent)" }} />
+                      {tImmediate("availableNowLabel")}
                     </span>
                   )}
                 </div>
@@ -540,6 +579,48 @@ export function PractitionerProfileView({
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {services.map((service) => {
                 const isExpanded = expandedServiceIds.has(service.id);
+                // The immediate „Резервирай сега" path is offered only to a
+                // signed-in client, when the practitioner is available right now
+                // AND this service's duration currently fits their gap. Everyone
+                // else (guest, practitioner-viewer, not-available, doesn't-fit)
+                // gets the ordinary timetable — no disabled ghost button.
+                const canBookNow = availableNow && viewerRole === "client" && (immediateFitByServiceId?.[service.id] ?? false);
+                const expandThis = () => {
+                  setExpandedServiceIds((prev) => new Set(prev).add(service.id));
+                  setPendingScrollId(service.id);
+                };
+                const slotPanel = (
+                  <div id={`availability-${service.id}`} style={{ marginTop: 20 }}>
+                    <SlotPicker
+                      slots={slotsByServiceId[service.id] ?? []}
+                      ownBookings={ownBookings}
+                      practitionerId={practitionerId}
+                      serviceId={service.id}
+                      username={username ?? ""}
+                      viewerRole={viewerRole}
+                      isOwnProfile={isOwnProfile}
+                      windowDays={bookingWindowDays}
+                      viewerSavedTimezone={viewerSavedTimezone}
+                      headerAction={
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedServiceIds((prev) => {
+                              const next = new Set(prev);
+                              next.delete(service.id);
+                              return next;
+                            })
+                          }
+                          aria-expanded="true"
+                          aria-controls={`slotpicker-${service.id}`}
+                          style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                          {t("hideDetails")} ⌃
+                        </button>
+                      }
+                    />
+                  </div>
+                );
                 return (
                   <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)", padding: 20 }}>
                     <div className={rowStyles.row} style={{ gap: 20 }}>
@@ -571,37 +652,17 @@ export function PractitionerProfileView({
                       </div>
                     </div>
 
-                    {isExpanded ? (
-                      <div id={`availability-${service.id}`} style={{ marginTop: 20 }}>
-                        <SlotPicker
-                          slots={slotsByServiceId[service.id] ?? []}
-                          ownBookings={ownBookings}
-                          practitionerId={practitionerId}
-                          serviceId={service.id}
-                          username={username ?? ""}
-                          viewerRole={viewerRole}
-                          isOwnProfile={isOwnProfile}
-                          windowDays={bookingWindowDays}
-                          viewerSavedTimezone={viewerSavedTimezone}
-                          headerAction={
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedServiceIds((prev) => {
-                                  const next = new Set(prev);
-                                  next.delete(service.id);
-                                  return next;
-                                })
-                              }
-                              aria-expanded="true"
-                              aria-controls={`slotpicker-${service.id}`}
-                              style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                            >
-                              {t("hideDetails")} ⌃
-                            </button>
-                          }
-                        />
+                    {canBookNow ? (
+                      // Available + fits: the two-action set. „Резервирай сега"
+                      // (gold primary) stays put even once the timetable is
+                      // expanded — „Виж други часове" just reveals the grid below
+                      // it (the widget owns both buttons; see ImmediateBookButton).
+                      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                        <ImmediateBookButton practitionerId={practitionerId} serviceId={service.id} onSeeOtherTimes={expandThis} />
+                        {isExpanded && slotPanel}
                       </div>
+                    ) : isExpanded ? (
+                      slotPanel
                     ) : (
                       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
                         <button

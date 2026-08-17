@@ -4,8 +4,12 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { isEnabled } from "@/lib/flags";
+import { getConnectedAccountId } from "@/lib/payments";
+import { createImmediateCheckoutSession } from "@/lib/payments/stripe/checkout";
+import { siteOrigin } from "@/lib/siteOrigin";
 import { IMMEDIATE_CONFIG } from "./config";
 import { computeImmediateFit } from "./fit";
+import { createImmediateBooking, releaseAndFree } from "./booking";
 
 // Every action opens with this: the feature doesn't exist while the flag is off
 // (notFound, not a hidden button), and each is scoped to the right role.
@@ -114,17 +118,21 @@ export async function createImmediateRequest(practitionerId: string, serviceId: 
   return { ok: true, requestId: inserted.id as string, expiresAt };
 }
 
-export type ConfirmResult = { ok: true } | { ok: false; reason: "not_pending" | "lapsed" | "no_fit" };
+export type ConfirmResult = { ok: true; needsPayment: boolean } | { ok: false; reason: "not_pending" | "lapsed" | "no_fit" };
 
-// The practitioner confirms — proving genuine presence. Re-checks the window and
-// the fit against the real projected start (a service that fitted at request
-// time may not now), then: confirms, switches availability OFF (they're in a
-// session), and cleanly declines every other pending request via 'superseded'.
+// The practitioner confirms — proving genuine presence. The duration-fit is
+// RE-CHECKED here for BOTH paths (never in the payment flow that software_
+// provider bookings bypass), against the real projected start. Then, guarded on
+// still-pending: availability OFF, other pendings superseded, and —
+//   commission:        status → confirmed, a payment-window hold is placed; the
+//                      client then pays (startImmediatePayment).
+//   software_provider: no payment gate, so confirm IS the booking — the off-grid
+//                      booking is created immediately, status → booked.
 export async function confirmImmediateRequest(requestId: string): Promise<ConfirmResult> {
   const user = await gate("practitioner");
   const svc = createServiceRoleClient();
 
-  const { data: req } = await svc.from("immediate_requests").select("practitioner_id, service_id, status, expires_at").eq("id", requestId).single();
+  const { data: req } = await svc.from("immediate_requests").select("client_id, practitioner_id, service_id, status, expires_at").eq("id", requestId).single();
   if (!req || req.practitioner_id !== user.id) notFound();
   if (req.status !== "pending") return { ok: false, reason: "not_pending" };
   if (new Date(req.expires_at as string) <= new Date()) {
@@ -139,18 +147,49 @@ export async function confirmImmediateRequest(requestId: string): Promise<Confir
     return { ok: false, reason: "no_fit" };
   }
 
-  // Guarded on still-pending so a racing lapse/decline can't be overwritten.
-  const { data: confirmed } = await svc
+  const { data: pp } = await svc.from("practitioner_profiles").select("billing_model").eq("id", user.id).single();
+  const commission = pp?.billing_model === "commission";
+  const reqRow = { client_id: req.client_id as string, practitioner_id: req.practitioner_id as string, service_id: req.service_id as string, request_id: requestId };
+
+  if (commission) {
+    // Won the race → confirmed (awaiting payment); place the hold.
+    const { data: confirmed } = await svc
+      .from("immediate_requests")
+      .update({ status: "confirmed", responded_at: nowIso(), projected_start_at: fit.projectedStart, projected_end_at: fit.projectedEnd })
+      .eq("id", requestId)
+      .eq("status", "pending")
+      .select("id");
+    if (!confirmed || confirmed.length === 0) return { ok: false, reason: "not_pending" };
+    await svc.from("immediate_holds").insert({
+      practitioner_id: user.id,
+      request_id: requestId,
+      start_utc: fit.projectedStart,
+      end_utc: fit.projectedEnd,
+      expires_at: new Date(Date.now() + IMMEDIATE_CONFIG.PAYMENT_WINDOW_MINUTES * 60_000).toISOString(),
+    });
+    await afterAccept(svc, user.id, requestId);
+    return { ok: true, needsPayment: true };
+  }
+
+  // software_provider — book immediately. Claim the request first (guard), THEN
+  // create the booking, so a raced request never produces an orphan booking.
+  const { data: claimed } = await svc
     .from("immediate_requests")
-    .update({ status: "confirmed", responded_at: nowIso(), projected_start_at: fit.projectedStart, projected_end_at: fit.projectedEnd })
+    .update({ status: "booked", responded_at: nowIso(), projected_start_at: fit.projectedStart, projected_end_at: fit.projectedEnd })
     .eq("id", requestId)
     .eq("status", "pending")
     .select("id");
-  if (!confirmed || confirmed.length === 0) return { ok: false, reason: "not_pending" };
+  if (!claimed || claimed.length === 0) return { ok: false, reason: "not_pending" };
+  await createImmediateBooking(svc, reqRow, fit.projectedStart, fit.projectedEnd);
+  await afterAccept(svc, user.id, requestId);
+  return { ok: true, needsPayment: false };
+}
 
-  await svc.from("immediate_presence").update({ available_now: false, updated_at: nowIso() }).eq("practitioner_id", user.id);
-  await svc.from("immediate_requests").update({ status: "superseded", responded_at: nowIso() }).eq("practitioner_id", user.id).eq("status", "pending").neq("id", requestId);
-  return { ok: true };
+// Shared post-accept: availability off (they're engaged), and every other
+// pending request to this practitioner cleanly superseded (collision resolved).
+async function afterAccept(svc: ReturnType<typeof createServiceRoleClient>, practitionerId: string, keepRequestId: string) {
+  await svc.from("immediate_presence").update({ available_now: false, updated_at: nowIso() }).eq("practitioner_id", practitionerId);
+  await svc.from("immediate_requests").update({ status: "superseded", responded_at: nowIso() }).eq("practitioner_id", practitionerId).eq("status", "pending").neq("id", keepRequestId);
 }
 
 export async function declineImmediateRequest(requestId: string): Promise<{ ok: boolean }> {
@@ -162,8 +201,10 @@ export async function declineImmediateRequest(requestId: string): Promise<{ ok: 
   return { ok: true };
 }
 
-// The client's bounded status poll: returns the current status, lazily lapsing
-// an expired pending. The caller STOPS polling on any terminal status.
+// The client's bounded status poll: returns the current status, lazily resolving
+// the two time-based transitions (pending→lapsed, confirmed-but-payment-window-
+// elapsed→payment_failed). The caller STOPS polling on any terminal status
+// (booked / declined / lapsed / superseded / payment_failed).
 export async function getImmediateRequestStatus(requestId: string): Promise<{ status: string }> {
   const user = await gate("client");
   const svc = createServiceRoleClient();
@@ -173,6 +214,85 @@ export async function getImmediateRequestStatus(requestId: string): Promise<{ st
   if (status === "pending" && new Date(req.expires_at as string) <= new Date()) {
     await svc.from("immediate_requests").update({ status: "lapsed" }).eq("id", requestId).eq("status", "pending");
     status = "lapsed";
+  } else if (status === "confirmed") {
+    const { data: hold } = await svc.from("immediate_holds").select("expires_at").eq("request_id", requestId).maybeSingle();
+    if (!hold || new Date(hold.expires_at as string) <= new Date()) {
+      await releaseAndFree(svc, requestId);
+      status = "payment_failed";
+    }
   }
   return { status };
+}
+
+// The post-payment (and software_provider book-on-confirm) confirmation page
+// polls this: the booking is created out-of-band by the webhook/confirm, so the
+// page waits for immediate_request_id to point at a real booking. Returns the
+// request status alongside so the page can distinguish "still processing" from a
+// terminal non-booked outcome (payment_failed / lapsed) without a second call.
+export async function getImmediateBooking(
+  requestId: string,
+): Promise<{ status: string; bookingId: string | null; username: string | null }> {
+  const user = await gate("client");
+  const svc = createServiceRoleClient();
+  const { data: req } = await svc.from("immediate_requests").select("status, client_id, practitioner_id").eq("id", requestId).single();
+  if (!req || req.client_id !== user.id) notFound();
+  const [{ data: booking }, { data: pp }] = await Promise.all([
+    svc.from("bookings").select("id").eq("immediate_request_id", requestId).maybeSingle(),
+    svc.from("practitioner_profiles").select("username").eq("id", req.practitioner_id as string).single(),
+  ]);
+  return { status: req.status as string, bookingId: (booking?.id as string) ?? null, username: (pp?.username as string) ?? null };
+}
+
+export type StartPaymentResult = { ok: true; url: string } | { ok: false; reason: "not_confirmed" | "expired" | "practitioner_not_ready" | "error" };
+
+// Commission path: the client starts payment once the practitioner has confirmed
+// (status 'confirmed', hold still live). Reuses the destination-charge checkout
+// with immediate_request_id metadata; the webhook creates the off-grid booking.
+export async function startImmediatePayment(requestId: string, locale: string): Promise<StartPaymentResult> {
+  const user = await gate("client");
+  const svc = createServiceRoleClient();
+  const { data: req } = await svc.from("immediate_requests").select("client_id, practitioner_id, service_id, status").eq("id", requestId).single();
+  if (!req || req.client_id !== user.id) notFound();
+  if (req.status !== "confirmed") return { ok: false, reason: "not_confirmed" };
+  const { data: hold } = await svc.from("immediate_holds").select("expires_at").eq("request_id", requestId).maybeSingle();
+  if (!hold || new Date(hold.expires_at as string) <= new Date()) return { ok: false, reason: "expired" };
+
+  const accountId = await getConnectedAccountId(req.practitioner_id as string);
+  if (!accountId) return { ok: false, reason: "practitioner_not_ready" };
+  const { data: service } = await svc.from("services").select("name, price_cents, currency").eq("id", req.service_id as string).single();
+  if (!service) return { ok: false, reason: "error" };
+
+  const origin = await siteOrigin();
+  const loc = locale === "en" ? "en" : "bg";
+  try {
+    const { url } = await createImmediateCheckoutSession(
+      {
+        practitionerId: req.practitioner_id as string,
+        clientId: user.id,
+        serviceId: req.service_id as string,
+        serviceName: service.name as string,
+        priceCents: service.price_cents as number,
+        currency: service.currency as string,
+        immediateRequestId: requestId,
+        successPath: `${origin}/${loc}/immediate/${requestId}?payment=done`,
+        cancelPath: `${origin}/${loc}/immediate/${requestId}?payment=cancelled`,
+      },
+      accountId,
+    );
+    return { ok: true, url };
+  } catch (e) {
+    console.error("startImmediatePayment: checkout failed", { requestId, error: e });
+    return { ok: false, reason: "error" };
+  }
+}
+
+// The client returned from a cancelled/failed Stripe Checkout — release the hold
+// and free the practitioner immediately rather than waiting out the window.
+export async function cancelImmediatePayment(requestId: string): Promise<{ ok: boolean }> {
+  const user = await gate("client");
+  const svc = createServiceRoleClient();
+  const { data: req } = await svc.from("immediate_requests").select("client_id, status").eq("id", requestId).single();
+  if (!req || req.client_id !== user.id) notFound();
+  if (req.status === "confirmed") await releaseAndFree(svc, requestId);
+  return { ok: true };
 }

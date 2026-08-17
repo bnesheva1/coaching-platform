@@ -3,6 +3,7 @@ import { getSiteName } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { localizedAlternates } from "@/lib/seo";
 import { Hero } from "./Hero";
+import { HomeAvailableNowLine } from "./HomeAvailableNowLine";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -22,6 +23,7 @@ export default function Home() {
   return (
     <div>
       <Hero />
+      <HomeAvailableNowLine />
     </div>
   );
 }

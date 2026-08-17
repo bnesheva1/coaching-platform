@@ -74,3 +74,54 @@ export async function createBookingCheckoutSession(
 
   return { sessionId: session.id, url: session.url };
 }
+
+// The immediate-booking counterpart: same destination charge, but the metadata
+// carries immediate_request_id so the webhook branches to the off-grid booking
+// path (create booking at the payment-clear moment, convert the hold, mark the
+// request booked) instead of the scheduled confirm_paid_booking path.
+export async function createImmediateCheckoutSession(
+  input: {
+    practitionerId: string;
+    clientId: string;
+    serviceId: string;
+    serviceName: string;
+    priceCents: number;
+    currency: string;
+    immediateRequestId: string;
+    successPath: string;
+    cancelPath: string;
+  },
+  connectedAccountId: string,
+): Promise<{ sessionId: string; url: string }> {
+  const stripe = getStripeClient();
+  const commissionCents = commissionCentsFor(input.priceCents);
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: input.currency.toLowerCase(),
+          product_data: { name: input.serviceName },
+          unit_amount: input.priceCents,
+        },
+        quantity: 1,
+      },
+    ],
+    payment_intent_data: {
+      application_fee_amount: commissionCents,
+      transfer_data: { destination: connectedAccountId },
+    },
+    metadata: {
+      immediate_request_id: input.immediateRequestId,
+      practitioner_id: input.practitionerId,
+      client_id: input.clientId,
+      service_id: input.serviceId,
+    },
+    success_url: input.successPath,
+    cancel_url: input.cancelPath,
+  });
+
+  if (!session.url) throw new Error("Stripe Checkout Session created with no url");
+  return { sessionId: session.id, url: session.url };
+}
