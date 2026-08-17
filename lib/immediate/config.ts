@@ -29,4 +29,9 @@ export const IMMEDIATE_CONFIG = {
   // Never let an immediate session run flush into a scheduled one: its end +
   // this must still clear the next booking's start (and the working-hours block).
   SAFETY_BUFFER_MINUTES: 5,
+
+  // Commission path only: after the practitioner confirms, the client has this
+  // long to complete payment. The hold that reserves the session window expires
+  // after it (enforced by time in get_practitioner_busy_times).
+  PAYMENT_WINDOW_MINUTES: 5,
 } as const;

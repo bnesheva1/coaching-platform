@@ -78,6 +78,11 @@ const isAvailable = async (id) => (await db.rpc("is_practitioner_available_now",
     // (exactly what the widget does on reload with a fresh heartbeat) — headless
     // Chromium won't grant the notification the go-available button gates on.
     async function makeAvailable() {
+      // Clear any booking/hold a prior sub-test's confirm left behind, so this
+      // shared practitioner is actually bookable — otherwise the tick would now
+      // auto-switch availability off (§4) and the inbox would never appear.
+      await db.from("immediate_holds").delete().eq("practitioner_id", prac.id);
+      await db.from("bookings").delete().eq("practitioner_id", prac.id);
       await db.from("immediate_presence").upsert(
         { practitioner_id: prac.id, available_now: true, last_heartbeat_at: new Date().toISOString(), updated_at: new Date().toISOString() },
         { onConflict: "practitioner_id" },
@@ -99,7 +104,9 @@ const isAvailable = async (id) => (await db.rpc("is_practitioner_available_now",
     await page.getByText(`IM Client ${stamp}`).waitFor({ timeout: 12000 });
     await page.getByRole("button", { name: "Потвърди" }).first().click();
     await page.waitForTimeout(2000);
-    check("confirm → request confirmed", (await reqStatus(p1)) === "confirmed");
+    // software_provider (this practitioner's default billing model) books on
+    // confirm — status 'booked', not the pre-slice-2 'confirmed'.
+    check("confirm → request booked", (await reqStatus(p1)) === "booked", await reqStatus(p1));
     check("confirm → availability switched OFF", (await isAvailable(prac.id)) === false);
 
     console.log("\n=== Supersede (collision) ===");
@@ -111,7 +118,7 @@ const isAvailable = async (id) => (await db.rpc("is_practitioner_available_now",
     await page.getByRole("button", { name: "Потвърди" }).first().click();
     await page.waitForTimeout(2000);
     const s2 = await reqStatus(p2), s3 = await reqStatus(p3);
-    check("one confirmed, the other superseded", (s2 === "confirmed" && s3 === "superseded") || (s3 === "confirmed" && s2 === "superseded"), `${s2}/${s3}`);
+    check("one booked, the other superseded", (s2 === "booked" && s3 === "superseded") || (s3 === "booked" && s2 === "superseded"), `${s2}/${s3}`);
 
     console.log("\n=== Decline ===");
     const p4 = await insertPending(client.id, prac.id, svc.id);
@@ -128,10 +135,13 @@ const isAvailable = async (id) => (await db.rpc("is_practitioner_available_now",
     check("expired pending → lapsed by the tick", (await reqStatus(p5)) === "lapsed");
 
     console.log("\n=== Fit rejection (collision at confirm) ===");
-    await db.from("bookings").insert({ practitioner_id: prac.id, client_id: client.id, service_id: svc.id, start_utc: iso(10 * 60000), end_utc: iso(40 * 60000), delivery_type: "online", service_name: "sched", price_cents: 5000, currency: "EUR" });
+    // Bookable when the request shows; the conflict appears just before confirm,
+    // so the confirm-time re-check declines it (inserting the conflict first would
+    // now auto-switch availability off before the request could even appear).
     const p6 = await insertPending(client.id, prac.id, svc.id);
     await makeAvailable();
     await page.getByRole("button", { name: "Потвърди" }).first().waitFor({ timeout: 12000 });
+    await db.from("bookings").insert({ practitioner_id: prac.id, client_id: client.id, service_id: svc.id, start_utc: iso(2 * 60000), end_utc: iso(40 * 60000), delivery_type: "online", service_name: "sched", price_cents: 5000, currency: "EUR" });
     await page.getByRole("button", { name: "Потвърди" }).first().click();
     await page.waitForTimeout(2000);
     check("confirm that no longer fits → declined, not confirmed", (await reqStatus(p6)) === "declined");

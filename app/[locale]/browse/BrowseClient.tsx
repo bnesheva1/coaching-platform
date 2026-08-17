@@ -33,6 +33,7 @@ export type BrowseResult = {
   createdAt: string;
   deliveryTypeKeys: string[];
   location: string | null;
+  availableNow: boolean;
 };
 
 // Simplified for now to just these two — Name/Newest are easy to bring
@@ -112,9 +113,20 @@ export function BrowseClient({
   deliveryTypeOptions: { key: string; label: string }[];
 }) {
   const t = useTranslations("Browse");
+  const tImmediate = useTranslations("Immediate");
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
+
+  // The „На разположение сега" filter only exists when at least one result is
+  // actually available right now (per spec — no dead toggle otherwise). It's a
+  // client-side narrow over the already-fetched snapshot, like the other
+  // filters; availability staleness across the page's lifetime is acceptable.
+  const anyAvailableNow = useMemo(() => results.some((r) => r.availableNow), [results]);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  // If the last result went unavailable and the toggle vanished, don't let a
+  // stuck-on `availableOnly` silently empty the grid.
+  const effectiveAvailableOnly = availableOnly && anyAvailableNow;
 
   const [searchText, setSearchText] = useState(query);
   const [selectedModalities, setSelectedModalities] = useState<Set<string>>(new Set(initialSpecialties));
@@ -261,9 +273,10 @@ export function BrowseClient({
         (r) =>
           matchesGroup(r.specialtyKeys, selectedModalities) &&
           matchesGroup(r.topicKeys, selectedTopics) &&
-          matchesGroup(r.deliveryTypeKeys, selectedDeliveryTypes),
+          matchesGroup(r.deliveryTypeKeys, selectedDeliveryTypes) &&
+          (!effectiveAvailableOnly || r.availableNow),
       ),
-    [results, selectedModalities, selectedTopics, selectedDeliveryTypes],
+    [results, selectedModalities, selectedTopics, selectedDeliveryTypes, effectiveAvailableOnly],
   );
 
   // Ordering: "default" is the stable-per-fetch shuffle (fair rotation
@@ -279,7 +292,12 @@ export function BrowseClient({
       const unrated = shuffled.filter((r) => r.averageRating === null);
       return [...rated.sort((a, b) => (b.averageRating ?? 0) - (a.averageRating ?? 0)), ...unrated];
     }
-    return shuffled;
+    // Default sort: available-now practitioners float to the top (placement, not
+    // a badge), preserving the stable shuffle order within each partition — so
+    // there's no fixed tie order among the available, just a fair rotation.
+    const available = shuffled.filter((r) => r.availableNow);
+    const rest = shuffled.filter((r) => !r.availableNow);
+    return [...available, ...rest];
   }, [filteredResults, shuffled, sortBy]);
 
   const specialtyLabelByKey = new Map(specialtyOptions.map((o) => [o.key, o.label]));
@@ -396,6 +414,39 @@ export function BrowseClient({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
             <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
+              {anyAvailableNow && (
+                <button
+                  type="button"
+                  className="focus-ring"
+                  aria-pressed={effectiveAvailableOnly}
+                  onClick={() => setAvailableOnly((v) => !v)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "var(--space-1)",
+                    background: effectiveAvailableOnly ? "var(--accent)" : "var(--bg-surface)",
+                    color: effectiveAvailableOnly ? "var(--text-on-accent)" : "var(--text-secondary)",
+                    border: `1px solid ${effectiveAvailableOnly ? "var(--accent)" : "var(--border-default)"}`,
+                    font: "var(--text-caption)",
+                    fontWeight: 600,
+                    padding: "4px var(--space-2)",
+                    borderRadius: "var(--radius-pill)",
+                    cursor: "pointer",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: effectiveAvailableOnly ? "var(--text-on-accent)" : "var(--accent)",
+                    }}
+                  />
+                  {tImmediate("availableNowLabel")}
+                </button>
+              )}
               {activeChips.map(({ group, key, label }) => (
                 // The whole pill is the button now, not just the ✕ —
                 // a bigger, more reliable tap target (and simpler than
@@ -511,6 +562,7 @@ export function BrowseClient({
                       topicLabels: practitioner.topicKeys.map((key) => topicLabelByKey.get(key) ?? key),
                       deliveryTypeLabels: practitioner.deliveryTypeKeys.map((key) => deliveryTypeLabelByKey.get(key) ?? key),
                       location: practitioner.location,
+                      availableNow: practitioner.availableNow,
                     }}
                   />
                 ))}

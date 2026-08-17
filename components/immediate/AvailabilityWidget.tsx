@@ -8,6 +8,7 @@ import {
   confirmImmediateRequest,
   declineImmediateRequest,
   type InboxRequest,
+  type ImmediateBlockReason,
 } from "@/lib/immediate/actions";
 import { IMMEDIATE_CONFIG } from "@/lib/immediate/config";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,10 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  // Why the practitioner can't be available right now — shown in a blocking modal
+  // both when they try to turn it on with nothing bookable (§2) and when they're
+  // auto-switched off because availability went stale (§4).
+  const [blockReason, setBlockReason] = useState<ImmediateBlockReason | null>(null);
   const seen = useRef<Set<string>>(new Set());
 
   const goOffline = useCallback(() => {
@@ -33,13 +38,19 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
 
   async function enable() {
     setError(null);
+    setBlockReason(null);
     if (typeof Notification === "undefined") return setError("noNotifications");
     let perm = Notification.permission;
     if (perm === "default") perm = await Notification.requestPermission();
     if (perm !== "granted") return setError("permissionRequired");
     setBusy(true);
     try {
-      await setAvailableNow(true);
+      const res = await setAvailableNow(true);
+      if (!res.ok) {
+        // Nothing is bookable — do NOT activate; explain why instead.
+        setBlockReason(res.reason);
+        return;
+      }
       seen.current.clear();
       setAvailable(true);
     } finally {
@@ -62,7 +73,11 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
   const tick = useCallback(async () => {
     try {
       const res = await presenceTick();
-      if (!res.available) return goOffline();
+      if (!res.available) {
+        // Auto-switched off because availability went stale — surface why.
+        if (res.staleReason) setBlockReason(res.staleReason);
+        return goOffline();
+      }
       for (const r of res.requests) {
         if (!seen.current.has(r.id)) {
           seen.current.add(r.id);
@@ -85,6 +100,7 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
   useEffect(() => {
     if (!available) return;
     if (document.visibilityState !== "visible") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       goOffline();
       return;
     }
@@ -112,6 +128,16 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, [available]);
+
+  // Dismiss the block modal on Escape.
+  useEffect(() => {
+    if (!blockReason) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBlockReason(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [blockReason]);
 
   async function respond(id: string, action: (id: string) => Promise<unknown>) {
     setBusy(true);
@@ -184,6 +210,75 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
       )}
 
       {error && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{t(`error_${error}` as Parameters<typeof t>[0])}</p>}
+
+      {blockReason && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="imm-block-title"
+          onClick={() => setBlockReason(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "var(--space-4)",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--bg-surface)",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "var(--shadow-lg)",
+              padding: "var(--space-6)",
+              maxWidth: 420,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--space-3)",
+            }}
+          >
+            <span id="imm-block-title" style={{ font: "var(--text-heading-sm)", color: "var(--text-primary)" }}>
+              {t("blockTitle")}
+            </span>
+            <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{blockPrimary(t, blockReason)}</p>
+            {blockReason.kind === "next_too_soon" && (
+              <p style={{ margin: 0, font: "var(--text-body-md)", fontWeight: 600, color: "var(--text-primary)" }}>
+                {t("block_next_too_soon_free", { time: blockReason.freeAtLabel })}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end", flexWrap: "wrap", marginTop: "var(--space-2)" }}>
+              {blockReason.kind === "no_services" && (
+                <Button href="/practitioner-dashboard/services" variant="secondary" size="sm">
+                  {t("block_no_services_cta")}
+                </Button>
+              )}
+              <Button type="button" size="sm" onClick={() => setBlockReason(null)}>
+                {t("blockDismiss")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// The primary line for each block reason. next_too_soon adds a second (bold) line
+// naming when they could turn availability on; the rest are one line.
+function blockPrimary(t: ReturnType<typeof useTranslations>, reason: ImmediateBlockReason): string {
+  switch (reason.kind) {
+    case "no_services":
+      return t("block_no_services");
+    case "in_session":
+      return t("block_in_session");
+    case "blocked":
+      return t("block_blocked");
+    case "next_too_soon":
+      return t("block_next_too_soon", { minutes: reason.shortestDurationMinutes, startsIn: reason.nextSessionInMinutes });
+  }
 }

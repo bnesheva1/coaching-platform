@@ -4,6 +4,7 @@ import { commissionCentsFor } from "./checkout";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPaidBookingConfirmationEmails, sendPaymentRefundedNotice } from "@/lib/email";
 import { ensureVideoSession } from "@/lib/video";
+import { finalizeImmediatePayment } from "@/lib/immediate/booking";
 
 // Signature verification needs the RAW request body — constructEvent
 // re-computes the signature over the exact bytes Stripe sent and
@@ -76,6 +77,24 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
     // Shouldn't occur for this event with card-only payment methods
     // (see checkout.ts), but defensive: only a confirmed charge should
     // ever reach confirm_paid_booking.
+    return;
+  }
+
+  // Immediate-booking sessions carry immediate_request_id and take the off-grid
+  // path: the booking is created at THIS moment (payment clear), start = now, no
+  // grid rounding. If the practitioner's payment window already elapsed and they
+  // moved on (booked:false), there is no session to honour — refund the client,
+  // since we can't retroactively reserve a window the practitioner has released.
+  const immediateRequestId = session.metadata?.immediate_request_id;
+  if (immediateRequestId) {
+    const immediatePi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+    const { booked } = await finalizeImmediatePayment(immediateRequestId);
+    if (!booked && immediatePi) {
+      await refundLateImmediatePayment(session, immediatePi, session.amount_total ?? 0, {
+        clientId: session.metadata?.client_id ?? "",
+        practitionerId: session.metadata?.practitioner_id ?? "",
+      });
+    }
     return;
   }
 
@@ -171,19 +190,22 @@ async function refundUnconfirmablePayment(
 ): Promise<void> {
   const stripe = getStripeClient();
   const supabase = createServiceRoleClient();
+  // Zero at a zero commission rate — the charge carried no application fee, so
+  // there's nothing to reverse (and nothing but €0 to record).
+  const feeCents = commissionCentsFor(amountCents);
 
   try {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reverse_transfer: true,
-      refund_application_fee: true,
+      refund_application_fee: feeCents > 0,
     });
 
     const { error } = await supabase.from("payments").insert({
       booking_id: null,
       stripe_checkout_session_id: session.id,
       amount_cents: amountCents,
-      commission_cents: commissionCentsFor(amountCents),
+      commission_cents: feeCents,
       currency: (session.currency ?? "eur").toUpperCase(),
       status: "refunded",
       provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: failureReason },
@@ -207,6 +229,55 @@ async function refundUnconfirmablePayment(
   await sendPaymentRefundedNotice({
     clientId: metadata.client_id,
     practitionerId: metadata.practitioner_id,
+    amountCents,
+    currency: (session.currency ?? "eur").toUpperCase(),
+  });
+}
+
+// The immediate-path counterpart: payment cleared, but the practitioner's payment
+// window had already lapsed (they were freed and told), so finalizeImmediatePayment
+// declined to book. No booking exists — refund the client. Same idempotent Stripe
+// refund + payments row (booking_id null) + client notice as the scheduled path.
+async function refundLateImmediatePayment(
+  session: Stripe.Checkout.Session,
+  paymentIntentId: string,
+  amountCents: number,
+  parties: { clientId: string; practitionerId: string },
+): Promise<void> {
+  const stripe = getStripeClient();
+  const supabase = createServiceRoleClient();
+  const feeCents = commissionCentsFor(amountCents);
+
+  try {
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reverse_transfer: true,
+      refund_application_fee: feeCents > 0,
+    });
+
+    const { error } = await supabase.from("payments").insert({
+      booking_id: null,
+      stripe_checkout_session_id: session.id,
+      amount_cents: amountCents,
+      commission_cents: feeCents,
+      currency: (session.currency ?? "eur").toUpperCase(),
+      status: "refunded",
+      provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: "immediate_window_lapsed" },
+    });
+    if (error) {
+      console.error("refundLateImmediatePayment: Stripe refund succeeded but DB insert failed", {
+        sessionId: session.id,
+        refundId: refund.id,
+        error,
+      });
+    }
+  } catch (stripeError) {
+    console.error("refundLateImmediatePayment: Stripe refund call failed", { sessionId: session.id, stripeError });
+  }
+
+  await sendPaymentRefundedNotice({
+    clientId: parties.clientId,
+    practitionerId: parties.practitionerId,
     amountCents,
     currency: (session.currency ?? "eur").toUpperCase(),
   });

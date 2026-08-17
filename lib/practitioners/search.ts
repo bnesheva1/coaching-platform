@@ -25,6 +25,10 @@ export type PractitionerSearchResult = {
   // field, already public) — not a new structured "city" column; null
   // whenever a practitioner hasn't filled it in.
   location: string | null;
+  // Whether they're available for an immediate session right now (declared +
+  // fresh heartbeat, per is_practitioner_available_now). Always present; false
+  // when the immediate feature is off or they're simply not currently present.
+  availableNow: boolean;
 };
 
 // Shape returned by the search_practitioners SQL function, before we
@@ -42,6 +46,7 @@ type SearchPractitionersRow = {
   created_at: string;
   delivery_types: ("online" | "in_person" | "phone")[] | null;
   location: string | null;
+  available_now: boolean | null;
 };
 
 // The single place that knows how to find practitioners — a page calls
@@ -60,10 +65,16 @@ export async function searchPractitioners({
   // going unbookable later must not make them silently disappear from
   // there, so that call site explicitly passes false.
   onlyBookable = true,
+  // Discovery's „На разположение сега" filter. Off by default — Browse only
+  // narrows to available-now when the viewer explicitly asks. The SQL function
+  // also orders available-now first regardless of this flag (placement, not a
+  // badge), so a false value still surfaces them higher when nothing else sorts.
+  onlyAvailableNow = false,
 }: {
   specialtyKeys?: string[];
   searchText?: string;
   onlyBookable?: boolean;
+  onlyAvailableNow?: boolean;
 }): Promise<PractitionerSearchResult[]> {
   const supabase = await createClient();
 
@@ -73,6 +84,7 @@ export async function searchPractitioners({
     specialty_keys: specialtyKeys && specialtyKeys.length > 0 ? specialtyKeys : null,
     search_query: trimmedSearchText,
     only_bookable: onlyBookable,
+    only_available_now: onlyAvailableNow,
   });
 
   if (error) {
@@ -97,5 +109,6 @@ export async function searchPractitioners({
     createdAt: row.created_at,
     deliveryTypes: row.delivery_types ?? [],
     location: row.location,
+    availableNow: row.available_now ?? false,
   }));
 }

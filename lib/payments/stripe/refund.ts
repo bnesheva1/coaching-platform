@@ -13,7 +13,7 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
 
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, status, provider_ref")
+    .select("id, status, provider_ref, commission_cents")
     .eq("booking_id", bookingId)
     .eq("status", "succeeded")
     .maybeSingle();
@@ -32,13 +32,19 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
     return { refunded: false, reason: "missing_payment_intent" };
   }
 
+  // Only reverse an application fee if one was actually charged — at a zero
+  // commission rate the charge carries no application fee, so there's nothing to
+  // reverse (this is the source of truth: what THIS payment recorded, not the
+  // current rate, which could differ from when the charge was created).
+  const hadApplicationFee = ((payment.commission_cents as number | null) ?? 0) > 0;
+
   const stripe = getStripeClient();
   let refund;
   try {
     refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reverse_transfer: true,
-      refund_application_fee: true,
+      refund_application_fee: hadApplicationFee,
     });
   } catch (err) {
     // Stripe rejected the refund — the client is owed money and doesn't have
