@@ -8,6 +8,7 @@ import type { RenameUsage } from "@/lib/rename-limits";
 import { SlotPicker } from "@/components/booking/SlotPicker";
 import { ImmediateBookButton } from "@/components/immediate/ImmediateBookButton";
 import { SaveButton } from "@/components/practitioners/SaveButton";
+import { recordProfileView, recordScheduleOpen } from "@/lib/practitioners/view-actions";
 import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
@@ -217,9 +218,32 @@ export function PractitionerProfileView({
     setPendingScrollId(null);
   }, [pendingScrollId]);
 
+  // Privacy-safe view counters: fire once per session, never for the owner (or a
+  // practitioner previewing their own public link). Deduped via a short-lived
+  // sessionStorage flag — nothing identifying is stored.
+  function trackOnce(key: string): boolean {
+    try {
+      if (sessionStorage.getItem(key)) return false;
+      sessionStorage.setItem(key, "1");
+      return true;
+    } catch {
+      return true; // sessionStorage blocked → still fire once per load
+    }
+  }
+  function trackScheduleOpen() {
+    if (isOwner || isOwnProfile) return;
+    if (trackOnce(`so:${practitionerId}`)) void recordScheduleOpen(practitionerId).catch(() => {});
+  }
+  useEffect(() => {
+    if (isOwner || isOwnProfile) return;
+    if (trackOnce(`pv:${practitionerId}`)) void recordProfileView(practitionerId).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // The hero "See availability" CTA: expand every service's timetable, then
   // scroll to the first one.
   function scrollToFirstAvailability() {
+    trackScheduleOpen();
     const first = services[0];
     if (!first) return;
     setExpandedServiceIds(new Set(services.map((s) => s.id)));
@@ -592,6 +616,7 @@ export function PractitionerProfileView({
                 // gets the ordinary timetable — no disabled ghost button.
                 const canBookNow = availableNow && viewerRole === "client" && (immediateFitByServiceId?.[service.id] ?? false);
                 const expandThis = () => {
+                  trackScheduleOpen();
                   setExpandedServiceIds((prev) => new Set(prev).add(service.id));
                   setPendingScrollId(service.id);
                 };
@@ -673,7 +698,10 @@ export function PractitionerProfileView({
                       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
                         <button
                           type="button"
-                          onClick={() => setExpandedServiceIds((prev) => new Set(prev).add(service.id))}
+                          onClick={() => {
+                            trackScheduleOpen();
+                            setExpandedServiceIds((prev) => new Set(prev).add(service.id));
+                          }}
                           aria-expanded="false"
                           aria-controls={`slotpicker-${service.id}`}
                           style={{ display: "inline-flex", alignItems: "center", gap: 7, font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}

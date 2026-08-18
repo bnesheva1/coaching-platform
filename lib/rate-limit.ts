@@ -78,6 +78,11 @@ export const bookingLimiter = createLimiter("rl:booking", 10, "10 m", 10 * 60 * 
 // needs one genuine completed session per review). Keyed by user id,
 // same reasoning as bookingLimiter.
 export const reviewLimiter = createLimiter("rl:review", 10, "10 m", 10 * 60 * 1000);
+// The privacy-safe profile/schedule view counters — keyed by IP (anonymous
+// viewers have no account). The counter is deduped per session client-side, so
+// real traffic is low; this only bounds a script bumping a practitioner's counts
+// in a loop. Generous, since one IP can legitimately view many profiles browsing.
+export const viewCounterLimiter = createLimiter("rl:viewcount", 60, "1 m", 60 * 1000);
 // The save/unsave toggle — keyed by user id, same reasoning as booking/review:
 // it already requires auth, so the account is the precise identifier. Generous
 // for real toggling (saving several practitioners while browsing) while bounding
