@@ -117,6 +117,12 @@ export default async function AdminPractitionersPage({
                     </span>
                   </div>
 
+                  <div>
+                    <Link href={`/admin/practitioners/${r.id}/stats`} style={{ font: "var(--text-body-sm)", fontWeight: 600, color: "var(--accent)" }}>
+                      {t("practViewStats")} →
+                    </Link>
+                  </div>
+
                   <PractitionerControls
                     practitionerId={r.id}
                     name={r.display_name ?? r.username ?? "—"}

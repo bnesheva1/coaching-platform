@@ -14,6 +14,7 @@ export type DashboardPulse = {
 
 const NAV_ITEMS = [
   { href: "/practitioner-dashboard", key: "home" },
+  { href: "/practitioner-dashboard/stats", key: "stats" },
   { href: "/practitioner-dashboard/profile", key: "profile" },
   { href: "/practitioner-dashboard/services", key: "services" },
   { href: "/practitioner-dashboard/schedule", key: "schedule" },

@@ -11,6 +11,8 @@ import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { notPastEndCutoffIso } from "@/lib/video/sessionWindow";
 import { isEnabled } from "@/lib/flags";
 import { AvailabilityWidget } from "@/components/immediate/AvailabilityWidget";
+import { getPractitionerStats } from "@/lib/practitioners/stats";
+import { PractitionerStatsSummary } from "@/components/practitioners/PractitionerStats";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -320,6 +322,9 @@ export default async function PractitionerHomePage() {
 
   const { missingLinkBookings, nextBooking } = buildAgendaView(upcoming);
 
+  const tStats = await getTranslations("Stats");
+  const homeStats = await getPractitionerStats(userId);
+
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
 
   return (
@@ -430,6 +435,11 @@ export default async function PractitionerHomePage() {
             {t("agenda.manageBookings")}
           </Button>
         </div>
+
+        <section style={{ marginTop: "var(--space-10)" }}>
+          <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{tStats("homeTitle")}</h2>
+          <PractitionerStatsSummary stats={homeStats} />
+        </section>
       </div>
     </main>
   );

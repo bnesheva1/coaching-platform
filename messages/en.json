@@ -96,6 +96,7 @@
     "practLoadError": "Couldn't load practitioners.",
     "practBookable": "Bookable",
     "practNotBookable": "Not bookable",
+    "practViewStats": "View statistics",
     "practUpcoming": "Upcoming",
     "practTotal": "Sessions",
     "practRating": "Rating",
@@ -345,6 +346,7 @@
     "advancedSectionTitle": "Advanced",
     "nav": {
       "home": "Home",
+      "stats": "Statistics",
       "profile": "Profile",
       "services": "Services",
       "schedule": "Schedule",
@@ -1150,5 +1152,31 @@
     "emptyLine": "Save practitioners to keep them here and find them again easily — even ones you haven't booked yet.",
     "emptyCta": "Browse practitioners",
     "notBookable": "Not taking bookings right now"
+  },
+  "Stats": {
+    "title": "Statistics",
+    "homeTitle": "Your statistics",
+    "funnel": {
+      "title": "Your funnel",
+      "thisMonth": "This month",
+      "viewed": "Viewed profile",
+      "opened": "Opened schedule",
+      "booked": "Booked",
+      "completed": "Completed",
+      "dropoff": "{opened} opened your schedule, {booked} booked — {pct}% went on to book.",
+      "dropoffNoOpens": "No one has opened your schedule yet this month."
+    },
+    "bookings": { "title": "Bookings", "thisMonth": "This month", "lastMonth": "Last month", "allTime": "All time" },
+    "outcomes": { "title": "Outcomes", "completed": "Completed", "cancelledByClient": "Cancelled by client", "cancelledByPractitioner": "Cancelled by practitioner", "cancelledByAdmin": "Cancelled by admin", "noShow": "No-show", "noShowNote": "video sessions" },
+    "repeatClients": { "label": "Repeat clients", "hint": "booked more than once" },
+    "revenue": { "title": "Revenue", "gross": "Gross", "net": "Net", "netHint": "after commission", "refunds": "Refunded", "refundCount": "{count, plural, one {# refund} other {# refunds}}" },
+    "reviews": { "title": "Reviews", "average": "Average rating", "count": "{count, plural, =0 {No reviews yet} one {# review} other {# reviews}}" },
+    "seeAll": "See all statistics",
+    "empty": {
+      "title": "Your stats will appear here",
+      "body": "Once people start finding you, this shows how many viewed your profile, opened your schedule, booked, and completed a session — and where they drop off. The gap between opening your schedule and booking is the most useful number: lots of people checking availability without booking can point to price, or a schedule that suits no one."
+    },
+    "adminHeading": "Statistics — {name}",
+    "adminBack": "Back to practitioners"
   }
 }
