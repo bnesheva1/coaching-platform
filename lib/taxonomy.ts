@@ -19,6 +19,41 @@ type RawTaxonomyEntry = {
 
 export type TaxonomyKind = "specialty" | "topic";
 
+// Top-level route segments that sit ALONGSIDE the dynamic /[locale]/[category]
+// route. Next.js resolves a static segment before a dynamic one, so a category
+// slugged e.g. "browse" wouldn't error — it'd silently lose: the static route
+// wins, the category page becomes unreachable, and its sitemap/footer link points
+// at the wrong page. So a slug matching one of these earns NO landing page.
+// KEEP IN SYNC when a top-level route is added/removed under app/[locale]/ —
+// scripts/verify-taxonomy.mjs asserts this covers every real route (fails on drift).
+export const RESERVED_CATEGORY_SLUGS = new Set<string>([
+  "about",
+  "account-deleted",
+  "admin",
+  "become-a-practitioner",
+  "browse",
+  "client-dashboard",
+  "contact",
+  "cookie-preferences",
+  "design-system",
+  "faq",
+  "forgot-password",
+  "how-it-works",
+  "immediate",
+  "login",
+  "p",
+  "practitioner-dashboard",
+  "privacy",
+  "reset-password",
+  "session",
+  "settings",
+  "signup",
+]);
+
+export function isReservedSlug(slug: string): boolean {
+  return RESERVED_CATEGORY_SLUGS.has(slug.toLowerCase());
+}
+
 export type LandingEntry = {
   kind: TaxonomyKind;
   key: string;
@@ -35,6 +70,13 @@ export type LandingEntry = {
 // while still working everywhere else).
 function toLandingEntry(kind: TaxonomyKind, raw: RawTaxonomyEntry): LandingEntry | null {
   if (!raw.slug || !raw.intro?.bg?.trim() || !raw.intro?.en?.trim()) return null;
+  if (isReservedSlug(raw.slug)) {
+    // Omit rather than let it silently shadow a real route (see the reserved set
+    // above). Logged loudly so an authoring mistake is visible, and asserted in
+    // verify-taxonomy.mjs so it can't reach production unnoticed.
+    console.error(`taxonomy: category slug "${raw.slug}" collides with a reserved route — landing page omitted`);
+    return null;
+  }
   return { kind, key: raw.key, slug: raw.slug, label: { bg: raw.bg, en: raw.en }, intro: raw.intro };
 }
 
