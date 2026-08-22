@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
+import { landingEntries } from "@/lib/taxonomy";
 
 // Dynamic so newly-bookable practitioners appear automatically without a
 // rebuild. searchPractitioners reads request cookies (anonymous here), which
@@ -41,11 +42,16 @@ function entriesForPath(pathname: string): MetadataRoute.Sitemap {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries = STATIC_PATHS.flatMap(entriesForPath);
 
+  // Category (taxonomy) landing pages — only entries with an authored slug +
+  // intro exist as pages (see lib/taxonomy.ts), so this lists exactly the real
+  // ones and grows automatically as more categories are authored.
+  const categoryEntries = landingEntries.flatMap((e) => entriesForPath(`/${e.slug}`));
+
   // Only BOOKABLE practitioners — searchPractitioners defaults to
   // onlyBookable, the exact filter Browse uses. A sitemap full of unbookable
   // profiles would waste crawl budget and send visitors to dead ends.
   const practitioners = await searchPractitioners({ onlyBookable: true });
   const profileEntries = practitioners.flatMap((p) => entriesForPath(`/p/${p.username}`));
 
-  return [...staticEntries, ...profileEntries];
+  return [...staticEntries, ...categoryEntries, ...profileEntries];
 }

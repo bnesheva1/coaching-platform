@@ -1048,6 +1048,7 @@
   },
   "Footer": {
     "navLabel": "Footer",
+    "categoriesLabel": "Categories",
     "howItWorksLink": "How it works",
     "becomePractitionerLink": "Become a practitioner",
     "aboutLink": "About",

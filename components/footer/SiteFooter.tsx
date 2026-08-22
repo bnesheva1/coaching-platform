@@ -1,7 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getSiteName } from "@/lib/brand";
 import { Link } from "@/i18n/navigation";
 import { ContentContainer } from "@/components/ui/ContentContainer";
+import { landingEntries } from "@/lib/taxonomy";
 
 // Mounted once in app/[locale]/layout.tsx, alongside SiteHeader — every
 // route gets it by construction. Unlike SiteHeader, this doesn't do a
@@ -12,6 +13,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 export async function SiteFooter() {
   const t = await getTranslations("Footer");
   const siteName = await getSiteName();
+  const locale = (await getLocale()) as "bg" | "en";
   const year = new Date().getFullYear();
 
   const links: { href: string; label: string }[] = [
@@ -56,6 +58,25 @@ export async function SiteFooter() {
               </Link>
             ))}
           </nav>
+
+          {/* Category landing pages — a crawlable, every-page internal link to
+              each authored category, so they aren't orphan pages. Rendered only
+              when at least one category is authored (landingEntries is already
+              filtered to slug + intro). */}
+          {landingEntries.length > 0 && (
+            <nav aria-label={t("categoriesLabel")} style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2) var(--space-5)" }}>
+              {landingEntries.map((e) => (
+                <Link
+                  key={e.slug}
+                  href={`/${e.slug}`}
+                  style={{ font: "var(--text-nav)", color: "var(--text-secondary)", textDecoration: "none" }}
+                >
+                  {e.label[locale]}
+                </Link>
+              ))}
+            </nav>
+          )}
+
           <p style={{ font: "var(--text-caption)", color: "var(--text-tertiary)", margin: 0 }}>
             {t("copyright", { year, siteName })}
           </p>
