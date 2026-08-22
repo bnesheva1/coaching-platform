@@ -1,5 +1,14 @@
 [
-  { "key": "tarot", "en": "Tarot", "bg": "Таро" },
+  {
+    "key": "tarot",
+    "en": "Tarot",
+    "bg": "Таро",
+    "slug": "taro",
+    "intro": {
+      "bg": "Таро е метод за себепознание и насока — подредбата на картите отваря разговор за въпросите, които те вълнуват: любов, работа, избори и вътрешно равновесие. Разгледай проверените практикуващи по-долу, виж отзивите и свободните им часове и запази онлайн консултация на спокойствие.",
+      "en": "Tarot is a tool for reflection and guidance — the way the cards fall opens a conversation about what matters to you: love, work, decisions and inner balance. Browse the verified practitioners below, read their reviews and availability, and book an online consultation at your own pace."
+    }
+  },
   { "key": "astrology", "en": "Astrology", "bg": "Астрология" },
   { "key": "reiki", "en": "Reiki", "bg": "Рейки" },
   { "key": "coaching", "en": "Coaching", "bg": "Коучинг" }
