@@ -19,7 +19,7 @@ export async function createImmediateBooking(
 ): Promise<string | null> {
   const { data: service } = await svc
     .from("services")
-    .select("name, price_cents, currency, delivery_type, delivery_info, phone_number, meeting_link")
+    .select("name, price_cents, currency, delivery_type, delivery_info, phone_number, meeting_link, documents_enabled")
     .eq("id", req.service_id)
     .single();
   if (!service) return null;
@@ -39,6 +39,7 @@ export async function createImmediateBooking(
       price_cents: service.price_cents,
       currency: service.currency,
       delivery_info: service.delivery_info,
+      documents_enabled: service.documents_enabled,
     })
     .select("id")
     .single();

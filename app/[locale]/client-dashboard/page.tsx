@@ -17,6 +17,8 @@ import { SavedPractitionersGrid } from "./SavedPractitionersGrid";
 import { ClientActivationState } from "./ClientActivationState";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { getSavedPractitionerCards } from "@/lib/practitioners/saved";
+import { isEnabled } from "@/lib/flags";
+import { getSessionDocumentSlots } from "@/lib/documents/read";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -54,7 +56,7 @@ export default async function ClientUpcomingPage({
     supabase.from("profiles").select("display_name").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at")
+      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled")
       .eq("client_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -76,7 +78,7 @@ export default async function ClientUpcomingPage({
     // avatar_url lives on practitioner_profiles, not profiles — same
     // query already fetching min_notice_hours, just widened rather
     // than adding a third round-trip for one more column.
-    supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url").in("id", practitionerIds),
+    supabase.from("practitioner_profiles").select("id, min_notice_hours, avatar_url, username").in("id", practitionerIds),
     // Only image_url comes from a live services join now — name/
     // duration/delivery_type are booking-time snapshots (see
     // SessionBooking's own comment on why), read straight off `bookings`
@@ -123,8 +125,16 @@ export default async function ClientUpcomingPage({
 
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
   const practitionerAvatarById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.avatar_url ?? null]));
+  const practitionerUsernameById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.username ?? null]));
   const minNoticeHoursById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.min_notice_hours]));
   const serviceById = new Map((services ?? []).map((s) => [s.id, s]));
+
+  // Session document slots, flag-gated. RLS restricts rows to this
+  // client's own bookings.
+  const documentsEnabled = await isEnabled("sessionDocuments");
+  const documentSlots = documentsEnabled
+    ? await getSessionDocumentSlots(supabase, (bookings ?? []).map((b) => b.id))
+    : new Map();
 
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
@@ -158,7 +168,11 @@ export default async function ClientUpcomingPage({
     connectedFrom: pastMetaByBookingId.get(b.id)?.connected_from ?? null,
     connectedTo: pastMetaByBookingId.get(b.id)?.connected_to ?? null,
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
+    counterpartUsername: practitionerUsernameById.get(b.practitioner_id) ?? null,
     serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
+    documentsAllowed: b.documents_enabled,
+    clientDocument: documentSlots.get(b.id)?.client ?? null,
+    practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);
@@ -300,6 +314,14 @@ export default async function ClientUpcomingPage({
         </p>
       )}
 
+      {/* Anchor for "my bookings → upcoming": the client's own booked-slot
+          chips on a practitioner's profile link to /client-dashboard#upcoming
+          (see components/booking/SlotPicker.tsx), landing them at the top of
+          their upcoming sessions — the hero when there is one, otherwise the
+          upcoming list below. Always rendered so the target exists either way;
+          scrollMarginTop keeps it clear of the top of the viewport. */}
+      <div id="upcoming" style={{ scrollMarginTop: "var(--space-6)" }} />
+
       {nextBooking && (
         <div style={{ marginBottom: "var(--space-6)" }}>
           {/* Hand-rolled rather than <Card>: Card's title/description
@@ -347,7 +369,7 @@ export default async function ClientUpcomingPage({
                   <h3 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
                     {nextBooking.serviceName} {tBooking("withInline")}
                   </h3>
-                  <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} />
+                  <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} username={nextBooking.counterpartUsername} />
                 </div>
                 <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
                   <ClientLocalTime iso={nextBooking.startUtc} savedTimezone={savedTz} /> ·{" "}
@@ -407,6 +429,7 @@ export default async function ClientUpcomingPage({
         nextSessionShownSeparately={nextBooking !== null}
         pastSectionId="past"
         emptyUpcomingContent={nextBooking ? undefined : noUpcomingBlock}
+        documentsEnabled={documentsEnabled}
       />
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">

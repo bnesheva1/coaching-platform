@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
@@ -13,6 +14,7 @@ import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@
 import { splitTextAndUrls } from "@/lib/linkify";
 import { sessionTimeState } from "@/lib/video/sessionWindow";
 import { JoinSessionLink } from "./JoinSessionLink";
+import { SessionDocuments, type SessionDocumentSlot } from "./SessionDocuments";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -127,11 +129,27 @@ export type SessionBooking = {
   // session; left undefined elsewhere.
   emergencyContactRevoked?: boolean;
   videoOpensAt?: string | null;
+  // Whether THIS booking offers file exchange — the practitioner's
+  // per-service setting, snapshotted onto the booking at creation
+  // (bookings.documents_enabled). The documents block shows only when the
+  // brand flag AND this are both true, so toggling the service later never
+  // changes an existing booking.
+  documentsAllowed?: boolean;
+  // Session document slots — one per side. Both perspectives populate
+  // both fields (each page maps from session_documents); the disclosure
+  // decides which is "yours" from the perspective. null = empty/purged
+  // slot. Only read when the sessionDocuments flag is on.
+  clientDocument?: SessionDocumentSlot;
+  practitionerDocument?: SessionDocumentSlot;
   // Only ever populated on the client path (a client's counterpart is a
   // practitioner, who has a public-facing photo). Left undefined on the
   // practitioner path — a client's own avatar isn't fetched there today,
   // and the compact (non-premium) card doesn't render one anyway.
   counterpartAvatarUrl?: string | null;
+  // The practitioner's username, so the client-side practitioner chip can
+  // link to their public profile (/p/<username>). Client path only; null
+  // when unknown (chip stays non-interactive).
+  counterpartUsername?: string | null;
   // Client path only, same reasoning as counterpartAvatarUrl — currently
   // only consumed by the client dashboard's own next-session hero
   // (hand-rolled in that page, not by BookingsList's own card markup).
@@ -258,23 +276,52 @@ export function ServiceImageSquare({ imageUrl, size }: { imageUrl?: string | nul
 // service/time text, not folded into a heading. Same fixed 32px avatar
 // in both the hero and the list cards — this is always a secondary
 // identity marker, never the card's own focal image.
-export function PractitionerChip({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
-  return (
-    <div
-      className={rowStyles.tile}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "var(--space-3)",
-        background: "var(--bg-surface-2)",
-        border: "1px solid var(--border-default)",
-        borderRadius: "var(--radius-md)",
-        padding: "var(--space-2) var(--space-4) var(--space-2) var(--space-2)",
-      }}
-    >
+// The practitioner mini-card on a client's session cards (upcoming list +
+// the next-session hero). When a username is known it becomes a link to
+// that practitioner's public profile (/p/<username>); without one — a rare
+// case, e.g. a practitioner whose username was never set — it stays a
+// plain, non-interactive card rather than a dead link.
+export function PractitionerChip({ name, avatarUrl, username }: { name: string; avatarUrl?: string | null; username?: string | null }) {
+  const t = useTranslations("Booking");
+  const [hover, setHover] = useState(false);
+
+  const baseStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "var(--space-3)",
+    background: "var(--bg-surface-2)",
+    border: `1px solid ${hover && username ? "var(--border-strong)" : "var(--border-default)"}`,
+    borderRadius: "var(--radius-md)",
+    padding: "var(--space-2) var(--space-4) var(--space-2) var(--space-2)",
+    transition: "border-color var(--duration-fast) var(--ease-standard)",
+  } as const;
+
+  const inner = (
+    <>
       <CounterpartAvatar name={name} avatarUrl={avatarUrl} size={32} />
       <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{name}</span>
-    </div>
+    </>
+  );
+
+  if (!username) {
+    return (
+      <div className={rowStyles.tile} style={baseStyle}>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/p/${username}`}
+      className={`${rowStyles.tile} focus-ring`}
+      aria-label={t("viewProfileAria", { name })}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ ...baseStyle, textDecoration: "none", color: "inherit", cursor: "pointer" }}
+    >
+      {inner}
+    </Link>
   );
 }
 
@@ -316,10 +363,18 @@ export function BookingDetailsDisclosure({
   // connected time, payment, refund, fallback). Left off elsewhere — an
   // upcoming session hasn't happened yet.
   isPast = false,
+  // Which side the viewer is, so the documents block knows which slot is
+  // "yours" (editable) vs the counterparty's (download-only).
+  perspective,
+  // The sessionDocuments feature flag, resolved server-side and passed
+  // down. When false the documents block is absent entirely.
+  documentsEnabled = false,
 }: {
   booking: SessionBooking;
   timezone: string;
   isPast?: boolean;
+  perspective: BookingPerspective;
+  documentsEnabled?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -499,6 +554,18 @@ export function BookingDetailsDisclosure({
           <dd style={valueStyle}>{createdAtFormatter.format(new Date(booking.createdAt))}</dd>
         </div>
       </dl>
+
+      {/* Session document exchange — one slot per side. Shown only when the
+          brand feature is on AND this booking's service opted in (snapshot). */}
+      {documentsEnabled && booking.documentsAllowed && (
+        <SessionDocuments
+          bookingId={booking.id}
+          perspective={perspective}
+          clientDocument={booking.clientDocument ?? null}
+          practitionerDocument={booking.practitionerDocument ?? null}
+          timezone={timezone}
+        />
+      )}
     </details>
   );
 }
@@ -560,6 +627,10 @@ export function BookingsList({
   // over upcomingRebookHref / the default message when the upcoming list is
   // empty.
   emptyUpcomingContent,
+  // The sessionDocuments feature flag, resolved server-side by each page
+  // and threaded down to the details disclosure (and its past-session
+  // counterpart). Off = no documents block anywhere.
+  documentsEnabled = false,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -574,6 +645,7 @@ export function BookingsList({
   pastSectionId?: string;
   upcomingRebookHref?: string;
   emptyUpcomingContent?: ReactNode;
+  documentsEnabled?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -799,14 +871,19 @@ export function BookingsList({
                       <p style={{ margin: 0, font: "var(--text-heading-sm)", color: "var(--text-primary)" }}>
                         {booking.serviceName} {t("withInline")}
                       </p>
-                      <PractitionerChip name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} />
+                      <PractitionerChip name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} username={booking.counterpartUsername} />
                     </div>
                     {/* Join link/location sits directly under that row. */}
                     {deliverySlot}
                     {joinSlot}
                     {revealMarker}
                     {revokeControl}
-                    <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
+                    <BookingDetailsDisclosure
+                      booking={booking}
+                      timezone={effectiveTimezone}
+                      perspective={perspective}
+                      documentsEnabled={documentsEnabled}
+                    />
                     {cancelSlot}
                   </div>
                 </div>
@@ -834,7 +911,12 @@ export function BookingsList({
                 {joinSlot}
                 {revealMarker}
                 {revokeControl}
-                <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
+                <BookingDetailsDisclosure
+                  booking={booking}
+                  timezone={effectiveTimezone}
+                  perspective={perspective}
+                  documentsEnabled={documentsEnabled}
+                />
                 {cancelSlot}
               </div>
             );
@@ -851,6 +933,7 @@ export function BookingsList({
           perspective={perspective}
           defaultOpen={pastStartsExpanded}
           id={pastSectionId}
+          documentsEnabled={documentsEnabled}
         />
       )}
     </section>

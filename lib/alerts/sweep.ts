@@ -5,6 +5,7 @@ import { AlertDigestEmail } from "@/lib/email/templates/AlertDigestEmail";
 import { projectVideoUsage } from "@/lib/video";
 import { isEnabled } from "@/lib/flags";
 import { CANCELLED_STATUSES } from "@/lib/booking-time";
+import { sweepStorageUsage } from "@/lib/storage/usage";
 import { raiseAlert, pushToAdapters } from "./index";
 import type { Alert } from "./types";
 
@@ -33,6 +34,7 @@ export async function runAlertSweep(): Promise<{
   paymentMismatches: number;
   webhookRepeats: number;
   videoCostAction: VideoCostAction;
+  storagePct: number | null;
   digested: number;
 }> {
   const unresolvedOutcomes = await sweepUnresolvedOutcomes();
@@ -42,8 +44,11 @@ export async function runAlertSweep(): Promise<{
   // Runs BEFORE deliverPendingAlerts so a video_cost alert raised this pass is
   // delivered in this same run's digest/push, not next day.
   const videoCostAction = await sweepVideoCostBreaker();
+  // Storage usage warning — same "raise before deliver" reasoning, so a
+  // storage_low alert rides out in this run's digest.
+  const { storagePct } = await sweepStorageUsage();
   const { digested } = await deliverPendingAlerts();
-  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, videoCostAction, digested };
+  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, videoCostAction, storagePct, digested };
 }
 
 function isoMinutesAgo(minutes: number): string {

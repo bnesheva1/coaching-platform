@@ -106,6 +106,7 @@ type ParsedServiceForm =
       deliveryType: DeliveryType;
       deliveryInfo: string | null;
       phoneNumber: string | null;
+      documentsEnabled: boolean;
     }
   | { ok: false; error: string; values: Record<string, string> };
 
@@ -132,6 +133,11 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
   const rawDeliveryType = (formData.get("deliveryType") as string)?.trim();
   const deliveryInfo = (formData.get("deliveryInfo") as string)?.trim();
   const phoneNumber = (formData.get("phoneNumber") as string)?.trim();
+  // Unchecked checkboxes submit nothing, so absence = off. Gated on the
+  // brand feature flag HERE, at the action (same discipline as phone
+  // delivery below): if the brand has file exchange off, a stale form or
+  // forged submission can't turn it on for a service.
+  const documentsEnabled = formData.get("documentsEnabled") === "on" && (await isEnabled("sessionDocuments"));
 
   // Echoed back on every error return below so a rejected submission can
   // redisplay what was actually typed instead of the pre-edit/blank
@@ -149,6 +155,7 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
     deliveryType: rawDeliveryType ?? "",
     deliveryInfo: deliveryInfo ?? "",
     phoneNumber: phoneNumber ?? "",
+    documentsEnabled: documentsEnabled ? "on" : "",
   };
 
   if (!name) {
@@ -234,6 +241,7 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
     deliveryType: rawDeliveryType,
     deliveryInfo: rawDeliveryType === "in_person" ? deliveryInfo : null,
     phoneNumber: rawDeliveryType === "phone" ? phoneNumber : null,
+    documentsEnabled,
   };
 }
 
@@ -272,6 +280,7 @@ export async function createService(
       delivery_type: parsed.deliveryType,
       delivery_info: parsed.deliveryInfo,
       phone_number: parsed.phoneNumber,
+      documents_enabled: parsed.documentsEnabled,
     })
     .select("id")
     .single();
@@ -359,6 +368,7 @@ export async function updateService(
     delivery_info?: string | null;
     phone_number: string | null;
     image_url?: string | null;
+    documents_enabled: boolean;
   } = {
     name: parsed.name,
     description: parsed.description,
@@ -366,6 +376,9 @@ export async function updateService(
     price_cents: parsed.priceCents,
     delivery_type: parsed.deliveryType,
     phone_number: parsed.phoneNumber,
+    // Not a locked field — editable regardless of upcoming bookings (it
+    // only affects FUTURE bookings, since each snapshots it at creation).
+    documents_enabled: parsed.documentsEnabled,
   };
 
   // delivery_info isn't collected in the form at all for online (see

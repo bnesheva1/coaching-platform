@@ -44,6 +44,12 @@ export const FLAGS = {
     envVar: "IMMEDIATE_BOOKING_ENABLED",
     description: "Enable 'book now / who's online' immediate sessions (feature not shipped yet).",
   },
+  sessionDocuments: {
+    scope: "runtime",
+    default: false,
+    envVar: "SESSION_DOCUMENTS_ENABLED",
+    description: "Let the two parties of a booking exchange one document each (upload/replace/download in booking details).",
+  },
 
   // ── Admin kill switches (all runtime, default ON = normal operation) ──
   // Emergency stops an admin flips from /admin. Each is enforced at its own

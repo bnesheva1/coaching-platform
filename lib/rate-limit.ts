@@ -95,6 +95,14 @@ export const saveLimiter = createLimiter("rl:save", 30, "10 m", 10 * 60 * 1000);
 // password-changed session re-entering the current password wrong
 // repeatedly is exactly the abuse shape this bounds.
 export const changePasswordLimiter = createLimiter("rl:changepw", 5, "10 m", 10 * 60 * 1000);
+// Session document uploads — keyed by `${userId}:${bookingId}`, same
+// reasoning as the video limiters: the action already requires an active
+// session AND booking membership, so the account+booking pair is the
+// precise identifier. Each upload reads and stores a whole file, so this
+// is deliberately tighter than the booking/save limiters — a party
+// swapping a document a handful of times is normal; a loop re-uploading
+// is what this bounds.
+export const documentUploadLimiter = createLimiter("rl:doc-upload", 10, "10 m", 10 * 60 * 1000);
 // Keyed by `${userId}:${bookingId}` (per your security spec: rate-limit
 // token generation per user per booking). A legitimate join — including
 // reconnects after a dropped connection — needs a handful of tokens over
