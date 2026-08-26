@@ -6,6 +6,7 @@ import { checkVideoConnection, liveKitPlan } from "@/lib/video";
 import { checkRateLimitConnection } from "@/lib/rate-limit";
 import { isEnabled } from "@/lib/flags";
 import { SITE_URL } from "@/lib/seo";
+import { getStorageUsage, storageHealthItem } from "@/lib/storage/usage";
 import { type ConnectionResult, errorMessage } from "@/lib/health/types";
 
 export type HealthStatus = "pass" | "fail" | "degraded";
@@ -164,19 +165,22 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
 export async function runHealthReport(): Promise<HealthReport> {
   const requireEmailConfirmation = await isEnabled("requireEmailConfirmation");
 
-  const [supabase, stripe, resend, livekit, upstash, cron] = await Promise.all([
+  const [supabase, stripe, resend, livekit, upstash, cron, storage] = await Promise.all([
     checkSupabase(),
     toCheck("Stripe", checkStripeConnection),
     toCheck("Resend", checkEmailConnection),
     toCheck("LiveKit", checkVideoConnection),
     toCheck("Upstash", checkRateLimitConnection, "degraded"),
     checkCron(),
+    getStorageUsage(),
   ]);
 
   return {
     checkedAt: new Date().toISOString(),
     dependencies: [supabase, stripe, resend, livekit, upstash],
-    config: gatherConfig(requireEmailConfirmation),
+    // Storage usage sits with the config values (it's a stated metric, not a
+    // reachability check) — flagged 'warn' once it crosses the threshold.
+    config: [...gatherConfig(requireEmailConfirmation), storageHealthItem(storage)],
     cron,
   };
 }

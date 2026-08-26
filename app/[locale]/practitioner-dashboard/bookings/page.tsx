@@ -4,6 +4,8 @@ import { BookingsList, type SessionBooking } from "@/components/bookings/Booking
 import { splitUpcomingPast } from "@/lib/booking-time";
 import { getEmergencyContact } from "@/lib/profile/emergencyContact";
 import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
+import { isEnabled } from "@/lib/flags";
+import { getSessionDocumentSlots } from "@/lib/documents/read";
 
 // Auth/role guard already ran in the shared layout.tsx. Full history
 // (upcoming, past, cancelled) — the new 6th nav item ("Резервации") that
@@ -33,7 +35,7 @@ export default async function BookingsPage({
     supabase.from("practitioner_profiles").select("timezone").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, client_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at")
+      .select("id, client_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled")
       .eq("practitioner_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -70,6 +72,13 @@ export default async function BookingsPage({
   const sessionStateByBookingId = new Map((sessionStateRows ?? []).map((row) => [row.booking_id, row]));
   const hasEmergencyContact = !!emergencyContact;
 
+  // Session document slots, flag-gated. One query for all bookings on the
+  // page; RLS restricts rows to this practitioner's own bookings.
+  const documentsEnabled = await isEnabled("sessionDocuments");
+  const documentSlots = documentsEnabled
+    ? await getSessionDocumentSlots(supabase, (bookings ?? []).map((b) => b.id))
+    : new Map();
+
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
     counterpartName: clientNameById.get(b.client_id) ?? "",
@@ -92,6 +101,9 @@ export default async function BookingsPage({
     fallbackRevealedAt: sessionStateByBookingId.get(b.id)?.revealed_at ?? null,
     emergencyContactRevoked: sessionStateByBookingId.get(b.id)?.emergency_contact_revoked ?? false,
     videoOpensAt: sessionStateByBookingId.get(b.id)?.opens_at ?? null,
+    documentsAllowed: b.documents_enabled,
+    clientDocument: documentSlots.get(b.id)?.client ?? null,
+    practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
   }));
 
   const { upcoming: upcomingBookings, past: pastBookings } = splitUpcomingPast(mergedBookings);
@@ -116,6 +128,7 @@ export default async function BookingsPage({
           perspective="practitioner"
           timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}
           hasEmergencyContact={hasEmergencyContact}
+          documentsEnabled={documentsEnabled}
         />
       </div>
     </main>

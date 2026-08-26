@@ -13,6 +13,7 @@ import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@
 import { splitTextAndUrls } from "@/lib/linkify";
 import { sessionTimeState } from "@/lib/video/sessionWindow";
 import { JoinSessionLink } from "./JoinSessionLink";
+import { SessionDocuments, type SessionDocumentSlot } from "./SessionDocuments";
 import rowStyles from "./ResponsiveImageRow.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
@@ -127,6 +128,18 @@ export type SessionBooking = {
   // session; left undefined elsewhere.
   emergencyContactRevoked?: boolean;
   videoOpensAt?: string | null;
+  // Whether THIS booking offers file exchange — the practitioner's
+  // per-service setting, snapshotted onto the booking at creation
+  // (bookings.documents_enabled). The documents block shows only when the
+  // brand flag AND this are both true, so toggling the service later never
+  // changes an existing booking.
+  documentsAllowed?: boolean;
+  // Session document slots — one per side. Both perspectives populate
+  // both fields (each page maps from session_documents); the disclosure
+  // decides which is "yours" from the perspective. null = empty/purged
+  // slot. Only read when the sessionDocuments flag is on.
+  clientDocument?: SessionDocumentSlot;
+  practitionerDocument?: SessionDocumentSlot;
   // Only ever populated on the client path (a client's counterpart is a
   // practitioner, who has a public-facing photo). Left undefined on the
   // practitioner path — a client's own avatar isn't fetched there today,
@@ -316,10 +329,18 @@ export function BookingDetailsDisclosure({
   // connected time, payment, refund, fallback). Left off elsewhere — an
   // upcoming session hasn't happened yet.
   isPast = false,
+  // Which side the viewer is, so the documents block knows which slot is
+  // "yours" (editable) vs the counterparty's (download-only).
+  perspective,
+  // The sessionDocuments feature flag, resolved server-side and passed
+  // down. When false the documents block is absent entirely.
+  documentsEnabled = false,
 }: {
   booking: SessionBooking;
   timezone: string;
   isPast?: boolean;
+  perspective: BookingPerspective;
+  documentsEnabled?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -499,6 +520,18 @@ export function BookingDetailsDisclosure({
           <dd style={valueStyle}>{createdAtFormatter.format(new Date(booking.createdAt))}</dd>
         </div>
       </dl>
+
+      {/* Session document exchange — one slot per side. Shown only when the
+          brand feature is on AND this booking's service opted in (snapshot). */}
+      {documentsEnabled && booking.documentsAllowed && (
+        <SessionDocuments
+          bookingId={booking.id}
+          perspective={perspective}
+          clientDocument={booking.clientDocument ?? null}
+          practitionerDocument={booking.practitionerDocument ?? null}
+          timezone={timezone}
+        />
+      )}
     </details>
   );
 }
@@ -560,6 +593,10 @@ export function BookingsList({
   // over upcomingRebookHref / the default message when the upcoming list is
   // empty.
   emptyUpcomingContent,
+  // The sessionDocuments feature flag, resolved server-side by each page
+  // and threaded down to the details disclosure (and its past-session
+  // counterpart). Off = no documents block anywhere.
+  documentsEnabled = false,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -574,6 +611,7 @@ export function BookingsList({
   pastSectionId?: string;
   upcomingRebookHref?: string;
   emptyUpcomingContent?: ReactNode;
+  documentsEnabled?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -806,7 +844,12 @@ export function BookingsList({
                     {joinSlot}
                     {revealMarker}
                     {revokeControl}
-                    <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
+                    <BookingDetailsDisclosure
+                      booking={booking}
+                      timezone={effectiveTimezone}
+                      perspective={perspective}
+                      documentsEnabled={documentsEnabled}
+                    />
                     {cancelSlot}
                   </div>
                 </div>
@@ -834,7 +877,12 @@ export function BookingsList({
                 {joinSlot}
                 {revealMarker}
                 {revokeControl}
-                <BookingDetailsDisclosure booking={booking} timezone={effectiveTimezone} />
+                <BookingDetailsDisclosure
+                  booking={booking}
+                  timezone={effectiveTimezone}
+                  perspective={perspective}
+                  documentsEnabled={documentsEnabled}
+                />
                 {cancelSlot}
               </div>
             );
@@ -851,6 +899,7 @@ export function BookingsList({
           perspective={perspective}
           defaultOpen={pastStartsExpanded}
           id={pastSectionId}
+          documentsEnabled={documentsEnabled}
         />
       )}
     </section>

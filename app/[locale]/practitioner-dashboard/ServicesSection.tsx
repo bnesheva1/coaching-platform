@@ -29,6 +29,7 @@ type Service = {
   delivery_info: string | null;
   phone_number: string | null;
   image_url: string | null;
+  documents_enabled: boolean;
   // Active/upcoming bookings for THIS service — > 0 locks price/
   // duration/deliveryType in the edit form (Option B: structural fields
   // become read-only once someone has already booked under the current
@@ -317,6 +318,23 @@ function DeliveryFields({
 // reason: a disabled control is dropped from form submission entirely,
 // so a hidden input is what actually carries the real value through
 // while the visible select just shows it, greyed out.
+// The per-service "allow file exchange" toggle. Only rendered when the
+// brand-level sessionDocuments flag is on (the parent decides that); the
+// server action re-checks the flag regardless. Not a locked field — it
+// only affects FUTURE bookings, since each snapshots the setting.
+function DocumentsToggle({ defaultChecked }: { defaultChecked: boolean }) {
+  const t = useTranslations("Services");
+  return (
+    <label style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-start" }}>
+      <input type="checkbox" name="documentsEnabled" defaultChecked={defaultChecked} style={{ marginTop: 3, flexShrink: 0 }} />
+      <span>
+        <span style={{ display: "block" }}>{t("documentsLabel")}</span>
+        <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)" }}>{t("documentsHint")}</span>
+      </span>
+    </label>
+  );
+}
+
 function DurationField({ defaultValue, locked }: { defaultValue: number; locked: boolean }) {
   const t = useTranslations("Services");
   const [duration, setDuration] = useState(defaultValue);
@@ -381,7 +399,7 @@ const tileStyle = {
   background: "var(--bg-surface)",
 };
 
-function ServiceRow({ service, showPhone }: { service: Service; showPhone: boolean }) {
+function ServiceRow({ service, showPhone, documentsFeatureEnabled }: { service: Service; showPhone: boolean; documentsFeatureEnabled: boolean }) {
   const t = useTranslations("Services");
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateService, initialState);
@@ -474,6 +492,9 @@ function ServiceRow({ service, showPhone }: { service: Service; showPhone: boole
               locked={locked}
               showPhone={showPhone}
             />
+            {documentsFeatureEnabled && (
+              <DocumentsToggle defaultChecked={state?.values ? state.values.documentsEnabled === "on" : service.documents_enabled} />
+            )}
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
@@ -620,7 +641,7 @@ function ServiceRow({ service, showPhone }: { service: Service; showPhone: boole
   );
 }
 
-export function ServicesSection({ services, showPhone }: { services: Service[]; showPhone: boolean }) {
+export function ServicesSection({ services, showPhone, documentsFeatureEnabled }: { services: Service[]; showPhone: boolean; documentsFeatureEnabled: boolean }) {
   const t = useTranslations("Services");
   const [isAdding, setIsAdding] = useState(false);
   const [state, formAction, pending] = useActionState(createService, initialState);
@@ -640,7 +661,7 @@ export function ServicesSection({ services, showPhone }: { services: Service[]; 
       {services.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, marginBottom: "var(--space-4)" }}>
           {services.map((service) => (
-            <ServiceRow key={service.id} service={service} showPhone={showPhone} />
+            <ServiceRow key={service.id} service={service} showPhone={showPhone} documentsFeatureEnabled={documentsFeatureEnabled} />
           ))}
         </ul>
       ) : (
@@ -686,6 +707,9 @@ export function ServicesSection({ services, showPhone }: { services: Service[]; 
               locked={false}
               showPhone={showPhone}
             />
+            {documentsFeatureEnabled && (
+              <DocumentsToggle defaultChecked={state?.values?.documentsEnabled === "on"} />
+            )}
             {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>

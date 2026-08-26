@@ -7,7 +7,8 @@ export type AlertType =
   | "webhook_failure"
   | "session_failed"
   | "unresolved_outcome"
-  | "video_cost";
+  | "video_cost"
+  | "storage_low";
 
 // What a call site hands to an adapter — what happened and how urgent, never
 // how it's delivered.
@@ -60,5 +61,9 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
     // actually fires (or is only held off by the manual override).
     severity: "warning",
     description: "Projected monthly WebRTC cost crossed an alert/breaker threshold.",
+  },
+  storage_low: {
+    severity: "warning",
+    description: "Total Supabase storage (shared 1GB free tier, incl. session documents) crossed the usage warning threshold.",
   },
 };

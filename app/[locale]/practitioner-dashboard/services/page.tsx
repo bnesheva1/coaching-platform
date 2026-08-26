@@ -15,7 +15,7 @@ export default async function ServicesPage() {
 
   const { data: services } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type, image_url")
+    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type, image_url, documents_enabled")
     .eq("practitioner_id", userId)
     .order("created_at", { ascending: true });
 
@@ -67,7 +67,11 @@ export default async function ServicesPage() {
           own service tiles (practitioner-dashboard/profile/page.tsx). */}
       <div style={{ maxWidth: 800 }}>
         <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{t("nav.services")}</h1>
-        <ServicesSection services={servicesWithDeliveryInfo} showPhone={await isEnabled("showPhoneDelivery")} />
+        <ServicesSection
+          services={servicesWithDeliveryInfo}
+          showPhone={await isEnabled("showPhoneDelivery")}
+          documentsFeatureEnabled={await isEnabled("sessionDocuments")}
+        />
       </div>
     </main>
   );

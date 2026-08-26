@@ -55,6 +55,9 @@ export function PastSessionsSection({
   // any other <details>.
   defaultOpen = false,
   id,
+  // Forwarded to each past booking's details disclosure so a document
+  // sent after a session (a chart, a summary) is exchangeable here too.
+  documentsEnabled = false,
 }: {
   bookings: SessionBooking[];
   timezone: string;
@@ -65,6 +68,7 @@ export function PastSessionsSection({
   // route — undefined on the practitioner dashboard, which has no such
   // link.
   id?: string;
+  documentsEnabled?: boolean;
 }) {
   const t = useTranslations("Booking");
   const tReviews = useTranslations("Reviews");
@@ -216,7 +220,13 @@ export function PastSessionsSection({
                     </div>
                   )}
 
-                  <BookingDetailsDisclosure booking={booking} timezone={timezone} isPast />
+                  <BookingDetailsDisclosure
+                    booking={booking}
+                    timezone={timezone}
+                    isPast
+                    perspective={perspective}
+                    documentsEnabled={documentsEnabled}
+                  />
 
                   {reviewed && (
                     <p

@@ -4,6 +4,7 @@ import { completePastBookings } from "@/lib/bookings/completePastBookings";
 import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
 import { reconcileVideoRooms } from "@/lib/video/reconcile";
 import { runAlertSweep } from "@/lib/alerts/sweep";
+import { runSessionDocumentRetention } from "@/lib/documents/retention";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
@@ -49,8 +50,22 @@ export async function GET(request: Request) {
   // sweep.ts): Vercel Hobby allows one daily cron, so it folds in here; on a
   // paid plan, give it its own tighter cron and delete this one line.
   const alertResult = await runAlertSweep();
+  // Session-document retention: warn parties whose documents are about to
+  // expire, then permanently delete the ones past their window. Runs
+  // regardless of the sessionDocuments UI flag — honouring the deletion
+  // promise is a data-lifecycle duty independent of whether the feature is
+  // currently exposed. Best-effort (never throws); a no-op if the tables
+  // don't exist yet.
+  const documentRetentionResult = await runSessionDocumentRetention();
 
-  const summary = { ...reconciliationResult, ...completionResult, ...reminderResult, ...videoResult, ...alertResult };
+  const summary = {
+    ...reconciliationResult,
+    ...completionResult,
+    ...reminderResult,
+    ...videoResult,
+    ...alertResult,
+    ...documentRetentionResult,
+  };
 
   // Heartbeat: record that this run happened, so the admin health page can tell
   // a stopped cron from a quiet one. Best-effort and LAST — a heartbeat write

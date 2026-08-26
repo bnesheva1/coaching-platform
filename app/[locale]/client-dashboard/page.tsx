@@ -17,6 +17,8 @@ import { SavedPractitionersGrid } from "./SavedPractitionersGrid";
 import { ClientActivationState } from "./ClientActivationState";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { getSavedPractitionerCards } from "@/lib/practitioners/saved";
+import { isEnabled } from "@/lib/flags";
+import { getSessionDocumentSlots } from "@/lib/documents/read";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -54,7 +56,7 @@ export default async function ClientUpcomingPage({
     supabase.from("profiles").select("display_name").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at")
+      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled")
       .eq("client_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -126,6 +128,13 @@ export default async function ClientUpcomingPage({
   const minNoticeHoursById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.min_notice_hours]));
   const serviceById = new Map((services ?? []).map((s) => [s.id, s]));
 
+  // Session document slots, flag-gated. RLS restricts rows to this
+  // client's own bookings.
+  const documentsEnabled = await isEnabled("sessionDocuments");
+  const documentSlots = documentsEnabled
+    ? await getSessionDocumentSlots(supabase, (bookings ?? []).map((b) => b.id))
+    : new Map();
+
   const mergedBookings: SessionBooking[] = (bookings ?? []).map((b) => ({
     id: b.id,
     counterpartName: practitionerNameById.get(b.practitioner_id) ?? "",
@@ -159,6 +168,9 @@ export default async function ClientUpcomingPage({
     connectedTo: pastMetaByBookingId.get(b.id)?.connected_to ?? null,
     counterpartAvatarUrl: practitionerAvatarById.get(b.practitioner_id) ?? null,
     serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
+    documentsAllowed: b.documents_enabled,
+    clientDocument: documentSlots.get(b.id)?.client ?? null,
+    practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);
@@ -407,6 +419,7 @@ export default async function ClientUpcomingPage({
         nextSessionShownSeparately={nextBooking !== null}
         pastSectionId="past"
         emptyUpcomingContent={nextBooking ? undefined : noUpcomingBlock}
+        documentsEnabled={documentsEnabled}
       />
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">
