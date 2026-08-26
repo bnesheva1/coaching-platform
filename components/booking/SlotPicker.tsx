@@ -223,7 +223,7 @@ export function SlotPicker({
       return (
         <Link
           key={chip.id}
-          href={`/client-dashboard#booking-${chip.id}`}
+          href="/client-dashboard#upcoming"
           className="slot-chip slot-chip--own focus-ring"
           aria-label={t("ownBookingAria", { time })}
           style={{ font: chipFont, padding: chipPadding }}

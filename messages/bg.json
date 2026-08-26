@@ -722,6 +722,7 @@
     "deliveryLabelOnline": "Как да се включиш",
     "deliveryLabelInPerson": "Локация",
     "deliveryLabelPhone": "Телефонен номер",
+    "viewProfileAria": "Виж профила на {name}",
     "detailsToggle": "Детайли",
     "detailsServiceLabel": "Услуга",
     "detailsPriceLabel": "Платена цена",

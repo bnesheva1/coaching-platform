@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CancelSessionDialog } from "./CancelSessionDialog";
 import { EmergencyContactRevokeControl } from "./EmergencyContactRevokeControl";
@@ -145,6 +146,10 @@ export type SessionBooking = {
   // practitioner path — a client's own avatar isn't fetched there today,
   // and the compact (non-premium) card doesn't render one anyway.
   counterpartAvatarUrl?: string | null;
+  // The practitioner's username, so the client-side practitioner chip can
+  // link to their public profile (/p/<username>). Client path only; null
+  // when unknown (chip stays non-interactive).
+  counterpartUsername?: string | null;
   // Client path only, same reasoning as counterpartAvatarUrl — currently
   // only consumed by the client dashboard's own next-session hero
   // (hand-rolled in that page, not by BookingsList's own card markup).
@@ -271,23 +276,52 @@ export function ServiceImageSquare({ imageUrl, size }: { imageUrl?: string | nul
 // service/time text, not folded into a heading. Same fixed 32px avatar
 // in both the hero and the list cards — this is always a secondary
 // identity marker, never the card's own focal image.
-export function PractitionerChip({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
-  return (
-    <div
-      className={rowStyles.tile}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "var(--space-3)",
-        background: "var(--bg-surface-2)",
-        border: "1px solid var(--border-default)",
-        borderRadius: "var(--radius-md)",
-        padding: "var(--space-2) var(--space-4) var(--space-2) var(--space-2)",
-      }}
-    >
+// The practitioner mini-card on a client's session cards (upcoming list +
+// the next-session hero). When a username is known it becomes a link to
+// that practitioner's public profile (/p/<username>); without one — a rare
+// case, e.g. a practitioner whose username was never set — it stays a
+// plain, non-interactive card rather than a dead link.
+export function PractitionerChip({ name, avatarUrl, username }: { name: string; avatarUrl?: string | null; username?: string | null }) {
+  const t = useTranslations("Booking");
+  const [hover, setHover] = useState(false);
+
+  const baseStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "var(--space-3)",
+    background: "var(--bg-surface-2)",
+    border: `1px solid ${hover && username ? "var(--border-strong)" : "var(--border-default)"}`,
+    borderRadius: "var(--radius-md)",
+    padding: "var(--space-2) var(--space-4) var(--space-2) var(--space-2)",
+    transition: "border-color var(--duration-fast) var(--ease-standard)",
+  } as const;
+
+  const inner = (
+    <>
       <CounterpartAvatar name={name} avatarUrl={avatarUrl} size={32} />
       <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{name}</span>
-    </div>
+    </>
+  );
+
+  if (!username) {
+    return (
+      <div className={rowStyles.tile} style={baseStyle}>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/p/${username}`}
+      className={`${rowStyles.tile} focus-ring`}
+      aria-label={t("viewProfileAria", { name })}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ ...baseStyle, textDecoration: "none", color: "inherit", cursor: "pointer" }}
+    >
+      {inner}
+    </Link>
   );
 }
 
@@ -837,7 +871,7 @@ export function BookingsList({
                       <p style={{ margin: 0, font: "var(--text-heading-sm)", color: "var(--text-primary)" }}>
                         {booking.serviceName} {t("withInline")}
                       </p>
-                      <PractitionerChip name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} />
+                      <PractitionerChip name={booking.counterpartName} avatarUrl={booking.counterpartAvatarUrl} username={booking.counterpartUsername} />
                     </div>
                     {/* Join link/location sits directly under that row. */}
                     {deliverySlot}

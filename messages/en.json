@@ -722,6 +722,7 @@
     "deliveryLabelOnline": "How to join",
     "deliveryLabelInPerson": "Location",
     "deliveryLabelPhone": "Phone number",
+    "viewProfileAria": "View {name}'s profile",
     "detailsToggle": "Details",
     "detailsServiceLabel": "Service",
     "detailsPriceLabel": "Price paid",
