@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useActionState, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog, type ConfirmDialogHandle } from "@/components/ui/ConfirmDialog";
 import { EditPencilButton } from "@/components/practitioner-profile/EditPencilButton";
@@ -54,13 +54,8 @@ const MAX_PHONE_LENGTH = 30;
 // values, no free entry.
 const DURATION_OPTIONS = [30, 45, 60, 75, 90, 105, 120] as const;
 const DEFAULT_DURATION_MINUTES = 60;
-// Mirrors MIN_PRICE_CENTS in services-actions.ts.
-const MIN_PRICE_EUROS = 20;
-// Mirrors DEFAULT_MAX_PRICE_CENTS in services-actions.ts — the
-// platform default. A practitioner's own max_price_cents override (no
-// UI yet) can raise the real, server-enforced ceiling above this; this
-// is only a client-side hint for the common (no override) case.
-const DEFAULT_MAX_PRICE_EUROS = 500;
+// Price bounds (min €20; the max is the practitioner's effective ceiling) are
+// resolved server-side and passed in via EarningsInfo now — see the page.
 
 function formatPrice(priceCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -399,7 +394,137 @@ const tileStyle = {
   background: "var(--bg-surface)",
 };
 
-function ServiceRow({ service, showPhone, documentsFeatureEnabled }: { service: Service; showPhone: boolean; documentsFeatureEnabled: boolean }) {
+const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
+
+export type EarningsInfo = {
+  // The practitioner's OWN effective commission rate (override ?? brand
+  // default; 0 for a software_provider who keeps 100%) — resolved server-side
+  // by the SAME function checkout uses, so the panel can't drift from what's
+  // actually charged.
+  commissionRate: number;
+  providerName: string;
+  processingFee: { minPct: number; maxPct: number; fixedCents: number };
+  minPriceEuros: number;
+  maxPriceEuros: number;
+};
+
+// The live "what you'll receive" breakdown, beneath the price, once a price is
+// entered. Our commission is EXACT (computed on integer cents, identical to
+// commissionCentsFor); the provider's fee is shown only as an APPROXIMATE range
+// in a note — never folded into a single confident net figure. Zero commission
+// (zero-commission brand or a software_provider) shows "the full amount", not a
+// noisy "0% commission" line.
+function EarningsBreakdown({ priceEuros, commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros }: { priceEuros: string } & EarningsInfo) {
+  const t = useTranslations("Earnings");
+  const locale = useLocale();
+  const intlLocale = INTL_LOCALES[locale] ?? "en-US";
+  const money = (cents: number, opts?: Intl.NumberFormatOptions) =>
+    new Intl.NumberFormat(intlLocale, { style: "currency", currency: "EUR", ...opts }).format(cents / 100);
+
+  const euros = Number(priceEuros);
+  if (!Number.isFinite(euros) || euros <= 0) return null; // appears once a price is entered
+
+  const priceCents = Math.round(euros * 100);
+  const commissionCents = Math.round(priceCents * commissionRate);
+  const netCents = priceCents - commissionCents;
+  const zero = commissionRate === 0;
+
+  const feeVars = {
+    provider: providerName,
+    feeMin: String(processingFee.minPct),
+    feeMax: String(processingFee.maxPct),
+    feeFixed: money(processingFee.fixedCents),
+  };
+  const whole = { maximumFractionDigits: 0 } as const;
+
+  const rowStyle = { display: "flex", justifyContent: "space-between", gap: "var(--space-3)" } as const;
+  const label = { margin: 0, color: "var(--text-secondary)" } as const;
+  const value = { margin: 0, color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" } as const;
+  const strongLabel = { ...label, color: "var(--text-primary)", fontWeight: 600 } as const;
+  const strongValue = { ...value, color: "var(--text-primary)", fontWeight: 600 } as const;
+  const note = { margin: 0, font: "var(--text-caption)", color: "var(--text-tertiary)" } as const;
+
+  return (
+    <div
+      role="group"
+      aria-label={t("heading")}
+      style={{
+        marginTop: "var(--space-2)",
+        padding: "var(--space-3)",
+        background: "var(--bg-sunken)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-md)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-2)",
+      }}
+    >
+      <p style={{ margin: 0, font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-tertiary)" }}>
+        {t("heading")}
+      </p>
+      <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: "var(--space-1)", font: "var(--text-body-sm)" }}>
+        <div style={rowStyle}>
+          <dt style={label}>{t("priceRow")}</dt>
+          <dd style={value}>{money(priceCents)}</dd>
+        </div>
+        {zero ? (
+          <div style={rowStyle}>
+            <dt style={strongLabel}>{t("fullAmountRow")}</dt>
+            <dd style={strongValue}>{money(priceCents)}</dd>
+          </div>
+        ) : (
+          <>
+            <div style={rowStyle}>
+              <dt style={label}>{t("commissionRow", { rate: `${+(commissionRate * 100).toFixed(2)}` })}</dt>
+              <dd style={value}>−{money(commissionCents)}</dd>
+            </div>
+            <div style={rowStyle}>
+              <dt style={strongLabel}>{t("netRow")}</dt>
+              <dd style={strongValue}>{money(netCents)}</dd>
+            </div>
+          </>
+        )}
+      </dl>
+      <p style={note}>{zero ? t("processingNoteZero", feeVars) : t("processingNote", feeVars)}</p>
+      <p style={note}>{t("taxNote")}</p>
+      <p style={note}>{t("boundsNote", { min: money(minPriceEuros * 100, whole), max: money(maxPriceEuros * 100, whole) })}</p>
+    </div>
+  );
+}
+
+// The price input + hint + live earnings breakdown. The input is CONTROLLED
+// (local state) so the breakdown recomputes as the number changes — the same
+// local-state pattern DurationField/DeliveryFields already use.
+function PriceField({ defaultValue, readOnly = false, earnings }: { defaultValue: string; readOnly?: boolean; earnings: EarningsInfo }) {
+  const t = useTranslations("Services");
+  const [priceEuros, setPriceEuros] = useState(defaultValue);
+  return (
+    <>
+      <label>
+        {t("priceLabel")}
+        <input
+          name="price"
+          type="number"
+          min={earnings.minPriceEuros}
+          max={earnings.maxPriceEuros}
+          step={0.01}
+          required
+          readOnly={readOnly}
+          value={priceEuros}
+          onChange={(e) => setPriceEuros(e.target.value)}
+          className="form-field"
+          style={{ width: "100%", background: readOnly ? "var(--bg-sunken)" : undefined }}
+        />
+        <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+          {t("priceHint", { min: earnings.minPriceEuros, max: earnings.maxPriceEuros })}
+        </span>
+      </label>
+      <EarningsBreakdown priceEuros={priceEuros} {...earnings} />
+    </>
+  );
+}
+
+function ServiceRow({ service, showPhone, documentsFeatureEnabled, earnings }: { service: Service; showPhone: boolean; documentsFeatureEnabled: boolean; earnings: EarningsInfo }) {
   const t = useTranslations("Services");
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateService, initialState);
@@ -467,24 +592,11 @@ function ServiceRow({ service, showPhone, documentsFeatureEnabled }: { service: 
               defaultValue={state?.values?.durationMinutes ? Number(state.values.durationMinutes) : service.duration_minutes}
               locked={locked}
             />
-            <label>
-              {t("priceLabel")}
-              <input
-                name="price"
-                type="number"
-                min={MIN_PRICE_EUROS}
-                max={DEFAULT_MAX_PRICE_EUROS}
-                step={0.01}
-                required
-                readOnly={locked}
-                defaultValue={state?.values?.price ?? (service.price_cents / 100).toFixed(2)}
-                className="form-field"
-                style={{ width: "100%", background: locked ? "var(--bg-sunken)" : undefined }}
-              />
-              <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
-                {t("priceHint", { min: MIN_PRICE_EUROS, max: DEFAULT_MAX_PRICE_EUROS })}
-              </span>
-            </label>
+            <PriceField
+              defaultValue={state?.values?.price ?? (service.price_cents / 100).toFixed(2)}
+              readOnly={locked}
+              earnings={earnings}
+            />
             <DeliveryFields
               defaultType={(state?.values?.deliveryType as DeliveryType) || service.delivery_type}
               defaultInfo={state?.values?.deliveryInfo ?? (service.delivery_info ?? "")}
@@ -641,7 +753,9 @@ function ServiceRow({ service, showPhone, documentsFeatureEnabled }: { service: 
   );
 }
 
-export function ServicesSection({ services, showPhone, documentsFeatureEnabled }: { services: Service[]; showPhone: boolean; documentsFeatureEnabled: boolean }) {
+export function ServicesSection({ services, showPhone, documentsFeatureEnabled, commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros }: { services: Service[]; showPhone: boolean; documentsFeatureEnabled: boolean } & EarningsInfo) {
+  // Bundle the earnings inputs once and thread them to every price field.
+  const earnings: EarningsInfo = { commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros };
   const t = useTranslations("Services");
   const [isAdding, setIsAdding] = useState(false);
   const [state, formAction, pending] = useActionState(createService, initialState);
@@ -661,7 +775,7 @@ export function ServicesSection({ services, showPhone, documentsFeatureEnabled }
       {services.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, marginBottom: "var(--space-4)" }}>
           {services.map((service) => (
-            <ServiceRow key={service.id} service={service} showPhone={showPhone} documentsFeatureEnabled={documentsFeatureEnabled} />
+            <ServiceRow key={service.id} service={service} showPhone={showPhone} documentsFeatureEnabled={documentsFeatureEnabled} earnings={earnings} />
           ))}
         </ul>
       ) : (
@@ -693,13 +807,7 @@ export function ServicesSection({ services, showPhone, documentsFeatureEnabled }
               defaultValue={state?.values?.durationMinutes ? Number(state.values.durationMinutes) : DEFAULT_DURATION_MINUTES}
               locked={false}
             />
-            <label>
-              {t("priceLabel")}
-              <input name="price" type="number" min={MIN_PRICE_EUROS} max={DEFAULT_MAX_PRICE_EUROS} step={0.01} required defaultValue={state?.values?.price ?? ""} className="form-field" style={{ width: "100%" }} />
-              <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
-                {t("priceHint", { min: MIN_PRICE_EUROS, max: DEFAULT_MAX_PRICE_EUROS })}
-              </span>
-            </label>
+            <PriceField defaultValue={state?.values?.price ?? ""} earnings={earnings} />
             <DeliveryFields
               defaultType={(state?.values?.deliveryType as DeliveryType) || null}
               defaultInfo={state?.values?.deliveryInfo ?? ""}
