@@ -16,14 +16,16 @@ function positiveIntEnv(raw: string | undefined, fallback: number): number {
 
 // The authoritative upload size cap. The bucket's own file_size_limit is
 // a much higher hard backstop (see the bucket migration) — this is the
-// real knob. Default 10MB: comfortably above a contract or a summary,
-// well under the shared 1GB free tier.
-export const SESSION_DOCUMENT_MAX_BYTES = positiveIntEnv(process.env.SESSION_DOCUMENT_MAX_BYTES, 10 * 1024 * 1024);
+// real knob. Default 5MB: comfortably handles a scanned contract, and
+// keeps roughly 200 documents inside the shared 1GB free tier.
+export const SESSION_DOCUMENT_MAX_BYTES = positiveIntEnv(process.env.SESSION_DOCUMENT_MAX_BYTES, 5 * 1024 * 1024);
 
 // Days after a session (booking.end_utc) before the file is permanently
 // deleted. Anchored to the session, not the upload, so a contract sent
-// before a consultation survives the consultation.
-export const SESSION_DOCUMENT_RETENTION_DAYS = positiveIntEnv(process.env.SESSION_DOCUMENT_RETENTION_DAYS, 30);
+// before a consultation survives the consultation. Default 14: covers the
+// realistic use (a practitioner sending a summary, a client who doesn't
+// check right away) without holding files longer than needed.
+export const SESSION_DOCUMENT_RETENTION_DAYS = positiveIntEnv(process.env.SESSION_DOCUMENT_RETENTION_DAYS, 14);
 
 // How many days before deletion both parties are warned.
 export const SESSION_DOCUMENT_RETENTION_WARN_DAYS = positiveIntEnv(process.env.SESSION_DOCUMENT_RETENTION_WARN_DAYS, 3);
