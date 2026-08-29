@@ -1,5 +1,5 @@
 ---
-lastUpdated: ""
+lastUpdated: "2026-08-29"
 ---
 
 ## 1. Who we are
@@ -83,10 +83,10 @@ We do not sell your data. We share it only with the service providers we need to
 | Provider | What they do | Where |
 |---|---|---|
 | **Supabase** | Database, authentication, file storage | EU (Frankfurt, Germany) |
-| **Vercel** | Website hosting | [CONFIRM REGION] |
+| **Vercel** | Website hosting | EU (Frankfurt, Germany) |
 | **Stripe** | Payment processing and payouts to practitioners | EU / international |
-| **Resend** | Sending transactional email | [CONFIRM — US] |
-| **Upstash** | Rate limiting (IP addresses only) | [CONFIRM REGION] |
+| **Resend** | Sending transactional email | US |
+| **Upstash** | Rate limiting (IP addresses only) | EU |
 | **LiveKit** *(planned)* | Video sessions | [CONFIRM] |
 
 **A note about Stripe.** Stripe acts as a separate data controller for the identity and banking information it collects from practitioners in order to make payouts. That information goes to Stripe directly and we do not hold it. Stripe retains it under its own obligations, and deleting your account with us does not remove it from Stripe.
