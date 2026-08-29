@@ -900,6 +900,17 @@
     "bulkCancellationSummaryIntro": "We've had to cancel {count} of your upcoming bookings and refund the clients. This was done on your behalf.",
     "bulkCancellationSummaryReasonLabel": "Reason:"
   },
+  "Earnings": {
+    "heading": "What you'll receive",
+    "priceRow": "Service price",
+    "commissionRow": "Platform commission ({rate}%)",
+    "netRow": "What you receive from us",
+    "fullAmountRow": "You receive the full amount",
+    "processingNote": "{provider} also deducts a card processing fee — about {feeMin}–{feeMax}% + {feeFixed}, depending on the card — before the money reaches you. That fee goes to {provider}, not to us, so your final payout is a little lower than the figure above.",
+    "processingNoteZero": "{provider} deducts a card processing fee — about {feeMin}–{feeMax}% + {feeFixed}, depending on the card — before the money reaches you. That fee goes to {provider}, not to us.",
+    "taxNote": "All taxes are your responsibility, according to your own registration.",
+    "boundsNote": "Price can be between {min} and {max}."
+  },
   "Session": {
     "deviceCheckRequestingTitle": "Getting ready…",
     "deviceCheckRequestingBody": "Allow access to your camera and microphone when your browser asks.",

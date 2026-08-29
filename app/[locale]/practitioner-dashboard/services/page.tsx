@@ -2,7 +2,14 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVE_STATUSES } from "@/lib/booking-time";
 import { isEnabled } from "@/lib/flags";
+import { paymentProviderName, processingFeeRange } from "@/lib/payments";
+import { effectiveCommissionRate } from "@/lib/payments/stripe/checkout";
 import { ServicesSection } from "../ServicesSection";
+
+// Mirrors DEFAULT_MAX_PRICE_CENTS in services-actions.ts — the platform default
+// ceiling when the practitioner has no max_price_cents override.
+const DEFAULT_MAX_PRICE_CENTS = 50000;
+const MIN_PRICE_EUROS = 20;
 
 // Auth/role guard already ran in the shared layout.tsx.
 export default async function ServicesPage() {
@@ -58,6 +65,22 @@ export default async function ServicesPage() {
     upcoming_booking_count: upcomingCountByServiceId.get(service.id) ?? 0,
   }));
 
+  // The practitioner's OWN effective commission rate, resolved server-side by
+  // the SAME function checkout uses — override ?? brand default, and 0 for a
+  // software_provider (they keep 100%). commission_rate_override + billing_model
+  // are admin-only, so they come through the get_my_commission_context definer
+  // RPC. A negotiated override shows the negotiated number, never the default.
+  const { data: ccRows } = (await supabase.rpc("get_my_commission_context")) as {
+    data: { billing_model: string | null; commission_rate_override: number | null }[] | null;
+  };
+  const cc = ccRows?.[0];
+  const commissionRate = cc?.billing_model === "commission" ? effectiveCommissionRate(cc.commission_rate_override) : 0;
+
+  // Effective price ceiling (the practitioner's max_price_cents override, else
+  // the platform default), so the panel's bounds match what's actually enforced.
+  const { data: maxCents } = (await supabase.rpc("get_my_max_price_cents")) as { data: number | null };
+  const maxPriceEuros = (maxCents ?? DEFAULT_MAX_PRICE_CENTS) / 100;
+
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       {/* No ContentContainer — DashboardShell already bounds/pads the
@@ -71,6 +94,11 @@ export default async function ServicesPage() {
           services={servicesWithDeliveryInfo}
           showPhone={await isEnabled("showPhoneDelivery")}
           documentsFeatureEnabled={await isEnabled("sessionDocuments")}
+          commissionRate={commissionRate}
+          providerName={paymentProviderName()}
+          processingFee={processingFeeRange()}
+          minPriceEuros={MIN_PRICE_EUROS}
+          maxPriceEuros={maxPriceEuros}
         />
       </div>
     </main>

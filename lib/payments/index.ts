@@ -19,6 +19,31 @@ export function defaultBillingModel(): BillingModel {
   return process.env.DEFAULT_BILLING_MODEL === "commission" ? "commission" : "software_provider";
 }
 
+// The payment provider's DISPLAY name, shown to practitioners (e.g. in the
+// earnings breakdown on the service form). Config, not a literal — the provider
+// lives behind this seam and a deployment may swap it, so the shown name follows
+// it. Defaults to Stripe.
+export function paymentProviderName(): string {
+  return process.env.PAYMENT_PROVIDER_NAME?.trim() || "Stripe";
+}
+
+// The provider's card-processing fee, shown to practitioners as an APPROXIMATE
+// range (it varies by card type and origin) — never as a single confident net.
+// The config holds the numbers; the copy only interpolates them. Percentages are
+// plain numbers (1.5 = 1.5%), fixed is in cents. Malformed/negative values fall
+// back to sensible EU-band defaults.
+export function processingFeeRange(): { minPct: number; maxPct: number; fixedCents: number } {
+  const num = (raw: string | undefined, fallback: number) => {
+    const n = raw && raw.trim() !== "" ? Number(raw) : NaN;
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+  return {
+    minPct: num(process.env.PAYMENT_PROCESSING_FEE_MIN_PCT, 1.5),
+    maxPct: num(process.env.PAYMENT_PROCESSING_FEE_MAX_PCT, 3.25),
+    fixedCents: num(process.env.PAYMENT_PROCESSING_FEE_FIXED_CENTS, 25),
+  };
+}
+
 // Mode is derived from the key prefix — no call needed — but the call itself
 // (a cheap balance.retrieve) is what proves the key is actually VALID right now,
 // not merely present. Both are reported: the mode always, the validity from the
