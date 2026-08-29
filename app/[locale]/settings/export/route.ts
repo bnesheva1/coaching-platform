@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import { collectSessionDocuments } from "@/lib/documents/gdpr";
 
 // Own-data export (GDPR access/portability). The ONLY id used anywhere
 // in this handler is `user.id`, read once below from the verified
@@ -88,6 +90,15 @@ export async function GET() {
     : { data: [] };
   const payments = (paymentsRaw ?? []).filter((p) => p.booking_id && ownClientBookingIdSet.has(p.booking_id));
 
+  // Session documents: metadata for every document on the user's bookings
+  // (both sides), and the list of their OWN uploaded files to embed in the
+  // ZIP. Right-of-access covers the files the user uploaded — they're
+  // personal data we hold — so the export is a ZIP (export.json + the files),
+  // not bare JSON. The counterparty's files are never included, only that a
+  // document was exchanged.
+  const allBookingIds = [...ownClientBookingIds, ...(bookingsAsPractitioner ?? []).map((b) => b.id)];
+  const { metadata: sessionDocuments, files: ownDocumentFiles } = await collectSessionDocuments(admin, user.id, allBookingIds);
+
   const exportPayload = {
     exportedAt: new Date().toISOString(),
     profile,
@@ -98,16 +109,29 @@ export async function GET() {
     reviewsWritten: reviewsWritten ?? [],
     reviewsReceived: reviewsReceived ?? [],
     payments,
+    sessionDocuments,
     // No messaging feature exists anywhere in this app today — included
     // as an explicit empty marker rather than omitted, so this export's
     // shape stays stable if one is ever added later.
     messages: [],
   };
 
-  return new NextResponse(JSON.stringify(exportPayload, null, 2), {
+  const zip = new JSZip();
+  zip.file("export.json", JSON.stringify(exportPayload, null, 2));
+  for (const f of ownDocumentFiles) {
+    const { data: blob, error: dlError } = await admin.storage.from("session-documents").download(f.storagePath);
+    if (dlError || !blob) {
+      console.error("export: session document download failed", { path: f.storagePath, dlError });
+      continue; // metadata still records it; a missing file must not fail the whole export
+    }
+    zip.file(f.zipPath, new Uint8Array(await blob.arrayBuffer()));
+  }
+  const zipBuffer = await zip.generateAsync({ type: "arraybuffer" });
+
+  return new NextResponse(zipBuffer, {
     headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="my-data-${user.id}.json"`,
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="my-data-${user.id}.zip"`,
     },
   });
 }
