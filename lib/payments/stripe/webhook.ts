@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { getStripeClient } from "./client";
-import { commissionCentsFor } from "./checkout";
+import { commissionCentsFor, COMMISSION_RATE } from "./checkout";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPaidBookingConfirmationEmails, sendPaymentRefundedNotice } from "@/lib/email";
 import { ensureVideoSession } from "@/lib/video";
@@ -66,6 +66,23 @@ function readMetadata(session: Stripe.Checkout.Session): CheckoutMetadata | null
   };
 }
 
+// The commission snapshot the checkout builder stamped into session metadata
+// at charge time: the resolved per-practitioner rate and the exact fee. We
+// record THESE rather than recompute, so a later rate change never rewrites
+// what was charged. Legacy fallback (a session created before the snapshot
+// existed): rate unknown (null), fee recomputed from the brand default —
+// which is exactly what the old code always did.
+function readCommission(session: Stripe.Checkout.Session, amountCents: number): { rate: number | null; cents: number } {
+  const rawRate = session.metadata?.commission_rate;
+  const rawCents = session.metadata?.commission_cents;
+  if (rawRate != null && rawCents != null) {
+    const rate = Number(rawRate);
+    const cents = Number(rawCents);
+    if (Number.isFinite(rate) && Number.isFinite(cents)) return { rate, cents };
+  }
+  return { rate: null, cents: commissionCentsFor(amountCents, COMMISSION_RATE) };
+}
+
 // The only event this module needs to handle at all. checkout.session.
 // expired is deliberately NOT subscribed to — under book-on-successful-
 // payment, an expired/abandoned session never created a booking or a
@@ -88,9 +105,20 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
   const immediateRequestId = session.metadata?.immediate_request_id;
   if (immediateRequestId) {
     const immediatePi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-    const { booked } = await finalizeImmediatePayment(immediateRequestId);
-    if (!booked && immediatePi) {
-      await refundLateImmediatePayment(session, immediatePi, session.amount_total ?? 0, {
+    const immediateAmount = session.amount_total ?? 0;
+    const { booked, bookingId, alreadyBooked } = await finalizeImmediatePayment(immediateRequestId);
+    if (booked && bookingId && immediatePi) {
+      // The immediate path books but writes no payments row of its own —
+      // record it here so its commission (rate + cents, from the snapshot
+      // metadata) is captured and counted in the revenue rollup, like the
+      // scheduled path's confirm_paid_booking does.
+      await recordImmediatePayment(session, immediatePi, bookingId, immediateAmount, readCommission(session, immediateAmount));
+    } else if (!booked && !alreadyBooked && immediatePi) {
+      // Genuinely couldn't book (the practitioner's window lapsed and they
+      // moved on) — refund. NOT reached for a redelivery/reconcile of an
+      // already-booked session (alreadyBooked), which must never refund a
+      // paid, booked session.
+      await refundLateImmediatePayment(session, immediatePi, immediateAmount, {
         clientId: session.metadata?.client_id ?? "",
         practitionerId: session.metadata?.practitioner_id ?? "",
       });
@@ -112,6 +140,7 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
 
   type ConfirmPaidBookingResult = { booking_id: string | null; already_processed: boolean; failure_reason: string | null };
 
+  const commission = readCommission(session, amountCents);
   const supabase = createServiceRoleClient();
   const { data: rawResult, error } = await supabase
     .rpc("confirm_paid_booking", {
@@ -121,7 +150,8 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
       p_start_utc: metadata.start_utc,
       p_checkout_session_id: session.id,
       p_amount_cents: amountCents,
-      p_commission_cents: commissionCentsFor(amountCents),
+      p_commission_cents: commission.cents,
+      p_commission_rate: commission.rate,
       p_currency: (session.currency ?? "eur").toUpperCase(),
       p_payment_intent_id: paymentIntentId,
     })
@@ -190,9 +220,11 @@ async function refundUnconfirmablePayment(
 ): Promise<void> {
   const stripe = getStripeClient();
   const supabase = createServiceRoleClient();
-  // Zero at a zero commission rate — the charge carried no application fee, so
-  // there's nothing to reverse (and nothing but €0 to record).
-  const feeCents = commissionCentsFor(amountCents);
+  // The snapshot from metadata (or the legacy recompute) — zero at a zero
+  // commission rate, so there's nothing to reverse (and nothing but €0 to
+  // record). refund_application_fee gates on the actually-charged fee.
+  const commission = readCommission(session, amountCents);
+  const feeCents = commission.cents;
 
   try {
     const refund = await stripe.refunds.create({
@@ -206,6 +238,7 @@ async function refundUnconfirmablePayment(
       stripe_checkout_session_id: session.id,
       amount_cents: amountCents,
       commission_cents: feeCents,
+      commission_rate: commission.rate,
       currency: (session.currency ?? "eur").toUpperCase(),
       status: "refunded",
       provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: failureReason },
@@ -246,7 +279,8 @@ async function refundLateImmediatePayment(
 ): Promise<void> {
   const stripe = getStripeClient();
   const supabase = createServiceRoleClient();
-  const feeCents = commissionCentsFor(amountCents);
+  const commission = readCommission(session, amountCents);
+  const feeCents = commission.cents;
 
   try {
     const refund = await stripe.refunds.create({
@@ -260,6 +294,7 @@ async function refundLateImmediatePayment(
       stripe_checkout_session_id: session.id,
       amount_cents: amountCents,
       commission_cents: feeCents,
+      commission_rate: commission.rate,
       currency: (session.currency ?? "eur").toUpperCase(),
       status: "refunded",
       provider_ref: { payment_intent_id: paymentIntentId, refund_id: refund.id, failure_reason: "immediate_window_lapsed" },
@@ -281,4 +316,34 @@ async function refundLateImmediatePayment(
     amountCents,
     currency: (session.currency ?? "eur").toUpperCase(),
   });
+}
+
+// Records the succeeded payment for an immediate booking. The immediate path
+// (lib/immediate/booking.ts) creates the booking but no payments row; this is
+// its counterpart to the scheduled path's confirm_paid_booking insert —
+// snapshotting the commission rate + cents from the session metadata so
+// immediate commissions are frozen per-payment and counted in the revenue
+// rollup. Best-effort/logged: the client has already paid and been booked, so
+// a payments-row hiccup must not fail the webhook.
+async function recordImmediatePayment(
+  session: Stripe.Checkout.Session,
+  paymentIntentId: string,
+  bookingId: string,
+  amountCents: number,
+  commission: { rate: number | null; cents: number },
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { error } = await supabase.from("payments").insert({
+    booking_id: bookingId,
+    stripe_checkout_session_id: session.id,
+    amount_cents: amountCents,
+    commission_cents: commission.cents,
+    commission_rate: commission.rate,
+    currency: (session.currency ?? "eur").toUpperCase(),
+    status: "succeeded",
+    provider_ref: { payment_intent_id: paymentIntentId },
+  });
+  if (error) {
+    console.error("recordImmediatePayment: payments insert failed", { sessionId: session.id, bookingId, error });
+  }
 }

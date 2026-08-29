@@ -78,10 +78,15 @@ export async function releaseAndFree(svc: ServiceClient, requestId: string): Pro
 // still waiting); the session starts at THIS moment (payment clear), off-grid.
 // Returns booked:false when the window passed / it raced — the caller refunds,
 // since the practitioner has already moved on.
-export async function finalizeImmediatePayment(requestId: string): Promise<{ booked: boolean; reason?: string }> {
+export async function finalizeImmediatePayment(requestId: string): Promise<{ booked: boolean; bookingId?: string; alreadyBooked?: boolean; reason?: string }> {
   const svc = createServiceRoleClient();
   const { data: req } = await svc.from("immediate_requests").select("client_id, practitioner_id, service_id, status").eq("id", requestId).single();
   if (!req) return { booked: false, reason: "no_request" };
+  // Already booked — this is a webhook REDELIVERY or the reconcile sweep
+  // re-processing a session that already succeeded. The booking + payment
+  // exist; the caller must NOT refund a booked, paid session. Distinct from
+  // the not_confirmed/expired outcomes below, which mean no booking exists.
+  if (req.status === "booked") return { booked: false, alreadyBooked: true, reason: "already_booked" };
   if (req.status !== "confirmed") return { booked: false, reason: "not_confirmed" };
   const { data: hold } = await svc.from("immediate_holds").select("expires_at").eq("request_id", requestId).maybeSingle();
   if (!hold || new Date(hold.expires_at as string) <= new Date()) return { booked: false, reason: "expired" };
@@ -89,17 +94,20 @@ export async function finalizeImmediatePayment(requestId: string): Promise<{ boo
   // Claim (guarded on confirmed) before creating the booking, so a racing
   // timeout-release can't double-book.
   const { data: claimed } = await svc.from("immediate_requests").update({ status: "booked" }).eq("id", requestId).eq("status", "confirmed").select("id");
-  if (!claimed || claimed.length === 0) return { booked: false, reason: "raced" };
+  // Lost the claim to a concurrent booker (another delivery of the same
+  // event): that other process is creating the booking, so — like the
+  // already-booked case — do NOT refund.
+  if (!claimed || claimed.length === 0) return { booked: false, alreadyBooked: true, reason: "raced" };
 
   const { data: service } = await svc.from("services").select("duration_minutes").eq("id", req.service_id as string).single();
   const start = new Date();
   const end = new Date(start.getTime() + ((service?.duration_minutes as number) ?? 0) * 60_000);
-  await createImmediateBooking(
+  const bookingId = await createImmediateBooking(
     svc,
     { client_id: req.client_id as string, practitioner_id: req.practitioner_id as string, service_id: req.service_id as string, request_id: requestId },
     start.toISOString(),
     end.toISOString(),
   );
   await svc.from("immediate_holds").delete().eq("request_id", requestId);
-  return { booked: true };
+  return { booked: true, bookingId: bookingId ?? undefined };
 }

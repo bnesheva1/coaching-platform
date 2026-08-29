@@ -2,7 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { isEnabled } from "@/lib/flags";
 import { type ConnectionResult, errorMessage } from "@/lib/health/types";
 import { getStripeClient } from "./stripe/client";
-import { createBookingCheckoutSession } from "./stripe/checkout";
+import { createBookingCheckoutSession, effectiveCommissionRate } from "./stripe/checkout";
 import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
 
@@ -57,7 +57,7 @@ export async function initiateBookingPayment(request: BookingPaymentRequest): Pr
   const supabase = createServiceRoleClient();
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("billing_model, stripe_connected_account_id, stripe_connect_transfers_active")
+    .select("billing_model, stripe_connected_account_id, stripe_connect_transfers_active, commission_rate_override")
     .eq("id", request.practitionerId)
     .single();
 
@@ -89,7 +89,11 @@ export async function initiateBookingPayment(request: BookingPaymentRequest): Pr
   }
 
   try {
-    const { url } = await createBookingCheckoutSession(request, practitionerProfile.stripe_connected_account_id);
+    // Resolve the practitioner's effective commission rate here (the single
+    // chokepoint that already reads their profile) and hand it to checkout,
+    // which stamps it into the session metadata as the snapshot.
+    const rate = effectiveCommissionRate(practitionerProfile.commission_rate_override as number | null);
+    const { url } = await createBookingCheckoutSession(request, practitionerProfile.stripe_connected_account_id, rate);
     return { type: "redirect", url };
   } catch (err) {
     // Network failure, missing/invalid STRIPE_SECRET_KEY, or Stripe

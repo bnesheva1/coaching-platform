@@ -67,6 +67,73 @@ export async function setModeration(
   return null;
 }
 
+// Percent (what the admin types) → a clean string like "15" or "7.5",
+// stripping float artifacts, for the audit log's human-readable values.
+function pctLabel(rate: number | null): string {
+  return rate == null ? "default" : `${+(rate * 100).toFixed(4)}%`;
+}
+
+// Set or clear a practitioner's commission-rate override. The admin enters a
+// PERCENT (0–100, decimals ok); an empty field clears the override back to the
+// brand default. The rate follows the practitioner (early-recruit terms), and
+// a required reason is recorded on the row (who/when/why) plus in the audit
+// log — an unexplained 0% six months on is a mystery. The resolved rate is
+// snapshotted onto each payment at booking time, so this only affects FUTURE
+// bookings, never what was already charged. Mirrors setModeration.
+export async function setCommissionOverride(
+  practitionerId: string,
+  _prev: PractitionerControlState,
+  formData: FormData,
+): Promise<PractitionerControlState> {
+  const user = await requireAdmin();
+
+  const reason = (formData.get("reason") as string | null)?.trim() ?? "";
+  if (!reason) return { error: "REASON_REQUIRED" };
+
+  const rawRate = (formData.get("rate") as string | null)?.trim() ?? "";
+  let override: number | null;
+  if (rawRate === "") {
+    override = null; // clear → brand default
+  } else {
+    const pct = Number(rawRate);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) return { error: "INVALID_RATE" };
+    override = pct / 100; // store the fraction; DB CHECK re-enforces 0–1
+  }
+
+  const supabase = createServiceRoleClient();
+  const { data: current } = await supabase
+    .from("practitioner_profiles")
+    .select("commission_rate_override")
+    .eq("id", practitionerId)
+    .single();
+  const previous = (current?.commission_rate_override as number | null) ?? null;
+  if (previous === override) return null; // unchanged — nothing to record
+
+  await supabase
+    .from("practitioner_profiles")
+    .update({
+      commission_rate_override: override,
+      // Clearing drops the shown reason; the WHY of the clear still lives in
+      // the audit log below.
+      commission_rate_reason: override == null ? null : reason,
+      commission_rate_set_by: user.id,
+      commission_rate_set_at: new Date().toISOString(),
+    })
+    .eq("id", practitionerId);
+
+  await recordAdminAction({
+    actorId: user.id,
+    actorEmail: user.email,
+    action: `practitioner.commission:${override == null ? "clear" : "set"}`,
+    previousValue: pctLabel(previous),
+    newValue: `${pctLabel(override)} — ${reason}`,
+    detail: { override, reason },
+  });
+
+  revalidatePath("/[locale]/admin/practitioners", "page");
+  return null;
+}
+
 // Freeze or release payouts. Flips the connected account's Stripe payout
 // schedule (see lib/payments setPayoutsHold) BEFORE the DB write, so a Stripe
 // failure leaves the recorded state consistent with reality rather than marking

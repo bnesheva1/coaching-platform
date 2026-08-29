@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { isEnabled } from "@/lib/flags";
 import { getConnectedAccountId } from "@/lib/payments";
-import { createImmediateCheckoutSession } from "@/lib/payments/stripe/checkout";
+import { createImmediateCheckoutSession, effectiveCommissionRate } from "@/lib/payments/stripe/checkout";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { IMMEDIATE_CONFIG } from "./config";
 import { computeImmediateFit, computeImmediateAvailability, type ImmediateBlockReason } from "./fit";
@@ -285,6 +285,11 @@ export async function startImmediatePayment(requestId: string, locale: string): 
   if (!accountId) return { ok: false, reason: "practitioner_not_ready" };
   const { data: service } = await svc.from("services").select("name, price_cents, currency").eq("id", req.service_id as string).single();
   if (!service) return { ok: false, reason: "error" };
+  // Resolve the practitioner's effective commission rate here (server-side,
+  // at booking time) so checkout stamps it into the session metadata as the
+  // snapshot — same as the scheduled path's initiateBookingPayment.
+  const { data: pp } = await svc.from("practitioner_profiles").select("commission_rate_override").eq("id", req.practitioner_id as string).single();
+  const rate = effectiveCommissionRate(pp?.commission_rate_override as number | null);
 
   const origin = await siteOrigin();
   const loc = locale === "en" ? "en" : "bg";
@@ -302,6 +307,7 @@ export async function startImmediatePayment(requestId: string, locale: string): 
         cancelPath: `${origin}/${loc}/immediate/${requestId}?payment=cancelled`,
       },
       accountId,
+      rate,
     );
     return { ok: true, url };
   } catch (e) {
