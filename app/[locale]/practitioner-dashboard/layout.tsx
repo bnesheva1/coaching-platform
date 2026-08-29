@@ -4,6 +4,8 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ModerationNotice } from "@/components/dashboard/ModerationNotice";
+import { SubscriptionNotice } from "@/components/dashboard/SubscriptionNotice";
+import { isEnabled } from "@/lib/flags";
 import { DashboardSidebar } from "./DashboardSidebar";
 
 // UTC calendar week (Monday 00:00 through the following Monday), not the
@@ -79,6 +81,15 @@ export default async function PractitionerDashboardLayout({ children }: { childr
     payouts_reason: string | null;
   } | null;
 
+  // Subscription state for the grace/lapsed banner — only when the feature is
+  // enabled (dormant otherwise, so no banner and no enrolment exists to lapse).
+  const subscriptionBillingOn = await isEnabled("subscriptionBilling");
+  let subStatus: "not_required" | "active" | "grace" | "lapsed" | "exempt" = "not_required";
+  if (subscriptionBillingOn) {
+    const { data: subCtx } = await supabase.rpc("get_my_subscription_context").single();
+    subStatus = (subCtx as { subscription_status: typeof subStatus } | null)?.subscription_status ?? "not_required";
+  }
+
   return (
     <DashboardShell
       sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
@@ -91,6 +102,7 @@ export default async function PractitionerDashboardLayout({ children }: { childr
           payoutsReason={mod.payouts_reason}
         />
       )}
+      {subscriptionBillingOn && <SubscriptionNotice subscriptionStatus={subStatus} />}
       {children}
     </DashboardShell>
   );

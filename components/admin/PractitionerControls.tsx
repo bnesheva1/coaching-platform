@@ -3,13 +3,24 @@
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { setModeration, setPayoutsFreeze, setCommissionOverride } from "@/app/[locale]/admin/practitioners/actions";
+import { setModeration, setPayoutsFreeze, setCommissionOverride, setSubscriptionOverride } from "@/app/[locale]/admin/practitioners/actions";
 import { Button } from "@/components/ui/Button";
 
 // A fraction (0.15) → a clean percent string ("15", "7.5"), no float noise.
 const fmtPct = (rate: number) => `${+(rate * 100).toFixed(4)}`;
+// Cents → a clean euro string ("15", "12.5").
+const fmtEur = (cents: number) => `${+(cents / 100).toFixed(2)}`;
 
 type ModStatus = "active" | "hidden" | "bookings_frozen" | "suspended";
+type SubStatus = "not_required" | "active" | "grace" | "lapsed" | "exempt";
+
+const SUB_STATUS_COLOR: Record<SubStatus, string> = {
+  not_required: "var(--text-tertiary)",
+  active: "#1e7f4f",
+  grace: "#a15c00",
+  lapsed: "#c0392b",
+  exempt: "#1e7f4f",
+};
 const MOD_TARGETS: ModStatus[] = ["hidden", "bookings_frozen", "suspended", "active"];
 
 const STATUS_COLOR: Record<ModStatus, string> = {
@@ -41,6 +52,15 @@ export function PractitionerControls({
   commissionReason,
   commissionSetOn,
   brandDefaultRate,
+  // Subscription: an INDEPENDENT axis from commission. The current lifecycle
+  // status, the exempt flag + custom monthly fee (cents, null = brand default),
+  // the recorded reason + when, and the brand default fee to show/compare.
+  subscriptionStatus,
+  subscriptionExempt,
+  subscriptionOverrideCents,
+  subscriptionReason,
+  subscriptionSetOn,
+  defaultFeeCents,
 }: {
   practitionerId: string;
   name: string;
@@ -50,19 +70,29 @@ export function PractitionerControls({
   commissionReason: string | null;
   commissionSetOn: string | null;
   brandDefaultRate: number;
+  subscriptionStatus: SubStatus;
+  subscriptionExempt: boolean;
+  subscriptionOverrideCents: number | null;
+  subscriptionReason: string | null;
+  subscriptionSetOn: string | null;
+  defaultFeeCents: number;
 }) {
   const t = useTranslations("Admin");
   const modRef = useRef<HTMLDialogElement>(null);
   const payRef = useRef<HTMLDialogElement>(null);
   const commRef = useRef<HTMLDialogElement>(null);
+  const subRef = useRef<HTMLDialogElement>(null);
   const [pendingStatus, setPendingStatus] = useState<ModStatus>("hidden");
   const [pendingFrozen, setPendingFrozen] = useState<boolean>(true);
+  const [pendingExempt, setPendingExempt] = useState<boolean>(subscriptionExempt);
   const [modError, setModError] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   const [commError, setCommError] = useState<string | null>(null);
+  const [subError, setSubError] = useState<string | null>(null);
   const [busy, startTransition] = useTransition();
 
   const effectiveRate = commissionOverride ?? brandDefaultRate;
+  const effectiveFeeCents = subscriptionExempt ? 0 : subscriptionOverrideCents ?? defaultFeeCents;
 
   const errorText = (code: string) => t(`practError_${code}` as Parameters<typeof t>[0]);
 
@@ -100,6 +130,18 @@ export function PractitionerControls({
       const res = await setCommissionOverride(practitionerId, null, formData);
       if (res?.error) setCommError(res.error);
       else commRef.current?.close();
+    });
+  }
+  function openSub() {
+    setPendingExempt(subscriptionExempt);
+    setSubError(null);
+    subRef.current?.showModal();
+  }
+  function submitSub(formData: FormData) {
+    startTransition(async () => {
+      const res = await setSubscriptionOverride(practitionerId, null, formData);
+      if (res?.error) setSubError(res.error);
+      else subRef.current?.close();
     });
   }
 
@@ -149,6 +191,22 @@ export function PractitionerControls({
           : t("commissionSourceDefault")}
       </div>
 
+      {/* Subscription: effective monthly fee, status, and where the fee comes from. */}
+      <div style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
+        <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-tertiary)" }}>
+          {t("subLabel")}
+        </span>{" "}
+        <strong style={{ color: subscriptionExempt || subscriptionOverrideCents != null ? "#a15c00" : "var(--text-secondary)" }}>
+          {t("subFeePerMonth", { amount: fmtEur(effectiveFeeCents) })}
+        </strong>{" "}
+        <span style={{ color: SUB_STATUS_COLOR[subscriptionStatus] }}>· {t(`subStatus_${subscriptionStatus}` as Parameters<typeof t>[0])}</span>{" "}
+        {subscriptionExempt
+          ? t("subSourceExempt", { reason: subscriptionReason ?? "—", date: subscriptionSetOn ?? "—" })
+          : subscriptionOverrideCents != null
+            ? t("subSourceCustom", { reason: subscriptionReason ?? "—", date: subscriptionSetOn ?? "—" })
+            : t("subSourceDefault")}
+      </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
         {MOD_TARGETS.filter((s) => s !== moderationStatus).map((s) => (
           <Button key={s} type="button" variant={s === "suspended" ? "secondary" : "ghost"} size="sm" onClick={() => openMod(s)}>
@@ -160,6 +218,9 @@ export function PractitionerControls({
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={openComm}>
           {t("commissionButton")}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={openSub}>
+          {t("subButton")}
         </Button>
         <Link
           href={`/admin/practitioners/${practitionerId}/cancel`}
@@ -243,6 +304,57 @@ export function PractitionerControls({
           {commError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(commError)}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => commRef.current?.close()}>
+              {t("practCancel")}
+            </Button>
+            <Button type="submit" size="sm" disabled={busy}>
+              {busy ? t("practApplying") : t("practConfirm")}
+            </Button>
+          </div>
+        </form>
+      </dialog>
+
+      {/* Subscription override dialog */}
+      <dialog ref={subRef} style={dialogStyle} onClick={(e) => e.target === subRef.current && subRef.current?.close()}>
+        <form action={submitSub} style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+          <input type="hidden" name="exempt" value={String(pendingExempt)} />
+          <h2 style={{ margin: 0, font: "var(--text-heading-sm)" }}>
+            {t("subButton")} — {name}
+          </h2>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-2)", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={pendingExempt}
+              onChange={(e) => setPendingExempt(e.target.checked)}
+              style={{ marginTop: "3px" }}
+            />
+            <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{t("subExemptLabel")}</span>
+              <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>{t("subExemptHint")}</span>
+            </span>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", opacity: pendingExempt ? 0.5 : 1 }}>
+            <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{t("subPriceLabel")}</span>
+            <input
+              type="number"
+              name="price"
+              min={0}
+              max={10000}
+              step="any"
+              inputMode="decimal"
+              disabled={pendingExempt}
+              defaultValue={subscriptionOverrideCents != null ? fmtEur(subscriptionOverrideCents) : ""}
+              placeholder={fmtEur(defaultFeeCents)}
+              className="form-field"
+              style={{ width: "100%" }}
+            />
+            <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
+              {t("subPriceHint", { default: fmtEur(defaultFeeCents) })}
+            </span>
+          </label>
+          {reasonField}
+          {subError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(subError)}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
+            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => subRef.current?.close()}>
               {t("practCancel")}
             </Button>
             <Button type="submit" size="sm" disabled={busy}>
