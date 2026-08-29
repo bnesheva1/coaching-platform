@@ -198,6 +198,9 @@ function YourSlot({
           )}
         </div>
         <p style={{ ...subMetaStyle, marginTop: "var(--space-1)" }}>{t("allowedHint")}</p>
+        {/* Quiet guidance at the point of upload — data-minimisation nudge +
+            the retention window, informative rather than a warning. */}
+        <p style={{ ...subMetaStyle, marginTop: "2px" }}>{t("uploadNotice")}</p>
       </form>
 
       {uploadState?.error && (

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getUpcomingBookingCountForUser } from "@/lib/services/bookingLock";
 import { checkRateLimit, changePasswordLimiter } from "@/lib/rate-limit";
+import { purgeUploadedDocumentsForUser } from "@/lib/documents/gdpr";
 
 // Locale-independent (lives outside app/[locale], same precedent as
 // cookie-consent-actions.ts) — both actions here operate on "whoever is
@@ -188,6 +189,13 @@ export async function deleteMyAccount(
       .update({ display_name: "Deleted user", email: null, deleted_at: new Date().toISOString() })
       .eq("id", user.id);
     if (profileErr) throw profileErr;
+
+    // Purge the documents this user UPLOADED (files + metadata rows) and
+    // anonymise their entries in the document event log. The counterparty's
+    // documents on shared bookings are left untouched (their content; they
+    // expire via retention). Best-effort — logged, never throws — so a
+    // storage hiccup can't strand the account anonymisation above.
+    await purgeUploadedDocumentsForUser(serviceSupabase, user.id);
   } catch (err) {
     console.error("deleteMyAccount: data scrub failed, auth NOT disabled", { userId: user.id, err });
     return { error: t("deleteAccountGenericError") };

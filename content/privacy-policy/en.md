@@ -1,5 +1,5 @@
 ---
-lastUpdated: "2026-08-04"
+lastUpdated: ""
 ---
 
 ## 1. Who we are
@@ -40,6 +40,17 @@ For any questions about your data, or to exercise any of the rights described be
 - Your rating and any text you write
 - Reviews are shown publicly, and to the practitioner, **without your name** — identified only as a verified user
 
+**When you or your practitioner attach a document to a session**
+
+Some practitioners offer file exchange for their services. Where they do, you and the practitioner can each attach one document to a booking — a PDF, Word file or text file.
+
+- **We do not inspect the contents.** Whatever you upload is yours; we store it and make it available to the other party to that booking, and to nobody else.
+- **Only the two of you can see it.** Access is enforced at the database level. Files are stored privately and served through links that expire after one minute.
+- **Files are deleted permanently 14 days after the session ends.** Both of you are warned a few days beforehand.
+- **A record of the exchange remains** after the file is gone — that a document was attached, by whom, when, its name and size. Not its contents. This is so either of you can later see that something was exchanged.
+
+Share only what the session actually needs. Please don't upload anything you wouldn't want stored, and remember the file is deleted after 14 days.
+
 **When you contact us**
 - Your name, email address, the category of your enquiry and your message. This is sent to us by email and is not stored in our database.
 
@@ -62,6 +73,8 @@ For any questions about your data, or to exercise any of the rights described be
 | Keeping records of transactions | Required by tax and accounting law | Legal obligation |
 | Sending marketing emails | Only if you have asked to receive them | Consent |
 | Analytics (planned, not yet in use) | To understand how the platform is used | Consent |
+
+> **For the lawyer:** the legal bases above are our understanding, not a settled legal position. Please confirm or correct — particularly around publishing practitioner profiles and reviews.
 
 ## 4. Who we share your data with
 
@@ -92,19 +105,21 @@ Our database is hosted in the EU. Some providers listed above operate outside th
 | Bookings | Retained after account deletion, in anonymised form, so the other party's records remain complete |
 | Payment and transaction records | As required by Bulgarian tax and accounting law — [LAWYER: confirm period] |
 | Reviews | Retained indefinitely, without your name |
+| Documents attached to a session | Deleted permanently 14 days after the session ends |
+| The record that a document was exchanged | Retained after the file is deleted — filename, size, who and when; never the contents |
 | Contact form messages | In our email, deleted when no longer needed |
 
 ## 7. Your rights
 
 You can:
-- **Access your data** — download everything we hold about you, from your account settings
+- **Access your data** — download everything we hold about you, including any documents you've attached to sessions, from your account settings
 - **Correct it** — edit your profile at any time
 - **Delete your account** — from your settings. See below for what this means in practice.
 - **Withdraw consent** — turn off marketing emails at any time, in settings
 - **Object or restrict** — contact us
 - **Complain** — to the Bulgarian Commission for Personal Data Protection (Комисия за защита на личните данни), or the authority in your country of residence
 
-**What deleting your account actually does.** Your login is disabled and your personal details are removed from your profile. Past bookings remain, but with your name replaced — this is so the practitioner or client you dealt with keeps a complete record of their own history. Reviews remain, as they never carried your name. Transaction records are kept where tax law requires it, no longer linked to your identity.
+**What deleting your account actually does.** Your login is disabled and your personal details are removed from your profile. Any documents you attached to sessions are deleted, though the record that a document was exchanged remains — its name, size and date, no longer linked to you — so the other party keeps a complete record of their own history. Past bookings remain, but with your name replaced — this is so the practitioner or client you dealt with keeps a complete record of their own history. Reviews remain, as they never carried your name. Transaction records are kept where tax law requires it, no longer linked to your identity.
 
 You cannot delete your account while you have upcoming bookings. Cancel or complete them first.
 

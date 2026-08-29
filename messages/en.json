@@ -1215,7 +1215,8 @@
     "rateLimited": "Too many uploads. Please wait a moment and try again.",
     "expired": "This session's documents are no longer available.",
     "fileRequired": "Choose a file to upload.",
-    "tooLarge": "That file is too large.",
+    "uploadNotice": "Share only what the session needs. The file is deleted 14 days afterwards.",
+    "tooLarge": "That file is too large (max {max} MB). Try compressing it or saving a smaller version before uploading.",
     "invalidType": "Only PDF, DOC, DOCX and TXT files are allowed.",
     "uploadFailed": "Upload failed. Please try again.",
     "saveFailed": "Something went wrong. Please try again."

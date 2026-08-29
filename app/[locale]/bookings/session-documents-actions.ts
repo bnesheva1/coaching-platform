@@ -102,7 +102,9 @@ export async function uploadSessionDocument(
   const entry = formData.get("file");
   const file = entry instanceof File && entry.size > 0 ? entry : null;
   if (!file) return { error: t("fileRequired") };
-  if (file.size > SESSION_DOCUMENT_MAX_BYTES) return { error: t("tooLarge") };
+  if (file.size > SESSION_DOCUMENT_MAX_BYTES) {
+    return { error: t("tooLarge", { max: Math.round(SESSION_DOCUMENT_MAX_BYTES / (1024 * 1024)) }) };
+  }
 
   // Read the actual bytes and validate the magic number — never trust the
   // declared extension/Content-Type for a file another user will open.
