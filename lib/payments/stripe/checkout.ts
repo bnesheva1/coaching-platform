@@ -16,8 +16,22 @@ function resolveCommissionRate(): number {
 
 export const COMMISSION_RATE = resolveCommissionRate();
 
-export function commissionCentsFor(priceCents: number): number {
-  return Math.round(priceCents * COMMISSION_RATE);
+// Per-practitioner effective rate: the override when one is set (INCLUDING
+// 0 — a founding-partner's genuine zero), otherwise the brand default.
+// `?? COMMISSION_RATE` keeps an explicit 0 (nullish, not falsy). This is
+// resolved server-side at booking time and snapshotted onto the payment
+// (via session metadata → payments.commission_rate) so a later change to a
+// practitioner's rate never alters what was already charged.
+export function effectiveCommissionRate(override: number | null | undefined): number {
+  return override ?? COMMISSION_RATE;
+}
+
+// The fee amount for a price at a given rate. Rate is now a parameter (the
+// resolved per-practitioner effective rate), not the bare global — callers
+// pass what effectiveCommissionRate() returned. Defaults to the brand rate
+// so any legacy call without a rate still behaves as before.
+export function commissionCentsFor(priceCents: number, rate: number = COMMISSION_RATE): number {
+  return Math.round(priceCents * rate);
 }
 
 // Destination charge: a single Checkout Session creation both charges
@@ -38,9 +52,10 @@ export function commissionCentsFor(priceCents: number): number {
 export async function createBookingCheckoutSession(
   request: BookingPaymentRequest,
   connectedAccountId: string,
+  effectiveRate: number,
 ): Promise<{ sessionId: string; url: string }> {
   const stripe = getStripeClient();
-  const commissionCents = commissionCentsFor(request.priceCents);
+  const commissionCents = commissionCentsFor(request.priceCents, effectiveRate);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -74,6 +89,11 @@ export async function createBookingCheckoutSession(
       client_id: request.clientId,
       service_id: request.serviceId,
       start_utc: request.startUtc,
+      // Snapshot carriers: the resolved rate and the exact fee charged, so
+      // the webhook records what was actually applied rather than
+      // recomputing from a rate that may have changed since.
+      commission_rate: String(effectiveRate),
+      commission_cents: String(commissionCents),
     },
     success_url: request.successPath,
     cancel_url: request.cancelPath,
@@ -105,9 +125,10 @@ export async function createImmediateCheckoutSession(
     cancelPath: string;
   },
   connectedAccountId: string,
+  effectiveRate: number,
 ): Promise<{ sessionId: string; url: string }> {
   const stripe = getStripeClient();
-  const commissionCents = commissionCentsFor(input.priceCents);
+  const commissionCents = commissionCentsFor(input.priceCents, effectiveRate);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -131,6 +152,10 @@ export async function createImmediateCheckoutSession(
       practitioner_id: input.practitionerId,
       client_id: input.clientId,
       service_id: input.serviceId,
+      // Same snapshot carriers as the scheduled path — the immediate
+      // finalize (in the webhook) reads these to record the payments row.
+      commission_rate: String(effectiveRate),
+      commission_cents: String(commissionCents),
     },
     success_url: input.successPath,
     cancel_url: input.cancelPath,

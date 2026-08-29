@@ -5,6 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { PractitionerControls } from "@/components/admin/PractitionerControls";
+import { COMMISSION_RATE } from "@/lib/payments/stripe/checkout";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,9 @@ type Row = {
   total_sessions: number;
   average_rating: number | null;
   review_count: number;
+  commission_rate_override: number | string | null;
+  commission_rate_reason: string | null;
+  commission_rate_set_at: string | null;
 };
 
 export default async function AdminPractitionersPage({
@@ -35,6 +39,7 @@ export default async function AdminPractitionersPage({
   const t = await getTranslations("Admin");
   const locale = await getLocale();
   const numberFmt = new Intl.NumberFormat(INTL_LOCALES[locale] ?? "en-US");
+  const dateFmt = new Intl.DateTimeFormat(INTL_LOCALES[locale] ?? "en-US", { day: "numeric", month: "short", year: "numeric" });
   const q = (await searchParams).q?.trim() ?? "";
 
   const supabase = createServiceRoleClient();
@@ -128,6 +133,10 @@ export default async function AdminPractitionersPage({
                     name={r.display_name ?? r.username ?? "—"}
                     moderationStatus={r.moderation_status}
                     payoutsFrozen={r.payouts_frozen}
+                    commissionOverride={r.commission_rate_override == null ? null : Number(r.commission_rate_override)}
+                    commissionReason={r.commission_rate_reason}
+                    commissionSetOn={r.commission_rate_set_at ? dateFmt.format(new Date(r.commission_rate_set_at)) : null}
+                    brandDefaultRate={COMMISSION_RATE}
                   />
                 </div>
               );
