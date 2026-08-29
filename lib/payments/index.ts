@@ -9,6 +9,12 @@ import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, Billin
 export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, RefundResult } from "./types";
 export { setPayoutsHold, getConnectedAccountId } from "./stripe/connect";
 
+// Subscription-billing config, surfaced through the seam so admin/UI code reads
+// the monthly platform fee (brand default + the exempt/override resolution)
+// without importing the Stripe subdirectory directly. The charging itself lives
+// behind the seam (subscription.ts); this is just the numbers to display.
+export { SUBSCRIPTION_PRICE_CENTS, effectiveSubscriptionCents } from "./stripe/subscription";
+
 // Deployment-scope default for a newly-created practitioner's billing_model,
 // read at creation (see signup/actions.ts). Lets a brand declare "all new
 // practitioners are commission" via the DEFAULT_BILLING_MODEL env var, with

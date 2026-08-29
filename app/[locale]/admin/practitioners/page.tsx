@@ -6,6 +6,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { PractitionerControls } from "@/components/admin/PractitionerControls";
 import { COMMISSION_RATE } from "@/lib/payments/stripe/checkout";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,12 @@ type Row = {
   commission_rate_override: number | string | null;
   commission_rate_reason: string | null;
   commission_rate_set_at: string | null;
+  subscription_status: "not_required" | "active" | "grace" | "lapsed" | "exempt";
+  subscription_exempt: boolean;
+  subscription_current_period_end: string | null;
+  subscription_price_override_cents: number | null;
+  subscription_override_reason: string | null;
+  subscription_override_set_at: string | null;
 };
 
 export default async function AdminPractitionersPage({
@@ -137,6 +144,12 @@ export default async function AdminPractitionersPage({
                     commissionReason={r.commission_rate_reason}
                     commissionSetOn={r.commission_rate_set_at ? dateFmt.format(new Date(r.commission_rate_set_at)) : null}
                     brandDefaultRate={COMMISSION_RATE}
+                    subscriptionStatus={r.subscription_status}
+                    subscriptionExempt={r.subscription_exempt}
+                    subscriptionOverrideCents={r.subscription_price_override_cents}
+                    subscriptionReason={r.subscription_override_reason}
+                    subscriptionSetOn={r.subscription_override_set_at ? dateFmt.format(new Date(r.subscription_override_set_at)) : null}
+                    defaultFeeCents={SUBSCRIPTION_PRICE_CENTS}
                   />
                 </div>
               );

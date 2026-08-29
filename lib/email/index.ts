@@ -354,6 +354,39 @@ export async function sendImmediatePaymentFailedEmail(requestId: string): Promis
   return result.success;
 }
 
+// Sent to a practitioner on the FIRST failed subscription-fee payment — before
+// any restriction, since a failed card is usually just expired and Stripe will
+// retry for ~a week (grace). Reuses the generic CancellationNoticeEmail shell,
+// same as sendImmediatePaymentFailedEmail. The practitioner's contact + locale
+// come from their stored profile (service role — a webhook has no session).
+export async function sendSubscriptionGraceEmail(practitionerId: string): Promise<boolean> {
+  const supabase = createServiceRoleClient();
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("email, locale")
+    .eq("id", practitionerId)
+    .single();
+  if (!prof?.email) {
+    console.error("sendSubscriptionGraceEmail: practitioner email is null", { practitionerId });
+    return false;
+  }
+  const locale = normalizeLocale(prof.locale as string);
+  const t = translator(locale);
+  const result = await provider.send({
+    to: prof.email as string,
+    subject: t("subscriptionGraceSubject"),
+    react: CancellationNoticeEmail({
+      heading: t("subscriptionGraceHeading"),
+      body: t("subscriptionGraceBody"),
+      footer: footerText(locale),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendSubscriptionGraceEmail: email failed", { practitionerId, error: result.error });
+  }
+  return result.success;
+}
+
 // One summary to the practitioner after a bulk cancel-and-refund: what was
 // cancelled on their behalf, and why. Reads their own contact/locale directly
 // from profiles (service role). Sent exactly once per operation by the executor.

@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import type Stripe from "stripe";
 import {
   verifyStripeWebhookEvent,
   verifyStripeThinEvent,
@@ -6,6 +7,11 @@ import {
   handleCheckoutSessionCompleted,
 } from "@/lib/payments/stripe/webhook";
 import { handleAccountUpdated } from "@/lib/payments/stripe/connect";
+import {
+  handleSubscriptionEvent,
+  handleSubscriptionInvoicePaid,
+  handleSubscriptionInvoicePaymentFailed,
+} from "@/lib/payments/stripe/subscription";
 import { recordWebhookFailure } from "@/lib/alerts/webhook";
 
 // Deliberately thin — every decision lives in lib/payments/stripe/
@@ -84,6 +90,21 @@ export async function POST(request: Request) {
       switch (event.type) {
         case "checkout.session.completed":
           await handleCheckoutSessionCompleted(event.data.object);
+          break;
+        // ── Subscription billing (Stripe Billing, distinct from the
+        // booking Checkout above) — the practitioner monthly platform fee.
+        // These drive practitioner_profiles.subscription_status; Stripe is
+        // the source of truth, so we re-read/act off each event rather than
+        // inferring transitions ourselves.
+        case "invoice.paid":
+          await handleSubscriptionInvoicePaid(event.data.object as Stripe.Invoice);
+          break;
+        case "invoice.payment_failed":
+          await handleSubscriptionInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+          break;
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted":
+          await handleSubscriptionEvent(event.data.object as Stripe.Subscription);
           break;
         // No other event types are subscribed to — see
         // handleCheckoutSessionCompleted's own comment on why

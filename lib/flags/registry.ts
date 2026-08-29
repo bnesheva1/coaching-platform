@@ -50,6 +50,17 @@ export const FLAGS = {
     envVar: "SESSION_DOCUMENTS_ENABLED",
     description: "Let the two parties of a booking exchange one document each (upload/replace/download in booking details).",
   },
+  subscriptionBilling: {
+    // Ships dormant: recruit early practitioners free, then flip this on to
+    // start charging the monthly platform fee — no redeploy. Gates the
+    // practitioner subscribe UI + dashboard banner. Enforcement (lapsed →
+    // not bookable) is automatic once enrolled, so with the flag off and
+    // nobody enrolled, nothing is restricted.
+    scope: "runtime",
+    default: false,
+    envVar: "SUBSCRIPTION_BILLING_ENABLED",
+    description: "Enable the practitioner monthly platform-fee subscription (subscribe UI + dashboard banner). Not shipped yet.",
+  },
 
   // ── Admin kill switches (all runtime, default ON = normal operation) ──
   // Emergency stops an admin flips from /admin. Each is enforced at its own
