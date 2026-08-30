@@ -17,6 +17,12 @@ export { setPayoutsHold, getConnectedAccountId } from "./stripe/connect";
 // behind the seam (subscription.ts); this is just the numbers to display.
 export { SUBSCRIPTION_PRICE_CENTS, effectiveSubscriptionCents } from "./stripe/subscription";
 
+// The webhook events the code handles (derived from the handler registry / the
+// Connect v2 list) — re-exported so the admin setup notes list exactly what to
+// subscribe the Stripe endpoint to, from the same source the config check reads.
+export { REQUIRED_STRIPE_V1_EVENTS } from "./stripe/webhook";
+export { REQUIRED_STRIPE_V2_EVENTS } from "./stripe/connect";
+
 // Deployment-scope default for a newly-created practitioner's billing_model,
 // read at creation (see signup/actions.ts). Lets a brand declare "all new
 // practitioners are commission" via the DEFAULT_BILLING_MODEL env var, with

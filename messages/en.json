@@ -82,6 +82,8 @@
     "healthDepsSub": "A live call to each provider, right now — not a synthetic transaction.",
     "healthConfigHeading": "Configuration",
     "healthConfigSub": "Current values, stated plainly. Flagged ones have caused problems before.",
+    "healthSetupHeading": "Subscription billing — setup",
+    "healthSetupSub": "What to configure in the platform and in Stripe to switch the monthly practitioner fee on. The platform side shows the current state.",
     "healthCronHeading": "Cron",
     "healthCronDaily": "Daily job (send-reminders)",
     "healthFlagged": "flagged",

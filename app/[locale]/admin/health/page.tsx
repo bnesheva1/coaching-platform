@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { runHealthReport, type HealthStatus } from "@/lib/admin/health";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { HealthRefreshButton } from "@/components/admin/HealthRefreshButton";
+import { SubscriptionBillingSetup } from "@/components/admin/SubscriptionBillingSetup";
 
 // Never cached — a stale health page is worse than none. force-dynamic + no
 // revalidate means every load (and every manual refresh) runs the checks live.
@@ -147,6 +148,13 @@ export default async function AdminHealthPage() {
                 </pre>
               )}
             </div>
+          </section>
+
+          {/* ── Subscription billing setup notes ──────────────────────── */}
+          <section>
+            <h2 style={{ font: "var(--text-heading-sm)", margin: "0 0 var(--space-1)" }}>{t("healthSetupHeading")}</h2>
+            <p style={{ margin: "0 0 var(--space-3)", font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{t("healthSetupSub")}</p>
+            <SubscriptionBillingSetup />
           </section>
         </div>
       </ContentContainer>
