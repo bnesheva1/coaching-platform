@@ -8,7 +8,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
-import { isEnabled } from "@/lib/flags";
+import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -48,11 +48,15 @@ export default async function BrowsePage({
   const topicParam = resolvedSearchParams.topic;
   const initialTopics = !topicParam ? [] : Array.isArray(topicParam) ? topicParam : [topicParam];
   const deliveryTypeParam = resolvedSearchParams.deliveryType;
-  const initialDeliveryTypes = !deliveryTypeParam
-    ? []
-    : Array.isArray(deliveryTypeParam)
-      ? deliveryTypeParam
-      : [deliveryTypeParam];
+  const enabledDelivery = enabledDeliveryTypes();
+  const initialDeliveryTypes = (
+    !deliveryTypeParam ? [] : Array.isArray(deliveryTypeParam) ? deliveryTypeParam : [deliveryTypeParam]
+  )
+    // Guard the filter server-side, not just the chip: a disabled type arriving
+    // via a hand-crafted URL (?deliveryType=in_person) is dropped here, so it
+    // can't pre-select a filter the deployment doesn't offer. This is the guard
+    // the phone flag never had — the filter was previously reachable by URL.
+    .filter((v): v is DeliveryType => enabledDelivery.has(v as DeliveryType));
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
 
   const practitioners = await searchPractitioners({ searchText: query });
@@ -98,18 +102,18 @@ export default async function BrowsePage({
     key: topic.key,
     label: topic[locale] ?? topic.en,
   }));
-  // Fixed 3-value enum, not a JSON taxonomy file like specialty/topic —
-  // filtered by the same flag as the service-editing radio, so a hidden
-  // phone option disappears from Browse too, not just the dashboard.
-  const deliveryTypeOptions = (
-    (await isEnabled("showPhoneDelivery"))
-      ? (["online", "in_person", "phone"] as const)
-      : (["online", "in_person"] as const)
-  ).map((key) => ({
-    key,
-    label:
-      key === "online" ? tServices("deliveryTypeOnline") : key === "in_person" ? tServices("deliveryTypeInPerson") : tServices("deliveryTypePhone"),
-  }));
+  // Fixed 3-value enum, not a JSON taxonomy file like specialty/topic — gated
+  // by the same ENABLED_DELIVERY_TYPES config as the service-editing select, so
+  // a mode the deployment doesn't offer disappears from Browse too, not just
+  // the dashboard. (Discovery, not editing: no grandfathering here — a disabled
+  // mode simply isn't a filter chip.)
+  const deliveryTypeOptions = (["online", "in_person", "phone"] as const)
+    .filter((key) => enabledDelivery.has(key))
+    .map((key) => ({
+      key,
+      label:
+        key === "online" ? tServices("deliveryTypeOnline") : key === "in_person" ? tServices("deliveryTypeInPerson") : tServices("deliveryTypePhone"),
+    }));
 
   return (
     <main style={{ padding: "var(--space-16) 0" }}>

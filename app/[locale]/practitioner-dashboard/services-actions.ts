@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUpcomingBookingCount } from "@/lib/services/bookingLock";
 import { isEnabled } from "@/lib/flags";
+import { isDeliveryTypeEnabled } from "@/lib/delivery";
 
 // values echoes back whatever text fields were actually submitted, on an
 // error return only — React 19 resets a <form action={...}> after ANY
@@ -35,10 +36,10 @@ const DEFAULT_MAX_PRICE_CENTS = 50000;
 const MAX_DELIVERY_INFO_LENGTH = 500;
 const MAX_PHONE_LENGTH = 30;
 type DeliveryType = "online" | "in_person" | "phone";
-// All three are valid schema-level data regardless of any flag. Whether
-// "phone" is currently OFFERED is the showPhoneDelivery flag, enforced in the
-// action below (not just hidden in the UI) — so a disabled option is rejected
-// end to end, not just missing from the radio.
+// All three are valid schema-level data regardless of config. Which are
+// currently OFFERED is the ENABLED_DELIVERY_TYPES config (see lib/delivery),
+// enforced in the action below (not just hidden in the UI) — so a disabled
+// option is rejected end to end, not just missing from the select.
 const DELIVERY_TYPES: readonly DeliveryType[] = ["online", "in_person", "phone"];
 
 // Same bucket, same limits as the profile's avatar/banner upload
@@ -124,7 +125,14 @@ async function getEffectiveMaxPriceCents(supabase: Awaited<ReturnType<typeof cre
   return (data as number | null) ?? DEFAULT_MAX_PRICE_CENTS;
 }
 
-async function parseServiceForm(formData: FormData, maxPriceCents: number): Promise<ParsedServiceForm> {
+async function parseServiceForm(
+  formData: FormData,
+  maxPriceCents: number,
+  // The service's currently-stored delivery type (null when creating). A
+  // service is allowed to KEEP a now-disabled type; only creating or switching
+  // TO a disabled type is blocked. See the delivery-type gate below.
+  currentDeliveryType: DeliveryType | null = null,
+): Promise<ParsedServiceForm> {
   const t = await getTranslations("Services");
   const name = (formData.get("name") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
@@ -194,14 +202,19 @@ async function parseServiceForm(formData: FormData, maxPriceCents: number): Prom
   // attend" info is a broken client experience. The DB's own NOT VALID
   // check constraint is the backstop against a direct-API bypass; this
   // is what gives a practitioner a clean, specific message instead.
-  // Gate "phone" on the flag HERE, at the action — not just in the UI. A
-  // forged submission (or a stale form) with the option disabled is rejected,
-  // so turning showPhoneDelivery off closes the route too, not just the radio.
-  const showPhone = await isEnabled("showPhoneDelivery");
+  //
+  // Which delivery types are OFFERED is deployment config (ENABLED_DELIVERY_TYPES,
+  // see lib/delivery) — enforced HERE, at the action, not just hidden in the UI,
+  // so a forged/stale submission with a disabled type is rejected end to end. A
+  // service is allowed to KEEP its existing type even if that type is now
+  // disabled (keepingCurrentType) — only CREATING or SWITCHING TO a disabled
+  // type is blocked, so a brand turning a type off never breaks a service that
+  // already had it.
+  const keepingCurrentType = currentDeliveryType != null && rawDeliveryType === currentDeliveryType;
   if (
     !rawDeliveryType ||
     !isDeliveryType(rawDeliveryType) ||
-    (rawDeliveryType === "phone" && !showPhone)
+    (!isDeliveryTypeEnabled(rawDeliveryType) && !keepingCurrentType)
   ) {
     return { ok: false, error: t("deliveryTypeRequired"), values };
   }
@@ -326,23 +339,24 @@ export async function updateService(
 
   const serviceId = formData.get("serviceId") as string;
   const maxPriceCents = await getEffectiveMaxPriceCents(supabase);
-  const parsed = await parseServiceForm(formData, maxPriceCents);
-  if (!parsed.ok) {
-    return { error: parsed.error, values: parsed.values };
-  }
 
-  // Lock re-verification — the actual enforcement. The UI disables
-  // these 3 inputs once a service has active/upcoming bookings, but a
-  // disabled attribute is a courtesy, not a boundary: this independently
-  // re-checks against the CURRENT stored values regardless of what the
-  // client submitted, so a hand-crafted request bypassing the disabled
-  // inputs still can't change a locked field.
+  // Fetched BEFORE parsing so the delivery-type gate knows the service's
+  // current type — a service may keep a now-disabled type (see parseServiceForm).
+  // This is also the lock re-verification source: the UI disables price/
+  // duration/deliveryType once a service has upcoming bookings, but a disabled
+  // attribute is a courtesy, not a boundary — this re-checks against the CURRENT
+  // stored values regardless of what the client submitted.
   const { data: currentService } = await supabase
     .from("services")
     .select("price_cents, duration_minutes, delivery_type, image_url")
     .eq("id", serviceId)
     .eq("practitioner_id", user.id)
     .single();
+
+  const parsed = await parseServiceForm(formData, maxPriceCents, currentService?.delivery_type ?? null);
+  if (!parsed.ok) {
+    return { error: parsed.error, values: parsed.values };
+  }
 
   if (!currentService) {
     return { error: t("saveFailed"), values: parsed.values };

@@ -216,7 +216,7 @@ function DeliveryFields({
   defaultInfo,
   defaultPhoneNumber,
   locked,
-  showPhone,
+  enabledTypes,
 }: {
   defaultType: Service["delivery_type"];
   defaultInfo: string;
@@ -227,13 +227,20 @@ function DeliveryFields({
   // explicit "still editable at any time: ...phone_number" list. Only
   // price/duration/deliveryType are structural enough to lock.
   locked: boolean;
-  // showPhoneDelivery flag, resolved server-side and threaded down — when
-  // off, the phone option is absent from the select (the server action
-  // rejects it too, so it's hidden end to end).
-  showPhone: boolean;
+  // Which delivery types this deployment offers (ENABLED_DELIVERY_TYPES,
+  // resolved server-side and threaded down). A disabled type's option is absent
+  // from the select — but a service that ALREADY has a now-disabled type still
+  // shows its own option (defaultType), so editing it doesn't render oddly or
+  // silently change the type. The server action enforces the same rule.
+  enabledTypes: DeliveryType[];
 }) {
   const t = useTranslations("Services");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>(defaultType ?? "online");
+  // Show an option when the type is offered, or when it's this service's own
+  // current type (grandfathered so an existing service isn't broken). "online"
+  // is always offered.
+  const showOption = (type: DeliveryType) =>
+    type === "online" || enabledTypes.includes(type) || defaultType === type;
 
   return (
     <>
@@ -255,8 +262,8 @@ function DeliveryFields({
             style={{ display: "block", width: "100%", maxWidth: 220, background: "var(--bg-sunken)" }}
           >
             <option value="online">{t("deliveryTypeOnline")}</option>
-            <option value="in_person">{t("deliveryTypeInPerson")}</option>
-            {showPhone && <option value="phone">{t("deliveryTypePhone")}</option>}
+            {showOption("in_person") && <option value="in_person">{t("deliveryTypeInPerson")}</option>}
+            {showOption("phone") && <option value="phone">{t("deliveryTypePhone")}</option>}
           </select>
           <input type="hidden" name="deliveryType" value={deliveryType} />
         </label>
@@ -280,8 +287,8 @@ function DeliveryFields({
             style={{ display: "block", width: "100%", maxWidth: 220 }}
           >
             <option value="online">{t("deliveryTypeOnline")}</option>
-            <option value="in_person">{t("deliveryTypeInPerson")}</option>
-            {showPhone && <option value="phone">{t("deliveryTypePhone")}</option>}
+            {showOption("in_person") && <option value="in_person">{t("deliveryTypeInPerson")}</option>}
+            {showOption("phone") && <option value="phone">{t("deliveryTypePhone")}</option>}
           </select>
         </label>
       )}
@@ -524,7 +531,7 @@ function PriceField({ defaultValue, readOnly = false, earnings }: { defaultValue
   );
 }
 
-function ServiceRow({ service, showPhone, documentsFeatureEnabled, earnings }: { service: Service; showPhone: boolean; documentsFeatureEnabled: boolean; earnings: EarningsInfo }) {
+function ServiceRow({ service, enabledTypes, documentsFeatureEnabled, earnings }: { service: Service; enabledTypes: DeliveryType[]; documentsFeatureEnabled: boolean; earnings: EarningsInfo }) {
   const t = useTranslations("Services");
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateService, initialState);
@@ -602,7 +609,7 @@ function ServiceRow({ service, showPhone, documentsFeatureEnabled, earnings }: {
               defaultInfo={state?.values?.deliveryInfo ?? (service.delivery_info ?? "")}
               defaultPhoneNumber={state?.values?.phoneNumber ?? (service.phone_number ?? "")}
               locked={locked}
-              showPhone={showPhone}
+              enabledTypes={enabledTypes}
             />
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values ? state.values.documentsEnabled === "on" : service.documents_enabled} />
@@ -753,7 +760,7 @@ function ServiceRow({ service, showPhone, documentsFeatureEnabled, earnings }: {
   );
 }
 
-export function ServicesSection({ services, showPhone, documentsFeatureEnabled, commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros }: { services: Service[]; showPhone: boolean; documentsFeatureEnabled: boolean } & EarningsInfo) {
+export function ServicesSection({ services, enabledTypes, documentsFeatureEnabled, commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros }: { services: Service[]; enabledTypes: DeliveryType[]; documentsFeatureEnabled: boolean } & EarningsInfo) {
   // Bundle the earnings inputs once and thread them to every price field.
   const earnings: EarningsInfo = { commissionRate, providerName, processingFee, minPriceEuros, maxPriceEuros };
   const t = useTranslations("Services");
@@ -775,7 +782,7 @@ export function ServicesSection({ services, showPhone, documentsFeatureEnabled, 
       {services.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, marginBottom: "var(--space-4)" }}>
           {services.map((service) => (
-            <ServiceRow key={service.id} service={service} showPhone={showPhone} documentsFeatureEnabled={documentsFeatureEnabled} earnings={earnings} />
+            <ServiceRow key={service.id} service={service} enabledTypes={enabledTypes} documentsFeatureEnabled={documentsFeatureEnabled} earnings={earnings} />
           ))}
         </ul>
       ) : (
@@ -813,7 +820,7 @@ export function ServicesSection({ services, showPhone, documentsFeatureEnabled, 
               defaultInfo={state?.values?.deliveryInfo ?? ""}
               defaultPhoneNumber={state?.values?.phoneNumber ?? ""}
               locked={false}
-              showPhone={showPhone}
+              enabledTypes={enabledTypes}
             />
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values?.documentsEnabled === "on"} />
