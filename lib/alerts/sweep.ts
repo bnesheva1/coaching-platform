@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { provider } from "@/lib/email/shared";
 import { AlertDigestEmail } from "@/lib/email/templates/AlertDigestEmail";
 import { projectVideoUsage } from "@/lib/video";
+import { checkStripeWebhookConfig } from "@/lib/payments";
 import { isEnabled } from "@/lib/flags";
 import { CANCELLED_STATUSES } from "@/lib/booking-time";
 import { sweepStorageUsage } from "@/lib/storage/usage";
@@ -33,6 +34,7 @@ export async function runAlertSweep(): Promise<{
   sessionFailed: number;
   paymentMismatches: number;
   webhookRepeats: number;
+  webhookConfigDrift: boolean;
   videoCostAction: VideoCostAction;
   storagePct: number | null;
   digested: number;
@@ -41,6 +43,11 @@ export async function runAlertSweep(): Promise<{
   const sessionFailed = await sweepSessionFailed();
   const paymentMismatches = await sweepPaymentBookingMismatches();
   const webhookRepeats = await sweepRepeatedWebhookFailures();
+  // Proactive config check — catches a webhook misconfiguration (an event not
+  // subscribed in the Stripe dashboard) BEFORE any delivery failure appears,
+  // which recordWebhookFailure structurally cannot see. Raised before delivery
+  // so it rides out in this run's digest.
+  const webhookConfigDrift = await sweepWebhookConfig();
   // Runs BEFORE deliverPendingAlerts so a video_cost alert raised this pass is
   // delivered in this same run's digest/push, not next day.
   const videoCostAction = await sweepVideoCostBreaker();
@@ -48,7 +55,7 @@ export async function runAlertSweep(): Promise<{
   // storage_low alert rides out in this run's digest.
   const { storagePct } = await sweepStorageUsage();
   const { digested } = await deliverPendingAlerts();
-  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, videoCostAction, storagePct, digested };
+  return { unresolvedOutcomes, sessionFailed, paymentMismatches, webhookRepeats, webhookConfigDrift, videoCostAction, storagePct, digested };
 }
 
 function isoMinutesAgo(minutes: number): string {
@@ -168,6 +175,26 @@ async function sweepRepeatedWebhookFailures(): Promise<number> {
     }
   }
   return raised;
+}
+
+// Proactive webhook-config check: verify the Stripe endpoint is subscribed to
+// every event the code handles (the required list is derived from the handler
+// registry, so it can't drift out of date). Unlike the failure counter above,
+// this catches a NEVER-DELIVERED event — the config misconfiguration that
+// produces no local signal at all, and ran a prior outage for days. Deduped per
+// (type, subject) + the missing-events fingerprint, so it notifies once and
+// stays quiet until the missing set changes. Test-mode "skipped" returns ok, so
+// this only fires on a real gap in a live deployment.
+async function sweepWebhookConfig(): Promise<boolean> {
+  const result = await checkStripeWebhookConfig();
+  if (result.ok) return false;
+  await raiseAlert({
+    type: "webhook_config",
+    subject: "stripe",
+    message: result.detail ?? "Stripe webhook configuration problem.",
+    context: { detail: result.detail ?? "", error: result.error ?? "" },
+  });
+  return true;
 }
 
 // The automatic video cost breaker. Projects this month's WebRTC cost and, on

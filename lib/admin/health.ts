@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
-import { checkStripeConnection, stripeMode, defaultBillingModel } from "@/lib/payments";
+import { checkStripeConnection, checkStripeWebhookConfig, stripeMode, defaultBillingModel } from "@/lib/payments";
 import { checkEmailConnection } from "@/lib/email";
 import { checkVideoConnection, liveKitPlan } from "@/lib/video";
 import { checkRateLimitConnection } from "@/lib/rate-limit";
@@ -154,6 +154,17 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
       note: "Presence only — if wrong, the daily cron 401s and stops (see Cron below).",
     },
     { name: "REQUIRE_EMAIL_CONFIRMATION", value: String(requireEmailConfirmation), level: "ok" },
+    {
+      // Stripe's webhook config is checked live (the "Stripe webhooks" dependency
+      // above); LiveKit's SDK exposes no API to READ the project's webhook
+      // config, so it can't be auto-verified. Surfaced here so the blind spot is
+      // visible rather than silent (a wrong/missing LiveKit webhook is otherwise
+      // only caught by accident). Verify by hand in the LiveKit dashboard.
+      name: "LiveKit webhook config",
+      value: "manual check",
+      level: "ok",
+      note: `Not API-readable — confirm in the LiveKit project settings that a webhook points at ${SITE_URL}/api/webhooks/livekit.`,
+    },
     { name: "LIVEKIT_PLAN", value: liveKitPlan(), level: "ok" },
     { name: "DEFAULT_BILLING_MODEL", value: defaultBillingModel(), level: "ok" },
   ];
@@ -165,9 +176,13 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
 export async function runHealthReport(): Promise<HealthReport> {
   const requireEmailConfirmation = await isEnabled("requireEmailConfirmation");
 
-  const [supabase, stripe, resend, livekit, upstash, cron, storage] = await Promise.all([
+  const [supabase, stripe, stripeWebhooks, resend, livekit, upstash, cron, storage] = await Promise.all([
     checkSupabase(),
     toCheck("Stripe", checkStripeConnection),
+    // Config verification, not reachability — is the endpoint subscribed to the
+    // events we handle? A "degraded" fail so a config gap flags amber (it isn't
+    // a hard outage), and the daily sweep raises it proactively too.
+    toCheck("Stripe webhooks", checkStripeWebhookConfig, "degraded"),
     toCheck("Resend", checkEmailConnection),
     toCheck("LiveKit", checkVideoConnection),
     toCheck("Upstash", checkRateLimitConnection, "degraded"),
@@ -177,7 +192,7 @@ export async function runHealthReport(): Promise<HealthReport> {
 
   return {
     checkedAt: new Date().toISOString(),
-    dependencies: [supabase, stripe, resend, livekit, upstash],
+    dependencies: [supabase, stripe, stripeWebhooks, resend, livekit, upstash],
     // Storage usage sits with the config values (it's a stated metric, not a
     // reachability check) — flagged 'warn' once it crosses the threshold.
     config: [...gatherConfig(requireEmailConfirmation), storageHealthItem(storage)],

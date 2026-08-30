@@ -1,17 +1,11 @@
 import { NextResponse, after } from "next/server";
-import type Stripe from "stripe";
 import {
   verifyStripeWebhookEvent,
   verifyStripeThinEvent,
   isThinEventPayload,
-  handleCheckoutSessionCompleted,
+  STRIPE_V1_WEBHOOK_HANDLERS,
 } from "@/lib/payments/stripe/webhook";
 import { handleAccountUpdated } from "@/lib/payments/stripe/connect";
-import {
-  handleSubscriptionEvent,
-  handleSubscriptionInvoicePaid,
-  handleSubscriptionInvoicePaymentFailed,
-} from "@/lib/payments/stripe/subscription";
 import { recordWebhookFailure } from "@/lib/alerts/webhook";
 
 // Deliberately thin — every decision lives in lib/payments/stripe/
@@ -57,7 +51,12 @@ export async function POST(request: Request) {
       const notification = verifyStripeThinEvent(rawBody, signature);
       accountId = (notification as unknown as { related_object: { id: string } }).related_object.id;
     } catch (err) {
+      // A verification failure here is usually a WRONG/rotated signing secret —
+      // which, unrecorded, silently 400s every event (how a prior outage ran for
+      // days). Record it so a burst trips the webhook_failure alert. Scheduled
+      // post-response so the 400 isn't delayed.
       console.error("Stripe thin-event signature verification failed", err);
+      after(() => recordWebhookFailure("stripe", `thin-event signature verification failed: ${err instanceof Error ? err.message : String(err)}`));
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
@@ -80,39 +79,25 @@ export async function POST(request: Request) {
     // Anything that doesn't verify — wrong secret, tampered body, not
     // actually from Stripe — is rejected before touching the database
     // at all. Logged, not detailed in the response (no reason to help
-    // an attacker iterate on a forged signature).
+    // an attacker iterate on a forged signature). ALSO recorded: a wrong/
+    // rotated STRIPE_WEBHOOK_SECRET makes EVERY real event fail here, and
+    // without recording it that failure was invisible until a downstream
+    // symptom appeared. Recorded post-response so the 400 isn't delayed; the
+    // burst threshold means a stray forged probe doesn't page anyone.
     console.error("Stripe webhook signature verification failed", err);
+    after(() => recordWebhookFailure("stripe", `signature verification failed: ${err instanceof Error ? err.message : String(err)}`));
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   after(async () => {
     try {
-      switch (event.type) {
-        case "checkout.session.completed":
-          await handleCheckoutSessionCompleted(event.data.object);
-          break;
-        // ── Subscription billing (Stripe Billing, distinct from the
-        // booking Checkout above) — the practitioner monthly platform fee.
-        // These drive practitioner_profiles.subscription_status; Stripe is
-        // the source of truth, so we re-read/act off each event rather than
-        // inferring transitions ourselves.
-        case "invoice.paid":
-          await handleSubscriptionInvoicePaid(event.data.object as Stripe.Invoice);
-          break;
-        case "invoice.payment_failed":
-          await handleSubscriptionInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-          break;
-        case "customer.subscription.updated":
-        case "customer.subscription.deleted":
-          await handleSubscriptionEvent(event.data.object as Stripe.Subscription);
-          break;
-        // No other event types are subscribed to — see
-        // handleCheckoutSessionCompleted's own comment on why
-        // checkout.session.expired needs no handler under this app's
-        // book-on-successful-payment design.
-        default:
-          break;
-      }
+      // Dispatch off the handler registry (lib/payments/stripe/webhook.ts) —
+      // the same map the health config check derives its required-events list
+      // from. An event type with no handler is a no-op (we only ever subscribe
+      // to the ones we handle); see handleCheckoutSessionCompleted's own note on
+      // why e.g. checkout.session.expired needs no handler.
+      const handle = STRIPE_V1_WEBHOOK_HANDLERS[event.type];
+      if (handle) await handle(event);
     } catch (err) {
       // The response was already sent as 200 — this can no longer
       // become a Stripe-visible failure or retry. Logged loudly for

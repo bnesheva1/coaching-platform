@@ -240,7 +240,12 @@ export async function handleSubscriptionEvent(subscription: Stripe.Subscription)
     .neq("subscription_status", "exempt");
 
   if (error) {
+    // Throw (don't swallow) — like handleCheckoutSessionCompleted's DB-failure
+    // path: the webhook route's catch records it via recordWebhookFailure, so a
+    // delivered-but-failing subscription sync trips the burst alert instead of
+    // vanishing into the logs.
     console.error("handleSubscriptionEvent: failed to update practitioner_profiles", { customerId, error });
+    throw new Error(`handleSubscriptionEvent update failed: ${error.message}`);
   }
 }
 
@@ -267,7 +272,10 @@ export async function handleSubscriptionInvoicePaid(invoice: Stripe.Invoice): Pr
     .neq("subscription_status", "exempt");
 
   if (error) {
+    // Throw so the failure is recorded/alerted rather than swallowed (see
+    // handleSubscriptionEvent).
     console.error("handleSubscriptionInvoicePaid: failed to update practitioner_profiles", { customerId, error });
+    throw new Error(`handleSubscriptionInvoicePaid update failed: ${error.message}`);
   }
 }
 
@@ -281,12 +289,20 @@ export async function handleSubscriptionInvoicePaymentFailed(invoice: Stripe.Inv
   if (!customerId || !isSubscriptionInvoice(invoice)) return;
 
   const supabase = createServiceRoleClient();
-  const { data: prac } = await supabase
+  const { data: prac, error } = await supabase
     .from("practitioner_profiles")
     .select("id")
     .eq("stripe_customer_id", customerId)
     .maybeSingle();
+  if (error) {
+    // A genuine DB failure (not "no such practitioner") — throw so it's recorded/
+    // alerted rather than swallowed (see handleSubscriptionEvent).
+    console.error("handleSubscriptionInvoicePaymentFailed: practitioner lookup failed", { customerId, error });
+    throw new Error(`handleSubscriptionInvoicePaymentFailed lookup failed: ${error.message}`);
+  }
   if (!prac?.id) {
+    // Not one of ours (a customer with no practitioner row) — nothing to notify,
+    // not an error to alert on.
     console.error("handleSubscriptionInvoicePaymentFailed: no practitioner for customer", { customerId });
     return;
   }
