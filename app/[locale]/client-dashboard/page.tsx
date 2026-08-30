@@ -249,6 +249,9 @@ export default async function ClientUpcomingPage({
     reviewCount: p.reviewCount,
   }));
   const unbookableSavedIds = savedCards.filter((p) => !p.bookable).map((p) => p.id);
+  // Fully-hidden saved practitioners (lapsed, no outstanding bookings) — the
+  // card stays but stops linking to an unreachable profile.
+  const hiddenSavedIds = savedCards.filter((p) => !p.visible).map((p) => p.id);
 
   // State 2 empty state — they have history but nothing upcoming. Not
   // patronising with a "how it works" explainer (they know); a route back
@@ -444,7 +447,7 @@ export default async function ClientUpcomingPage({
 
       <section style={{ marginTop: "var(--space-8)" }} id="saved">
         <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{tSaved("sectionTitle")}</h2>
-        <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} />
+        <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} hiddenIds={hiddenSavedIds} />
       </section>
     </main>
   );

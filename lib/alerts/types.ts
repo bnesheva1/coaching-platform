@@ -5,6 +5,7 @@ export type AlertType =
   | "payment_booking_mismatch"
   | "failed_email"
   | "webhook_failure"
+  | "webhook_config"
   | "session_failed"
   | "unresolved_outcome"
   | "video_cost"
@@ -47,6 +48,12 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
   webhook_failure: {
     severity: "critical",
     description: "Stripe/LiveKit webhook delivery failed repeatedly rather than once.",
+  },
+  webhook_config: {
+    // Warning, not critical: it's config drift the daily sweep catches BEFORE a
+    // symptom (so never immediate), delivered via the digest until fixed.
+    severity: "warning",
+    description: "The Stripe webhook endpoint is missing a required event — events the code handles aren't being delivered, before any failure shows.",
   },
   session_failed: {
     severity: "warning",

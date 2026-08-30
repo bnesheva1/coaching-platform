@@ -24,12 +24,6 @@ export type FlagDef = {
 // isEnabled -> boolean; a tuning value is a different concern and stays a
 // standalone env read where it's used.
 export const FLAGS = {
-  showPhoneDelivery: {
-    scope: "runtime",
-    default: true,
-    envVar: "SHOW_PHONE_DELIVERY_OPTION",
-    description: "Offer phone as a session delivery method (practitioner service form + Browse filter).",
-  },
   requireEmailConfirmation: {
     // deploy, not runtime: flipping this mid-run would strand people who
     // signed up under the other rule, so it can't safely change while live.
@@ -111,10 +105,10 @@ export const FLAGS = {
 export type FlagKey = keyof typeof FLAGS;
 
 // The kill switches surfaced in the /admin Controls section, in display order.
-// A deliberately curated subset of the runtime flags — showPhoneDelivery and
-// immediateBooking are product config, not operational emergency stops, so they
-// stay out of the operator surface. videoCostOverride is grouped with `video`
-// in the UI, so it's not a standalone row here.
+// A deliberately curated subset of the runtime flags — immediateBooking and
+// subscriptionBilling are product config, not operational emergency stops, so
+// they stay out of the operator surface. videoCostOverride is grouped with
+// `video` in the UI, so it's not a standalone row here.
 export const KILL_SWITCHES = [
   "newBookings",
   "clientRegistration",

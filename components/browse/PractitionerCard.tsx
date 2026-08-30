@@ -49,6 +49,12 @@ export function PractitionerCard({
   // A saved practitioner who has become unbookable/suspended still shows in the
   // list, but with no booking action (defaults to bookable for the browse grid).
   bookable = true,
+  // Whether the practitioner's profile is still reachable. False only for a
+  // fully-hidden one (lapsed, no outstanding bookings) in a saved list: the
+  // card stays (the client chose to keep them) but must not link to a profile
+  // that now shows "not listed". Browse never passes false — search already
+  // excludes those.
+  visible = true,
 }: {
   practitioner: PractitionerCardData;
   saveable?: boolean;
@@ -56,12 +62,94 @@ export function PractitionerCard({
   viewerIsGuest?: boolean;
   onToggleSave?: (saved: boolean) => void;
   bookable?: boolean;
+  visible?: boolean;
 }) {
   const t = useTranslations("Reviews");
   const tBrowse = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
   const tSaved = useTranslations("Saved");
   const profileHref = `/p/${practitioner.username}`;
+
+  const profileBlockStyle = {
+    color: "inherit",
+    textDecoration: "none",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: "var(--space-3)",
+  };
+
+  // The avatar / name / chips / bio stack. Wrapped in a Link to the profile when
+  // reachable; rendered as a plain (non-clickable) block when the practitioner
+  // is fully hidden, so a saved card never leads to a "not listed" page.
+  const profileBlock = (
+    <>
+      <Avatar
+        src={practitioner.avatarUrl}
+        name={practitioner.displayName || practitioner.username}
+        size={AVATAR_SIZE}
+        availableNow={practitioner.availableNow}
+        availableLabel={tImmediate("availableNowLabel")}
+        imageStyle={{ boxShadow: "0 4px 14px hsl(var(--shadow-color) / .14)" }}
+        fallbackBackground="linear-gradient(160deg, var(--bg-sunken), var(--bg-surface-2))"
+        fallbackColor="var(--accent-subtle-text)"
+        fallbackOpacity={0.7}
+        fallbackFont="600 2.8125rem var(--font-display)"
+      />
+
+      <div>
+        <div style={{ font: "var(--text-heading-sm)", fontWeight: 700, color: "var(--text-primary)" }}>
+          {practitioner.displayName || `@${practitioner.username}`}
+        </div>
+        {practitioner.specialtyLabels.length > 0 && (
+          <div style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)", letterSpacing: "0.02em", marginTop: "var(--space-1)" }}>
+            {practitioner.specialtyLabels.join(" · ")}
+          </div>
+        )}
+        {(practitioner.location || (practitioner.deliveryTypeLabels && practitioner.deliveryTypeLabels.length > 0)) && (
+          <div style={{ font: "var(--text-micro)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+            {[practitioner.location, ...(practitioner.deliveryTypeLabels ?? [])].filter(Boolean).join(" · ")}
+          </div>
+        )}
+      </div>
+
+      {practitioner.topicLabels && practitioner.topicLabels.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "var(--space-2)" }}>
+          {practitioner.topicLabels.map((label) => (
+            <span
+              key={label}
+              style={{
+                background: "var(--accent-subtle)",
+                color: "var(--accent-subtle-text)",
+                font: "var(--text-micro)",
+                fontWeight: 600,
+                padding: "var(--badge-padding-sm)",
+                borderRadius: "var(--radius-pill)",
+              }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {practitioner.bio && (
+        <p
+          style={{
+            margin: 0,
+            font: "var(--text-body-xs)",
+            color: "var(--text-secondary)",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          {practitioner.bio}
+        </p>
+      )}
+    </>
+  );
 
   // A plain <div>, not a Link, at the top level — "Book a session" below
   // needs its own real link/button, and nesting an interactive element
@@ -118,84 +206,30 @@ export function PractitionerCard({
         </span>
       )}
 
-      <Link
-        href={profileHref}
-        style={{ color: "inherit", textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-3)" }}
-      >
-        <Avatar
-          src={practitioner.avatarUrl}
-          name={practitioner.displayName || practitioner.username}
-          size={AVATAR_SIZE}
-          availableNow={practitioner.availableNow}
-          availableLabel={tImmediate("availableNowLabel")}
-          // A softer, tighter lift than the card's own shadow, matching the
-          // card's original avatar treatment; the gradient/muted fallback keeps
-          // photo cards from being out-competed by initials in the same row.
-          imageStyle={{ boxShadow: "0 4px 14px hsl(var(--shadow-color) / .14)" }}
-          fallbackBackground="linear-gradient(160deg, var(--bg-sunken), var(--bg-surface-2))"
-          fallbackColor="var(--accent-subtle-text)"
-          fallbackOpacity={0.7}
-          fallbackFont="600 2.8125rem var(--font-display)"
-        />
+      {visible ? (
+        <Link href={profileHref} style={profileBlockStyle}>
+          {profileBlock}
+        </Link>
+      ) : (
+        <div style={profileBlockStyle}>{profileBlock}</div>
+      )}
 
-        <div>
-          <div style={{ font: "var(--text-heading-sm)", fontWeight: 700, color: "var(--text-primary)" }}>
-            {practitioner.displayName || `@${practitioner.username}`}
-          </div>
-          {practitioner.specialtyLabels.length > 0 && (
-            <div style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)", letterSpacing: "0.02em", marginTop: "var(--space-1)" }}>
-              {practitioner.specialtyLabels.join(" · ")}
-            </div>
-          )}
-          {/* City + delivery type as one quiet line — both are "quick
-              facts" in the same register as the specialty line above,
-              not worth two separate rows. Renders nothing at all when
-              neither is present, rather than an empty line. */}
-          {(practitioner.location || (practitioner.deliveryTypeLabels && practitioner.deliveryTypeLabels.length > 0)) && (
-            <div style={{ font: "var(--text-micro)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
-              {[practitioner.location, ...(practitioner.deliveryTypeLabels ?? [])].filter(Boolean).join(" · ")}
-            </div>
-          )}
-        </div>
-
-        {practitioner.topicLabels && practitioner.topicLabels.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "var(--space-2)" }}>
-            {practitioner.topicLabels.map((label) => (
-              <span
-                key={label}
-                style={{
-                  background: "var(--accent-subtle)",
-                  color: "var(--accent-subtle-text)",
-                  font: "var(--text-micro)",
-                  fontWeight: 600,
-                  padding: "var(--badge-padding-sm)",
-                  borderRadius: "var(--radius-pill)",
-                }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {practitioner.bio && (
-          <p
-            style={{
-              margin: 0,
-              font: "var(--text-body-xs)",
-              color: "var(--text-secondary)",
-              overflow: "hidden",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
-            {practitioner.bio}
-          </p>
-        )}
-      </Link>
-
-      {bookable ? (
+      {!visible ? (
+        // Fully hidden (lapsed, no outstanding sessions): the profile is no
+        // longer reachable, so no link — a quiet status note instead of a dead
+        // link. The card itself stays (and its SaveButton) so the client can
+        // still remove them.
+        <span
+          style={{
+            marginTop: "auto",
+            paddingTop: "var(--space-2)",
+            font: "var(--text-body-xs)",
+            color: "var(--text-tertiary)",
+          }}
+        >
+          {tSaved("noLongerListed")}
+        </span>
+      ) : bookable ? (
         <Link
           href={profileHref}
           style={{

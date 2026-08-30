@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVE_STATUSES } from "@/lib/booking-time";
 import { isEnabled } from "@/lib/flags";
+import { enabledDeliveryTypes } from "@/lib/delivery";
 import { paymentProviderName, processingFeeRange } from "@/lib/payments";
 import { effectiveCommissionRate } from "@/lib/payments/stripe/checkout";
 import { ServicesSection } from "../ServicesSection";
@@ -92,7 +93,7 @@ export default async function ServicesPage() {
         <h1 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-6)" }}>{t("nav.services")}</h1>
         <ServicesSection
           services={servicesWithDeliveryInfo}
-          showPhone={await isEnabled("showPhoneDelivery")}
+          enabledTypes={[...enabledDeliveryTypes()]}
           documentsFeatureEnabled={await isEnabled("sessionDocuments")}
           commissionRate={commissionRate}
           providerName={paymentProviderName()}

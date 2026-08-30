@@ -5,6 +5,11 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPaidBookingConfirmationEmails, sendPaymentRefundedNotice } from "@/lib/email";
 import { ensureVideoSession } from "@/lib/video";
 import { finalizeImmediatePayment } from "@/lib/immediate/booking";
+import {
+  handleSubscriptionEvent,
+  handleSubscriptionInvoicePaid,
+  handleSubscriptionInvoicePaymentFailed,
+} from "./subscription";
 
 // Signature verification needs the RAW request body — constructEvent
 // re-computes the signature over the exact bytes Stripe sent and
@@ -30,6 +35,25 @@ export function verifyStripeWebhookEvent(rawBody: string, signatureHeader: strin
 // `object` field first (see isThinEventPayload) only decides which
 // verifier to run, it grants no bypass: a forged `object` field just
 // routes to a verifier that then correctly fails on that payload.
+// THE single source of truth for which v1 (snapshot) webhook events this app
+// handles, and how. The route dispatches off this map, and the health config
+// check derives its "required events" list from the keys — so adding a handled
+// event here (a) wires it into the route and (b) makes the config check verify
+// Stripe is actually subscribed to it, with no second list to update. Each entry
+// takes the raw event and casts its own payload (the entry knows its shape),
+// giving the map a single uniform signature.
+export const STRIPE_V1_WEBHOOK_HANDLERS: Record<string, (event: Stripe.Event) => Promise<void>> = {
+  "checkout.session.completed": (e) => handleCheckoutSessionCompleted(e.data.object as Stripe.Checkout.Session),
+  "invoice.paid": (e) => handleSubscriptionInvoicePaid(e.data.object as Stripe.Invoice),
+  "invoice.payment_failed": (e) => handleSubscriptionInvoicePaymentFailed(e.data.object as Stripe.Invoice),
+  "customer.subscription.updated": (e) => handleSubscriptionEvent(e.data.object as Stripe.Subscription),
+  "customer.subscription.deleted": (e) => handleSubscriptionEvent(e.data.object as Stripe.Subscription),
+};
+
+// Derived, never hand-maintained — the config check reads this to confirm the
+// Stripe endpoint is subscribed to every event we actually handle.
+export const REQUIRED_STRIPE_V1_EVENTS: readonly string[] = Object.keys(STRIPE_V1_WEBHOOK_HANDLERS);
+
 export function isThinEventPayload(rawBody: string): boolean {
   try {
     return JSON.parse(rawBody)?.object === "v2.core.event";

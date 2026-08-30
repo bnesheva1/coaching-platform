@@ -643,6 +643,9 @@
   },
   "PublicProfile": {
     "editProfile": "Edit profile",
+    "notListedTitle": "This practitioner isn't currently listed",
+    "notListedBody": "Their profile isn't available right now. If you've worked with them before, they may be back later — in the meantime, you can find other practitioners here.",
+    "notListedBrowse": "Browse practitioners",
     "metaDescriptionFallback": "{name} is a verified practitioner on {site}. See their services, availability and reviews, and book a consultation.",
     "breadcrumbHome": "Home",
     "breadcrumbBrowse": "Practitioners",
@@ -1202,7 +1205,8 @@
     "sectionTitle": "Saved practitioners",
     "emptyLine": "Save practitioners to keep them here and find them again easily — even ones you haven't booked yet.",
     "emptyCta": "Browse practitioners",
-    "notBookable": "Not taking bookings right now"
+    "notBookable": "Not taking bookings right now",
+    "noLongerListed": "No longer listed"
   },
   "Stats": {
     "title": "Statistics",

@@ -4,6 +4,8 @@ import { type ConnectionResult, errorMessage } from "@/lib/health/types";
 import { getStripeClient } from "./stripe/client";
 import { createBookingCheckoutSession, effectiveCommissionRate } from "./stripe/checkout";
 import { refundBookingPayment as refundViaStripe } from "./stripe/refund";
+import { REQUIRED_STRIPE_V1_EVENTS } from "./stripe/webhook";
+import { REQUIRED_STRIPE_V2_EVENTS } from "./stripe/connect";
 import type { BookingPaymentRequest, InitiatePaymentResult, RefundResult, BillingModel } from "./types";
 
 export type { BillingModel, BookingPaymentRequest, InitiatePaymentResult, RefundResult } from "./types";
@@ -67,6 +69,84 @@ export async function checkStripeConnection(): Promise<ConnectionResult> {
     return { ok: true, detail: `API key valid — ${mode} mode` };
   } catch (e) {
     return { ok: false, detail: `Stripe call failed (${mode} key)`, error: errorMessage(e) };
+  }
+}
+
+// Proactively verify the Stripe webhook endpoint is actually subscribed to every
+// event the code handles — the failure mode the webhook_failure alert can't see
+// (a never-delivered event produces no local signal). The required-events lists
+// are DERIVED from the handler registry + the Connect v2 list, so adding a
+// handled event automatically extends this check. Read via the seam so the
+// health page/cron never import the Stripe SDK directly.
+const STRIPE_WEBHOOK_PATH = "/api/webhooks/stripe";
+export async function checkStripeWebhookConfig(): Promise<ConnectionResult> {
+  const mode = stripeMode();
+  const stripe = getStripeClient();
+  try {
+    // ── v1 snapshot events (checkout + subscription billing) ──
+    const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
+    const ours = endpoints.data.filter(
+      (e) => e.status === "enabled" && (e.url ?? "").includes(STRIPE_WEBHOOK_PATH),
+    );
+
+    if (ours.length === 0) {
+      // No enabled endpoint for THIS app's URL. In live mode that means real
+      // events are going nowhere — a real failure. In test mode it's normal
+      // (the Stripe CLI forwards without a registered endpoint), so don't cry
+      // wolf.
+      return mode === "live"
+        ? {
+            ok: false,
+            detail: "No enabled Stripe webhook endpoint points at this app.",
+            error: `Expected an endpoint whose URL contains ${STRIPE_WEBHOOK_PATH}.`,
+          }
+        : { ok: true, detail: "No registered endpoint (test mode — likely the Stripe CLI); config check skipped." };
+    }
+
+    const enabledV1 = new Set<string>();
+    let wildcard = false;
+    for (const ep of ours) {
+      for (const ev of ep.enabled_events ?? []) {
+        if (ev === "*") wildcard = true;
+        enabledV1.add(ev);
+      }
+    }
+    const missingV1 = wildcard ? [] : REQUIRED_STRIPE_V1_EVENTS.filter((e) => !enabledV1.has(e));
+
+    // ── v2 thin events (Connect account updates) ──
+    // A separate event-destination in Stripe's newer model. Matched leniently
+    // (any v2.core.account* event covers the generic thin handler), since the
+    // exact event-type string is version-sensitive. Best-effort: if the account
+    // doesn't support the v2 API, note it rather than false-failing.
+    let missingV2: string[] = [];
+    let v2Note = "";
+    try {
+      const dests = await stripe.v2.core.eventDestinations.list({ limit: 100 });
+      const enabledV2 = new Set<string>();
+      for (const d of (dests.data ?? []) as Array<{ status?: string; enabled_events?: string[] }>) {
+        if (d.status && d.status !== "enabled") continue;
+        for (const ev of d.enabled_events ?? []) enabledV2.add(ev);
+      }
+      const coversAccount = [...enabledV2].some((e) => e.startsWith("v2.core.account"));
+      if (!coversAccount) missingV2 = [...REQUIRED_STRIPE_V2_EVENTS];
+    } catch (e) {
+      v2Note = ` (Connect v2 events not verified: ${errorMessage(e)})`;
+    }
+
+    const missing = [...missingV1, ...missingV2];
+    if (missing.length > 0) {
+      return {
+        ok: false,
+        detail: `Missing required webhook events: ${missing.join(", ")}.`,
+        error: `Subscribe the endpoint to these in the Stripe Dashboard.${v2Note}`,
+      };
+    }
+    return {
+      ok: true,
+      detail: `All ${REQUIRED_STRIPE_V1_EVENTS.length} handled events + Connect account events subscribed (${mode} mode).${v2Note}`,
+    };
+  } catch (e) {
+    return { ok: false, detail: "Couldn't read Stripe webhook configuration.", error: errorMessage(e) };
   }
 }
 

@@ -13,13 +13,18 @@ import { Button } from "@/components/ui/Button";
 export function SavedPractitionersGrid({
   practitioners,
   unbookableIds,
+  hiddenIds = [],
 }: {
   practitioners: PractitionerCardData[];
   unbookableIds: string[];
+  // Fully-hidden saved practitioners (lapsed, no outstanding bookings): the card
+  // stays but stops linking to an unreachable profile.
+  hiddenIds?: string[];
 }) {
   const t = useTranslations("Saved");
   const [list, setList] = useState(practitioners);
   const unbookable = new Set(unbookableIds);
+  const hidden = new Set(hiddenIds);
 
   if (list.length === 0) {
     return (
@@ -53,6 +58,7 @@ export function SavedPractitionersGrid({
           saved
           viewerIsGuest={false}
           bookable={!unbookable.has(p.id)}
+          visible={!hidden.has(p.id)}
           onToggleSave={(nowSaved) => {
             // Unsaving from the saved list removes the card right away.
             if (!nowSaved) setList((prev) => prev.filter((x) => x.id !== p.id));

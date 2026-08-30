@@ -12,6 +12,7 @@ import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
+import { ProfileUnavailableNotice } from "@/components/practitioner-profile/ProfileUnavailableNotice";
 import { localizedAlternates, profileMetaTitle, profileMetaDescription, SITE_URL } from "@/lib/seo";
 import specialtiesData from "@/data/specialties.json";
 
@@ -33,6 +34,14 @@ export async function generateMetadata({
     .eq("username", username.toLowerCase())
     .single();
   if (!pp) return {};
+
+  // A fully-hidden practitioner (lapsed, no outstanding bookings) shouldn't be
+  // indexed or advertised — the page itself serves a neutral "not listed"
+  // notice, so keep search engines off it and skip the rich meta.
+  const { data: fullyHidden } = await supabase.rpc("is_practitioner_fully_hidden", { target_practitioner_id: pp.id });
+  if (fullyHidden) {
+    return { robots: { index: false, follow: false } };
+  }
 
   const [{ data: prof }, t, siteName] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", pp.id).single(),
@@ -99,6 +108,19 @@ export default async function PublicProfilePage({
       permanentRedirect(`/${locale}/p/${currentUsername}`);
     }
     notFound();
+  }
+
+  // Lapse stage two: a lapsed practitioner with no outstanding bookings is fully
+  // hidden — the direct link stops working too, replaced by a quiet "not
+  // currently listed" notice (never a 404 — the username stays reserved and they
+  // may return; one successful payment restores this instantly). While any
+  // booking is still outstanding this is false, so clients with a session to
+  // keep can always reach them.
+  const { data: fullyHidden } = await supabase.rpc("is_practitioner_fully_hidden", {
+    target_practitioner_id: practitionerProfile.id,
+  });
+  if (fullyHidden) {
+    return <ProfileUnavailableNotice />;
   }
 
   const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }] =

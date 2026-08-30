@@ -26,8 +26,13 @@ export async function POST(request: Request) {
     normalised = await verifyAndNormaliseVideoEvent(rawBody, authHeader);
   } catch (err) {
     // Wrong key/secret, tampered body, not actually from LiveKit — rejected
-    // before any DB access. Logged, not detailed in the response.
+    // before any DB access. Logged, not detailed in the response. ALSO recorded
+    // (post-response, so the 400 isn't delayed): a wrong LiveKit key/secret makes
+    // EVERY event fail here, and without recording it that's invisible until a
+    // symptom appears — same blind spot as the Stripe path. The burst threshold
+    // keeps a stray forged probe from paging anyone.
     console.error("LiveKit webhook signature verification failed", err);
+    after(() => recordWebhookFailure("livekit", `signature verification failed: ${err instanceof Error ? err.message : String(err)}`));
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 

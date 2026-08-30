@@ -39,6 +39,10 @@ export type SavedPractitionerCard = {
   deliveryTypeKeys: string[];
   location: string | null;
   bookable: boolean;
+  // Whether the practitioner's profile is still reachable. False for a
+  // fully-hidden one (lapsed with no outstanding bookings) — the card stays but
+  // must not link to a profile that now shows "not listed".
+  visible: boolean;
 };
 
 type CardRow = {
@@ -54,6 +58,7 @@ type CardRow = {
   delivery_types: string[] | null;
   location: string | null;
   bookable: boolean | null;
+  visible: boolean | null;
 };
 
 export async function getSavedPractitionerCards(): Promise<SavedPractitionerCard[]> {
@@ -89,6 +94,9 @@ export async function getSavedPractitionerCards(): Promise<SavedPractitionerCard
       deliveryTypeKeys: row.delivery_types ?? [],
       location: row.location,
       bookable: !!row.bookable,
+      // Default to visible if the RPC somehow omitted it — never hide a card by
+      // accident; only an explicit false hides the link.
+      visible: row.visible !== false,
     }));
 }
 

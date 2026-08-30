@@ -156,6 +156,18 @@ export async function setPayoutsHold(accountId: string, held: boolean): Promise<
   });
 }
 
+// The v2 (thin) Connect events the account-readiness flow depends on. The thin
+// branch of the webhook route handles ANY account event generically (it just
+// re-fetches the account), so there's no per-type switch to derive from — this
+// is the single source the health config check reads to confirm a v2 event
+// destination is subscribed to the account events. A missing one means
+// practitioners never flip to transfers-active (and so never become bookable on
+// the commission model), silently.
+export const REQUIRED_STRIPE_V2_EVENTS: readonly string[] = [
+  "v2.core.account[configuration.recipient].capability_status_updated",
+  "v2.core.account.updated",
+];
+
 // Called from the webhook route for both v2.core.account.updated and
 // v2.core.account[configuration.recipient].capability_status_updated —
 // deliberately re-fetches the account's current state rather than

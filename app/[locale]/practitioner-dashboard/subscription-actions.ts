@@ -8,6 +8,12 @@ import { siteOrigin } from "@/lib/siteOrigin";
 import { isEnabled } from "@/lib/flags";
 import { createSubscriptionCheckoutUrl, createBillingPortalUrl, getBillingCustomerId } from "@/lib/payments/stripe/subscription";
 
+type SubscriptionContext = {
+  subscription_exempt: boolean;
+  subscription_price_override_cents: number | null;
+  has_subscription: boolean;
+};
+
 // Enrol the current practitioner in the monthly platform-fee subscription — a
 // Checkout Session in mode:"subscription". Same shape as
 // startStripeConnectOnboarding (connect-actions.ts): auth + role check, then a
@@ -54,9 +60,7 @@ export async function startSubscription() {
   // (the columns are admin-only). Exempt = active-and-charged-nothing, so there
   // is nothing to check out — send them back with a benign notice.
   const { data: ctx } = await supabase.rpc("get_my_subscription_context").single();
-  const context = ctx as
-    | { subscription_exempt: boolean; subscription_price_override_cents: number | null }
-    | null;
+  const context = ctx as SubscriptionContext | null;
   if (context?.subscription_exempt) {
     redirect({ href: { pathname: "/practitioner-dashboard/settings", query: { subscriptionInfo: "exempt" } }, locale });
     return;
@@ -67,22 +71,35 @@ export async function startSubscription() {
 
   // redirect()/redirectExternal() throw internally — kept outside any try/catch,
   // same reasoning as connect-actions.ts.
-  let checkoutUrl: string;
+  let externalUrl: string;
   try {
-    checkoutUrl = await createSubscriptionCheckoutUrl({
-      practitionerId: user.id,
-      email: user.email,
-      priceOverrideCents: context?.subscription_price_override_cents ?? null,
-      successUrl: `${settingsPath}?subscriptionInfo=started`,
-      cancelUrl: `${settingsPath}?subscriptionInfo=cancelled`,
-    });
+    if (context?.has_subscription) {
+      // Already enrolled — a lapse is a past_due/unpaid subscription that STILL
+      // EXISTS; reviving it is "pay and become visible again," never a second
+      // subscription. So an enrolled (incl. lapsed) practitioner goes to the
+      // Billing Portal to update their card → Stripe retries → invoice.paid →
+      // active. Only the exempt path cancels a subscription, and it also clears
+      // the stored id, so an un-exempted practitioner falls through to a genuine
+      // fresh checkout below.
+      const customerId = await getBillingCustomerId(user.id);
+      if (!customerId) throw new Error("has_subscription but no stored customer id");
+      externalUrl = await createBillingPortalUrl(customerId, `${settingsPath}?subscriptionInfo=managed`);
+    } else {
+      externalUrl = await createSubscriptionCheckoutUrl({
+        practitionerId: user.id,
+        email: user.email,
+        priceOverrideCents: context?.subscription_price_override_cents ?? null,
+        successUrl: `${settingsPath}?subscriptionInfo=started`,
+        cancelUrl: `${settingsPath}?subscriptionInfo=cancelled`,
+      });
+    }
   } catch (err) {
     console.error("startSubscription failed", { practitionerId: user.id, err });
     await redirectWithError("subscriptionFailed");
     return;
   }
 
-  redirectExternal(checkoutUrl);
+  redirectExternal(externalUrl);
 }
 
 // Open the Stripe Billing Portal for the current practitioner — the hosted
