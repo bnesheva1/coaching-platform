@@ -208,10 +208,20 @@ export async function setSubscriptionOverride(
 
   // Turning exempt ON: stop billing them. Best-effort — a Stripe failure here
   // must not leave the DB unwritten (the row already reflects exempt, which is
-  // the source of truth for bookability); logged for manual follow-up.
+  // the source of truth for bookability); logged for manual follow-up. On a
+  // SUCCESSFUL cancel we also clear the stored subscription id: the Stripe
+  // subscription is gone, so un-exempting them later must lead to a genuine
+  // fresh subscribe, not a Billing-Portal "revive" of a dead subscription (see
+  // startSubscription's has_subscription branch). Only cleared on success, so a
+  // failed cancel keeps the id for a retry / manual follow-up rather than
+  // orphaning a still-billing subscription we can no longer see.
   if (exempt && !prevExempt && current?.stripe_subscription_id) {
     try {
       await cancelPractitionerSubscription(current.stripe_subscription_id as string);
+      await supabase
+        .from("practitioner_profiles")
+        .update({ stripe_subscription_id: null, subscription_current_period_end: null })
+        .eq("id", practitionerId);
     } catch (e) {
       console.error("setSubscriptionOverride: Stripe subscription cancel failed", { practitionerId, error: e });
     }
