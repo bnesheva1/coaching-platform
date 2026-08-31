@@ -78,6 +78,33 @@ async function checkSupabase(): Promise<DependencyCheck> {
   }
 }
 
+// Turnstile CAPTCHA secret — a LIVE validity check, not just presence. The
+// verification is fail-open (signup/contact skip the check when the secret is
+// unset), so "unset" is a real security gap worth flagging red. When set, we
+// call Cloudflare's siteverify with a deliberately bogus token: a VALID secret
+// makes Cloudflare reject the TOKEN (invalid-input-response) — proving the
+// secret works — while a wrong secret is rejected as invalid-input-secret. So a
+// present-but-wrong key is caught here, not only when a real signup fails.
+async function checkTurnstileConnection(): Promise<ConnectionResult> {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    return { ok: false, detail: "Not set — CAPTCHA verification is skipped (fail-open) on signup + contact." };
+  }
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ secret, response: "health-check-not-a-real-token" }),
+  });
+  const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
+  const codes = data["error-codes"] ?? [];
+  if (codes.includes("invalid-input-secret") || codes.includes("missing-input-secret")) {
+    return { ok: false, detail: "Set, but Cloudflare rejected the secret as invalid.", error: codes.join(", ") };
+  }
+  // Our dummy token was rejected (not the secret) — exactly the "secret is
+  // valid" signal, since a real token would only ever come from the widget.
+  return { ok: true, detail: "Secret set and accepted by Cloudflare (dummy token correctly rejected)." };
+}
+
 // The cron heartbeat. The daily cron (send-reminders) writes a cron_runs row at
 // the end of every invocation; a stopped cron is otherwise invisible, and
 // outcome resolution / reminders / room-close / the alert sweep all ride on it.
@@ -129,6 +156,14 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
     },
     { name: "SITE_URL", value: SITE_URL, level: "ok", note: "Used for canonical URLs, email links and redirects — a wrong value poisons all of them." },
     {
+      name: "CONTACT_SUPPORT_EMAIL",
+      value: process.env.CONTACT_SUPPORT_EMAIL ? "set" : "unset",
+      level: process.env.CONTACT_SUPPORT_EMAIL ? "ok" : "warn",
+      note: process.env.CONTACT_SUPPORT_EMAIL
+        ? "Where the contact form and the daily alert digest are delivered."
+        : "Unset — the contact form returns an error and the daily alert digest isn't sent (Telegram criticals still work).",
+    },
+    {
       name: "Stripe mode",
       value: mode,
       level: mode === "live" ? "warn" : "ok",
@@ -176,7 +211,7 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
 export async function runHealthReport(): Promise<HealthReport> {
   const requireEmailConfirmation = await isEnabled("requireEmailConfirmation");
 
-  const [supabase, stripe, stripeWebhooks, resend, livekit, upstash, cron, storage] = await Promise.all([
+  const [supabase, stripe, stripeWebhooks, resend, livekit, turnstile, upstash, cron, storage] = await Promise.all([
     checkSupabase(),
     toCheck("Stripe", checkStripeConnection),
     // Config verification, not reachability — is the endpoint subscribed to the
@@ -185,6 +220,7 @@ export async function runHealthReport(): Promise<HealthReport> {
     toCheck("Stripe webhooks", checkStripeWebhookConfig, "degraded"),
     toCheck("Resend", checkEmailConnection),
     toCheck("LiveKit", checkVideoConnection),
+    toCheck("Turnstile (CAPTCHA)", checkTurnstileConnection),
     toCheck("Upstash", checkRateLimitConnection, "degraded"),
     checkCron(),
     getStorageUsage(),
@@ -192,7 +228,7 @@ export async function runHealthReport(): Promise<HealthReport> {
 
   return {
     checkedAt: new Date().toISOString(),
-    dependencies: [supabase, stripe, stripeWebhooks, resend, livekit, upstash],
+    dependencies: [supabase, stripe, stripeWebhooks, resend, livekit, turnstile, upstash],
     // Storage usage sits with the config values (it's a stated metric, not a
     // reachability check) — flagged 'warn' once it crosses the threshold.
     config: [...gatherConfig(requireEmailConfirmation), storageHealthItem(storage)],
