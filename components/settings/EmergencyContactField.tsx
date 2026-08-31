@@ -75,7 +75,7 @@ export function EmergencyContactField({ initialContact }: { initialContact: stri
               style={{ width: "100%" }}
             />
           </label>
-          {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
+          {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
           <div style={{ display: "flex", gap: "var(--space-2)" }}>
             <Button type="submit" size="sm" disabled={pending}>
               {pending ? t("emergencyContactSaving") : t("emergencyContactSave")}

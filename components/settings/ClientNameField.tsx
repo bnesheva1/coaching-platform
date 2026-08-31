@@ -73,8 +73,8 @@ export function ClientNameField({ initialName, usage }: { initialName: string; u
               style={{ width: "100%" }}
             />
           </label>
-          {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
-          {state?.success && <p style={{ color: "green", margin: 0 }}>{t("savedMessage")}</p>}
+          {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
+          {state?.success && <p style={{ color: "var(--color-success)", margin: 0 }}>{t("savedMessage")}</p>}
           <div style={{ display: "flex", gap: "var(--space-2)" }}>
             <Button type="submit" size="sm" disabled={pending || usage.remaining <= 0}>
               {pending ? t("saveButtonPending") : t("saveButton")}

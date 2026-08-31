@@ -51,7 +51,7 @@ export function BookingResultDialog({
 
   if (!outcome) return null;
 
-  const titleColor = outcome === "success" ? "green" : outcome === "error" ? "crimson" : "var(--text-primary)";
+  const titleColor = outcome === "success" ? "var(--color-success)" : outcome === "error" ? "var(--color-danger)" : "var(--text-primary)";
   const title =
     outcome === "success"
       ? t("resultConfirmedTitle")

@@ -97,7 +97,7 @@ export function ResetPasswordForm() {
         {t("confirmPasswordLabel")}
         <input name="confirmPassword" type="password" required minLength={12} className="form-field" style={{ width: "100%" }} />
       </label>
-      {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+      {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? t("resetPasswordButtonPending") : t("resetPasswordButton")}
       </Button>

@@ -68,7 +68,7 @@ export function EditableImage({
         )}
       </div>
       {state?.error && (
-        <p role="alert" style={{ position: "absolute", font: "var(--text-caption)", color: "crimson", background: "var(--bg-surface)", padding: "var(--space-1) var(--space-2)", borderRadius: "var(--radius-sm)", marginTop: 4 }}>
+        <p role="alert" style={{ position: "absolute", font: "var(--text-caption)", color: "var(--color-danger)", background: "var(--bg-surface)", padding: "var(--space-1) var(--space-2)", borderRadius: "var(--radius-sm)", marginTop: 4 }}>
           {state.error}
         </p>
       )}

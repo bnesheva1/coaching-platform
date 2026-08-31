@@ -23,7 +23,7 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
   }
 
   if (state?.success) {
-    return <p style={{ color: "green", margin: "var(--space-1) 0 0" }}>{t("submittedMessage")}</p>;
+    return <p style={{ color: "var(--color-success)", margin: "var(--space-1) 0 0" }}>{t("submittedMessage")}</p>;
   }
 
   return (
@@ -56,7 +56,7 @@ export function LeaveReviewForm({ bookingId }: { bookingId: string }) {
         className="form-field"
         style={{ width: "100%", marginTop: "var(--space-2)" }}
       />
-      {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+      {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? t("submitButtonPending") : t("submitButton")}
       </Button>

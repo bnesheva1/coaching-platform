@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand, type Brand } from "@/lib/brand";
 import { PT_Serif, Manrope, JetBrains_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -36,6 +36,17 @@ const fontMono = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500"],
 });
+
+// Fonts are brand-selectable, the same way colors are — a brand carries as much
+// identity in its type as its palette. Each brand maps to the next/font
+// instances whose CSS variables (--font-display/ui/mono) typography.css reads;
+// the layout applies ONLY the selected brand's variable classes, so a second
+// brand's fonts aren't loaded when it isn't active. "warm" keeps the original
+// PT Serif / Manrope / JetBrains Mono. A new brand adds its own next/font
+// instances + an entry here (and a colors.css block + a name in lib/brand.ts).
+const BRAND_FONTS: Record<Brand, { display: string; ui: string; mono: string }> = {
+  warm: { display: fontDisplay.variable, ui: fontUi.variable, mono: fontMono.variable },
+};
 
 // metadataBase — needed for every page's relative/absolute URL resolution
 // in metadata (og:image, alternates, etc.) to produce correct absolute
@@ -81,10 +92,18 @@ export default async function LocaleLayout({
   // polls to stay current across client-side navigation.
   const callSession = await getImminentCallSession();
 
+  // The selected brand drives both the palette (data-brand → colors.css) and
+  // the fonts (which next/font variable classes to apply). Resolved from the
+  // BRAND env server-side, so it's deterministic and needs no client script
+  // (unlike theme) — no hydration concern.
+  const brand = resolveBrand();
+  const fonts = BRAND_FONTS[brand];
+
   return (
     <html
       lang={locale}
-      className={`${fontDisplay.variable} ${fontUi.variable} ${fontMono.variable} h-full antialiased`}
+      data-brand={brand}
+      className={`${fonts.display} ${fonts.ui} ${fonts.mono} h-full antialiased`}
       // The theme is decided client-side, before paint, by next-themes'
       // own blocking script (see ThemeProvider) — the server can't know
       // the visitor's localStorage or OS preference, so the data-theme

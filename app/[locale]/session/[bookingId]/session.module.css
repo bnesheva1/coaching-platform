@@ -378,7 +378,7 @@
   height: 56px;
   border-radius: var(--radius-pill);
   border: none;
-  background: #c0392b;
+  background: var(--color-danger);
   color: #fff;
   font-size: 1.4rem;
   display: flex;

@@ -1,5 +1,17 @@
-/* Prozreniya — color tokens. Base warm-neutral hue (~90) + single gold accent hue (~85). Light is default; [data-theme="dark"] overrides. */
-:root{
+/* Color tokens organised as named BRAND sets, selected by the BRAND env var
+   (resolveBrand() in lib/brand.ts stamps data-brand onto <html> in the layout).
+   "warm" is the default and also applies with NO data-brand attribute, so an
+   unset BRAND behaves exactly as before this restructure. A second brand is
+   added as its own [data-brand="…"] block (higher specificity, wins when
+   selected) — no component changes. Fonts are selected the same way, in the
+   layout (see BRAND_FONTS there).
+
+   Base warm-neutral hue (~90) + single gold accent hue (~85). Light is the
+   default; the dark blocks override under [data-theme="dark"]. */
+
+/* ── Brand: warm (default — the original warm-neutral + gold palette) ─────── */
+:root,
+:root[data-brand="warm"] {
   --hue-neutral: 90;
   --hue-accent: 85;
 
@@ -38,9 +50,21 @@
   --focus-ring: oklch(55% 0.15 var(--hue-accent) / .45);
   --shadow-color: 220 10% 10%;
   --overlay-scrim: oklch(20% 0.01 var(--hue-neutral) / .45);
+
+  /* Semantic status colors. Brand-agnostic today (a future brand may override
+     any of them). Single value across BOTH themes — the literals these replace
+     (crimson/#c0392b for errors, green/#1e7f4f/#2ea043 for success, #a15c00 for
+     warnings) were hardcoded and not theme-aware, so making them theme-aware
+     would be a visual change; that's out of scope for this preservation slice.
+     Standardized (both error reds -> #c0392b, all success greens -> #1e7f4f)
+     onto the design-system's own values. */
+  --color-danger: #c0392b;
+  --color-success: #1e7f4f;
+  --color-warning: #a15c00;
 }
 
-[data-theme="dark"]{
+[data-theme="dark"],
+:root[data-brand="warm"][data-theme="dark"] {
   --bg-page: oklch(14% 0.006 var(--hue-neutral));
   --bg-surface: oklch(18% 0.006 var(--hue-neutral));
   --bg-surface-2: oklch(21% 0.006 var(--hue-neutral));

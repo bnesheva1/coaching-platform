@@ -50,7 +50,7 @@ export async function ModerationNotice({
   );
 
   const isSuspended = moderationStatus === "suspended";
-  const accent = isSuspended ? "#c0392b" : "#a15c00";
+  const accent = isSuspended ? "var(--color-danger)" : "var(--color-warning)";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
@@ -61,7 +61,7 @@ export async function ModerationNotice({
           t(`${moderationStatus}_body` as Parameters<typeof t>[0]),
           moderationReason,
         )}
-      {payoutsFrozen && banner("#a15c00", t("payouts_title"), t("payouts_body"), payoutsReason)}
+      {payoutsFrozen && banner("var(--color-warning)", t("payouts_title"), t("payouts_body"), payoutsReason)}
     </div>
   );
 }

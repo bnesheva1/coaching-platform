@@ -35,7 +35,7 @@ export async function SubscriptionBillingSetup() {
         font: "var(--text-label)",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
-        color: ok ? "#1e7f4f" : "#a15c00",
+        color: ok ? "var(--color-success)" : "var(--color-warning)",
         whiteSpace: "nowrap",
       }}
     >
@@ -46,7 +46,7 @@ export async function SubscriptionBillingSetup() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
       <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-        The monthly platform fee is <strong style={{ color: enabled ? "#1e7f4f" : "#a15c00" }}>{enabled ? "ON" : "OFF (dormant)"}</strong>.
+        The monthly platform fee is <strong style={{ color: enabled ? "var(--color-success)" : "var(--color-warning)" }}>{enabled ? "ON" : "OFF (dormant)"}</strong>.
         Complete every item below before switching it on. The “Stripe webhooks” check above verifies the webhook step live.
       </p>
 

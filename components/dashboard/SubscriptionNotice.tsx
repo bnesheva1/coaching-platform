@@ -20,7 +20,7 @@ export async function SubscriptionNotice({ subscriptionStatus }: { subscriptionS
   const t = await getTranslations("Subscription");
 
   const isLapsed = subscriptionStatus === "lapsed";
-  const accent = isLapsed ? "#c0392b" : "#a15c00";
+  const accent = isLapsed ? "var(--color-danger)" : "var(--color-warning)";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>

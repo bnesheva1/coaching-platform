@@ -7,8 +7,8 @@ import type { BulkCancelPreview } from "@/lib/admin/bulkCancel";
 import { Button } from "@/components/ui/Button";
 
 const OUTCOME_COLOR: Record<string, string> = {
-  refunded: "#1e7f4f",
-  refund_failed: "#c0392b",
+  refunded: "var(--color-success)",
+  refund_failed: "var(--color-danger)",
   no_payment: "var(--text-tertiary)",
   already_refunded: "var(--text-tertiary)",
 };
@@ -54,8 +54,8 @@ export function BulkCancelConfirm({
             noPayment: result.counts.noPayment + result.counts.alreadyRefunded,
           })}
         </p>
-        {!result.complete && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#a15c00" }}>{t("bulkReportIncomplete")}</p>}
-        {result.counts.refundFailed > 0 && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{t("bulkReportFailedNote")}</p>}
+        {!result.complete && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-warning)" }}>{t("bulkReportIncomplete")}</p>}
+        {result.counts.refundFailed > 0 && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{t("bulkReportFailedNote")}</p>}
         <div style={{ display: "flex", flexDirection: "column" }}>
           {result.outcomes.map((o) => (
             <div key={o.bookingId} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", font: "var(--text-body-sm)", borderBottom: "1px solid var(--border-subtle)", padding: "var(--space-1) 0" }}>
@@ -112,8 +112,8 @@ export function BulkCancelConfirm({
 
       {/* Confirm — reason + type the username. */}
       <form action={formAction} style={{ maxWidth: 520 }}>
-        <div style={{ border: "1px solid #c0392b", borderRadius: "var(--radius-md)", padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          <p style={{ margin: 0, font: "var(--text-body-md)", color: "#c0392b", fontWeight: 600 }}>{t("bulkWarning")}</p>
+        <div style={{ border: "1px solid var(--color-danger)", borderRadius: "var(--radius-md)", padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+          <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--color-danger)", fontWeight: 600 }}>{t("bulkWarning")}</p>
 
           <label style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
             <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{t("bulkReasonLabel")}</span>
@@ -125,7 +125,7 @@ export function BulkCancelConfirm({
             <input name="confirmUsername" value={typed} onChange={(e) => setTyped(e.target.value)} className="form-field" autoComplete="off" style={{ width: "100%" }} />
           </label>
 
-          {error && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{t(`bulkError_${error}` as Parameters<typeof t>[0])}</p>}
+          {error && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{t(`bulkError_${error}` as Parameters<typeof t>[0])}</p>}
 
           <Button type="submit" disabled={!canSubmit}>
             {isPending ? t("bulkRunning") : t("bulkConfirm")}

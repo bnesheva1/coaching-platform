@@ -614,7 +614,7 @@ function ServiceRow({ service, enabledTypes, documentsFeatureEnabled, earnings }
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values ? state.values.documentsEnabled === "on" : service.documents_enabled} />
             )}
-            {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+            {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
                 {pending ? t("saveButtonPending") : t("saveButton")}
@@ -825,7 +825,7 @@ export function ServicesSection({ services, enabledTypes, documentsFeatureEnable
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values?.documentsEnabled === "on"} />
             )}
-            {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+            {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
                 {pending ? t("addButtonPending") : t("addButton")}

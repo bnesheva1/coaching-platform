@@ -41,7 +41,7 @@
 /* the cost-override's "on" is a caution state (safety suppressed), not the
    brand accent — amber, matching its amber pill */
 .override[aria-checked="true"] {
-  background: #a15c00;
+  background: var(--color-warning);
 }
 
 .small {

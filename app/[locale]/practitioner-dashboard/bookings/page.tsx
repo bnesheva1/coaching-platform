@@ -116,9 +116,9 @@ export default async function BookingsPage({
       {/* No ContentContainer — DashboardShell already bounds/pads the
           sidebar+content row; see profile/page.tsx's identical note. */}
       <div style={{ maxWidth: 500 }}>
-        {justCancelled && <p style={{ color: "green" }}>{tBooking("cancelledMessage")}</p>}
+        {justCancelled && <p style={{ color: "var(--color-success)" }}>{tBooking("cancelledMessage")}</p>}
         {cancelErrorCode && (
-          <p style={{ color: "crimson" }}>
+          <p style={{ color: "var(--color-danger)" }}>
             {tBooking.has(cancelErrorCode) ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0]) : tBooking("cancellationFailed")}
           </p>
         )}

@@ -79,7 +79,7 @@ export function EditableSpecialties({ specialties }: { specialties: string[] }) 
       {selected.map((key) => (
         <input key={key} type="hidden" name="specialties" value={key} />
       ))}
-      {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+      {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? t("saveButtonPending") : t("saveButton")}

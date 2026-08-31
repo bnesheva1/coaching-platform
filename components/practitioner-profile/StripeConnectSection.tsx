@@ -77,7 +77,7 @@ export async function StripeConnectSection({
             background: "rgba(220, 20, 60, 0.08)",
             border: "1px solid rgba(220, 20, 60, 0.3)",
             font: "var(--text-body-sm)",
-            color: "crimson",
+            color: "var(--color-danger)",
           }}
         >
           {errorMessage}
