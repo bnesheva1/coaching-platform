@@ -204,12 +204,12 @@ function YourSlot({
       </form>
 
       {uploadState?.error && (
-        <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger, crimson)" }}>
+        <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger)" }}>
           {uploadState.error}
         </p>
       )}
       {removeError && (
-        <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger, crimson)" }}>
+        <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger)" }}>
           {removeError}
         </p>
       )}
@@ -271,7 +271,7 @@ function TheirSlot({
             {downloading ? t("preparing") : t("download")}
           </button>
           {downloadError && (
-            <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger, crimson)" }}>
+            <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger)" }}>
               {downloadError}
             </p>
           )}

@@ -14,7 +14,7 @@ const MAX_MESSAGE_LENGTH = 2000;
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} role="alert" style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "crimson" }}>
+    <p id={id} role="alert" style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--color-danger)" }}>
       {message}
     </p>
   );
@@ -153,7 +153,7 @@ export function ContactForm() {
       )}
 
       {state?.generalError && (
-        <p role="alert" style={{ margin: 0, font: "var(--text-body-sm)", color: "crimson" }}>
+        <p role="alert" style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>
           {state.generalError}
         </p>
       )}

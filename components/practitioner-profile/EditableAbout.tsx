@@ -57,7 +57,7 @@ export function EditableAbout({ bio }: { bio: string }) {
   return (
     <form key={formKey} action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
       <textarea name="bio" defaultValue={state?.values?.bio ?? bio} rows={6} maxLength={MAX_BIO_LENGTH} className="form-field" style={{ width: "100%" }} />
-      {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+      {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? t("saveButtonPending") : t("saveButton")}

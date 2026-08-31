@@ -1,12 +1,11 @@
 "use client";
 
 // The removal counterpart to EditPencilButton — same circular ghost
-// button shape/size, but a plain "✕" and crimson (matching this app's
-// existing convention of the literal color for error/destructive text,
-// e.g. the inline form error messages in ServicesSection.tsx) rather
-// than the neutral pencil tone, so it doesn't read as just another
-// edit action. Used wherever an image can be cleared, not just
-// replaced: service thumbnails, and the profile's own avatar/banner.
+// button shape/size, but a plain "✕" and the --color-danger token (the app's
+// convention for error/destructive text, e.g. the inline form error messages
+// in ServicesSection.tsx) rather than the neutral pencil tone, so it doesn't
+// read as just another edit action. Used wherever an image can be cleared, not
+// just replaced: service thumbnails, and the profile's own avatar/banner.
 export function RemoveImageButton({
   label,
   onClick,
@@ -31,7 +30,7 @@ export function RemoveImageButton({
         alignItems: "center",
         justifyContent: "center",
         font: size >= 32 ? "var(--text-label)" : "var(--text-caption)",
-        color: "crimson",
+        color: "var(--color-danger)",
         boxShadow: "var(--shadow-sm)",
         cursor: "pointer",
         padding: 0,

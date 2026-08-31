@@ -103,7 +103,7 @@ export function EditableIdentity({
         {t("locationLabel")}
         <input name="location" type="text" defaultValue={state?.values?.location ?? location} maxLength={MAX_LOCATION_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
-      {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+      {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? t("saveButtonPending") : t("saveButton")}

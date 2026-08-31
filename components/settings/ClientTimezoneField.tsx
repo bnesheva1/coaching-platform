@@ -113,7 +113,7 @@ export function ClientTimezoneField({ initialTimezone }: { initialTimezone: stri
               </Button>
             </p>
           )}
-          {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
+          {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
           <div style={{ display: "flex", gap: "var(--space-2)" }}>
             <Button type="submit" size="sm" disabled={pending || effective === ""}>
               {pending ? t("timezoneSaving") : t("timezoneSave")}

@@ -61,8 +61,8 @@ export function ChangePasswordSection() {
               {t("confirmNewPasswordLabel")}
               <input name="confirmNewPassword" type="password" required minLength={12} autoComplete="new-password" className="form-field" style={{ width: "100%" }} />
             </label>
-            {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
-            {state?.success && <p style={{ color: "green", margin: 0 }}>{t("changePasswordSuccess")}</p>}
+            {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
+            {state?.success && <p style={{ color: "var(--color-success)", margin: 0 }}>{t("changePasswordSuccess")}</p>}
             <div>
               <Button type="submit" size="sm" disabled={pending}>
                 {pending ? t("changePasswordButtonPending") : t("changePasswordButton")}

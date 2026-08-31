@@ -389,7 +389,7 @@ export function AvailabilitySection({
                   </Button>
                 </div>
 
-                {editError && <p style={{ margin: 0, color: "crimson" }}>{editError}</p>}
+                {editError && <p style={{ margin: 0, color: "var(--color-danger)" }}>{editError}</p>}
                 {/* Extra breathing room above (space-4, not the space-2
                     the rest of this form uses between rows) so Save/
                     Cancel read as a distinct, final row rather than
@@ -452,7 +452,7 @@ export function AvailabilitySection({
       </ul>
 
       {actionError && (
-        <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{actionError}</p>
+        <p style={{ marginTop: "var(--space-3)", color: "var(--color-danger)" }}>{actionError}</p>
       )}
 
       <ConfirmDialog

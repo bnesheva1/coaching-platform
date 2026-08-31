@@ -40,8 +40,8 @@ export function MinNoticeHoursForm({ initialMinNoticeHours }: { initialMinNotice
           {t("minNoticeHoursHint")}
         </p>
 
-        {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
-        {state?.success && <p style={{ color: "green", margin: 0 }}>{t("savedMessage")}</p>}
+        {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
+        {state?.success && <p style={{ color: "var(--color-success)", margin: 0 }}>{t("savedMessage")}</p>}
       </form>
     </section>
   );

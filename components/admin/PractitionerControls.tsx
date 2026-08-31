@@ -16,18 +16,18 @@ type SubStatus = "not_required" | "active" | "grace" | "lapsed" | "exempt";
 
 const SUB_STATUS_COLOR: Record<SubStatus, string> = {
   not_required: "var(--text-tertiary)",
-  active: "#1e7f4f",
-  grace: "#a15c00",
-  lapsed: "#c0392b",
-  exempt: "#1e7f4f",
+  active: "var(--color-success)",
+  grace: "var(--color-warning)",
+  lapsed: "var(--color-danger)",
+  exempt: "var(--color-success)",
 };
 const MOD_TARGETS: ModStatus[] = ["hidden", "bookings_frozen", "suspended", "active"];
 
 const STATUS_COLOR: Record<ModStatus, string> = {
   active: "var(--text-secondary)",
-  hidden: "#a15c00",
-  bookings_frozen: "#a15c00",
-  suspended: "#c0392b",
+  hidden: "var(--color-warning)",
+  bookings_frozen: "var(--color-warning)",
+  suspended: "var(--color-danger)",
 };
 
 const dialogStyle = {
@@ -177,7 +177,7 @@ export function PractitionerControls({
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", alignItems: "center" }}>
         {chip(t(`modStatus_${moderationStatus}` as Parameters<typeof t>[0]), STATUS_COLOR[moderationStatus])}
-        {payoutsFrozen && chip(t("practPayoutsFrozen"), "#c0392b")}
+        {payoutsFrozen && chip(t("practPayoutsFrozen"), "var(--color-danger)")}
       </div>
 
       {/* Effective commission + where it comes from. */}
@@ -185,7 +185,7 @@ export function PractitionerControls({
         <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-tertiary)" }}>
           {t("commissionLabel")}
         </span>{" "}
-        <strong style={{ color: commissionOverride != null ? "#a15c00" : "var(--text-secondary)" }}>{fmtPct(effectiveRate)}%</strong>{" "}
+        <strong style={{ color: commissionOverride != null ? "var(--color-warning)" : "var(--text-secondary)" }}>{fmtPct(effectiveRate)}%</strong>{" "}
         {commissionOverride != null
           ? t("commissionSourceOverride", { reason: commissionReason ?? "—", date: commissionSetOn ?? "—" })
           : t("commissionSourceDefault")}
@@ -196,7 +196,7 @@ export function PractitionerControls({
         <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-tertiary)" }}>
           {t("subLabel")}
         </span>{" "}
-        <strong style={{ color: subscriptionExempt || subscriptionOverrideCents != null ? "#a15c00" : "var(--text-secondary)" }}>
+        <strong style={{ color: subscriptionExempt || subscriptionOverrideCents != null ? "var(--color-warning)" : "var(--text-secondary)" }}>
           {t("subFeePerMonth", { amount: fmtEur(effectiveFeeCents) })}
         </strong>{" "}
         <span style={{ color: SUB_STATUS_COLOR[subscriptionStatus] }}>· {t(`subStatus_${subscriptionStatus}` as Parameters<typeof t>[0])}</span>{" "}
@@ -224,7 +224,7 @@ export function PractitionerControls({
         </Button>
         <Link
           href={`/admin/practitioners/${practitionerId}/cancel`}
-          style={{ font: "var(--text-body-sm)", color: "#c0392b", alignSelf: "center", fontWeight: 600 }}
+          style={{ font: "var(--text-body-sm)", color: "var(--color-danger)", alignSelf: "center", fontWeight: 600 }}
         >
           {t("bulkLink")} →
         </Link>
@@ -241,7 +241,7 @@ export function PractitionerControls({
             {t(`practConsequence_${pendingStatus}` as Parameters<typeof t>[0])}
           </p>
           {reasonField}
-          {modError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(modError)}</p>}
+          {modError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{errorText(modError)}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => modRef.current?.close()}>
               {t("practCancel")}
@@ -264,7 +264,7 @@ export function PractitionerControls({
             {pendingFrozen ? t("practConsequence_payouts_freeze") : t("practConsequence_payouts_release")}
           </p>
           {reasonField}
-          {payError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(payError)}</p>}
+          {payError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{errorText(payError)}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => payRef.current?.close()}>
               {t("practCancel")}
@@ -301,7 +301,7 @@ export function PractitionerControls({
             </span>
           </label>
           {reasonField}
-          {commError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(commError)}</p>}
+          {commError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{errorText(commError)}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => commRef.current?.close()}>
               {t("practCancel")}
@@ -352,7 +352,7 @@ export function PractitionerControls({
             </span>
           </label>
           {reasonField}
-          {subError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{errorText(subError)}</p>}
+          {subError && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{errorText(subError)}</p>}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-2)" }}>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => subRef.current?.close()}>
               {t("practCancel")}

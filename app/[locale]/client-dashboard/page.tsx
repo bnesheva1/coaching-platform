@@ -309,10 +309,10 @@ export default async function ClientUpcomingPage({
       <ClientTimezoneNotice savedTimezone={savedTz} />
 
       {justCancelled && (
-        <p style={{ color: "green", marginBottom: "var(--space-4)" }}>{tBooking("cancelledMessage")}</p>
+        <p style={{ color: "var(--color-success)", marginBottom: "var(--space-4)" }}>{tBooking("cancelledMessage")}</p>
       )}
       {cancelErrorCode && (
-        <p style={{ color: "crimson", marginBottom: "var(--space-4)" }}>
+        <p style={{ color: "var(--color-danger)", marginBottom: "var(--space-4)" }}>
           {tBooking.has(cancelErrorCode) ? tBooking(cancelErrorCode as Parameters<typeof tBooking>[0]) : tBooking("cancellationFailed")}
         </p>
       )}

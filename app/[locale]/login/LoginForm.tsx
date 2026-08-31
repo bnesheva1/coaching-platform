@@ -29,7 +29,7 @@ export function LoginForm() {
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <h1 style={{ font: "var(--text-heading-lg)" }}>{t("loginTitle")}</h1>
           {justResetPassword && (
-            <p style={{ margin: 0, font: "var(--text-body-sm)", color: "green" }}>
+            <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-success)" }}>
               {t("passwordResetSuccessBanner")}
             </p>
           )}
@@ -49,7 +49,7 @@ export function LoginForm() {
             <Link href="/forgot-password" style={{ font: "var(--text-body-sm)", color: "var(--accent)", alignSelf: "flex-end" }}>
               {t("forgotPasswordLink")}
             </Link>
-            {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+            {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
             <Button type="submit" disabled={pending}>
               {pending ? t("loginButtonPending") : t("loginButton")}
             </Button>

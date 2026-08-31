@@ -14,9 +14,9 @@ export const revalidate = 0;
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 
 const STATUS_COLOR: Record<HealthStatus, string> = {
-  pass: "#1e7f4f",
-  degraded: "#a15c00",
-  fail: "#c0392b",
+  pass: "var(--color-success)",
+  degraded: "var(--color-warning)",
+  fail: "var(--color-danger)",
 };
 
 export default async function AdminHealthPage() {
@@ -83,7 +83,7 @@ export default async function AdminHealthPage() {
                       style={{
                         font: "var(--text-body-sm)",
                         fontFamily: "var(--font-mono, monospace)",
-                        color: "#c0392b",
+                        color: "var(--color-danger)",
                         wordBreak: "break-word",
                         marginTop: "var(--space-1)",
                       }}
@@ -106,14 +106,14 @@ export default async function AdminHealthPage() {
                   key={c.name}
                   style={{
                     ...cardStyle,
-                    borderLeft: c.level === "warn" ? "3px solid #a15c00" : cardStyle.border,
+                    borderLeft: c.level === "warn" ? "3px solid var(--color-warning)" : cardStyle.border,
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "baseline" }}>
                     <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-tertiary)" }}>{c.name}</span>
-                    {c.level === "warn" && <span style={badgeStyle("#a15c00")}>{t("healthFlagged")}</span>}
+                    {c.level === "warn" && <span style={badgeStyle("var(--color-warning)")}>{t("healthFlagged")}</span>}
                   </div>
-                  <span style={{ font: "var(--text-body-md)", fontFamily: "var(--font-mono, monospace)", wordBreak: "break-word", color: c.level === "warn" ? "#a15c00" : "var(--text-primary)" }}>
+                  <span style={{ font: "var(--text-body-md)", fontFamily: "var(--font-mono, monospace)", wordBreak: "break-word", color: c.level === "warn" ? "var(--color-warning)" : "var(--text-primary)" }}>
                     {c.value}
                   </span>
                   {c.note && <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{c.note}</span>}

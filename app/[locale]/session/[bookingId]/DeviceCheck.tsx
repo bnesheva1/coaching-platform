@@ -465,7 +465,7 @@ export function DeviceCheck({
         )}
 
         {errorMessage && (
-          <p className={styles.subtle} role="alert" style={{ color: "#c0392b" }}>
+          <p className={styles.subtle} role="alert" style={{ color: "var(--color-danger)" }}>
             {errorMessage}
           </p>
         )}

@@ -20,8 +20,8 @@ function dayBounds(from?: string, to?: string) {
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
-  critical: "#c0392b",
-  warning: "#a15c00",
+  critical: "var(--color-danger)",
+  warning: "var(--color-warning)",
   info: "var(--text-tertiary)",
 };
 
@@ -130,15 +130,15 @@ export default async function AdminPage({
     cost >= breakerEur ? "breaker" : cost >= highAlertEur ? "high" : cost >= earlyAlertEur ? "early" : "ok";
   const COST_LEVEL_COLOR: Record<string, string> = {
     ok: "var(--text-secondary)",
-    early: "#a15c00",
-    high: "#a15c00",
-    breaker: "#c0392b",
+    early: "var(--color-warning)",
+    high: "var(--color-warning)",
+    breaker: "var(--color-danger)",
   };
   const minutesPct = Math.round(videoUsage.minutesUtilization * 100);
   const dataPct = Math.round(videoUsage.dataUtilization * 100);
   // Colour a usage row by how close it is to its ceiling — amber past 80%, red
   // once over — so an approaching limit reads before it turns into overage cost.
-  const utilColor = (u: number) => (u >= 1 ? "#c0392b" : u >= 0.8 ? "#a15c00" : "var(--text-secondary)");
+  const utilColor = (u: number) => (u >= 1 ? "var(--color-danger)" : u >= 0.8 ? "var(--color-warning)" : "var(--text-secondary)");
 
   const emptyStyle = { margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" } as const;
   const cellStyle = {
@@ -164,7 +164,7 @@ export default async function AdminPage({
     color: "var(--text-tertiary)",
   };
 
-  const greenDotStyle = { display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#2ea043", marginLeft: 6 } as const;
+  const greenDotStyle = { display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "var(--color-success)", marginLeft: 6 } as const;
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -264,7 +264,7 @@ export default async function AdminPage({
                       ...cardStyle,
                       gap: "var(--space-2)",
                       // off = the alarm state: a quiet red left edge, matching the pill
-                      borderLeft: on ? undefined : "3px solid #c0392b",
+                      borderLeft: on ? undefined : "3px solid var(--color-danger)",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "center" }}>
@@ -275,7 +275,7 @@ export default async function AdminPage({
                             font: "var(--text-label)",
                             textTransform: "uppercase",
                             letterSpacing: "0.06em",
-                            color: on ? "var(--text-secondary)" : "#c0392b",
+                            color: on ? "var(--text-secondary)" : "var(--color-danger)",
                             whiteSpace: "nowrap",
                             display: "inline-flex",
                             alignItems: "center",
@@ -323,7 +323,7 @@ export default async function AdminPage({
                                     font: "var(--text-label)",
                                     textTransform: "uppercase",
                                     letterSpacing: "0.06em",
-                                    color: ov ? "#a15c00" : "var(--text-tertiary)",
+                                    color: ov ? "var(--color-warning)" : "var(--text-tertiary)",
                                     whiteSpace: "nowrap",
                                   }}
                                 >

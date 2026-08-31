@@ -162,14 +162,14 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
     <div style={cardStyle}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap" }}>
         <span style={{ font: "var(--text-heading-sm)" }}>{t("heading")}</span>
-        <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: available ? "#1e7f4f" : "var(--text-tertiary)" }}>
+        <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: available ? "var(--color-success)" : "var(--text-tertiary)" }}>
           {available ? `● ${t("statusOn")}` : t("statusOff")}
         </span>
       </div>
 
       {available ? (
         <>
-          <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#a15c00" }}>{t("keepTabOpen")}</p>
+          <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-warning)" }}>{t("keepTabOpen")}</p>
           <div style={{ alignSelf: "flex-start" }}>
             <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={disable}>
               {t("goOffline")}
@@ -209,7 +209,7 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
         </>
       )}
 
-      {error && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "#c0392b" }}>{t(`error_${error}` as Parameters<typeof t>[0])}</p>}
+      {error && <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--color-danger)" }}>{t(`error_${error}` as Parameters<typeof t>[0])}</p>}
 
       {blockReason && (
         <div

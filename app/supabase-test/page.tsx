@@ -60,14 +60,14 @@ export default function SupabaseTestPage() {
   }, []);
 
   return (
-    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+    <main style={{ padding: "2rem", fontFamily: "var(--font-ui)" }}>
       <h1>Supabase Connection Test</h1>
       {status.state === "loading" && <p>Checking connection…</p>}
       {status.state === "success" && (
-        <p style={{ color: "green" }}>✅ {status.message}</p>
+        <p style={{ color: "var(--color-success)" }}>✅ {status.message}</p>
       )}
       {status.state === "error" && (
-        <p style={{ color: "crimson" }}>❌ {status.message}</p>
+        <p style={{ color: "var(--color-danger)" }}>❌ {status.message}</p>
       )}
     </main>
   );

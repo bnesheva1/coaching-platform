@@ -43,7 +43,7 @@ export function DeleteAccountSection({ displayName }: { displayName: string }) {
           glance — the red border on the outer section still flags it as
           sensitive even closed. */}
       <details>
-        <summary style={{ cursor: "pointer", font: "var(--text-heading-sm)", color: "crimson" }}>
+        <summary style={{ cursor: "pointer", font: "var(--text-heading-sm)", color: "var(--color-danger)" }}>
           {t("deleteAccountTitle")}
         </summary>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", marginTop: "var(--space-3)" }}>
@@ -67,7 +67,7 @@ export function DeleteAccountSection({ displayName }: { displayName: string }) {
                 autoComplete="off"
               />
             </label>
-            {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
+            {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
             <Button type="submit" variant="secondary" disabled={!matches || pending}>
               {pending ? t("deleteAccountButtonPending") : t("deleteAccountButton")}
             </Button>

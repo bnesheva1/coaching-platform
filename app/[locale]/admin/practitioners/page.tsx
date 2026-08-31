@@ -96,7 +96,7 @@ export default async function AdminPractitionersPage({
         </form>
 
         {error ? (
-          <p style={{ font: "var(--text-body-md)", color: "#c0392b" }}>{t("practLoadError")}</p>
+          <p style={{ font: "var(--text-body-md)", color: "var(--color-danger)" }}>{t("practLoadError")}</p>
         ) : rows.length === 0 ? (
           <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("practNone")}</p>
         ) : (
@@ -115,7 +115,7 @@ export default async function AdminPractitionersPage({
                         </Link>
                       )}
                     </div>
-                    <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: r.is_bookable ? "#1e7f4f" : "var(--text-tertiary)" }}>
+                    <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: r.is_bookable ? "var(--color-success)" : "var(--text-tertiary)" }}>
                       {r.is_bookable ? t("practBookable") : t("practNotBookable")}
                     </span>
                   </div>
@@ -124,7 +124,7 @@ export default async function AdminPractitionersPage({
                     <span style={statStyle}><span style={statLabel}>{t("practUpcoming")}</span> {numberFmt.format(r.upcoming_count)}</span>
                     <span style={statStyle}><span style={statLabel}>{t("practTotal")}</span> {numberFmt.format(r.total_sessions)}</span>
                     <span style={statStyle}><span style={statLabel}>{t("practRating")}</span> {rating}</span>
-                    <span style={{ ...statStyle, color: connect.warn ? "#a15c00" : "var(--text-secondary)" }}>
+                    <span style={{ ...statStyle, color: connect.warn ? "var(--color-warning)" : "var(--text-secondary)" }}>
                       <span style={statLabel}>{t("practConnect")}</span> {connect.text}
                     </span>
                   </div>

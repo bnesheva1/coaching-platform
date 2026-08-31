@@ -259,12 +259,12 @@ export function AvailabilityExceptionsSection({
             </>
           )}
 
-          {state?.error && <p style={{ color: "crimson" }}>{state.error}</p>}
+          {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
           {state?.success && (
             <>
-              <p style={{ color: "green" }}>{t("addedMessage")}</p>
+              <p style={{ color: "var(--color-success)" }}>{t("addedMessage")}</p>
               {!!state.warningCount && state.warningCount > 0 && (
-                <p style={{ color: "#a15c00" }}>
+                <p style={{ color: "var(--color-warning)" }}>
                   {t("existingBookingsWarning", { count: state.warningCount })}
                 </p>
               )}

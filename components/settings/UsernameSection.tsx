@@ -118,10 +118,10 @@ export function UsernameSection({ initialUsername, usage }: { initialUsername: s
           </label>
           <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", margin: 0 }}>{t("usernameHint")}</p>
           {isChecking && <p style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", margin: 0 }}>{t("checkingAvailability")}</p>}
-          {isAvailable && <p style={{ font: "var(--text-body-sm)", color: "green", margin: 0 }}>{t("available")}</p>}
-          {unavailableReason && <p style={{ font: "var(--text-body-sm)", color: "crimson", margin: 0 }}>{unavailableReason}</p>}
-          {state?.error && <p style={{ color: "crimson", margin: 0 }}>{state.error}</p>}
-          {state?.success && <p style={{ color: "green", margin: 0 }}>{t("savedMessage")}</p>}
+          {isAvailable && <p style={{ font: "var(--text-body-sm)", color: "var(--color-success)", margin: 0 }}>{t("available")}</p>}
+          {unavailableReason && <p style={{ font: "var(--text-body-sm)", color: "var(--color-danger)", margin: 0 }}>{unavailableReason}</p>}
+          {state?.error && <p style={{ color: "var(--color-danger)", margin: 0 }}>{state.error}</p>}
+          {state?.success && <p style={{ color: "var(--color-success)", margin: 0 }}>{t("savedMessage")}</p>}
           <div style={{ display: "flex", gap: "var(--space-2)" }}>
             <Button type="submit" size="sm" disabled={pending || usage.remaining <= 0}>
               {pending ? t("saveButtonPending") : t("saveButton")}

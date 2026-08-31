@@ -44,7 +44,7 @@ export function ImmediateRequestStatus({ requestId, expiresAt }: { requestId: st
   const remaining = Math.max(0, Math.round((new Date(expiresAt).getTime() - nowMs) / 1000));
 
   if (status === "pending") return <p style={{ font: "var(--text-body-md)" }}>{t("waiting", { seconds: remaining })}</p>;
-  if (status === "confirmed") return <p style={{ font: "var(--text-body-md)", color: "#1e7f4f" }}>{t("confirmed")}</p>;
+  if (status === "confirmed") return <p style={{ font: "var(--text-body-md)", color: "var(--color-success)" }}>{t("confirmed")}</p>;
   if (status === "lapsed") return <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("lapsed")}</p>;
   // declined + superseded read identically to the client — no reason given.
   return <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("notAvailable")}</p>;

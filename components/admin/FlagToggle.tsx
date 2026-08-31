@@ -5,11 +5,11 @@ import { useFormStatus } from "react-dom";
 import { Spinner } from "@/components/ui/Spinner";
 import styles from "./FlagToggle.module.css";
 
-// The confirm-button tone maps to how alarming the action is. Uses the same
-// semantic hexes the admin page already uses for off/warning states
-// (#c0392b / #a15c00), kept literal here to match rather than inventing tokens.
+// The confirm-button tone maps to how alarming the action is, via the shared
+// semantic tokens (--color-danger / --color-warning) — the same ones the admin
+// page and the dashboard notices use.
 type Tone = "accent" | "danger" | "warning";
-const TONE_BG: Record<Tone, string> = { accent: "var(--accent)", danger: "#c0392b", warning: "#a15c00" };
+const TONE_BG: Record<Tone, string> = { accent: "var(--accent)", danger: "var(--color-danger)", warning: "var(--color-warning)" };
 const TONE_TEXT: Record<Tone, string> = { accent: "var(--text-on-accent)", danger: "#fff", warning: "#fff" };
 
 // The switch is a state MIRROR + trigger: activating it opens a confirmation,
