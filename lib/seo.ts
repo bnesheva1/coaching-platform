@@ -1,14 +1,24 @@
 import { routing } from "@/i18n/routing";
 
 // The deployment's public origin — feeds every canonical, hreflang, sitemap
-// entry and JSON-LD URL. Deployment-scoped config (SITE_URL env), so a second
-// brand on a different domain sets it once rather than silently attributing
-// all SEO signals to this domain. The fallback is this deployment's own
-// domain, so the primary keeps working if the var is unset — but a second
-// deployment MUST set SITE_URL or its URLs will point here. Server-only (no
-// NEXT_PUBLIC): every consumer is server-side (metadata, sitemap, robots,
+// entry and JSON-LD URL. Deployment-scoped config (SITE_URL env). Server-only
+// (no NEXT_PUBLIC): every consumer is server-side (metadata, sitemap, robots,
 // JSON-LD).
-export const SITE_URL = process.env.SITE_URL ?? "https://coaching-platform-tau.vercel.app";
+//
+// Fail LOUD, never mask: a real production deployment MUST set SITE_URL. If it's
+// unset there, throw — a build/boot failure with a clear message is far better
+// than silently attributing every SEO signal to a stale or wrong domain (the
+// old fallback pointed at the Vercel domain, so a typo/missing var would quietly
+// send all canonicals there). Gated on VERCEL_ENV === "production" so only the
+// real production deploy is strict; local dev and any non-Vercel run fall back
+// to the dev origin, where SEO is irrelevant.
+const configuredSiteUrl = process.env.SITE_URL?.trim();
+if (!configuredSiteUrl && process.env.VERCEL_ENV === "production") {
+  throw new Error(
+    "SITE_URL is not set in production. Every canonical, hreflang, sitemap and JSON-LD URL derives from it, so an unset value would attribute all SEO to the wrong domain. Set SITE_URL to the production origin (e.g. https://www.samodapopitam.bg).",
+  );
+}
+export const SITE_URL = configuredSiteUrl ?? "http://localhost:3000";
 
 // Every static/marketing page's generateMetadata calls this with its own
 // locale + locale-agnostic pathname (e.g. "/how-it-works", no leading
