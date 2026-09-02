@@ -1,18 +1,9 @@
 import { getTranslations } from "next-intl/server";
 
-// White-label brand selection. A brand is a named token set (palette in
-// app/tokens/colors.css, fonts in the layout's BRAND_FONTS map), chosen by the
-// BRAND env var. Unset → "warm" (the original palette + fonts), so a default
-// deployment is unchanged; a second deployment sets BRAND=<name> to swap the
-// whole visual identity with no code change. Adding a brand = a colors.css
-// [data-brand] block + a BRAND_FONTS entry + its name here.
-export const BRANDS = ["warm"] as const;
-export type Brand = (typeof BRANDS)[number];
-
-export function resolveBrand(): Brand {
-  const raw = process.env.BRAND?.trim().toLowerCase();
-  return (BRANDS as readonly string[]).includes(raw ?? "") ? (raw as Brand) : "warm";
-}
+// Brand palette/locale config lives in lib/brand-config.ts (framework-free, so
+// the edge middleware + next.config can import it). Re-exported here so existing
+// importers of resolveBrand/Brand from "@/lib/brand" keep working.
+export { BRANDS, resolveBrand, brandLocales, BRAND_LOCALES, type Brand, type Locale } from "./brand-config";
 
 // The platform's display name — the single dedicated source (Brand.siteName).
 // Consumers (metadata titles, the nav wordmark, structured data) ask "what is

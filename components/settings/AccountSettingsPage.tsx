@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations, getLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { Link, getPathname } from "@/i18n/navigation";
 import { MarketingConsentSection } from "./MarketingConsentSection";
 import { ChangePasswordSection } from "./ChangePasswordSection";
 import { DeleteAccountSection } from "./DeleteAccountSection";
@@ -95,7 +95,7 @@ export async function AccountSettingsPage({
             attachment, see settings/export/route.ts), so it needs a
             real, uninterrupted browser navigation. The locale prefix is
             built in manually since Link would normally be what adds it. */}
-        <a href={`/${locale}/settings/export`} style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+        <a href={getPathname({ href: "/settings/export", locale })} style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
           {t("dataExportButton")}
         </a>
       </section>

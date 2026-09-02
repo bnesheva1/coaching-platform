@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { NavBar, type NavLink } from "@/components/ui/NavBar";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
+import { routing } from "@/i18n/routing";
 import { getViewer } from "@/lib/auth/getViewer";
 import { getSiteName } from "@/lib/brand";
 import { signOut } from "@/app/actions";
@@ -100,7 +101,7 @@ export async function SiteHeader() {
       accountLinks={accountLinks}
       signOut={signOutItem}
       authLinks={authLinks}
-      langToggle={<LangToggle />}
+      langToggle={routing.locales.length > 1 ? <LangToggle /> : null}
       themeToggle={<ThemeToggle compact switchToLightLabel={tHeader("switchToLight")} switchToDarkLabel={tHeader("switchToDark")} />}
       mobileMenuLabel={{ open: tHeader("mobileMenuOpen"), close: tHeader("mobileMenuClose") }}
     />

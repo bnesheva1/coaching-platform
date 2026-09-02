@@ -2,7 +2,7 @@
 
 import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { redirect, getPathname } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { isEnabled } from "@/lib/flags";
@@ -67,7 +67,7 @@ export async function startSubscription() {
   }
 
   const origin = await siteOrigin();
-  const settingsPath = `${origin}/${locale}/practitioner-dashboard/settings`;
+  const settingsPath = `${origin}${getPathname({ href: "/practitioner-dashboard/settings", locale })}`;
 
   // redirect()/redirectExternal() throw internally — kept outside any try/catch,
   // same reasoning as connect-actions.ts.
@@ -130,7 +130,7 @@ export async function openBillingPortal() {
   }
 
   const origin = await siteOrigin();
-  const returnUrl = `${origin}/${locale}/practitioner-dashboard/settings`;
+  const returnUrl = `${origin}${getPathname({ href: "/practitioner-dashboard/settings", locale })}`;
 
   let portalUrl: string;
   try {

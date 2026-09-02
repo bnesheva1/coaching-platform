@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { brandLocales } from "./lib/brand-config";
 
 // Server Actions receive uploads as multipart bodies, so this framework
 // limit must sit ABOVE the largest file any action accepts — otherwise a
@@ -24,7 +25,22 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
+    const locales = brandLocales();
+    // Single active locale → served at the root. Permanently (308) strip the old
+    // /<locale>/ prefix, so indexed/shared prefixed URLs consolidate onto the
+    // root rather than relying on next-intl's TEMPORARY (307) auto-redirect.
+    // Derived from the locale list: a bilingual brand keeps its prefixes (no
+    // rule), and a single-locale brand that was never prefixed simply has no
+    // traffic here. Placed first so it resolves in one hop on the live host.
+    const stripSoleLocalePrefix =
+      locales.length === 1
+        ? [
+            { source: `/${locales[0]}/:path*`, destination: "/:path*", permanent: true },
+            { source: `/${locales[0]}`, destination: "/", permanent: true },
+          ]
+        : [];
     return [
+      ...stripSoleLocalePrefix,
       {
         // Old Vercel alias → the real domain, 308 permanent (permanent: true).
         // Stops the old host serving duplicate content at all, and — since auth

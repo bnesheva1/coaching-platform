@@ -1,4 +1,13 @@
 import { routing } from "@/i18n/routing";
+import { getPathname } from "@/i18n/navigation";
+import type { Locale } from "@/lib/brand-config";
+
+// Absolute URL for a locale-agnostic path, with the locale prefix applied only
+// when the routing strategy uses one (getPathname respects localePrefix — no
+// prefix for a single-locale brand, /<locale> for a multi-locale one).
+function localizedUrl(pathname: string, locale: Locale): string {
+  return `${SITE_URL}${getPathname({ href: pathname, locale })}`;
+}
 
 // The deployment's public origin — feeds every canonical, hreflang, sitemap
 // entry and JSON-LD URL. Deployment-scoped config (SITE_URL env). Server-only
@@ -29,16 +38,22 @@ export const SITE_URL = configuredSiteUrl ?? "http://localhost:3000";
 // preference lands on the site's default (bg) rather than an arbitrary
 // pick.
 export function localizedAlternates(locale: string, pathname: string) {
+  const canonical = localizedUrl(pathname, locale as Locale);
+
+  // With a single served locale there's no alternate language to point at — emit
+  // only the canonical, not a self-referencing hreflang pair against a locale
+  // this brand doesn't serve.
+  if (routing.locales.length === 1) {
+    return { canonical };
+  }
+
   const languages: Record<string, string> = {};
   for (const l of routing.locales) {
-    languages[l] = `${SITE_URL}/${l}${pathname}`;
+    languages[l] = localizedUrl(pathname, l);
   }
-  languages["x-default"] = `${SITE_URL}/${routing.defaultLocale}${pathname}`;
+  languages["x-default"] = localizedUrl(pathname, routing.defaultLocale);
 
-  return {
-    canonical: `${SITE_URL}/${locale}${pathname}`,
-    languages,
-  };
+  return { canonical, languages };
 }
 
 // Collapse whitespace and cut to a meta-description-friendly length at a

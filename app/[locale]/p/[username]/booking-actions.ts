@@ -2,7 +2,7 @@
 
 import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { redirect, getPathname } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { checkRateLimit, bookingLimiter } from "@/lib/rate-limit";
@@ -160,7 +160,7 @@ export async function bookSlot(
   }
 
   const origin = await siteOrigin();
-  const profilePath = `/${locale}/p/${username}`;
+  const profilePath = getPathname({ href: `/p/${username}`, locale });
 
   const paymentResult = await initiateBookingPayment({
     practitionerId,

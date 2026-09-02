@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { getTranslations, getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { redirect, getPathname } from "@/i18n/navigation";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import {
   checkRateLimit,
@@ -78,7 +78,7 @@ export async function requestPasswordReset(
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: { redirectTo: `${origin}/${locale}/reset-password` },
+      options: { redirectTo: `${origin}${getPathname({ href: "/reset-password", locale })}` },
     });
 
     // Deliberately not branching on WHY this failed (no such user vs.
