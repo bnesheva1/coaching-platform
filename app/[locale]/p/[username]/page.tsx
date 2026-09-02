@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteName } from "@/lib/brand";
 import { notFound, permanentRedirect } from "next/navigation";
+import { getPathname } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
@@ -105,7 +106,7 @@ export default async function PublicProfilePage({
       // equity onto the current URL and treat it as canonical. (Next's
       // permanentRedirect emits 308, which Google treats as permanent, the
       // same as 301.)
-      permanentRedirect(`/${locale}/p/${currentUsername}`);
+      permanentRedirect(getPathname({ href: `/p/${currentUsername}`, locale }));
     }
     notFound();
   }
@@ -251,7 +252,7 @@ export default async function PublicProfilePage({
     getSiteName(locale),
   ]);
   const displayName = profile?.display_name || `@${practitionerProfile.username}`;
-  const canonicalUrl = `${SITE_URL}/${locale}/p/${practitionerProfile.username}`;
+  const canonicalUrl = `${SITE_URL}${getPathname({ href: `/p/${practitionerProfile.username}`, locale })}`;
   const specialtyLabelByKey = new Map(
     specialtiesData.map((s) => [s.key, locale === "en" ? s.en : s.bg]),
   );
@@ -311,8 +312,8 @@ export default async function PublicProfilePage({
   const breadcrumb = {
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: tProfile("breadcrumbHome"), item: `${SITE_URL}/${locale}` },
-      { "@type": "ListItem", position: 2, name: tProfile("breadcrumbBrowse"), item: `${SITE_URL}/${locale}/browse` },
+      { "@type": "ListItem", position: 1, name: tProfile("breadcrumbHome"), item: `${SITE_URL}${getPathname({ href: "/", locale })}` },
+      { "@type": "ListItem", position: 2, name: tProfile("breadcrumbBrowse"), item: `${SITE_URL}${getPathname({ href: "/browse", locale })}` },
       { "@type": "ListItem", position: 3, name: displayName, item: canonicalUrl },
     ],
   };

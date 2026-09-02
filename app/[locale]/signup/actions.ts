@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { getTranslations, getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { redirect, getPathname } from "@/i18n/navigation";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { checkRateLimit, getClientIp, signupLimiter } from "@/lib/rate-limit";
 import { siteOrigin } from "@/lib/siteOrigin";
@@ -104,7 +104,7 @@ export async function signup(
     password,
     options: {
       data: { display_name: displayName, role, locale },
-      redirectTo: `${origin}/${locale}/signup/confirm`,
+      redirectTo: `${origin}${getPathname({ href: "/signup/confirm", locale })}`,
     },
   });
 

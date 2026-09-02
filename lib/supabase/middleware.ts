@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
+import { getPathname } from "@/i18n/navigation";
 import { extractLocale, stripLocale } from "@/lib/locale-path";
 
 // `response` is whatever next-intl's own middleware already decided
@@ -52,7 +53,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
 
   if (!user && isProtectedPath) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/login`;
+    url.pathname = getPathname({ href: "/login", locale });
     return NextResponse.redirect(url);
   }
 

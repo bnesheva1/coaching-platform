@@ -1,7 +1,11 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
+import { getPathname } from "@/i18n/navigation";
+import type { Locale } from "@/lib/brand-config";
 import { SITE_URL } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
+
+const urlFor = (pathname: string, locale: Locale) => `${SITE_URL}${getPathname({ href: pathname, locale })}`;
 
 // Dynamic so newly-bookable practitioners appear automatically without a
 // rebuild. searchPractitioners reads request cookies (anonymous here), which
@@ -22,19 +26,21 @@ const STATIC_PATHS = [
 ];
 
 // hreflang alternates for one path — every locale plus x-default -> the
-// default locale, matching lib/seo.ts's localizedAlternates.
+// default locale, matching lib/seo.ts's localizedAlternates. Omitted entirely
+// for a single served locale (nothing to alternate against).
 function languagesFor(pathname: string): Record<string, string> {
   const languages: Record<string, string> = {};
-  for (const l of routing.locales) languages[l] = `${SITE_URL}/${l}${pathname}`;
-  languages["x-default"] = `${SITE_URL}/${routing.defaultLocale}${pathname}`;
+  for (const l of routing.locales) languages[l] = urlFor(pathname, l);
+  languages["x-default"] = urlFor(pathname, routing.defaultLocale);
   return languages;
 }
 
 function entriesForPath(pathname: string): MetadataRoute.Sitemap {
-  const languages = languagesFor(pathname);
+  const single = routing.locales.length === 1;
+  const languages = single ? null : languagesFor(pathname);
   return routing.locales.map((locale) => ({
-    url: `${SITE_URL}/${locale}${pathname}`,
-    alternates: { languages },
+    url: urlFor(pathname, locale),
+    ...(languages ? { alternates: { languages } } : {}),
   }));
 }
 

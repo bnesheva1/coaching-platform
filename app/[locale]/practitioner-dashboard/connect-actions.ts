@@ -2,7 +2,7 @@
 
 import { redirect as redirectExternal } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
+import { redirect, getPathname } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/siteOrigin";
 import {
@@ -54,7 +54,7 @@ export async function startStripeConnectOnboarding() {
   }
 
   const origin = await siteOrigin();
-  const settingsPath = `${origin}/${locale}/practitioner-dashboard/settings`;
+  const settingsPath = `${origin}${getPathname({ href: "/practitioner-dashboard/settings", locale })}`;
 
   // redirect()/redirectExternal() work by throwing internally — calling
   // either one from inside a try/catch would let the catch block
