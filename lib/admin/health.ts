@@ -154,7 +154,21 @@ function gatherConfig(requireEmailConfirmation: boolean): ConfigItem[] {
       level: from === "onboarding@resend.dev" ? "warn" : "ok",
       note: from === "onboarding@resend.dev" ? "Resend's sandbox sender — can only deliver to the account owner; every other recipient 422s." : undefined,
     },
-    { name: "SITE_URL", value: SITE_URL, level: "ok", note: "Used for canonical URLs, email links and redirects — a wrong value poisons all of them." },
+    // Unset SITE_URL throws at startup in production (see lib/seo.ts), so it
+    // can't silently revert. This catches the other masking case — a value
+    // that's SET but points at a non-production host (localhost / *.vercel.app),
+    // which would send every canonical/sitemap/JSON-LD URL to the wrong domain.
+    (() => {
+      const suspect = /localhost|vercel\.app/i.test(SITE_URL);
+      return {
+        name: "SITE_URL",
+        value: SITE_URL,
+        level: suspect ? "warn" : "ok",
+        note: suspect
+          ? "Looks like a non-production origin (localhost / *.vercel.app). Every canonical, sitemap and JSON-LD URL derives from this — set it to the real production domain."
+          : "Origin for every canonical, sitemap and JSON-LD URL. (Auth/redirect links use the request host, not this.)",
+      } as ConfigItem;
+    })(),
     {
       name: "CONTACT_SUPPORT_EMAIL",
       value: process.env.CONTACT_SUPPORT_EMAIL ? "set" : "unset",

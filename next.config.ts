@@ -23,6 +23,24 @@ const nextConfig: NextConfig = {
       bodySizeLimit: serverActionBodyLimitBytes(),
     },
   },
+  async redirects() {
+    return [
+      {
+        // Old Vercel alias → the real domain, 308 permanent (permanent: true).
+        // Stops the old host serving duplicate content at all, and — since auth
+        // links are built from the REQUEST host, not SITE_URL — it means anyone
+        // arriving on an old link completes signup/reset on the correct host.
+        // The path (and query) carry over via :path*. Matched on the exact old
+        // host only, so the live domain (www.samodapopitam.bg) never matches and
+        // can't loop. Deployment-specific *.vercel.app preview URLs aren't
+        // covered (not indexed/shared); broaden the host match if that changes.
+        source: "/:path*",
+        has: [{ type: "host", value: "coaching-platform-tau.vercel.app" }],
+        destination: "https://www.samodapopitam.bg/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();
