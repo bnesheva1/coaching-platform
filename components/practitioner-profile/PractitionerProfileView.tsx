@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Clock, Wallet, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
@@ -726,6 +727,74 @@ export function PractitionerProfileView({
                     />
                   </div>
                 );
+                if (isBrandTwo) {
+                  // Split the formatted price into amount + symbol so each stat
+                  // can show a big mono number with a small unit beneath it.
+                  const priceParts = new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).formatToParts(
+                    service.priceCents / 100,
+                  );
+                  const priceAmount = priceParts
+                    .filter((p) => p.type !== "currency" && p.type !== "literal")
+                    .map((p) => p.value)
+                    .join("");
+                  const priceSymbol = priceParts.find((p) => p.type === "currency")?.value ?? service.currency;
+                  return (
+                    <div key={service.id} className={styles.svc2Card}>
+                      <div className={styles.svc2Row}>
+                        {service.imageUrl ? (
+                          <div className={styles.svc2Image}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={service.imageUrl} alt="" />
+                          </div>
+                        ) : (
+                          <div className={`${styles.svc2Image} ${styles.svc2ImagePlaceholder}`} aria-hidden="true" />
+                        )}
+                        <div className={styles.svc2Text}>
+                          <span className={styles.svc2Title}>{service.name}</span>
+                          <div className={styles.svc2Stats}>
+                            <div className={styles.svc2Stat}>
+                              <Clock size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                              <span className={styles.svc2StatText}>
+                                <span className={styles.svc2StatNum}>{service.durationMinutes}</span>
+                                <span className={styles.svc2StatUnit}>{tPublic("minutesShort")}</span>
+                              </span>
+                            </div>
+                            <div className={styles.svc2Stat}>
+                              <Wallet size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                              <span className={styles.svc2StatText}>
+                                <span className={styles.svc2StatNum}>{priceAmount}</span>
+                                <span className={styles.svc2StatUnit}>{priceSymbol}</span>
+                              </span>
+                            </div>
+                            {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
+                          </div>
+                          {service.description && <span className={styles.svc2Desc}>{service.description}</span>}
+                        </div>
+                        {!isExpanded && !canBookNow && (
+                          <button
+                            type="button"
+                            className={styles.svc2BookBtn}
+                            onClick={expandThis}
+                            aria-expanded="false"
+                            aria-controls={`slotpicker-${service.id}`}
+                          >
+                            <CalendarDays size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
+                            {t("bookSlotCta")}
+                          </button>
+                        )}
+                      </div>
+                      {canBookNow ? (
+                        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                          <ImmediateBookButton practitionerId={practitionerId} serviceId={service.id} onSeeOtherTimes={expandThis} />
+                          {isExpanded && slotPanel}
+                        </div>
+                      ) : isExpanded ? (
+                        slotPanel
+                      ) : null}
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)", padding: 20 }}>
                     <div className={rowStyles.row} style={{ gap: 20 }}>

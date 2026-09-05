@@ -538,6 +538,7 @@
     "topicsHint": "Choose up to {max} topics that best describe your work ({count}/{max}).",
     "topicsMaxExceeded": "You can select up to {max} topics.",
     "seeAvailability": "See availability",
+    "bookSlotCta": "Book",
     "hideDetails": "Hide available times",
     "noServicesYet": "No services added yet."
   },
@@ -689,6 +690,7 @@
     "topicsLabel": "Topics",
     "modeInPerson": "In person — {city}",
     "nextAvailableSlotLabel": "Next available time",
+    "minutesShort": "min",
     "nextAvailableSlotEmpty": "No upcoming times",
     "summaryReviewsLabel": "Reviews",
     "summaryPriceLabel": "Price",
