@@ -465,20 +465,6 @@ export function BrowseClient({
           </aside>
 
           <div style={{ minWidth: 0 }}>
-            <div className={twoStyles.resultsHeader}>
-              <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
-              <label className={twoStyles.sortControl}>
-                {t("sortLabel")}
-                <span className={twoStyles.selectWrap}>
-                  <select className={twoStyles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
-                    <option value="default">{t("sortDefault")}</option>
-                    <option value="rating">{t("sortRating")}</option>
-                  </select>
-                  <ChevronDown size={16} strokeWidth={1.8} className={twoStyles.selectChevron} aria-hidden="true" />
-                </span>
-              </label>
-            </div>
-
             {activeChips.length > 0 && (
               <div className={twoStyles.activeChips}>
                 {activeChips.map(({ group, key, label }) => (
@@ -497,6 +483,20 @@ export function BrowseClient({
                 ))}
               </div>
             )}
+
+            <div className={twoStyles.resultsHeader}>
+              <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
+              <label className={twoStyles.sortControl}>
+                {t("sortLabel")}
+                <span className={twoStyles.selectWrap}>
+                  <select className={twoStyles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                    <option value="default">{t("sortDefault")}</option>
+                    <option value="rating">{t("sortRating")}</option>
+                  </select>
+                  <ChevronDown size={16} strokeWidth={1.8} className={twoStyles.selectChevron} aria-hidden="true" />
+                </span>
+              </label>
+            </div>
 
             {orderedResults.length === 0 ? (
               <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("emptyStateBody")}</p>
