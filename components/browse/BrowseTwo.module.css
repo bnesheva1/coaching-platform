@@ -193,12 +193,14 @@
   box-shadow: var(--focus-ring-shadow);
 }
 
-/* Active-filter pills (below the results header) — each removes its filter. */
-.activeChips {
+/* Active-filter pills + the results count share one wrapping row (pills first,
+   then the count); each pill removes its filter. */
+.resultsHeaderLeft {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  min-width: 0;
 }
 .activeChip {
   display: inline-flex;

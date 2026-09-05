@@ -465,8 +465,8 @@ export function BrowseClient({
           </aside>
 
           <div style={{ minWidth: 0 }}>
-            {activeChips.length > 0 && (
-              <div className={twoStyles.activeChips}>
+            <div className={twoStyles.resultsHeader}>
+              <div className={twoStyles.resultsHeaderLeft}>
                 {activeChips.map(({ group, key, label }) => (
                   <button
                     key={`${group}:${key}`}
@@ -481,11 +481,8 @@ export function BrowseClient({
                     </span>
                   </button>
                 ))}
+                <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
               </div>
-            )}
-
-            <div className={twoStyles.resultsHeader}>
-              <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
               <label className={twoStyles.sortControl}>
                 {t("sortLabel")}
                 <span className={twoStyles.selectWrap}>
