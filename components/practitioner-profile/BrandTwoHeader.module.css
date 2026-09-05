@@ -13,9 +13,6 @@
     grid-template-columns: 1fr;
     gap: 28px;
   }
-  .card {
-    position: static;
-  }
 }
 
 /* ── Left: summary card (resembles the browse result card) ───────────────── */
@@ -36,6 +33,13 @@
   align-items: center;
   gap: 14px;
   text-align: center;
+}
+/* Not sticky once the columns stack — placed AFTER the base .card so it wins on
+   source order (a media query adds no specificity). */
+@media (max-width: 860px) {
+  .card {
+    position: static;
+  }
 }
 .ratingPill {
   position: absolute;

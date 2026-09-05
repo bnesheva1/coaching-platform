@@ -758,7 +758,8 @@ export function PractitionerProfileView({
                   };
                   return (
                     <div key={service.id} className={styles.svc2Card}>
-                      <div className={styles.svc2Row}>
+                      <div className={styles.svc2Grid}>
+                        <span className={styles.svc2Title}>{service.name}</span>
                         {service.imageUrl ? (
                           <div className={styles.svc2Image}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -767,28 +768,25 @@ export function PractitionerProfileView({
                         ) : (
                           <div className={`${styles.svc2Image} ${styles.svc2ImagePlaceholder}`} aria-hidden="true" />
                         )}
-                        <div className={styles.svc2Text}>
-                          <span className={styles.svc2Title}>{service.name}</span>
-                          <div className={styles.svc2Stats}>
-                            <div className={styles.svc2Stat}>
-                              <Clock size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
-                              <span className={styles.svc2StatText}>
-                                <span className={styles.svc2StatNum}>{service.durationMinutes}</span>
-                                <span className={styles.svc2StatUnit}>{tPublic("minutesShort")}</span>
-                              </span>
-                            </div>
-                            <div className={styles.svc2Stat}>
-                              <Wallet size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
-                              <span className={styles.svc2StatText}>
-                                <span className={styles.svc2StatNum}>{priceAmount}</span>
-                                <span className={styles.svc2StatUnit}>{priceSymbol}</span>
-                              </span>
-                            </div>
-                            {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
+                        <div className={styles.svc2Stats}>
+                          <div className={styles.svc2Stat}>
+                            <Clock size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                            <span className={styles.svc2StatText}>
+                              <span className={styles.svc2StatNum}>{service.durationMinutes}</span>
+                              <span className={styles.svc2StatUnit}>{tPublic("minutesShort")}</span>
+                            </span>
                           </div>
-                          {/* Always rendered (min-height reserves 2 lines) so every card is the same height. */}
-                          <span className={styles.svc2Desc}>{service.description}</span>
+                          <div className={styles.svc2Stat}>
+                            <Wallet size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                            <span className={styles.svc2StatText}>
+                              <span className={styles.svc2StatNum}>{priceAmount}</span>
+                              <span className={styles.svc2StatUnit}>{priceSymbol}</span>
+                            </span>
+                          </div>
+                          {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
                         </div>
+                        {/* Always rendered (min-height reserves 2 lines) so every card is the same height. */}
+                        <span className={styles.svc2Desc}>{service.description}</span>
                         {!canBookNow && (
                           <button
                             type="button"

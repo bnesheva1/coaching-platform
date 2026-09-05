@@ -187,15 +187,22 @@
   border-radius: var(--radius-2xl);
   padding: 20px;
 }
-.svc2Row {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
+/* Desktop: image spanning the left, text (title/stats/desc) in the middle,
+   book button on the right. Mobile reflows the areas below. */
+.svc2Grid {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 8px 20px;
+  align-items: start;
+  grid-template-areas:
+    "image title  button"
+    "image stats  button"
+    "image desc   button";
 }
 .svc2Image {
+  grid-area: image;
   width: 100px;
   height: 100px;
-  flex: none;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -214,18 +221,13 @@
     var(--border-subtle) 9px
   );
 }
-.svc2Text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .svc2Title {
+  grid-area: title;
   font: 700 1.0625rem var(--font-ui);
   color: var(--text-primary);
 }
 .svc2Stats {
+  grid-area: stats;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -260,6 +262,7 @@
 /* Clamp + reserve 2 lines so every card is the same height regardless of how
    long (or empty) the description is. */
 .svc2Desc {
+  grid-area: desc;
   font: 400 0.9375rem/1.5 var(--font-ui);
   color: var(--text-secondary);
   display: -webkit-box;
@@ -271,7 +274,7 @@
 /* Collapsed: solid black, matching the other brand-two action buttons (same
    --radius-lg rounding). Open: flips to white with a black border. */
 .svc2BookBtn {
-  flex: none;
+  grid-area: button;
   align-self: center;
   display: inline-flex;
   align-items: center;
@@ -293,8 +296,16 @@
   flex: none;
 }
 @media (max-width: 640px) {
-  .svc2Row {
-    flex-wrap: wrap;
+  /* Mobile: title full-width on top, then image + stat boxes side by side,
+     then the description full-width, then the book button full-width. */
+  .svc2Grid {
+    grid-template-columns: 100px 1fr;
+    grid-template-areas:
+      "title  title"
+      "image  stats"
+      "desc   desc"
+      "button button";
+    align-items: center;
   }
   .svc2BookBtn {
     width: 100%;
