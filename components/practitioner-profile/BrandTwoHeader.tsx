@@ -103,6 +103,21 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         <h1 className={styles.cardName}>{props.displayName}</h1>
         {props.specialties.length > 0 && <span className={styles.cardPractice}>{specialtyText}</span>}
         <div className={styles.cardDivider} />
+        <div className={styles.cardMeta}>
+          <div className={styles.cardMetaRow}>
+            <Clock size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+            <span className={styles.cardMetaText}>
+              <span className={styles.cardMetaLabel}>{tPublic("nextAvailableSlotLabel")}</span>
+              <span className={styles.cardMetaValue}>{props.nextSlotLabel ?? tPublic("nextAvailableSlotEmpty")}</span>
+            </span>
+          </div>
+          {priceText && (
+            <div className={styles.cardMetaRow}>
+              <Wallet size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+              <span className={styles.cardMetaValue}>{tPublic("summaryPriceFrom", { price: priceText })}</span>
+            </div>
+          )}
+        </div>
         <button type="button" className={styles.cardCta} onClick={props.onSeeAvailability}>
           <CalendarDays size={17} strokeWidth={1.8} aria-hidden="true" />
           {t("seeAvailability")}
@@ -121,21 +136,8 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           </div>
         )}
         {props.headline && <h2 className={styles.headline}>{props.headline}</h2>}
-        <div className={styles.factRow}>
-          <span className={styles.factPill}>
-            <Clock size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
-            <span className={styles.factPillText}>
-              <span className={styles.factLabel}>{tPublic("nextAvailableSlotLabel")}</span>
-              <span className={styles.factValue}>{props.nextSlotLabel ?? tPublic("nextAvailableSlotEmpty")}</span>
-            </span>
-          </span>
-          {priceText && (
-            <span className={styles.factPill}>
-              <Wallet size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
-              {tPublic("summaryPriceFrom", { price: priceText })}
-            </span>
-          )}
-          {showSave && (
+        {showSave && (
+          <div className={styles.factRow}>
             <SaveButton
               practitionerId={props.practitionerId}
               username={props.username ?? ""}
@@ -143,8 +145,8 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
               viewerIsGuest={props.viewerRole === null}
               variant="full"
             />
-          )}
-        </div>
+          </div>
+        )}
         {/* About — lives here (not in a separate section below) so the left
             card can stay sticky over the whole header+about run, down to
             Services. */}
