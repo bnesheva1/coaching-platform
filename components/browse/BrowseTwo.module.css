@@ -352,10 +352,8 @@
   color: var(--text-secondary);
 }
 .bio {
-  width: 100%;
   font: 300 0.875rem/1.5 var(--font-ui);
   color: var(--text-primary);
-  text-align: left;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
