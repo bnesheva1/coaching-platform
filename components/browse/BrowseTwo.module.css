@@ -305,7 +305,7 @@
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
   background: var(--bg-surface);
   text-decoration: none;
   color: inherit;
@@ -345,16 +345,21 @@
   align-items: center;
   gap: 8px;
   text-align: center;
+  /* Kept space between the bio and the footer separator even when the card is
+     full (the footer's margin-top:auto still pins it to the bottom). */
+  margin-bottom: 14px;
 }
 .portrait {
-  width: 148px;
-  height: 148px;
+  width: 80%;
+  max-width: 200px;
+  aspect-ratio: 1;
   border-radius: 999px;
   object-fit: cover;
 }
 .portraitFallback {
-  width: 148px;
-  height: 148px;
+  width: 80%;
+  max-width: 200px;
+  aspect-ratio: 1;
   border-radius: 999px;
   display: flex;
   align-items: center;
