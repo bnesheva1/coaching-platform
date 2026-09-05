@@ -171,7 +171,7 @@
   letter-spacing: -0.02em;
   color: var(--text-primary);
   text-wrap: balance;
-  max-width: 20ch;
+  max-width: 30ch;
 }
 @media (max-width: 640px) {
   .headline {
@@ -197,7 +197,7 @@
   margin: 0;
   font: 300 1.125rem/1.55 var(--font-ui);
   color: var(--text-secondary);
-  max-width: 60ch;
+  max-width: 65ch;
 }
 .aboutPara + .aboutPara {
   margin-top: var(--space-2);

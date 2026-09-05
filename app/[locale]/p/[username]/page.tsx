@@ -341,8 +341,10 @@ export default async function PublicProfilePage({
             specifically — PractitionerProfileView itself no longer
             applies this, since the dashboard's own Profile tab
             (practitioner-dashboard/profile/page.tsx) wants the
-            opposite: left-aligned, filling the available width. */}
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            opposite: left-aligned, filling the available width.
+            Brand two drops the cap — its wider header/sections layout
+            fills the ContentContainer width instead. */}
+        <div style={resolveBrand() === "two" ? undefined : { maxWidth: 900, margin: "0 auto" }}>
         <PractitionerProfileView
           isOwner={false}
           practitionerId={practitionerProfile.id}
