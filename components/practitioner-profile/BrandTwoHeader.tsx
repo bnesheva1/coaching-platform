@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { Star, MapPin, Clock, CalendarDays } from "lucide-react";
+import { Star, Clock, CalendarDays, Wallet } from "lucide-react";
 import type { RenameUsage } from "@/lib/rename-limits";
 import { SaveButton } from "@/components/practitioners/SaveButton";
 import { EditableImage } from "./EditableImage";
@@ -114,12 +114,6 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         <h1 className={styles.cardName}>{props.displayName}</h1>
         {props.specialties.length > 0 && <span className={styles.cardPractice}>{specialtyText}</span>}
         <div className={styles.cardDivider} />
-        {priceText && (
-          <span className={styles.cardPrice}>
-            <Clock size={15} className={styles.pillIcon} aria-hidden="true" />
-            {tPublic("summaryPriceFrom", { price: priceText })}
-          </span>
-        )}
         <button type="button" className={styles.cardCta} onClick={props.onSeeAvailability}>
           <CalendarDays size={17} strokeWidth={1.8} aria-hidden="true" />
           {t("seeAvailability")}
@@ -139,12 +133,6 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         )}
         {props.headline && <h2 className={styles.headline}>{props.headline}</h2>}
         <div className={styles.factRow}>
-          {props.specialties.length > 0 && (
-            <span className={styles.factPill}>
-              <MapPin size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
-              {specialtyText}
-            </span>
-          )}
           <span className={styles.factPill}>
             <Clock size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
             <span className={styles.factPillText}>
@@ -152,6 +140,12 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
               <span className={styles.factValue}>{props.nextSlotLabel ?? tPublic("nextAvailableSlotEmpty")}</span>
             </span>
           </span>
+          {priceText && (
+            <span className={styles.factPill}>
+              <Wallet size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+              {tPublic("summaryPriceFrom", { price: priceText })}
+            </span>
+          )}
           {showSave && (
             <SaveButton
               practitionerId={props.practitionerId}
