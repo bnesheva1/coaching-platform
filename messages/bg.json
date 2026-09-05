@@ -874,6 +874,9 @@
     "sortLabel": "Подредба",
     "sortDefault": "По подразбиране",
     "sortRating": "Рейтинг",
+    "browseTwoNewProfile": "нов профил",
+    "browseTwoNext": "Следваща",
+    "browseTwoFiltersTitle": "Филтри",
     "sortName": "Име (А-Я)",
     "sortNewest": "Най-нови"
   },

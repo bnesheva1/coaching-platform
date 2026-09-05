@@ -874,6 +874,9 @@
     "sortLabel": "Sort by",
     "sortDefault": "Default",
     "sortRating": "Rating",
+    "browseTwoNewProfile": "new profile",
+    "browseTwoNext": "Next",
+    "browseTwoFiltersTitle": "Filters",
     "sortName": "Name (A-Z)",
     "sortNewest": "Newest"
   },

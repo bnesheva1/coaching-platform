@@ -9,6 +9,7 @@ import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
+import { resolveBrand } from "@/lib/brand";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -133,6 +134,7 @@ export default async function BrowsePage({
           saveable={saveable}
           viewerIsGuest={viewerIsGuest}
           savedPractitionerIds={savedPractitionerIds}
+          brand={resolveBrand()}
         />
       </ContentContainer>
     </main>

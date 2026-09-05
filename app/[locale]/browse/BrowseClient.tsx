@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
+import { BrowseCardTwo } from "@/components/browse/BrowseCardTwo";
+import { Search, ArrowRight } from "lucide-react";
+import twoStyles from "@/components/browse/BrowseTwo.module.css";
 import { useIsMobile } from "@/lib/useIsMobile";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -105,6 +108,7 @@ export function BrowseClient({
   saveable,
   viewerIsGuest,
   savedPractitionerIds,
+  brand,
 }: {
   results: BrowseResult[];
   query: string;
@@ -117,7 +121,11 @@ export function BrowseClient({
   saveable: boolean;
   viewerIsGuest: boolean;
   savedPractitionerIds: string[];
+  // Active white-label brand; "two" renders the handoff-1g layout (sidebar +
+  // hairline cards + numbered pagination), reusing all the state below.
+  brand?: string;
 }) {
+  const isBrandTwo = brand === "two";
   const t = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
   const router = useRouter();
@@ -324,6 +332,9 @@ export function BrowseClient({
   // Continuous-scroll reveal over the already-fetched result set — how
   // many of `orderedResults` are actually rendered right now.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Brand two uses numbered pagination (handoff 1g) instead of the scroll
+  // reveal; this page index is only read on the brand-two path.
+  const [pageTwo, setPageTwo] = useState(1);
 
   // Reset to one page whenever the underlying filtered set changes (a
   // new search or a different filter selection) — adjusted during
@@ -335,6 +346,7 @@ export function BrowseClient({
   if (filteredResults !== prevFilteredResults) {
     setPrevFilteredResults(filteredResults);
     setVisibleCount(PAGE_SIZE);
+    setPageTwo(1);
   }
 
   const visibleResults = orderedResults.slice(0, visibleCount);
@@ -368,6 +380,148 @@ export function BrowseClient({
     ...[...selectedTopics].map((key) => ({ group: TOPIC_GROUP, key, label: topicLabelByKey.get(key) ?? key })),
     ...[...selectedDeliveryTypes].map((key) => ({ group: DELIVERY_TYPE_GROUP, key, label: deliveryTypeLabelByKey.get(key) ?? key })),
   ];
+
+  // ── Brand two: handoff-1g layout (sidebar + hairline cards + numbered
+  // pagination). Reuses every piece of state/derived data above; only the
+  // presentation differs. ──────────────────────────────────────────────────
+  if (isBrandTwo) {
+    const pageCount = Math.max(1, Math.ceil(orderedResults.length / PAGE_SIZE));
+    const currentPage = Math.min(pageTwo, pageCount);
+    const paged = orderedResults.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const toggleFilter = (groupKey: string, optionKey: string) => {
+      const toggled = (set: Set<string>) => {
+        const next = new Set(set);
+        if (next.has(optionKey)) next.delete(optionKey);
+        else next.add(optionKey);
+        return next;
+      };
+      if (groupKey === SPECIALTY_GROUP) applyFilters(toggled(selectedModalities), selectedTopics, selectedDeliveryTypes);
+      else if (groupKey === TOPIC_GROUP) applyFilters(selectedModalities, toggled(selectedTopics), selectedDeliveryTypes);
+      else applyFilters(selectedModalities, selectedTopics, toggled(selectedDeliveryTypes));
+    };
+    return (
+      <>
+        <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{t("title")}</h1>
+        <div className={twoStyles.search}>
+          <Search size={20} strokeWidth={1.8} className={twoStyles.searchIcon} aria-hidden="true" />
+          <input
+            className={twoStyles.searchInput}
+            type="search"
+            value={searchText}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchAriaLabel")}
+          />
+        </div>
+        <div className={twoStyles.body}>
+          <aside className={twoStyles.sidebar}>
+            <h2 className={twoStyles.sidebarTitle}>{t("browseTwoFiltersTitle")}</h2>
+            {filterGroups.map(
+              (g) =>
+                g.options.length > 0 && (
+                  <div key={g.key} className={twoStyles.group}>
+                    <p className={twoStyles.groupLabel}>{g.groupLabel}</p>
+                    {g.options.map((o) => {
+                      const on = g.selected.has(o.key);
+                      return (
+                        <label key={o.key} className={twoStyles.checkRow}>
+                          <span className={`${twoStyles.checkbox} ${on ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
+                            {on ? "✓" : ""}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => toggleFilter(g.key, o.key)}
+                            style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                          />
+                          {o.label}
+                          <span className={twoStyles.count}>{o.count}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ),
+            )}
+            <button type="button" className={twoStyles.clearLink} onClick={clearAll}>
+              {t("clearFilters")}
+            </button>
+          </aside>
+
+          <div style={{ minWidth: 0 }}>
+            <div className={twoStyles.resultsHeader}>
+              <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
+              <label className={twoStyles.sortControl}>
+                {t("sortLabel")}
+                <select className={twoStyles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                  <option value="default">{t("sortDefault")}</option>
+                  <option value="rating">{t("sortRating")}</option>
+                </select>
+              </label>
+            </div>
+
+            {orderedResults.length === 0 ? (
+              <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("emptyStateBody")}</p>
+            ) : (
+              <>
+                <div className={twoStyles.cardGrid}>
+                  {paged.map((p) => (
+                    <BrowseCardTwo
+                      key={p.id}
+                      practitioner={{
+                        id: p.id,
+                        username: p.username,
+                        displayName: p.displayName,
+                        bio: p.bio,
+                        avatarUrl: p.avatarUrl,
+                        averageRating: p.averageRating,
+                        specialtyLabels: p.specialtyKeys.map((k) => specialtyLabelByKey.get(k) ?? k),
+                        topicLabels: p.topicKeys.map((k) => topicLabelByKey.get(k) ?? k),
+                        location: p.location,
+                      }}
+                      saveable={saveable}
+                      saved={savedSet.has(p.id)}
+                      viewerIsGuest={viewerIsGuest}
+                      onToggleSave={(s) => updateSaved(p.id, s)}
+                    />
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <div className={twoStyles.pagination}>
+                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`${twoStyles.pageSquare} ${n === currentPage ? twoStyles.pageSquareOn : ""}`}
+                        aria-current={n === currentPage ? "page" : undefined}
+                        onClick={() => {
+                          setPageTwo(n);
+                          window.scrollTo({ top: 0 });
+                        }}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={twoStyles.pageNext}
+                      disabled={currentPage >= pageCount}
+                      onClick={() => {
+                        setPageTwo((p) => Math.min(p + 1, pageCount));
+                        window.scrollTo({ top: 0 });
+                      }}
+                    >
+                      {t("browseTwoNext")}
+                      <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
