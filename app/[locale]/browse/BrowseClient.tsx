@@ -434,8 +434,7 @@ export function BrowseClient({
                             onChange={() => toggleFilter(g.key, o.key)}
                             style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
                           />
-                          {o.label}
-                          <span className={twoStyles.count}>{o.count}</span>
+                          {o.label} <span className={twoStyles.count}>({o.count})</span>
                         </label>
                       );
                     })}
@@ -475,13 +474,7 @@ export function BrowseClient({
                         avatarUrl: p.avatarUrl,
                         averageRating: p.averageRating,
                         specialtyLabels: p.specialtyKeys.map((k) => specialtyLabelByKey.get(k) ?? k),
-                        topicLabels: p.topicKeys.map((k) => topicLabelByKey.get(k) ?? k),
-                        location: p.location,
                       }}
-                      saveable={saveable}
-                      saved={savedSet.has(p.id)}
-                      viewerIsGuest={viewerIsGuest}
-                      onToggleSave={(s) => updateSaved(p.id, s)}
                     />
                   ))}
                 </div>

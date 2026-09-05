@@ -95,8 +95,7 @@
   color: var(--text-on-accent);
 }
 .count {
-  margin-left: auto;
-  font: 400 0.8125rem var(--font-mono);
+  font: 400 0.875rem var(--font-mono);
   color: var(--text-tertiary);
 }
 .clearLink {
@@ -141,7 +140,7 @@
 }
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
   align-items: stretch;
 }
@@ -199,16 +198,17 @@
 .card {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
-  padding: 18px;
+  padding: 22px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   background: var(--bg-surface);
 }
 .cardTop {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
+  justify-content: flex-end;
   min-height: 32px;
 }
 .ratingPill {
@@ -233,26 +233,27 @@
   text-align: center;
 }
 .portrait {
-  width: 104px;
-  height: 104px;
+  width: 148px;
+  height: 148px;
   border-radius: 999px;
   object-fit: cover;
 }
 .portraitFallback {
-  width: 104px;
-  height: 104px;
+  width: 148px;
+  height: 148px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-surface-2);
   color: var(--text-tertiary);
-  font: 700 2rem var(--font-ui);
+  font: 700 2.5rem var(--font-ui);
 }
 .name {
   margin: 0;
-  font: 500 1.0625rem var(--font-ui);
+  font: 700 1.125rem/1.25 var(--font-ui);
   color: var(--text-primary);
+  text-wrap: balance;
 }
 .practice {
   font: 500 0.875rem var(--font-ui);

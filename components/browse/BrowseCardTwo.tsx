@@ -3,7 +3,6 @@
 import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { SaveButton } from "@/components/practitioners/SaveButton";
 import styles from "./BrowseTwo.module.css";
 
 export type BrowseCardTwoData = {
@@ -13,45 +12,21 @@ export type BrowseCardTwoData = {
   bio: string | null;
   avatarUrl: string | null;
   specialtyLabels: string[];
-  topicLabels: string[];
   averageRating: number | null;
-  location: string | null;
 };
 
-// Brand-two browse result card (handoff 1g): heart (left) + rating badge (right)
-// on top, centred portrait/name/practice/location/topics/bio, "Запази час" link
-// in a hairline footer. Reuses SaveButton (compact heart) and the Browse i18n.
-export function BrowseCardTwo({
-  practitioner,
-  saveable,
-  saved,
-  viewerIsGuest,
-  onToggleSave,
-}: {
-  practitioner: BrowseCardTwoData;
-  saveable: boolean;
-  saved: boolean;
-  viewerIsGuest: boolean;
-  onToggleSave: (saved: boolean) => void;
-}) {
+// Brand-two browse result card (handoff 1g): a white hairline card on the grey
+// page. Rating pill (teal) or "нов профил" top-right; then a centred column —
+// large circular portrait, bold name, teal practice line, 2-line bio — and a
+// "Запази час" link in a hairline footer. No heart / location / topic chips
+// (the mockup's cards don't carry them).
+export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoData }) {
   const t = useTranslations("Browse");
   const name = practitioner.displayName || `@${practitioner.username}`;
 
   return (
     <div className={styles.card}>
       <div className={styles.cardTop}>
-        {saveable ? (
-          <SaveButton
-            practitionerId={practitioner.id}
-            username={practitioner.username}
-            initialSaved={saved}
-            viewerIsGuest={viewerIsGuest}
-            variant="compact"
-            onToggle={onToggleSave}
-          />
-        ) : (
-          <span />
-        )}
         {practitioner.averageRating !== null ? (
           <span className={styles.ratingPill}>
             <Star size={12} fill="currentColor" strokeWidth={0} aria-hidden="true" />
@@ -73,17 +48,7 @@ export function BrowseCardTwo({
         )}
         <p className={styles.name}>{name}</p>
         {practitioner.specialtyLabels.length > 0 && (
-          <span className={styles.practice}>{practitioner.specialtyLabels.join(", ")}</span>
-        )}
-        {practitioner.location && <span className={styles.location}>{practitioner.location}</span>}
-        {practitioner.topicLabels.length > 0 && (
-          <span className={styles.chips}>
-            {practitioner.topicLabels.slice(0, 3).map((label) => (
-              <span key={label} className={styles.chip}>
-                {label}
-              </span>
-            ))}
-          </span>
+          <span className={styles.practice}>{practitioner.specialtyLabels.join(" · ")}</span>
         )}
         {practitioner.bio && <span className={styles.bio}>{practitioner.bio}</span>}
       </Link>
