@@ -143,3 +143,50 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Brand two: the About column sits under the header's right column (an empty
+   card-width gutter on the left), with a quote beneath the "Относно мен" text. */
+.brandTwoAbout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 44px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .brandTwoAbout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+.brandTwoQuote {
+  margin: 32px 0 0;
+  padding: 24px 28px;
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-2xl);
+  font: italic 400 1.125rem/1.5 var(--font-ui);
+  color: var(--text-primary);
+}
+.brandTwoQuoteBy {
+  margin-top: 14px;
+  font-style: normal;
+  font: 500 0.9375rem var(--font-ui);
+  color: var(--text-secondary);
+}
+
+/* Brand two: Services on a full-bleed light-grey band (background only — the
+   content stays in the normal flow so it aligns with the header/About). */
+.brandTwoServicesStrip {
+  position: relative;
+  padding: 44px 0;
+}
+.brandTwoServicesStrip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  background: var(--bg-surface-2);
+  z-index: -1;
+}
