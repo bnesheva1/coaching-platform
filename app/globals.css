@@ -72,6 +72,14 @@ body {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Brand two: inputs rest with an ink border (black in light, theme-adapted in
+   dark) rather than the hairline grey. :not(:focus) leaves the focused state
+   above untouched (accent border + ring). Scoped to brand two — brand one keeps
+   its grey hairline inputs. */
+[data-brand="two"] .form-field:not(:focus) {
+  border-color: var(--text-primary);
+}
+
 /* Generic keyboard-focus ring for interactive elements that aren't a
    .form-field (buttons, chips, link-styled controls) — same box-shadow
    recipe and --focus-ring token, opt in via className since inline
