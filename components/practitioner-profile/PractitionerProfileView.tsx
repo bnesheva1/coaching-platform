@@ -621,7 +621,7 @@ export function PractitionerProfileView({
       {/* Sections — spacing alone separates them, no rule lines. Brand two has a
           flush header (BrandTwoHeader), so its sections drop the 40px side
           padding to align with it; warm keeps the inset (its header has it too). */}
-      <div style={{ padding: isBrandTwo ? "8px 0 42px" : "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
+      <div style={{ padding: isBrandTwo ? "42px 0 42px" : "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
         {/* About. Brand two (view) renders this inside BrandTwoHeader's right
             column so the card can stay sticky over it — so here it appears only
             for warm, or for brand-two editing (aligned in the card-gutter grid). */}
