@@ -146,13 +146,30 @@
   font: 400 0.875rem var(--font-ui);
   color: var(--text-secondary);
 }
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 .sortSelect {
+  appearance: none;
+  -webkit-appearance: none;
   border: 1px solid var(--text-primary);
   border-radius: var(--radius-md);
   background: var(--bg-surface);
-  padding: 8px 17px 8px 12px;
+  /* Room on the right for the custom chevron (positioned 12px from the edge). */
+  padding: 8px 34px 8px 12px;
   font: 400 0.875rem var(--font-ui);
   color: var(--text-primary);
+  cursor: pointer;
+}
+.selectChevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  pointer-events: none;
 }
 .cardGrid {
   display: grid;
