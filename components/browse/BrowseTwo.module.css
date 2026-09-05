@@ -173,6 +173,13 @@
   color: var(--text-primary);
   cursor: pointer;
 }
+/* Replace the browser's blue focus outline with the same teal ring as the
+   inputs. */
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
 .selectChevron {
   position: absolute;
   right: 12px;
