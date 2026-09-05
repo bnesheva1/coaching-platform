@@ -15,17 +15,16 @@ export type BrowseCardTwoData = {
   averageRating: number | null;
 };
 
-// Brand-two browse result card (handoff 1g): a white hairline card on the grey
-// page. Rating pill (teal) or "нов профил" top-right; then a centred column —
-// large circular portrait, bold name, teal practice line, 2-line bio — and a
-// "Запази час" link in a hairline footer. No heart / location / topic chips
-// (the mockup's cards don't carry them).
+// Brand-two browse result card (handoff 1g). The ENTIRE card is the link to the
+// practitioner's profile (browse-only behaviour); "Запази час" stays as text in
+// the footer, not a separate anchor (nested anchors are invalid). White border
+// at rest → black + shadow on hover.
 export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoData }) {
   const t = useTranslations("Browse");
   const name = practitioner.displayName || `@${practitioner.username}`;
 
   return (
-    <div className={styles.card}>
+    <Link href={`/p/${practitioner.username}`} className={styles.card}>
       <div className={styles.cardTop}>
         {practitioner.averageRating !== null ? (
           <span className={styles.ratingPill}>
@@ -37,7 +36,7 @@ export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoDat
         )}
       </div>
 
-      <Link href={`/p/${practitioner.username}`} className={styles.cardBody} style={{ textDecoration: "none" }}>
+      <div className={styles.cardBody}>
         {practitioner.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.portrait} src={practitioner.avatarUrl} alt="" />
@@ -51,13 +50,11 @@ export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoDat
           <span className={styles.practice}>{practitioner.specialtyLabels.join(" · ")}</span>
         )}
         {practitioner.bio && <span className={styles.bio}>{practitioner.bio}</span>}
-      </Link>
+      </div>
 
       <div className={styles.cardFooter}>
-        <Link href={`/p/${practitioner.username}`} className={styles.bookLink}>
-          {t("bookSessionCta")}
-        </Link>
+        <span className={styles.bookLink}>{t("bookSessionCta")}</span>
       </div>
-    </div>
+    </Link>
   );
 }
