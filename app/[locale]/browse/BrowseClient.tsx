@@ -402,17 +402,35 @@ export function BrowseClient({
     return (
       <>
         <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{t("title")}</h1>
-        <div className={twoStyles.search}>
-          <Search size={20} strokeWidth={1.8} className={twoStyles.searchIcon} aria-hidden="true" />
-          <input
-            className={twoStyles.searchInput}
-            type="search"
-            value={searchText}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            aria-label={t("searchAriaLabel")}
-          />
-        </div>
+        <form
+          className={twoStyles.searchRow}
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Search is already live/debounced; the button (and Enter) just flush
+            // it immediately rather than waiting out the debounce.
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            router.replace(
+              { pathname, query: buildQuery(searchText, selectedModalities, selectedTopics, selectedDeliveryTypes) },
+              { scroll: false },
+            );
+          }}
+        >
+          <div className={twoStyles.search}>
+            <Search size={20} strokeWidth={1.8} className={twoStyles.searchIcon} aria-hidden="true" />
+            <input
+              className={twoStyles.searchInput}
+              type="search"
+              value={searchText}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={t("searchPlaceholder")}
+              aria-label={t("searchAriaLabel")}
+            />
+          </div>
+          <button type="submit" className={twoStyles.searchButton}>
+            {t("browseTwoSearchButton")}
+          </button>
+        </form>
         <div className={twoStyles.body}>
           <aside className={twoStyles.sidebar}>
             <h2 className={twoStyles.sidebarTitle}>{t("browseTwoFiltersTitle")}</h2>

@@ -2,8 +2,14 @@
    sidebar + results grid, hairline result cards, numbered pagination. Shares
    color/radius tokens so it themes; only rendered when brand === "two". */
 
+.searchRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+}
 .search {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   height: 58px;
   display: flex;
   align-items: center;
@@ -12,7 +18,17 @@
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
-  margin-bottom: 28px;
+}
+.searchButton {
+  flex: none;
+  height: 58px;
+  padding: 0 30px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--text-primary);
+  color: var(--bg-page);
+  font: 500 1rem var(--font-ui);
+  cursor: pointer;
 }
 .search:focus-within {
   border-color: var(--accent);
