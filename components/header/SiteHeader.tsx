@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
 import { routing } from "@/i18n/routing";
 import { getViewer } from "@/lib/auth/getViewer";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { signOut } from "@/app/actions";
 
 // The one header, mounted once in app/[locale]/layout.tsx — every route
@@ -24,6 +24,12 @@ export async function SiteHeader() {
     label: viewer.status === "practitioner" ? tHeader("browseLinkPractitioner") : tBrowse("title"),
     href: "/browse",
   };
+
+  // Brand two renames this content-nav dropdown "Полезно" (Useful) — it maps to
+  // the mockup's "Как работи" nav slot but holds all the info pages below.
+  // Brand one keeps "Информация". Same items either way.
+  const brand = resolveBrand();
+  const infoDropdownLabel = brand === "two" ? tHeader("usefulDropdownLabel") : tHeader("infoDropdownLabel");
 
   // The 5 marketing/info pages — same for every viewer, unlike
   // browseLink/dashboardLink/authLinks below. Reuses Footer's own
@@ -94,7 +100,7 @@ export async function SiteHeader() {
     <NavBar
       wordmark={siteName}
       browseLink={browseLink}
-      infoDropdownLabel={tHeader("infoDropdownLabel")}
+      infoDropdownLabel={infoDropdownLabel}
       infoLinks={infoLinks}
       dashboardLink={dashboardLink}
       greetingText={greetingText}
