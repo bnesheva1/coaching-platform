@@ -264,6 +264,8 @@
   overflow: hidden;
   min-height: 3em;
 }
+/* Collapsed: solid black, matching the other brand-two action buttons (same
+   --radius-lg rounding). Open: flips to white with a black border. */
 .svc2BookBtn {
   flex: none;
   align-self: center;
@@ -271,19 +273,20 @@
   align-items: center;
   gap: 8px;
   padding: 12px 22px;
-  border: 1px solid var(--border-default);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-lg);
+  background: var(--text-primary);
+  color: var(--bg-page);
   font: 500 0.9375rem var(--font-ui);
   cursor: pointer;
   white-space: nowrap;
 }
-.svc2BookBtn:hover {
-  border-color: var(--text-primary);
+.svc2BookBtn[aria-expanded="true"] {
+  background: transparent;
+  color: var(--text-primary);
 }
 .svc2BookIcon {
-  color: var(--accent);
+  flex: none;
 }
 @media (max-width: 640px) {
   .svc2Row {
