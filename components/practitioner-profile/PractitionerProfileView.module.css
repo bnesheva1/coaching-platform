@@ -228,13 +228,17 @@
 .svc2Stats {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 12px;
   flex-wrap: wrap;
 }
+/* Each value sits in a rounded, accent-tinted box (theme-aware). */
 .svc2Stat {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 14px;
+  background: var(--accent-subtle);
+  border-radius: var(--radius-lg);
 }
 .svc2StatIcon {
   color: var(--accent);
