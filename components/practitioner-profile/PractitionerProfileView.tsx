@@ -621,32 +621,19 @@ export function PractitionerProfileView({
           flush header (BrandTwoHeader), so its sections drop the 40px side
           padding to align with it; warm keeps the inset (its header has it too). */}
       <div style={{ padding: isBrandTwo ? "8px 0 42px" : "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
-        {/* About — brand two places it under the header's right column (an empty
-            card-width gutter on the left), with a quote beneath the text. */}
+        {/* About. Brand two (view) renders this inside BrandTwoHeader's right
+            column so the card can stay sticky over it — so here it appears only
+            for warm, or for brand-two editing (aligned in the card-gutter grid). */}
         {isBrandTwo ? (
-          <div className={styles.brandTwoAbout}>
-            <div aria-hidden="true" />
-            <div>
-              <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
-              {isEditing ? (
+          isEditing ? (
+            <div className={styles.brandTwoAbout}>
+              <div aria-hidden="true" />
+              <div>
+                <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
                 <EditableAbout bio={bio} />
-              ) : bio ? (
-                bio.split("\n\n").map((paragraph, i) => (
-                  <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                    {paragraph}
-                  </p>
-                ))
-              ) : (
-                <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("aboutEmpty")}</p>
-              )}
-              {!isEditing && headline && (
-                <blockquote className={styles.brandTwoQuote}>
-                  &bdquo;{headline}&ldquo;
-                  <div className={styles.brandTwoQuoteBy}>&mdash; {displayName}</div>
-                </blockquote>
-              )}
+              </div>
             </div>
-          </div>
+          ) : null
         ) : (
           <div>
             <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>

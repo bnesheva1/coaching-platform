@@ -13,11 +13,20 @@
     grid-template-columns: 1fr;
     gap: 28px;
   }
+  .card {
+    position: static;
+  }
 }
 
 /* ── Left: summary card (resembles the browse result card) ───────────────── */
+/* Sticky over the whole header+about run: the right column is taller (it holds
+   the About), so the card sticks from the top until the grid ends at Services.
+   `align-items: start` on .headerGrid keeps the grid area full-height so sticky
+   has range; static on mobile where the columns stack. */
 .card {
-  position: relative;
+  position: sticky;
+  top: 20px;
+  align-self: start;
   border: 1px solid var(--text-primary);
   border-radius: var(--radius-2xl);
   background: var(--bg-surface);
@@ -168,11 +177,42 @@
   font: 500 0.875rem var(--font-mono);
   color: var(--text-primary);
 }
-.intro {
+/* About + quote, stacked under the header facts in the right column. */
+.about {
+  margin-top: 18px;
+}
+.aboutHeading {
+  margin: 0 0 12px;
+  font: var(--text-heading-lg);
+  color: var(--text-primary);
+}
+.aboutPara {
   margin: 0;
   font: 300 1.125rem/1.55 var(--font-ui);
   color: var(--text-secondary);
-  max-width: 54ch;
+  max-width: 60ch;
+}
+.aboutPara + .aboutPara {
+  margin-top: var(--space-2);
+}
+.aboutEmpty {
+  margin: 0;
+  font: var(--text-body-md);
+  color: var(--text-tertiary);
+}
+.quote {
+  margin: 32px 0 0;
+  padding: 24px 28px;
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-2xl);
+  font: italic 400 1.125rem/1.5 var(--font-ui);
+  color: var(--text-primary);
+}
+.quoteBy {
+  margin-top: 14px;
+  font-style: normal;
+  font: 500 0.9375rem var(--font-ui);
+  color: var(--text-secondary);
 }
 
 /* Edit-mode stack (no card — just the editable pieces). */

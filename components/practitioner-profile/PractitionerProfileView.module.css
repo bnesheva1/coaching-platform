@@ -144,8 +144,9 @@
   }
 }
 
-/* Brand two: the About column sits under the header's right column (an empty
-   card-width gutter on the left), with a quote beneath the "Относно мен" text. */
+/* Brand two, editing only: the About sits under the header's right column
+   (empty card-width gutter on the left). In view mode the About lives inside
+   BrandTwoHeader so the card can stay sticky over it. */
 .brandTwoAbout {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -158,20 +159,6 @@
     grid-template-columns: 1fr;
     gap: 0;
   }
-}
-.brandTwoQuote {
-  margin: 32px 0 0;
-  padding: 24px 28px;
-  background: var(--bg-surface-2);
-  border-radius: var(--radius-2xl);
-  font: italic 400 1.125rem/1.5 var(--font-ui);
-  color: var(--text-primary);
-}
-.brandTwoQuoteBy {
-  margin-top: 14px;
-  font-style: normal;
-  font: 500 0.9375rem var(--font-ui);
-  color: var(--text-secondary);
 }
 
 /* Brand two: Services on a full-bleed light-grey band (background only — the

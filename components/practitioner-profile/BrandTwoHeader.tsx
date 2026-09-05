@@ -38,15 +38,6 @@ export type BrandTwoHeaderProps = {
   intlLocale: string;
 };
 
-// Header teaser — trims the bio to a short intro at a word boundary.
-function truncate(text: string, max: number): string {
-  const clean = text.replace(/\s+/g, " ").trim();
-  if (clean.length <= max) return clean;
-  const cut = clean.slice(0, max);
-  const lastSpace = cut.lastIndexOf(" ");
-  return `${cut.slice(0, lastSpace > 40 ? lastSpace : max).trim()}…`;
-}
-
 // Brand-two profile header (design handoff 1f): a summary CARD on the left
 // (browse-card styling, profile content) beside the content column. Only
 // rendered when the active brand is "two"; brand one keeps its own header.
@@ -67,7 +58,6 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           props.minPriceCents / 100,
         )
       : null;
-  const introText = props.bio ? truncate(props.bio, 190) : "";
   const showSave = !props.isOwnProfile && props.viewerRole !== "practitioner";
 
   const avatar = props.avatarUrl ? (
@@ -155,7 +145,27 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
             />
           )}
         </div>
-        {introText && <p className={styles.intro}>{introText}</p>}
+        {/* About — lives here (not in a separate section below) so the left
+            card can stay sticky over the whole header+about run, down to
+            Services. */}
+        <div className={styles.about}>
+          <h2 className={styles.aboutHeading}>{t("aboutHeading")}</h2>
+          {props.bio ? (
+            props.bio.split("\n\n").map((paragraph, i) => (
+              <p key={i} className={styles.aboutPara}>
+                {paragraph}
+              </p>
+            ))
+          ) : (
+            <p className={styles.aboutEmpty}>{t("aboutEmpty")}</p>
+          )}
+          {props.headline && (
+            <blockquote className={styles.quote}>
+              &bdquo;{props.headline}&ldquo;
+              <div className={styles.quoteBy}>&mdash; {props.displayName}</div>
+            </blockquote>
+          )}
+        </div>
       </div>
     </div>
   );
