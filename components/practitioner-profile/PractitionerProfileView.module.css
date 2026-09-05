@@ -241,9 +241,9 @@
   flex: none;
 }
 .svc2StatText {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
 }
 .svc2StatNum {
   font: 500 1.125rem var(--font-mono);
