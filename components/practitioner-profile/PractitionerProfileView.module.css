@@ -184,13 +184,8 @@
    "Запази час" outline button. */
 .svc2Card {
   background: var(--bg-surface);
-  border: 1px solid transparent;
   border-radius: var(--radius-2xl);
   padding: 20px;
-}
-/* Services that currently have open times get the black border. */
-.svc2CardBookable {
-  border-color: var(--text-primary);
 }
 .svc2Row {
   display: flex;

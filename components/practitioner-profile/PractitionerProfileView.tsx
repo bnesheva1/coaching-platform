@@ -738,8 +738,6 @@ export function PractitionerProfileView({
                     .map((p) => p.value)
                     .join("");
                   const priceSymbol = priceParts.find((p) => p.type === "currency")?.value ?? service.currency;
-                  // Cards that currently have open times get the black border.
-                  const hasSlots = (slotsByServiceId[service.id]?.length ?? 0) > 0;
                   // Toggle the panel open/closed IN PLACE — no pendingScrollId, so
                   // the page doesn't jump; the button keeps its spot in the row.
                   const toggleThis = () => {
@@ -755,7 +753,7 @@ export function PractitionerProfileView({
                     });
                   };
                   return (
-                    <div key={service.id} className={`${styles.svc2Card}${hasSlots ? ` ${styles.svc2CardBookable}` : ""}`}>
+                    <div key={service.id} className={styles.svc2Card}>
                       <div className={styles.svc2Row}>
                         {service.imageUrl ? (
                           <div className={styles.svc2Image}>

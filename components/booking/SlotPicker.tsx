@@ -377,7 +377,8 @@ export function SlotPicker({
           // real definition, and lets the chips read clearly against a
           // true background instead of another muted one.
           background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
+          // Brand two overrides --slot-day-border to black; warm falls back to grey.
+          border: "1px solid var(--slot-day-border, var(--border-default))",
           padding,
           gap,
         }}

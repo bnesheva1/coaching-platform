@@ -80,6 +80,12 @@ body {
   border-color: var(--text-primary);
 }
 
+/* Brand two: the bookable day cards in the slot picker take an ink border
+   instead of the grey hairline (empty days keep their dashed grey). */
+[data-brand="two"] {
+  --slot-day-border: var(--text-primary);
+}
+
 /* Generic keyboard-focus ring for interactive elements that aren't a
    .form-field (buttons, chips, link-styled controls) — same box-shadow
    recipe and --focus-ring token, opt in via className since inline
