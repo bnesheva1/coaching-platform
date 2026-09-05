@@ -201,6 +201,9 @@
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
+  /* Take only the free space left of the sort control and wrap the pills
+     internally — flex-basis 0 means this never pushes the sort onto a new row. */
+  flex: 1 1 0;
 }
 .activeChip {
   display: inline-flex;
