@@ -88,6 +88,23 @@ body {
   --slot-cal-align: stretch;
 }
 
+/* Slot-picker "Изберете свободен час" heading — font in a class (not inline) so
+   brand two can enlarge it and, on desktop, sit it inline with the timezone note. */
+.slot-picker-heading {
+  font: var(--text-label);
+}
+[data-brand="two"] .slot-picker-heading {
+  font-size: 1rem;
+}
+@media (min-width: 861px) {
+  [data-brand="two"] .slot-picker-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
 /* Generic keyboard-focus ring for interactive elements that aren't a
    .form-field (buttons, chips, link-styled controls) — same box-shadow
    recipe and --focus-ring token, opt in via className since inline

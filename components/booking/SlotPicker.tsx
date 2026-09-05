@@ -472,8 +472,8 @@ export function SlotPicker({
           handoff's "Избери свободен час ... Скрий свободните часове"
           layout. */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-        <div>
-          <h3 style={{ margin: 0, font: "var(--text-label)", color: "var(--text-primary)" }}>{t("chooseTimeHeading")}</h3>
+        <div className="slot-picker-head">
+          <h3 className="slot-picker-heading" style={{ margin: 0, color: "var(--text-primary)" }}>{t("chooseTimeHeading")}</h3>
           <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
             {t("timesShownIn", { timezone: clientTimezone })}
           </p>
