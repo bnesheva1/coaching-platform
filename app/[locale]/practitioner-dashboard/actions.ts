@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { validateUsernameFormat } from "@/lib/validation/username";
 import { getRenameUsage, recordRename, formatRenameDate } from "@/lib/rename-limits";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import sharp from "sharp";
+import { parseVideoUrl, fetchVideoOEmbed } from "@/lib/videos";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 
@@ -27,12 +29,15 @@ const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_HEADLINE_LENGTH = 150;
 const MAX_LOCATION_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
-// Gallery: up to 3 images, each with an optional <=100-char plain-text caption.
-// The UI enforces both too; these are the authoritative checks for a direct API
-// call, and the 3-image cap is ALSO enforced by a DB trigger (see migration
-// 20260905120000) so a race can't exceed it.
-const MAX_GALLERY_IMAGES = 3;
-const MAX_GALLERY_CAPTION_LENGTH = 100;
+// Gallery + Videos: up to 9 of each per practitioner (also enforced by DB
+// triggers, see migration 20260905130000, so a race can't exceed it). Gallery
+// uploads accept up to 8MB of raw input, which is then re-encoded to a 16:9
+// 1200x675 WebP — the raw bytes are never persisted.
+const MAX_GALLERY_IMAGES = 9;
+const MAX_VIDEOS = 9;
+const MAX_GALLERY_UPLOAD_BYTES = 8 * 1024 * 1024; // 8MB, pre-processing input cap
+const GALLERY_WIDTH = 1200;
+const GALLERY_HEIGHT = 675; // 16:9
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 const KNOWN_TOPIC_KEYS = new Set(topicsData.map((topic) => topic.key));
 // A curated handful reads as focused — see EditableTopics.tsx's own
@@ -394,13 +399,14 @@ export async function removeProfileImage(kind: "avatar" | "banner"): Promise<Pro
   return { success: true };
 }
 
-// ---- Gallery (up to 3 images + optional captions, shown after About) ----
 
-// Add one gallery image (+ optional caption). Rejects once the practitioner
-// already has MAX_GALLERY_IMAGES; the image goes to the same public `avatars`
-// bucket every other profile image uses, under the owner's own folder at a
-// unique `gallery-<uuid>` path (so multiple images never collide the way the
-// fixed avatar/banner paths would).
+// ---- Gallery (up to 9 images, 16:9 lightbox grid after Videos) ----
+
+// Add one gallery image. The raw upload is validated (<=8MB, real raster image,
+// never SVG) and TRANSFORMED server-side — cover-resized + centre-cropped to a
+// 1200x675 (16:9) WebP with metadata (incl. EXIF) stripped by the re-encode —
+// and only that processed output is stored, under a generated UUID filename in
+// the public `avatars` bucket. The original bytes/filename are never persisted.
 export async function addGalleryImage(
   _prevState: ProfileFormState,
   formData: FormData,
@@ -414,8 +420,6 @@ export async function addGalleryImage(
     return { error: t("notLoggedIn") };
   }
 
-  // Count first so we don't upload a file we're about to reject. The DB trigger
-  // is the real backstop; this gives a friendly message instead of a raw throw.
   const { count, error: countError } = await supabase
     .from("practitioner_gallery")
     .select("id", { count: "exact", head: true })
@@ -432,44 +436,65 @@ export async function addGalleryImage(
   const imageEntry = formData.get("image");
   const imageFile = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
   if (!imageFile) {
-    return { error: t("photoInvalidType") };
+    return { error: t("galleryImageInvalid") };
   }
-  if (!ALLOWED_AVATAR_TYPES.includes(imageFile.type)) {
-    return { error: t("photoInvalidType") };
+  // Size gate BEFORE reading/processing.
+  if (imageFile.size > MAX_GALLERY_UPLOAD_BYTES) {
+    return { error: t("galleryImageTooLarge") };
   }
-  if (imageFile.size > MAX_AVATAR_BYTES) {
-    return { error: t("photoTooLarge") };
+  // Reject SVG explicitly (by declared type — the content check below is the
+  // real backstop, but this rejects the obvious case before any parsing).
+  if (imageFile.type === "image/svg+xml") {
+    return { error: t("galleryImageInvalid") };
   }
 
-  const rawCaption = ((formData.get("caption") as string) ?? "").trim();
-  if (rawCaption.length > MAX_GALLERY_CAPTION_LENGTH) {
-    return { error: t("galleryCaptionTooLong", { max: MAX_GALLERY_CAPTION_LENGTH }) };
-  }
-  const caption = rawCaption === "" ? null : rawCaption;
+  const inputBuf = Buffer.from(await imageFile.arrayBuffer());
 
-  const path = `${user.id}/gallery-${crypto.randomUUID()}`;
-  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, imageFile, {
+  // Validate ACTUAL content, not the client-sent type/extension: sharp must be
+  // able to parse it AND report a real raster format with dimensions. SVG is
+  // rejected here too (belt-and-suspenders).
+  let format: string | undefined;
+  try {
+    const meta = await sharp(inputBuf).metadata();
+    format = meta.format;
+    if (!format || format === "svg" || !meta.width || !meta.height) {
+      return { error: t("galleryImageInvalid") };
+    }
+  } catch {
+    return { error: t("galleryImageInvalid") };
+  }
+
+  // Cover-resize + centre-crop to exactly 1200x675, re-encode as WebP. `.rotate()`
+  // with no args bakes in EXIF orientation first; the WebP re-encode then drops
+  // all metadata (EXIF included) as a byproduct. WebP is universally supported by
+  // the browsers this app targets, so no JPEG fallback is served.
+  let output: Buffer;
+  try {
+    output = await sharp(inputBuf, { animated: false })
+      .rotate()
+      .resize(GALLERY_WIDTH, GALLERY_HEIGHT, { fit: "cover", position: "centre" })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch (err) {
+    console.error("addGalleryImage: processing failed", err);
+    return { error: t("galleryImageInvalid") };
+  }
+
+  const path = `${user.id}/gallery-${crypto.randomUUID()}.webp`;
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, output, {
     upsert: false,
-    contentType: imageFile.type,
+    contentType: "image/webp",
   });
   if (uploadError) {
     return { error: t("photoUploadFailed", { message: uploadError.message }) };
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("avatars").getPublicUrl(path);
-
   const { error } = await supabase.from("practitioner_gallery").insert({
     practitioner_id: user.id,
     storage_path: path,
-    image_url: publicUrl,
-    caption,
-    // Append after any existing images.
-    position: existing,
+    sort_order: existing,
   });
   if (error) {
-    // Roll back the just-uploaded file so a failed insert doesn't orphan it.
     await supabase.storage.from("avatars").remove([path]).catch(() => {});
     console.error("addGalleryImage: insert failed", error);
     return { error: t("saveFailed") };
@@ -479,46 +504,8 @@ export async function addGalleryImage(
   return { success: true };
 }
 
-// Edit just the caption of an existing gallery image (id bound by the caller).
-export async function updateGalleryCaption(
-  id: string,
-  _prevState: ProfileFormState,
-  formData: FormData,
-): Promise<ProfileFormState> {
-  const t = await getTranslations("Profile");
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: t("notLoggedIn") };
-  }
-
-  const rawCaption = ((formData.get("caption") as string) ?? "").trim();
-  if (rawCaption.length > MAX_GALLERY_CAPTION_LENGTH) {
-    return { error: t("galleryCaptionTooLong", { max: MAX_GALLERY_CAPTION_LENGTH }) };
-  }
-  const caption = rawCaption === "" ? null : rawCaption;
-
-  // RLS also scopes this to the owner; the practitioner_id filter makes the
-  // ownership explicit and means a wrong id simply updates nothing.
-  const { error } = await supabase
-    .from("practitioner_gallery")
-    .update({ caption })
-    .eq("id", id)
-    .eq("practitioner_id", user.id);
-  if (error) {
-    console.error("updateGalleryCaption: update failed", error);
-    return { error: t("saveFailed") };
-  }
-
-  revalidateDashboard();
-  return { success: true };
-}
-
-// Remove a gallery image: delete the row and best-effort delete the underlying
-// storage object (same non-blocking posture as removeProfileImage — an orphaned
-// file matters less than a stuck "can't remove" UI).
+// Remove a gallery image: delete the row, then best-effort delete the underlying
+// storage object (an orphaned file matters less than a stuck "can't remove" UI).
 export async function removeGalleryImage(id: string): Promise<ProfileFormState> {
   const t = await getTranslations("Profile");
   const supabase = await createClient();
@@ -529,7 +516,6 @@ export async function removeGalleryImage(id: string): Promise<ProfileFormState> 
     return { error: t("notLoggedIn") };
   }
 
-  // Fetch the storage path (scoped to the owner) before deleting the row.
   const { data: row } = await supabase
     .from("practitioner_gallery")
     .select("storage_path")
@@ -552,6 +538,91 @@ export async function removeGalleryImage(id: string): Promise<ProfileFormState> 
       .from("avatars")
       .remove([row.storage_path])
       .catch((err) => console.error("removeGalleryImage: storage delete failed", err));
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+// ---- Videos (up to 9, YouTube/Vimeo, shown after Services) ----
+
+// Add one video from a plain watch/share URL. The URL is validated against an
+// exact host allowlist and a strict per-platform id regex (lib/videos.ts); the
+// embed URL is built by the app, never from user markup. Title + thumbnail are
+// resolved via oEmbed at add time.
+export async function addVideo(
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("practitioner_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("practitioner_id", user.id);
+  if (countError) {
+    console.error("addVideo: count failed", countError);
+    return { error: t("saveFailed") };
+  }
+  const existing = count ?? 0;
+  if (existing >= MAX_VIDEOS) {
+    return { error: t("videoLimitReached", { max: MAX_VIDEOS }) };
+  }
+
+  const rawUrl = ((formData.get("url") as string) ?? "").trim();
+  if (!rawUrl) {
+    return { error: t("videoUrlRequired") };
+  }
+  const parsed = parseVideoUrl(rawUrl);
+  if (!parsed) {
+    return { error: t("videoUrlInvalid") };
+  }
+
+  const { title, thumbnailUrl } = await fetchVideoOEmbed(parsed.platform, rawUrl, parsed.videoId);
+
+  const { error } = await supabase.from("practitioner_videos").insert({
+    practitioner_id: user.id,
+    url: rawUrl,
+    platform: parsed.platform,
+    video_id: parsed.videoId,
+    title,
+    thumbnail_url: thumbnailUrl,
+    sort_order: existing,
+  });
+  if (error) {
+    console.error("addVideo: insert failed", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+export async function removeVideo(id: string): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const { error } = await supabase
+    .from("practitioner_videos")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", user.id);
+  if (error) {
+    console.error("removeVideo: delete failed", error);
+    return { error: t("saveFailed") };
   }
 
   revalidateDashboard();

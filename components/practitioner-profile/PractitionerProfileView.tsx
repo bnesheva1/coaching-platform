@@ -13,7 +13,8 @@ import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
-import { GalleryEditor, type GalleryImage } from "./GalleryEditor";
+import { GallerySection, type GalleryImage } from "./GallerySection";
+import { VideosSection, type ProfileVideo } from "./VideosSection";
 import { EditableSpecialties } from "./EditableSpecialties";
 import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
@@ -123,9 +124,10 @@ export type PractitionerProfileViewProps = {
   // Whether the viewing client has already saved this practitioner (initial state
   // for the save toggle). Always false for a guest / non-client.
   viewerHasSaved?: boolean;
-  // The practitioner's gallery images (up to 3, each with an optional caption),
-  // shown as their own section directly after About. Empty array → the section
-  // is omitted entirely on the public view; the owner still sees the editor.
+  // Videos + gallery images, each rendered as its own section after Services
+  // (order: Videos then Gallery). Empty arrays → the section self-omits on the
+  // public view; the owner still sees the editor in edit mode.
+  videos?: ProfileVideo[];
   gallery?: GalleryImage[];
   // Whether delivery-mode badges ("Онлайн" / "На живо") should render at all —
   // derived server-side from deliveryBadgesVisible() (lib/delivery.ts) and passed
@@ -175,6 +177,7 @@ export function PractitionerProfileView({
   immediateFitByServiceId,
   viewerHasSaved = false,
   showDeliveryBadges = false,
+  videos = [],
   gallery = [],
 }: PractitionerProfileViewProps) {
   const t = useTranslations("Profile");
@@ -590,33 +593,6 @@ export function PractitionerProfileView({
           )}
         </div>
 
-        {/* Gallery — directly after About. Editor in edit mode; a read-only
-            image+caption grid on the public view (omitted entirely when empty,
-            so a practitioner with no gallery shows no section). */}
-        {isEditing ? (
-          <div>
-            <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("galleryHeading")}</h2>
-            <GalleryEditor gallery={gallery} />
-          </div>
-        ) : gallery.length > 0 ? (
-          <div>
-            <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("galleryHeading")}</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-              {gallery.map((img) => (
-                <figure key={img.id} style={{ margin: 0, width: 190, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div style={{ width: "100%", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.imageUrl} alt={img.caption ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                  {img.caption && (
-                    <figcaption style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{img.caption}</figcaption>
-                  )}
-                </figure>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         {/* Services */}
         <div id="services">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -757,6 +733,14 @@ export function PractitionerProfileView({
             </div>
           )}
         </div>
+
+        {/* Videos — after Services, before Gallery. Self-omits when empty on
+            the public view; the shared MediaModal handles the iframe embed. */}
+        <VideosSection videos={videos} isEditing={isEditing} />
+
+        {/* Gallery — after Videos. Self-omits when empty on the public view;
+            the shared MediaModal handles the lightbox. */}
+        <GallerySection images={gallery} isEditing={isEditing} />
 
         {/* Reviews */}
         <div id="reviews">

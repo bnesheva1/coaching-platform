@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }, { data: galleryRows }] =
+  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }, { data: galleryRows }, { data: videoRows }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", userId).single(),
       supabase
@@ -44,9 +44,14 @@ export default async function ProfilePage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("practitioner_gallery")
-        .select("id, image_url, caption")
+        .select("id, storage_path")
         .eq("practitioner_id", userId)
-        .order("position", { ascending: true }),
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("practitioner_videos")
+        .select("id, platform, video_id, title, thumbnail_url")
+        .eq("practitioner_id", userId)
+        .order("sort_order", { ascending: true }),
     ]);
 
   const averageRating =
@@ -107,7 +112,18 @@ export default async function ProfilePage() {
             createdAt: r.created_at,
           }))}
           averageRating={averageRating}
-          gallery={(galleryRows ?? []).map((g) => ({ id: g.id, imageUrl: g.image_url, caption: g.caption }))}
+          showDeliveryBadges={deliveryBadgesVisible()}
+          gallery={(galleryRows ?? []).map((g) => ({
+            id: g.id,
+            url: supabase.storage.from("avatars").getPublicUrl(g.storage_path).data.publicUrl,
+          }))}
+          videos={(videoRows ?? []).map((v) => ({
+            id: v.id,
+            platform: v.platform as "youtube" | "vimeo",
+            videoId: v.video_id,
+            title: v.title,
+            thumbnailUrl: v.thumbnail_url,
+          }))}
           slotsByServiceId={slotsByServiceId}
           // An owner never books their own profile, so there's no "own
           // bookings with this practitioner" concept here — unlike

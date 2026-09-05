@@ -125,7 +125,7 @@ export default async function PublicProfilePage({
     return <ProfileUnavailableNotice />;
   }
 
-  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }, { data: galleryRows }] =
+  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }, { data: galleryRows }, { data: videoRows }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
       supabase
@@ -149,12 +149,17 @@ export default async function PublicProfilePage({
       // WHICH condition failed, just whether this profile can book at
       // all right now.
       supabase.rpc("is_practitioner_bookable", { target_practitioner_id: practitionerProfile.id }),
-      // Gallery images (public content), in display order.
+      // Gallery images + videos (public content), in display order.
       supabase
         .from("practitioner_gallery")
-        .select("id, image_url, caption")
+        .select("id, storage_path")
         .eq("practitioner_id", practitionerProfile.id)
-        .order("position", { ascending: true }),
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("practitioner_videos")
+        .select("id, platform, video_id, title, thumbnail_url")
+        .eq("practitioner_id", practitionerProfile.id)
+        .order("sort_order", { ascending: true }),
     ]);
 
   const averageRating =
@@ -383,7 +388,17 @@ export default async function PublicProfilePage({
           immediateFitByServiceId={immediateFitByServiceId}
           viewerHasSaved={viewerHasSaved}
           showDeliveryBadges={deliveryBadgesVisible()}
-          gallery={(galleryRows ?? []).map((g) => ({ id: g.id, imageUrl: g.image_url, caption: g.caption }))}
+          gallery={(galleryRows ?? []).map((g) => ({
+            id: g.id,
+            url: supabase.storage.from("avatars").getPublicUrl(g.storage_path).data.publicUrl,
+          }))}
+          videos={(videoRows ?? []).map((v) => ({
+            id: v.id,
+            platform: v.platform as "youtube" | "vimeo",
+            videoId: v.video_id,
+            title: v.title,
+            thumbnailUrl: v.thumbnail_url,
+          }))}
         />
         </div>
       </ContentContainer>

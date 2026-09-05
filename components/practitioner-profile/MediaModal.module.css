@@ -1,0 +1,112 @@
+/* Shared lightbox used by both the Gallery (image mode) and Videos (iframe
+   mode) sections. Built on a native <dialog> opened with showModal(), so focus
+   trapping, focus restore on close, and Escape-to-close come from the browser;
+   this module supplies the dark backdrop, sizing, and controls. */
+
+.dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: visible;
+  margin: auto; /* center within the viewport */
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Image mode: the image itself is the sized element. */
+.image {
+  display: block;
+  max-width: 92vw;
+  max-height: 86vh;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Iframe mode: a responsive 16:9 box. */
+.iframeWrap {
+  width: min(92vw, 1100px);
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.control {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+}
+.control:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.control:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.close {
+  top: -14px;
+  right: -14px;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  font-size: 26px;
+  line-height: 1;
+}
+.prev {
+  left: -22px;
+}
+.next {
+  right: -22px;
+}
+
+@media (max-width: 640px) {
+  .close {
+    top: -10px;
+    right: 0;
+  }
+  .prev {
+    left: 2px;
+  }
+  .next {
+    right: 2px;
+  }
+  .nav {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}

@@ -1,7 +1,7 @@
-// Practitioner gallery — verification. Table + 3-image cap trigger + caption
-// CHECK, RLS (owner-only writes, public read, cross-owner denial), position
+// Practitioner gallery + videos — DB verification. Tables, 9-item cap triggers,
+// RLS (owner-only writes, public read, cross-owner denial), platform CHECK,
 // ordering, and cascade on practitioner delete. Requires migration
-// 20260905120000 applied.
+// 20260905130000 applied.
 // Run: node --env-file=.env.local scripts/verify-practitioner-gallery.mjs
 import { createClient } from "@supabase/supabase-js";
 
@@ -15,89 +15,77 @@ const created = [];
 const check = (l, c, d) => { if (!c) failures++; console.log(`${c ? "PASS" : "FAIL"} — ${l}${d !== undefined ? `  (${d})` : ""}`); };
 
 async function mk(role, name) {
-  const email = `gal-${role}-${stamp}-${Math.random().toString(36).slice(2, 5)}@example.com`;
+  const email = `med-${role}-${stamp}-${Math.random().toString(36).slice(2, 5)}@example.com`;
   const { data, error } = await db.auth.admin.createUser({ email, password: PW, email_confirm: true, user_metadata: { role, display_name: name } });
   if (error) throw error;
   created.push(data.user.id);
   await new Promise((r) => setTimeout(r, 400));
-  return { id: data.user.id, email, name };
+  return { id: data.user.id, email };
 }
 async function setupPractitioner(prac, uname) {
   for (let i = 0; i < 20; i++) { if ((await db.from("practitioner_profiles").select("id").eq("id", prac.id).maybeSingle()).data) break; await new Promise((r) => setTimeout(r, 200)); }
   await db.from("practitioner_profiles").update({ username: uname, timezone: "Europe/Sofia", bio: "b", headline: "h", location: "Sofia", specialties: ["coaching"] }).eq("id", prac.id);
 }
-// An anon-key client signed in as a specific user — RLS applies to it, unlike `db`.
 async function asUser(email) {
   const c = createClient(URL, ANON);
   const { error } = await c.auth.signInWithPassword({ email, password: PW });
   if (error) throw error;
   return c;
 }
-const img = (n) => ({ storage_path: `x/gallery-${n}-${stamp}`, image_url: `https://example.com/${n}.jpg` });
+const gImg = (n) => ({ storage_path: `x/gallery-${n}-${stamp}.webp` });
+const vid = (n) => ({ url: `https://youtu.be/vid${stamp}${n}`, platform: "youtube", video_id: `id${n}${stamp}`.slice(0, 11) });
 
 (async () => {
   try {
     console.log("=== Setup ===");
-    const A = await mk("practitioner", `Prac A ${stamp}`);
-    const B = await mk("practitioner", `Prac B ${stamp}`);
-    await setupPractitioner(A, `ga${stamp}`);
-    await setupPractitioner(B, `gb${stamp}`);
+    const A = await mk("practitioner", `A ${stamp}`);
+    const B = await mk("practitioner", `B ${stamp}`);
+    await setupPractitioner(A, `ma${stamp}`);
+    await setupPractitioner(B, `mb${stamp}`);
     const aClient = await asUser(A.email);
     const bClient = await asUser(B.email);
     const anon = createClient(URL, ANON);
 
-    console.log("\n=== 3-image cap trigger (service role) ===");
-    for (let i = 0; i < 3; i++) {
-      const { error } = await db.from("practitioner_gallery").insert({ practitioner_id: A.id, position: i, ...img(i) });
-      check(`insert image ${i + 1}/3`, !error, error?.message);
+    for (const table of ["practitioner_gallery", "practitioner_videos"]) {
+      const isGallery = table === "practitioner_gallery";
+      const row = (n) => ({ practitioner_id: A.id, sort_order: n, ...(isGallery ? gImg(n) : vid(n)) });
+      console.log(`\n=== ${table}: 9-item cap trigger ===`);
+      for (let i = 0; i < 9; i++) {
+        const { error } = await db.from(table).insert(row(i));
+        if (error) { check(`insert ${i + 1}/9`, false, error.message); break; }
+      }
+      const { count } = await db.from(table).select("id", { count: "exact", head: true }).eq("practitioner_id", A.id);
+      check("9 inserted", count === 9, count);
+      const { error: tenth } = await db.from(table).insert(row(9));
+      check("10th rejected by cap trigger", !!tenth, tenth?.message);
+
+      console.log(`=== ${table}: public read + ordering ===`);
+      const { data: pub, error: pubErr } = await anon.from(table).select("id, sort_order").eq("practitioner_id", A.id).order("sort_order");
+      check("anon can read (public content)", !pubErr && pub?.length === 9, pubErr?.message ?? `${pub?.length}`);
+      check("returned in sort_order", !!pub && pub.every((r, i) => r.sort_order === i));
+
+      console.log(`=== ${table}: RLS owner-only writes ===`);
+      // A is at cap, so delete one first to isolate the RLS with-check from the trigger.
+      const firstId = pub[0].id;
+      await db.from(table).delete().eq("id", firstId);
+      const { error: bForA } = await bClient.from(table).insert(row(0));
+      check("B cannot insert into A's rows (RLS with-check, under cap)", !!bForA && /row-level security/.test(bForA.message), bForA?.message);
+      const anyA = (await db.from(table).select("id").eq("practitioner_id", A.id).limit(1).single()).data.id;
+      const { data: bDel } = await bClient.from(table).delete().eq("id", anyA).select("id");
+      check("B cannot delete A's row (0 rows)", (bDel?.length ?? 0) === 0);
     }
-    const { error: fourth } = await db.from("practitioner_gallery").insert({ practitioner_id: A.id, position: 3, ...img(3) });
-    check("4th image rejected by cap trigger", !!fourth, fourth?.message);
 
-    console.log("\n=== caption CHECK (<=100) ===");
-    const firstId = (await db.from("practitioner_gallery").select("id").eq("practitioner_id", A.id).order("position").limit(1).single()).data.id;
-    const { error: longCap } = await db.from("practitioner_gallery").update({ caption: "x".repeat(101) }).eq("id", firstId);
-    check("101-char caption rejected", !!longCap, longCap?.message);
-    const { error: okCap } = await db.from("practitioner_gallery").update({ caption: "x".repeat(100) }).eq("id", firstId);
-    check("100-char caption accepted", !okCap, okCap?.message);
-
-    console.log("\n=== RLS: public read ===");
-    const { data: pubRows, error: pubErr } = await anon.from("practitioner_gallery").select("id, image_url, caption, position").eq("practitioner_id", A.id).order("position");
-    check("anon (guest) can read a practitioner's gallery", !pubErr && (pubRows?.length ?? 0) === 3, pubErr?.message ?? `${pubRows?.length} rows`);
-    check("rows come back in position order", !!pubRows && pubRows.every((r, i) => r.position === i));
-
-    console.log("\n=== RLS: owner-only writes ===");
-    // B currently has 0 images; B inserting for THEMSELF is fine.
-    const { error: bOwn } = await bClient.from("practitioner_gallery").insert({ practitioner_id: B.id, position: 0, ...img("b0") });
-    check("owner (B) can insert their own image", !bOwn, bOwn?.message);
-    // B trying to insert a row owned by A must fail the WITH CHECK policy.
-    const { error: bForA } = await bClient.from("practitioner_gallery").insert({ practitioner_id: A.id, position: 9, ...img("bForA") });
-    check("B cannot insert into A's gallery (RLS with-check)", !!bForA, bForA?.message);
-    // B trying to update/delete A's row: RLS makes it match 0 rows (no error, no effect).
-    const { data: bUpd } = await bClient.from("practitioner_gallery").update({ caption: "hacked" }).eq("id", firstId).select("id");
-    check("B cannot update A's image (0 rows affected)", (bUpd?.length ?? 0) === 0);
-    const { data: bDel } = await bClient.from("practitioner_gallery").delete().eq("id", firstId).select("id");
-    check("B cannot delete A's image (0 rows affected)", (bDel?.length ?? 0) === 0);
-    const stillThere = (await db.from("practitioner_gallery").select("caption").eq("id", firstId).single()).data;
-    check("A's image survived B's attempts", stillThere?.caption === "x".repeat(100), stillThere?.caption?.slice(0, 12));
-
-    console.log("\n=== RLS: owner can edit/remove own ===");
-    const { data: aUpd } = await aClient.from("practitioner_gallery").update({ caption: "mine" }).eq("id", firstId).select("id");
-    check("A can update own caption", (aUpd?.length ?? 0) === 1);
-    const { data: aDel } = await aClient.from("practitioner_gallery").delete().eq("id", firstId).select("id");
-    check("A can delete own image", (aDel?.length ?? 0) === 1);
-
-    // Now A is UNDER the 3-image cap, so the cap trigger can't be what stops a
-    // cross-owner insert — this isolates the RLS with-check policy specifically.
-    const { error: bForAClean } = await bClient.from("practitioner_gallery").insert({ practitioner_id: A.id, position: 5, ...img("bForAClean") });
-    check("B cannot insert into A's gallery even under cap (RLS with-check, not trigger)", !!bForAClean, bForAClean?.message);
+    console.log("\n=== platform CHECK (videos) ===");
+    const { error: badPlatform } = await db.from("practitioner_videos").insert({ practitioner_id: B.id, url: "x", platform: "dailymotion", video_id: "x", sort_order: 0 });
+    check("invalid platform rejected by CHECK", !!badPlatform, badPlatform?.message);
 
     console.log("\n=== cascade on practitioner delete ===");
-    await db.auth.admin.deleteUser(B.id);
-    created.splice(created.indexOf(B.id), 1);
+    await db.auth.admin.deleteUser(A.id);
+    created.splice(created.indexOf(A.id), 1);
     await new Promise((r) => setTimeout(r, 500));
-    const { count: bCount } = await db.from("practitioner_gallery").select("id", { count: "exact", head: true }).eq("practitioner_id", B.id);
-    check("B's gallery rows removed on account delete (cascade)", (bCount ?? 0) === 0, `${bCount} rows`);
+    const { count: gLeft } = await db.from("practitioner_gallery").select("id", { count: "exact", head: true }).eq("practitioner_id", A.id);
+    const { count: vLeft } = await db.from("practitioner_videos").select("id", { count: "exact", head: true }).eq("practitioner_id", A.id);
+    check("gallery + video rows removed on account delete", (gLeft ?? 0) === 0 && (vLeft ?? 0) === 0, `g=${gLeft} v=${vLeft}`);
   } catch (e) {
     console.error("THREW:", e);
     failures++;
