@@ -56,6 +56,12 @@
      change shape as a side effect of this card's specific treatment. */
   --shadow-card: 0 2px 6px hsl(var(--shadow-color) / .05), 0 20px 40px -12px hsl(var(--shadow-color) / .12);
 
+  /* The accent (teal, per brand) input focus ring — a 3px glow around the
+     border. Reuse on any focusable field alongside `border-color: var(--accent)`
+     rather than repeating the literal box-shadow. --accent-glow is set per brand
+     in colors.css, so this themes automatically. */
+  --focus-ring-shadow: 0 0 0 3px var(--accent-glow);
+
   --ease-standard: cubic-bezier(.4,0,.2,1);
   --duration-fast: 120ms;
   --duration-base: 200ms;
