@@ -88,6 +88,11 @@
 }
 .sidebarTitle {
   margin: 0;
+  /* Match the results header row height (driven by the sort control) and centre
+     the text, so "Филтри" lines up with the centred results count beside it. */
+  min-height: 35px;
+  display: flex;
+  align-items: center;
   font: 500 1.0625rem var(--font-ui);
   color: var(--text-primary);
 }
