@@ -151,6 +151,7 @@
   grid-template-columns: 320px 1fr;
   gap: 44px;
   align-items: start;
+  margin-top: 40px;
 }
 @media (max-width: 860px) {
   .brandTwoAbout {
