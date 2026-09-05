@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPathname } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { isEnabled } from "@/lib/flags";
+import { deliveryBadgesVisible } from "@/lib/delivery";
 import { computeImmediateAvailability } from "@/lib/immediate/fit";
 import { isPractitionerSaved } from "@/lib/practitioners/saved";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
@@ -124,7 +125,7 @@ export default async function PublicProfilePage({
     return <ProfileUnavailableNotice />;
   }
 
-  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }] =
+  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }, { data: galleryRows }, { data: videoRows }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
       supabase
@@ -148,6 +149,17 @@ export default async function PublicProfilePage({
       // WHICH condition failed, just whether this profile can book at
       // all right now.
       supabase.rpc("is_practitioner_bookable", { target_practitioner_id: practitionerProfile.id }),
+      // Gallery images + videos (public content), in display order.
+      supabase
+        .from("practitioner_gallery")
+        .select("id, storage_path")
+        .eq("practitioner_id", practitionerProfile.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("practitioner_videos")
+        .select("id, platform, video_id, title, thumbnail_url")
+        .eq("practitioner_id", practitionerProfile.id)
+        .order("sort_order", { ascending: true }),
     ]);
 
   const averageRating =
@@ -375,6 +387,19 @@ export default async function PublicProfilePage({
           availableNow={availableNow}
           immediateFitByServiceId={immediateFitByServiceId}
           viewerHasSaved={viewerHasSaved}
+          showDeliveryBadges={deliveryBadgesVisible()}
+          brand={resolveBrand()}
+          gallery={(galleryRows ?? []).map((g) => ({
+            id: g.id,
+            url: supabase.storage.from("avatars").getPublicUrl(g.storage_path).data.publicUrl,
+          }))}
+          videos={(videoRows ?? []).map((v) => ({
+            id: v.id,
+            platform: v.platform as "youtube" | "vimeo",
+            videoId: v.video_id,
+            title: v.title,
+            thumbnailUrl: v.thumbnail_url,
+          }))}
         />
         </div>
       </ContentContainer>

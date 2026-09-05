@@ -1,0 +1,118 @@
+/* Shared layout for the Videos + Gallery sections: a 3-column grid on desktop,
+   2 on tablet, 1 on mobile. (The Services list isn't actually a CSS grid and
+   the reviews grid is 3->1 with no tablet step, so this defines the requested
+   3/2/1 explicitly; 640px is the app's usual mobile cutoff, 900px the tablet
+   step.) Every tile is a fixed 16:9 box so rows stay aligned. */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Clickable 16:9 thumbnail (a <button> so it's keyboard-operable and opens the
+   lightbox). */
+.tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-surface-2);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+.tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Play-button overlay for video thumbnails. */
+.playOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.18);
+}
+.playIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoTitle {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Remove control overlaid on a tile in edit mode (sibling of the tile button,
+   never nested inside it — nested buttons are invalid). */
+.removeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+/* Dashed "add" cell (upload / paste-URL form), same 16:9 footprint. */
+.addTile {
+  aspect-ratio: 16 / 9;
+  border: 1px dashed var(--border-default);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.addTile input {
+  width: 100%;
+}
+
+.error {
+  margin: 4px 0 0;
+  font: var(--text-caption);
+  color: var(--color-danger);
+}

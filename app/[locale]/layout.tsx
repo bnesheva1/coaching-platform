@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSiteName, resolveBrand, type Brand } from "@/lib/brand";
-import { PT_Serif, Manrope, JetBrains_Mono } from "next/font/google";
+import { PT_Serif, Manrope, JetBrains_Mono, Ubuntu, IBM_Plex_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -37,6 +37,23 @@ const fontMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+// Brand two: Ubuntu is the single family for ALL text (display + ui — no PT
+// Serif), so it drives --font-ui here and --font-display is aliased to it in
+// colors.css. IBM Plex Mono is used only for numeric/meta data (latin digits),
+// so it's latin-only — no cyrillic subset needed.
+const fontTwoBody = Ubuntu({
+  variable: "--font-ui",
+  subsets: ["latin", "cyrillic"],
+  weight: ["300", "400", "500", "700"],
+  style: ["normal", "italic"],
+});
+
+const fontTwoMono = IBM_Plex_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
 // Fonts are brand-selectable, the same way colors are — a brand carries as much
 // identity in its type as its palette. Each brand maps to the next/font
 // instances whose CSS variables (--font-display/ui/mono) typography.css reads;
@@ -46,6 +63,10 @@ const fontMono = JetBrains_Mono({
 // instances + an entry here (and a colors.css block + a name in lib/brand.ts).
 const BRAND_FONTS: Record<Brand, { display: string; ui: string; mono: string }> = {
   warm: { display: fontDisplay.variable, ui: fontUi.variable, mono: fontMono.variable },
+  // Ubuntu covers both display and ui (one family); --font-display is aliased to
+  // --font-ui in colors.css, so applying the Ubuntu class (which sets --font-ui)
+  // is enough. IBM Plex Mono sets --font-mono.
+  two: { display: fontTwoBody.variable, ui: fontTwoBody.variable, mono: fontTwoMono.variable },
 };
 
 // metadataBase — needed for every page's relative/absolute URL resolution

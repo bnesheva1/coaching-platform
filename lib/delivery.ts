@@ -42,3 +42,15 @@ export function enabledDeliveryTypes(): Set<DeliveryType> {
 export function isDeliveryTypeEnabled(type: DeliveryType): boolean {
   return enabledDeliveryTypes().has(type);
 }
+
+// A delivery-mode badge (the "Онлайн" / "На живо" pill on the profile) only
+// carries information when the deployment offers a CHOICE of modes. With a
+// single enabled mode — the default, online-only state, since in-person is
+// deprioritised for now — every service is that one mode, so the badge is pure
+// noise on every card. Hide it until a second mode (in_person/phone) is
+// re-enabled, at which point online-vs-in-person is a real distinction again.
+// Reversible through the same ENABLED_DELIVERY_TYPES env as everything else
+// here; no delivery logic is removed, only the redundant badge is suppressed.
+export function deliveryBadgesVisible(): boolean {
+  return enabledDeliveryTypes().size > 1;
+}

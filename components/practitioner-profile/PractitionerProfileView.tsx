@@ -13,6 +13,10 @@ import { BookingResultDialog } from "@/components/booking/BookingResultDialog";
 import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
+import { GallerySection, type GalleryImage } from "./GallerySection";
+import { VideosSection, type ProfileVideo } from "./VideosSection";
+import { BrandTwoHeader } from "./BrandTwoHeader";
+import type { Brand } from "@/lib/brand-config";
 import { EditableSpecialties } from "./EditableSpecialties";
 import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
@@ -122,6 +126,22 @@ export type PractitionerProfileViewProps = {
   // Whether the viewing client has already saved this practitioner (initial state
   // for the save toggle). Always false for a guest / non-client.
   viewerHasSaved?: boolean;
+  // Videos + gallery images, each rendered as its own section after Services
+  // (order: Videos then Gallery). Empty arrays → the section self-omits on the
+  // public view; the owner still sees the editor in edit mode.
+  videos?: ProfileVideo[];
+  gallery?: GalleryImage[];
+  // The active white-label brand (from resolveBrand(), server-side). "two" swaps
+  // the profile header for the brand-two design (no banner, dominant intro,
+  // hairline summary card, availability rule); the shared sections below are
+  // token-restyled either way. Defaults to "warm".
+  brand?: Brand;
+  // Whether delivery-mode badges ("Онлайн" / "На живо") should render at all —
+  // derived server-side from deliveryBadgesVisible() (lib/delivery.ts) and passed
+  // in because this is a client component and ENABLED_DELIVERY_TYPES is a
+  // server-only env. False in the current online-only deployment, where the
+  // badge is redundant on every card; the delivery data itself is untouched.
+  showDeliveryBadges?: boolean;
 };
 
 // Shared by both app/[locale]/p/[username]/page.tsx (isOwner always
@@ -163,7 +183,12 @@ export function PractitionerProfileView({
   availableNow = false,
   immediateFitByServiceId,
   viewerHasSaved = false,
+  showDeliveryBadges = false,
+  videos = [],
+  gallery = [],
+  brand = "warm",
 }: PractitionerProfileViewProps) {
+  const isBrandTwo = brand === "two";
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
   const tReviews = useTranslations("Reviews");
@@ -250,6 +275,9 @@ export function PractitionerProfileView({
     setPendingScrollId(first.id);
   }
 
+  // Lowest active-service price, for the brand-two summary card's "from" row.
+  const minPriceCents = services.length > 0 ? Math.min(...services.map((s) => s.priceCents)) : null;
+
   const dedupedDeliveryTypes = Array.from(new Set(services.map((s) => s.deliveryType))) as (
     | "online"
     | "in_person"
@@ -331,6 +359,33 @@ export function PractitionerProfileView({
         </div>
       )}
 
+      {isBrandTwo ? (
+        <BrandTwoHeader
+          isEditing={isEditing}
+          displayName={displayName}
+          headline={headline}
+          location={location}
+          avatarUrl={avatarUrl}
+          specialties={specialties}
+          topics={topics}
+          nameUsage={nameUsage}
+          availableNow={availableNow}
+          averageRating={averageRating}
+          reviewCount={reviews.length}
+          minPriceCents={minPriceCents}
+          currency={services[0]?.currency ?? null}
+          nextSlotLabel={nextSlotLabel}
+          timezone={timezone}
+          practitionerId={practitionerId}
+          username={username}
+          viewerRole={viewerRole}
+          isOwnProfile={isOwnProfile}
+          viewerHasSaved={viewerHasSaved}
+          onSeeAvailability={scrollToFirstAvailability}
+          intlLocale={intlLocale}
+        />
+      ) : (
+      <>
       {/* Banner — no text inside. The pull-quote (headline) moved to
           the intro block below; a tall empty-feeling banner with text
           lost inside it was the main defect of the version this
@@ -548,7 +603,7 @@ export function PractitionerProfileView({
               <FactsCard
                 averageRating={averageRating}
                 reviewCount={reviews.length}
-                deliveryTypes={dedupedDeliveryTypes}
+                deliveryTypes={showDeliveryBadges ? dedupedDeliveryTypes : []}
                 city={location}
                 nextSlotLabel={nextSlotLabel}
                 timezone={timezone}
@@ -558,6 +613,8 @@ export function PractitionerProfileView({
           )}
         </div>
       </div>
+      </>
+      )}
 
       {/* Sections — spacing alone separates them, no rule lines. */}
       <div style={{ padding: "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
@@ -675,7 +732,7 @@ export function PractitionerProfileView({
                             {tPublic("serviceDuration", { minutes: service.durationMinutes })} ·{" "}
                             {new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).format(service.priceCents / 100)}
                           </span>
-                          <ModeBadge deliveryType={service.deliveryType} city={location} compact />
+                          {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
                         </div>
                         {service.description && (
                           <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{service.description}</span>
@@ -717,6 +774,14 @@ export function PractitionerProfileView({
             </div>
           )}
         </div>
+
+        {/* Videos — after Services, before Gallery. Self-omits when empty on
+            the public view; the shared MediaModal handles the iframe embed. */}
+        <VideosSection videos={videos} isEditing={isEditing} />
+
+        {/* Gallery — after Videos. Self-omits when empty on the public view;
+            the shared MediaModal handles the lightbox. */}
+        <GallerySection images={gallery} isEditing={isEditing} />
 
         {/* Reviews */}
         <div id="reviews">
