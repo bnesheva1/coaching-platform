@@ -18,7 +18,7 @@
 /* ── Left: summary card (resembles the browse result card) ───────────────── */
 .card {
   position: relative;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--text-primary);
   border-radius: var(--radius-2xl);
   background: var(--bg-surface);
   padding: 20px;
