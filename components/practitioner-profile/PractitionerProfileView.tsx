@@ -364,6 +364,7 @@ export function PractitionerProfileView({
           isEditing={isEditing}
           displayName={displayName}
           headline={headline}
+          bio={bio}
           location={location}
           avatarUrl={avatarUrl}
           specialties={specialties}

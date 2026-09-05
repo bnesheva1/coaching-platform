@@ -538,6 +538,7 @@
     "topicsHint": "Избери до {max} теми, с които се свързва работата ти ({count}/{max}).",
     "topicsMaxExceeded": "Може да избереш най-много {max} теми.",
     "seeAvailability": "Виж свободни часове",
+    "bookNowCta": "Запази час",
     "hideDetails": "Скрий свободните часове",
     "noServicesYet": "Все още няма добавени услуги."
   },
