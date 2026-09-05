@@ -173,6 +173,11 @@
   text-wrap: balance;
   max-width: 20ch;
 }
+@media (max-width: 640px) {
+  .headline {
+    font-size: 1.8rem;
+  }
+}
 .factRow {
   display: flex;
   flex-wrap: wrap;
