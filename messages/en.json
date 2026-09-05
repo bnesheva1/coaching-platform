@@ -538,7 +538,6 @@
     "topicsHint": "Choose up to {max} topics that best describe your work ({count}/{max}).",
     "topicsMaxExceeded": "You can select up to {max} topics.",
     "seeAvailability": "See availability",
-    "bookNowCta": "Book now",
     "hideDetails": "Hide available times",
     "noServicesYet": "No services added yet."
   },

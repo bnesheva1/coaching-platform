@@ -122,7 +122,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         )}
         <button type="button" className={styles.cardCta} onClick={props.onSeeAvailability}>
           <CalendarDays size={17} strokeWidth={1.8} aria-hidden="true" />
-          {t("bookNowCta")}
+          {t("seeAvailability")}
         </button>
       </div>
 
