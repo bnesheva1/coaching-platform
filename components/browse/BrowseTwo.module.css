@@ -257,7 +257,7 @@
 .card {
   border: 1px solid var(--bg-surface);
   border-radius: var(--radius-xl);
-  padding: 22px;
+  padding: 18px;
   min-height: 400px;
   display: flex;
   flex-direction: column;
@@ -352,10 +352,12 @@
   color: var(--text-secondary);
 }
 .bio {
+  width: 100%;
   font: 300 0.875rem/1.5 var(--font-ui);
   color: var(--text-primary);
+  text-align: left;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
