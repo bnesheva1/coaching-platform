@@ -539,6 +539,7 @@
     "topicsMaxExceeded": "You can select up to {max} topics.",
     "seeAvailability": "See availability",
     "bookSlotCta": "Book",
+    "closeCalendar": "Close calendar",
     "hideDetails": "Hide available times",
     "noServicesYet": "No services added yet."
   },

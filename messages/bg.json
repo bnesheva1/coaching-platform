@@ -539,6 +539,7 @@
     "topicsMaxExceeded": "Може да избереш най-много {max} теми.",
     "seeAvailability": "Виж свободни часове",
     "bookSlotCta": "Запази час",
+    "closeCalendar": "Затвори календара",
     "hideDetails": "Скрий свободните часове",
     "noServicesYet": "Все още няма добавени услуги."
   },

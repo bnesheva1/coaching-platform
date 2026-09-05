@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Clock, Wallet, CalendarDays } from "lucide-react";
+import { Clock, Wallet, CalendarDays, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
@@ -738,8 +738,24 @@ export function PractitionerProfileView({
                     .map((p) => p.value)
                     .join("");
                   const priceSymbol = priceParts.find((p) => p.type === "currency")?.value ?? service.currency;
+                  // Cards that currently have open times get the black border.
+                  const hasSlots = (slotsByServiceId[service.id]?.length ?? 0) > 0;
+                  // Toggle the panel open/closed IN PLACE — no pendingScrollId, so
+                  // the page doesn't jump; the button keeps its spot in the row.
+                  const toggleThis = () => {
+                    setExpandedServiceIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(service.id)) {
+                        next.delete(service.id);
+                      } else {
+                        next.add(service.id);
+                        trackScheduleOpen();
+                      }
+                      return next;
+                    });
+                  };
                   return (
-                    <div key={service.id} className={styles.svc2Card}>
+                    <div key={service.id} className={`${styles.svc2Card}${hasSlots ? ` ${styles.svc2CardBookable}` : ""}`}>
                       <div className={styles.svc2Row}>
                         {service.imageUrl ? (
                           <div className={styles.svc2Image}>
@@ -768,24 +784,29 @@ export function PractitionerProfileView({
                             </div>
                             {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
                           </div>
-                          {service.description && <span className={styles.svc2Desc}>{service.description}</span>}
+                          {/* Always rendered (min-height reserves 2 lines) so every card is the same height. */}
+                          <span className={styles.svc2Desc}>{service.description}</span>
                         </div>
-                        {!isExpanded && !canBookNow && (
+                        {!canBookNow && (
                           <button
                             type="button"
                             className={styles.svc2BookBtn}
-                            onClick={expandThis}
-                            aria-expanded="false"
+                            onClick={toggleThis}
+                            aria-expanded={isExpanded}
                             aria-controls={`slotpicker-${service.id}`}
                           >
-                            <CalendarDays size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
-                            {t("bookSlotCta")}
+                            {isExpanded ? (
+                              <X size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
+                            ) : (
+                              <CalendarDays size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
+                            )}
+                            {isExpanded ? t("closeCalendar") : t("bookSlotCta")}
                           </button>
                         )}
                       </div>
                       {canBookNow ? (
                         <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
-                          <ImmediateBookButton practitionerId={practitionerId} serviceId={service.id} onSeeOtherTimes={expandThis} />
+                          <ImmediateBookButton practitionerId={practitionerId} serviceId={service.id} onSeeOtherTimes={toggleThis} />
                           {isExpanded && slotPanel}
                         </div>
                       ) : isExpanded ? (
