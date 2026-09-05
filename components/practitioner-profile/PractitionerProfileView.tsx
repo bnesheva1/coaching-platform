@@ -617,8 +617,10 @@ export function PractitionerProfileView({
       </>
       )}
 
-      {/* Sections — spacing alone separates them, no rule lines. */}
-      <div style={{ padding: "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
+      {/* Sections — spacing alone separates them, no rule lines. Brand two has a
+          flush header (BrandTwoHeader), so its sections drop the 40px side
+          padding to align with it; warm keeps the inset (its header has it too). */}
+      <div style={{ padding: isBrandTwo ? "8px 0 42px" : "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
         {/* About */}
         <div>
           <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
