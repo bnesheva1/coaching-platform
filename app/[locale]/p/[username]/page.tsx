@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { isEnabled } from "@/lib/flags";
+import { deliveryBadgesVisible } from "@/lib/delivery";
 import { computeImmediateAvailability } from "@/lib/immediate/fit";
 import { isPractitionerSaved } from "@/lib/practitioners/saved";
 import { getOwnBookingsWithPractitioner } from "@/lib/bookings/ownBookings";
@@ -124,7 +125,7 @@ export default async function PublicProfilePage({
     return <ProfileUnavailableNotice />;
   }
 
-  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }] =
+  const [{ data: profile }, { data: services }, { data: authData }, { data: reviews }, { data: isBookable }, { data: galleryRows }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", practitionerProfile.id).single(),
       supabase
@@ -148,6 +149,12 @@ export default async function PublicProfilePage({
       // WHICH condition failed, just whether this profile can book at
       // all right now.
       supabase.rpc("is_practitioner_bookable", { target_practitioner_id: practitionerProfile.id }),
+      // Gallery images (public content), in display order.
+      supabase
+        .from("practitioner_gallery")
+        .select("id, image_url, caption")
+        .eq("practitioner_id", practitionerProfile.id)
+        .order("position", { ascending: true }),
     ]);
 
   const averageRating =
@@ -375,6 +382,8 @@ export default async function PublicProfilePage({
           availableNow={availableNow}
           immediateFitByServiceId={immediateFitByServiceId}
           viewerHasSaved={viewerHasSaved}
+          showDeliveryBadges={deliveryBadgesVisible()}
+          gallery={(galleryRows ?? []).map((g) => ({ id: g.id, imageUrl: g.image_url, caption: g.caption }))}
         />
         </div>
       </ContentContainer>

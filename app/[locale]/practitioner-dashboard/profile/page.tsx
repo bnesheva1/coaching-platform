@@ -4,6 +4,7 @@ import { getBookableSlots } from "@/lib/availability/slots";
 import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 import { getRenameUsage } from "@/lib/rename-limits";
+import { deliveryBadgesVisible } from "@/lib/delivery";
 import styles from "./page.module.css";
 
 // Auth/role guard already ran in the shared layout.tsx. isOwner is
@@ -18,7 +19,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }] =
+  const [{ data: profile }, { data: practitionerProfile }, { data: services }, { data: reviews }, { data: galleryRows }] =
     await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", userId).single(),
       supabase
@@ -41,6 +42,11 @@ export default async function ProfilePage() {
         .select("id, rating, review_text, created_at")
         .eq("practitioner_id", userId)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("practitioner_gallery")
+        .select("id, image_url, caption")
+        .eq("practitioner_id", userId)
+        .order("position", { ascending: true }),
     ]);
 
   const averageRating =
@@ -101,6 +107,7 @@ export default async function ProfilePage() {
             createdAt: r.created_at,
           }))}
           averageRating={averageRating}
+          gallery={(galleryRows ?? []).map((g) => ({ id: g.id, imageUrl: g.image_url, caption: g.caption }))}
           slotsByServiceId={slotsByServiceId}
           // An owner never books their own profile, so there's no "own
           // bookings with this practitioner" concept here — unlike

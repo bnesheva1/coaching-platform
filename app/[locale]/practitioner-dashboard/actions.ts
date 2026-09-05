@@ -27,6 +27,12 @@ const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_HEADLINE_LENGTH = 150;
 const MAX_LOCATION_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
+// Gallery: up to 3 images, each with an optional <=100-char plain-text caption.
+// The UI enforces both too; these are the authoritative checks for a direct API
+// call, and the 3-image cap is ALSO enforced by a DB trigger (see migration
+// 20260905120000) so a race can't exceed it.
+const MAX_GALLERY_IMAGES = 3;
+const MAX_GALLERY_CAPTION_LENGTH = 100;
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 const KNOWN_TOPIC_KEYS = new Set(topicsData.map((topic) => topic.key));
 // A curated handful reads as focused — see EditableTopics.tsx's own
@@ -382,6 +388,170 @@ export async function removeProfileImage(kind: "avatar" | "banner"): Promise<Pro
   if (error) {
     console.error("removeProfileImage failed:", error);
     return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+// ---- Gallery (up to 3 images + optional captions, shown after About) ----
+
+// Add one gallery image (+ optional caption). Rejects once the practitioner
+// already has MAX_GALLERY_IMAGES; the image goes to the same public `avatars`
+// bucket every other profile image uses, under the owner's own folder at a
+// unique `gallery-<uuid>` path (so multiple images never collide the way the
+// fixed avatar/banner paths would).
+export async function addGalleryImage(
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  // Count first so we don't upload a file we're about to reject. The DB trigger
+  // is the real backstop; this gives a friendly message instead of a raw throw.
+  const { count, error: countError } = await supabase
+    .from("practitioner_gallery")
+    .select("id", { count: "exact", head: true })
+    .eq("practitioner_id", user.id);
+  if (countError) {
+    console.error("addGalleryImage: count failed", countError);
+    return { error: t("saveFailed") };
+  }
+  const existing = count ?? 0;
+  if (existing >= MAX_GALLERY_IMAGES) {
+    return { error: t("galleryLimitReached", { max: MAX_GALLERY_IMAGES }) };
+  }
+
+  const imageEntry = formData.get("image");
+  const imageFile = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
+  if (!imageFile) {
+    return { error: t("photoInvalidType") };
+  }
+  if (!ALLOWED_AVATAR_TYPES.includes(imageFile.type)) {
+    return { error: t("photoInvalidType") };
+  }
+  if (imageFile.size > MAX_AVATAR_BYTES) {
+    return { error: t("photoTooLarge") };
+  }
+
+  const rawCaption = ((formData.get("caption") as string) ?? "").trim();
+  if (rawCaption.length > MAX_GALLERY_CAPTION_LENGTH) {
+    return { error: t("galleryCaptionTooLong", { max: MAX_GALLERY_CAPTION_LENGTH }) };
+  }
+  const caption = rawCaption === "" ? null : rawCaption;
+
+  const path = `${user.id}/gallery-${crypto.randomUUID()}`;
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, imageFile, {
+    upsert: false,
+    contentType: imageFile.type,
+  });
+  if (uploadError) {
+    return { error: t("photoUploadFailed", { message: uploadError.message }) };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+
+  const { error } = await supabase.from("practitioner_gallery").insert({
+    practitioner_id: user.id,
+    storage_path: path,
+    image_url: publicUrl,
+    caption,
+    // Append after any existing images.
+    position: existing,
+  });
+  if (error) {
+    // Roll back the just-uploaded file so a failed insert doesn't orphan it.
+    await supabase.storage.from("avatars").remove([path]).catch(() => {});
+    console.error("addGalleryImage: insert failed", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+// Edit just the caption of an existing gallery image (id bound by the caller).
+export async function updateGalleryCaption(
+  id: string,
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const rawCaption = ((formData.get("caption") as string) ?? "").trim();
+  if (rawCaption.length > MAX_GALLERY_CAPTION_LENGTH) {
+    return { error: t("galleryCaptionTooLong", { max: MAX_GALLERY_CAPTION_LENGTH }) };
+  }
+  const caption = rawCaption === "" ? null : rawCaption;
+
+  // RLS also scopes this to the owner; the practitioner_id filter makes the
+  // ownership explicit and means a wrong id simply updates nothing.
+  const { error } = await supabase
+    .from("practitioner_gallery")
+    .update({ caption })
+    .eq("id", id)
+    .eq("practitioner_id", user.id);
+  if (error) {
+    console.error("updateGalleryCaption: update failed", error);
+    return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+// Remove a gallery image: delete the row and best-effort delete the underlying
+// storage object (same non-blocking posture as removeProfileImage — an orphaned
+// file matters less than a stuck "can't remove" UI).
+export async function removeGalleryImage(id: string): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  // Fetch the storage path (scoped to the owner) before deleting the row.
+  const { data: row } = await supabase
+    .from("practitioner_gallery")
+    .select("storage_path")
+    .eq("id", id)
+    .eq("practitioner_id", user.id)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from("practitioner_gallery")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", user.id);
+  if (error) {
+    console.error("removeGalleryImage: delete failed", error);
+    return { error: t("saveFailed") };
+  }
+
+  if (row?.storage_path) {
+    await supabase.storage
+      .from("avatars")
+      .remove([row.storage_path])
+      .catch((err) => console.error("removeGalleryImage: storage delete failed", err));
   }
 
   revalidateDashboard();
