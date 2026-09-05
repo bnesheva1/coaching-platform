@@ -79,9 +79,10 @@ export function PractitionerCard({
     gap: "var(--space-3)",
   };
 
-  // The avatar / name / chips / bio stack. Wrapped in a Link to the profile when
-  // reachable; rendered as a plain (non-clickable) block when the practitioner
-  // is fully hidden, so a saved card never leads to a "not listed" page.
+  // The avatar / name / chips / bio stack — a plain (non-clickable) block; the
+  // stretched-link overlay in the card (rendered only when visible) is what makes
+  // the whole card navigate to the profile, so a fully-hidden practitioner's
+  // card correctly leads nowhere.
   const profileBlock = (
     <>
       <Avatar
@@ -151,13 +152,14 @@ export function PractitionerCard({
     </>
   );
 
-  // A plain <div>, not a Link, at the top level — "Book a session" below
-  // needs its own real link/button, and nesting an interactive element
-  // inside another <a> is invalid HTML (and unreliable across browsers/
-  // screen readers) even when both happen to point at the same
-  // destination. The profile-navigation Link instead wraps just the
-  // avatar/name/modality/chips/bio block; the CTA is a sibling, not a
-  // descendant.
+  // The whole card is the profile link, via a stretched-link overlay — a
+  // full-card <Link> (absolute, inset:0) sitting over the content, so a click
+  // anywhere navigates to the profile. It's a SIBLING of the SaveButton, never a
+  // wrapper: nesting the heart's <button> inside an <a> would be invalid HTML.
+  // The heart sits above the overlay (same z-index, later in the DOM) so it
+  // stays independently clickable; the avatar/name/bio and the "book" label sit
+  // below it. A fully-hidden practitioner (visible === false) gets no overlay —
+  // the profile isn't reachable — so that card simply isn't clickable.
   return (
     <div
       style={{
@@ -173,6 +175,14 @@ export function PractitionerCard({
         padding: "var(--card-padding-feature)",
       }}
     >
+      {visible && (
+        <Link
+          href={profileHref}
+          aria-label={practitioner.displayName || practitioner.username}
+          style={{ position: "absolute", inset: 0, zIndex: 1, borderRadius: "var(--radius-2xl)" }}
+        />
+      )}
+
       {saveable && (
         <SaveButton
           practitionerId={practitioner.id}
@@ -206,13 +216,9 @@ export function PractitionerCard({
         </span>
       )}
 
-      {visible ? (
-        <Link href={profileHref} style={profileBlockStyle}>
-          {profileBlock}
-        </Link>
-      ) : (
-        <div style={profileBlockStyle}>{profileBlock}</div>
-      )}
+      {/* Plain block — the stretched overlay above (when visible) makes the whole
+          card the link, so this doesn't need its own anchor. */}
+      <div style={profileBlockStyle}>{profileBlock}</div>
 
       {!visible ? (
         // Fully hidden (lapsed, no outstanding sessions): the profile is no
@@ -230,8 +236,9 @@ export function PractitionerCard({
           {tSaved("noLongerListed")}
         </span>
       ) : bookable ? (
-        <Link
-          href={profileHref}
+        // Text, not its own anchor — the stretched overlay above handles the
+        // click. Kept underlined so it still reads as the card's affordance.
+        <span
           style={{
             marginTop: "auto",
             paddingTop: "var(--space-2)",
@@ -242,7 +249,7 @@ export function PractitionerCard({
           }}
         >
           {tBrowse("bookSessionCta")}
-        </Link>
+        </span>
       ) : (
         // Saved-but-unbookable: keep the card (the client chose to keep them) but
         // offer no booking action that would lead nowhere.
