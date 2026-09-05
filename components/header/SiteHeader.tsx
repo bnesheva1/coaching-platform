@@ -20,15 +20,22 @@ export async function SiteHeader() {
   const tFooter = await getTranslations("Footer");
   const viewer = await getViewer();
 
+  // Brand two overrides the nav wording to the handoff labels (wordmark "само да
+  // попитам" via getSiteName, "Специалисти", "Моите срещи", "Полезно"); brand one
+  // keeps its own. The links, order, and role logic are identical either way —
+  // only the labels differ.
+  const brand = resolveBrand();
+
   const browseLink = {
-    label: viewer.status === "practitioner" ? tHeader("browseLinkPractitioner") : tBrowse("title"),
+    label:
+      brand === "two"
+        ? tHeader("specialistsLink")
+        : viewer.status === "practitioner"
+          ? tHeader("browseLinkPractitioner")
+          : tBrowse("title"),
     href: "/browse",
   };
 
-  // Brand two renames this content-nav dropdown "Полезно" (Useful) — it maps to
-  // the mockup's "Как работи" nav slot but holds all the info pages below.
-  // Brand one keeps "Информация". Same items either way.
-  const brand = resolveBrand();
   const infoDropdownLabel = brand === "two" ? tHeader("usefulDropdownLabel") : tHeader("infoDropdownLabel");
 
   // The 5 marketing/info pages — same for every viewer, unlike
@@ -57,7 +64,15 @@ export async function SiteHeader() {
   // /admin is reachable from the account menu only (see accountLinks).
   const dashboardLink =
     isLoggedIn && !isAdmin
-      ? { label: isPractitioner ? tHeader("dashboardLinkPractitioner") : tHeader("dashboardLinkClient"), href: dashboardHref }
+      ? {
+          label:
+            brand === "two"
+              ? tHeader("myMeetingsLink")
+              : isPractitioner
+                ? tHeader("dashboardLinkPractitioner")
+                : tHeader("dashboardLinkClient"),
+          href: dashboardHref,
+        }
       : null;
 
   // The greeting is now the account-menu trigger; it still does identity

@@ -1,6 +1,7 @@
 {
   "Brand": {
-    "siteName": "Платформа за консултации"
+    "siteName": "Платформа за консултации",
+    "siteNameTwo": "само да попитам"
   },
   "Admin": {
     "heading": "Админ",
@@ -215,6 +216,8 @@
     "howItWorksLink": "Как работи",
     "becomePractitionerLink": "Станете специалист",
     "browseLinkPractitioner": "Виж другите практици",
+    "specialistsLink": "Специалисти",
+    "myMeetingsLink": "Моите срещи",
     "infoDropdownLabel": "Информация",
     "usefulDropdownLabel": "Полезно",
     "greeting": "Привет, {name}",

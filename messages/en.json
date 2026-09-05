@@ -1,6 +1,7 @@
 {
   "Brand": {
-    "siteName": "Coaching Platform"
+    "siteName": "Coaching Platform",
+    "siteNameTwo": "само да попитам"
   },
   "Admin": {
     "heading": "Admin",
@@ -215,6 +216,8 @@
     "howItWorksLink": "How it works",
     "becomePractitionerLink": "Become a practitioner",
     "browseLinkPractitioner": "Browse other practitioners",
+    "specialistsLink": "Specialists",
+    "myMeetingsLink": "My meetings",
     "infoDropdownLabel": "Info",
     "usefulDropdownLabel": "Useful",
     "greeting": "Hi, {name}",
