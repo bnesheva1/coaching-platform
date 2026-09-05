@@ -54,7 +54,6 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
   const { isEditing } = props;
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
-  const tImmediate = useTranslations("Immediate");
   const locale = useLocale();
 
   const specialtyLabel = (key: string) =>
