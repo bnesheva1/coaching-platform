@@ -25,7 +25,14 @@ const handleI18nRouting = createIntlMiddleware(routing);
 // 429 wouldn't match the response shape a Server Action's caller expects.
 function rateLimitedGetEndpoint(request: NextRequest) {
   if (request.method !== "GET") return null;
-  if (request.nextUrl.pathname === "/auth/callback") return authCallbackLimiter;
+  // Both auth link-verification endpoints share the same limiter — /auth/confirm
+  // verifies an emailed recovery token_hash, so it warrants the same guard
+  // against token enumeration that /auth/callback already has.
+  if (
+    request.nextUrl.pathname === "/auth/callback" ||
+    request.nextUrl.pathname === "/auth/confirm"
+  )
+    return authCallbackLimiter;
   if (stripLocale(request.nextUrl.pathname) === "/browse") return searchLimiter;
   return null;
 }
@@ -46,13 +53,18 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // /auth/callback lives outside app/[locale] — it's a route handler, not
-  // a page, and was never meant to be locale-prefixed. Without this, the
-  // routing config below (localePrefix: "always") redirects it to
-  // /bg/auth/callback or /en/auth/callback, neither of which is a real
-  // route, breaking every magic-link/OAuth redirect into this app. This
-  // predates the rate-limiting work above — found while testing it.
-  if (request.nextUrl.pathname === "/auth/callback") {
+  // The /auth/* route handlers live outside app/[locale] — they're route
+  // handlers, not pages, and were never meant to be locale-prefixed. Without
+  // this, the routing config below (localePrefix: "always") redirects e.g.
+  // /auth/callback to /bg/auth/callback or /en/auth/callback, neither of which
+  // is a real route, breaking every magic-link/OAuth/recovery redirect into
+  // this app. /auth/confirm (dashboard-triggered recovery token_hash links)
+  // needs the same bypass as /auth/callback (PKCE). This predates the
+  // rate-limiting work above — found while testing it.
+  if (
+    request.nextUrl.pathname === "/auth/callback" ||
+    request.nextUrl.pathname === "/auth/confirm"
+  ) {
     return updateSession(request, NextResponse.next());
   }
 
