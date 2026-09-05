@@ -116,6 +116,15 @@
   gap: 12px;
   width: calc(60% - 24px);
 }
+/* Mobile: field full-width with the button stacked beneath it (same 12px gap). */
+@media (max-width: 640px) {
+  .searchRow {
+    flex-direction: column;
+  }
+  .searchField {
+    flex: none;
+  }
+}
 .searchField {
   flex: 1;
   min-width: 0;

@@ -30,6 +30,18 @@
   font: 500 1rem var(--font-ui);
   cursor: pointer;
 }
+
+/* Mobile: stack the field + button vertically (same 12px gap). flex:none on the
+   field stops it growing tall in the column; align-items:stretch (default) makes
+   both span the full width. */
+@media (max-width: 640px) {
+  .searchRow {
+    flex-direction: column;
+  }
+  .search {
+    flex: none;
+  }
+}
 .search:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
