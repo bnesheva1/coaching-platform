@@ -908,7 +908,7 @@ export function PractitionerProfileView({
             <>
               <div className={styles.reviewsGrid}>
                 {reviews.slice(0, 6).map((review) => (
-                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: isBrandTwo ? "none" : "var(--shadow-md)", border: isBrandTwo ? "1px solid var(--border-default)" : undefined, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
                     <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)" }}>
                       <StarRating rating={review.rating} size={14} />
                     </span>

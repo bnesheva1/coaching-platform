@@ -95,6 +95,7 @@ body {
 }
 [data-brand="two"] .slot-picker-heading {
   font-size: 1rem;
+  font-weight: 700;
 }
 @media (min-width: 861px) {
   [data-brand="two"] .slot-picker-head {
