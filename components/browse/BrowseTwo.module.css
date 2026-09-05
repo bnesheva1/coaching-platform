@@ -89,8 +89,8 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  font: 300 0.9375rem var(--font-ui);
-  color: var(--text-secondary);
+  font: 400 0.9375rem var(--font-ui);
+  color: var(--text-primary);
 }
 .checkbox {
   width: 16px;
