@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPathname } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -388,6 +388,7 @@ export default async function PublicProfilePage({
           immediateFitByServiceId={immediateFitByServiceId}
           viewerHasSaved={viewerHasSaved}
           showDeliveryBadges={deliveryBadgesVisible()}
+          brand={resolveBrand()}
           gallery={(galleryRows ?? []).map((g) => ({
             id: g.id,
             url: supabase.storage.from("avatars").getPublicUrl(g.storage_path).data.publicUrl,

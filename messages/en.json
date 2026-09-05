@@ -681,6 +681,10 @@
     "modeInPerson": "In person — {city}",
     "nextAvailableSlotLabel": "Next available time",
     "nextAvailableSlotEmpty": "No upcoming times",
+    "summaryReviewsLabel": "Reviews",
+    "summaryPriceLabel": "Price",
+    "summaryPriceFrom": "from {price}",
+    "cancellationNote": "Free cancellation per the cancellation policy.",
     "savePractitioner": "Save practitioner",
     "expandAllReviews": "See all reviews ({count})",
     "collapseReviews": "Show less"

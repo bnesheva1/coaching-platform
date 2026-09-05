@@ -94,3 +94,84 @@
   --focus-ring: oklch(78% 0.13 var(--hue-accent) / .45);
   --overlay-scrim: oklch(5% 0.006 var(--hue-neutral) / .6);
 }
+
+/* ── Brand: two (high-contrast black-and-white / notebook; deep-teal accent) ──
+   Hex-literal palette straight from design/design_handoff_brand_two (light is
+   primary; the dark block overrides under [data-theme="dark"]). Every color
+   token is set in BOTH blocks on purpose: :root[data-brand="two"] (0,2,0) has
+   higher specificity than the shared [data-theme="dark"] block (0,1,0), so any
+   token the dark block omitted would incorrectly fall back to the LIGHT
+   brand-two value. Radii are intentionally NOT touched — the rounded-corner
+   tokens (spacing.css) are shared and kept. Fonts: Ubuntu drives --font-ui via
+   next/font (layout.tsx); --font-display is aliased to it here since brand two
+   uses one family for all text (no PT Serif). */
+:root[data-brand="two"] {
+  /* Light theme (primary) */
+  --bg-page: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f4f4f4;
+  --bg-sunken: #f4f4f4;
+  --bg-inverse: #0a0a0a;
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-tertiary: #737373;
+  --text-on-accent: #ffffff;
+  --text-on-inverse: #f5f5f5;
+
+  --border-subtle: #e5e5e5;
+  --border-default: #dcdcdc;
+  --border-strong: #c4c4c4;
+
+  --accent: #0f766e;
+  --accent-hover: #0d6a62;
+  --accent-active: #0b5751;
+  --accent-subtle: #e6f2f1;
+  --accent-subtle-text: #0f766e;
+  --accent-glow: rgba(15, 118, 110, 0.28);
+  /* Inverse-tone surfaces need the opposite theme's accent to stay readable
+     (same rule as warm) — this is dark brand-two's teal. */
+  --accent-on-inverse: #2dd4bf;
+
+  --focus-ring: rgba(15, 118, 110, 0.45);
+  /* Near-shadowless system: neutralise the warm-brown shadow tint to a plain
+     near-black so the (rare, subtle) shadows on shared cards read as brand-two
+     rather than warm. Radii/shadow SHAPES stay shared. */
+  --shadow-color: 0 0% 4%;
+  --overlay-scrim: rgba(10, 10, 10, 0.55);
+
+  /* One family for all text — alias display to the Ubuntu ui variable. */
+  --font-display: var(--font-ui);
+}
+
+:root[data-brand="two"][data-theme="dark"] {
+  --bg-page: #0a0a0a;
+  --bg-surface: #171717;
+  --bg-surface-2: #1f1f1f;
+  --bg-sunken: #121212;
+  --bg-inverse: #f5f5f5;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #a3a3a3;
+  --text-on-accent: #0a0a0a;
+  --text-on-inverse: #0a0a0a;
+
+  --border-subtle: #262626;
+  --border-default: #2e2e2e;
+  --border-strong: #3a3a3a;
+
+  --accent: #2dd4bf;
+  --accent-hover: #40e0cd;
+  --accent-active: #22c4b0;
+  --accent-subtle: #143c38;
+  --accent-subtle-text: #5eead4;
+  --accent-glow: rgba(45, 212, 191, 0.3);
+  --accent-on-inverse: #0f766e;
+
+  --focus-ring: rgba(45, 212, 191, 0.5);
+  --shadow-color: 0 0% 0%;
+  --overlay-scrim: rgba(0, 0, 0, 0.6);
+
+  --font-display: var(--font-ui);
+}

@@ -681,6 +681,10 @@
     "modeInPerson": "На място — {city}",
     "nextAvailableSlotLabel": "Следващ свободен час",
     "nextAvailableSlotEmpty": "Няма предстоящи часове",
+    "summaryReviewsLabel": "Отзиви",
+    "summaryPriceLabel": "Цена",
+    "summaryPriceFrom": "от {price}",
+    "cancellationNote": "Безплатна отмяна според правилата за отмяна.",
     "savePractitioner": "Запази специалист",
     "expandAllReviews": "Виж всички отзиви ({count})",
     "collapseReviews": "Покажи по-малко"

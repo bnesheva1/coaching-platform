@@ -5,6 +5,7 @@ import { BOOKING_WINDOW_DAYS } from "@/lib/availability/generateSlots";
 import { PractitionerProfileView } from "@/components/practitioner-profile/PractitionerProfileView";
 import { getRenameUsage } from "@/lib/rename-limits";
 import { deliveryBadgesVisible } from "@/lib/delivery";
+import { resolveBrand } from "@/lib/brand";
 import styles from "./page.module.css";
 
 // Auth/role guard already ran in the shared layout.tsx. isOwner is
@@ -113,6 +114,7 @@ export default async function ProfilePage() {
           }))}
           averageRating={averageRating}
           showDeliveryBadges={deliveryBadgesVisible()}
+          brand={resolveBrand()}
           gallery={(galleryRows ?? []).map((g) => ({
             id: g.id,
             url: supabase.storage.from("avatars").getPublicUrl(g.storage_path).data.publicUrl,

@@ -7,7 +7,7 @@
 // The brands this codebase can render. A brand is a full visual+locale identity
 // (palette in app/tokens/colors.css, fonts in the layout, locales below),
 // chosen by the BRAND env var. Unset → "warm".
-export const BRANDS = ["warm"] as const;
+export const BRANDS = ["warm", "two"] as const;
 export type Brand = (typeof BRANDS)[number];
 
 export function resolveBrand(): Brand {
@@ -28,6 +28,11 @@ export const BRAND_LOCALES: Record<Brand, Locale[]> = {
   // samodapopitam.bg is Bulgarian-only. English remains in messages/en.json for
   // future brands that list it.
   warm: ["bg"],
+  // Brand two (high-contrast black-and-white / notebook) — bg-only for now, same
+  // as warm, so routing stays unprefixed. The handoff is bilingual; add "en"
+  // here to switch it on (and update the Supabase redirect allowlist), but that
+  // wasn't in scope for this pass.
+  two: ["bg"],
 };
 
 export function brandLocales(): Locale[] {

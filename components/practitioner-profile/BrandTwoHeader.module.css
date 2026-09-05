@@ -1,0 +1,190 @@
+/* Brand-two practitioner-profile header (design handoff 1e): no cover banner,
+   a persistent 2px availability rule down the left of the lead content, a
+   dominant intro statement, and a hairline (no-fill, no-shadow) summary card on
+   the right. Uses shared color/radius tokens so it themes light/dark. */
+
+.headerGrid {
+  display: grid;
+  grid-template-columns: calc(66% - 16px) calc(34% - 16px);
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .headerGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* Lead column sits behind the 2px availability rule (quiet border by default,
+   accent teal when available now). */
+.leadCol {
+  border-left: 2px solid var(--border-default);
+  padding-left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.leadColAvailable {
+  border-left-color: var(--accent);
+}
+
+.availRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.availDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.portrait {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  object-fit: cover;
+  position: relative;
+}
+.portraitFallback {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-2);
+  color: var(--text-tertiary);
+  font: 700 2rem var(--font-ui);
+}
+
+.name {
+  margin: 0;
+  font: 700 2.25rem/1.15 var(--font-ui);
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+.practiceLine {
+  font: 500 1rem var(--font-ui);
+  color: var(--accent);
+}
+
+/* The dominant lead statement — large, replacing the old caption-sized quote. */
+.intro {
+  margin: 0;
+  font: 500 1.5rem/1.4 var(--font-ui);
+  color: var(--text-primary);
+  max-width: 40ch;
+}
+
+.tagRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .tagRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+.tagLabel {
+  width: 88px;
+  flex: none;
+  padding-top: 7px;
+  font: 400 0.6875rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+@media (max-width: 640px) {
+  .tagLabel {
+    width: auto;
+    padding-top: 0;
+  }
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.chip {
+  font: 400 0.8125rem var(--font-ui);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+/* Summary card — hairline border only, no fill, no shadow. */
+.card {
+  position: relative;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2xl);
+  background: transparent;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ratingVal {
+  font: 500 1.125rem var(--font-mono);
+  color: var(--text-primary);
+}
+.heart {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rowLabel {
+  font: 300 0.9375rem var(--font-ui);
+  color: var(--text-secondary);
+}
+.rowValue {
+  font: 500 0.9375rem var(--font-mono);
+  color: var(--text-primary);
+  text-align: right;
+}
+.rowValueMuted {
+  color: var(--text-tertiary);
+}
+.note {
+  font: 400 0.75rem/1.5 var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+/* Edit-mode stack (no summary card, no banner — just the editable pieces). */
+.editStack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
