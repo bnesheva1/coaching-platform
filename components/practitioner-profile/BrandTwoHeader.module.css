@@ -44,19 +44,19 @@
 }
 .portraitWrap {
   position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  width: 80%;
+  max-width: 200px;
+  aspect-ratio: 1;
 }
 .portrait {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   border-radius: 999px;
   object-fit: cover;
 }
 .portraitFallback {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -67,8 +67,8 @@
 }
 .availDot {
   position: absolute;
-  right: 9%;
-  bottom: 9%;
+  right: 7%;
+  bottom: 7%;
   width: 22px;
   height: 22px;
   border-radius: 999px;
