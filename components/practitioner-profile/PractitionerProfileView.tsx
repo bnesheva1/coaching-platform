@@ -708,21 +708,25 @@ export function PractitionerProfileView({
                       windowDays={bookingWindowDays}
                       viewerSavedTimezone={viewerSavedTimezone}
                       headerAction={
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedServiceIds((prev) => {
-                              const next = new Set(prev);
-                              next.delete(service.id);
-                              return next;
-                            })
-                          }
-                          aria-expanded="true"
-                          aria-controls={`slotpicker-${service.id}`}
-                          style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                        >
-                          {t("hideDetails")} ⌃
-                        </button>
+                        // Brand two closes via the card's own "Затвори календара"
+                        // button, so the panel's built-in hide link would duplicate it.
+                        isBrandTwo ? undefined : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedServiceIds((prev) => {
+                                const next = new Set(prev);
+                                next.delete(service.id);
+                                return next;
+                              })
+                            }
+                            aria-expanded="true"
+                            aria-controls={`slotpicker-${service.id}`}
+                            style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                          >
+                            {t("hideDetails")} ⌃
+                          </button>
+                        )
                       }
                     />
                   </div>
