@@ -500,7 +500,7 @@ export function SlotPicker({
 
       {hasAnyContent && !isMobile && (
         <div>
-          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "var(--slot-cal-align, flex-start)" }}>
             <button
               type="button"
               className="focus-ring"

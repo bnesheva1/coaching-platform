@@ -80,10 +80,12 @@ body {
   border-color: var(--text-primary);
 }
 
-/* Brand two: the bookable day cards in the slot picker take an ink border
-   instead of the grey hairline (empty days keep their dashed grey). */
+/* Brand two: in the slot picker, the bookable day cards take an ink border
+   instead of the grey hairline (empty days keep their dashed grey), and the
+   day row stretches so every day box is the same height. */
 [data-brand="two"] {
   --slot-day-border: var(--text-primary);
+  --slot-cal-align: stretch;
 }
 
 /* Generic keyboard-focus ring for interactive elements that aren't a
