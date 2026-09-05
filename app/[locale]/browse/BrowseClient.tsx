@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
 import { BrowseCardTwo } from "@/components/browse/BrowseCardTwo";
-import { Search, ArrowRight, ChevronDown } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import twoStyles from "@/components/browse/BrowseTwo.module.css";
 import { useIsMobile } from "@/lib/useIsMobile";
 
@@ -332,9 +332,6 @@ export function BrowseClient({
   // Continuous-scroll reveal over the already-fetched result set — how
   // many of `orderedResults` are actually rendered right now.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  // Brand two uses numbered pagination (handoff 1g) instead of the scroll
-  // reveal; this page index is only read on the brand-two path.
-  const [pageTwo, setPageTwo] = useState(1);
 
   // Reset to one page whenever the underlying filtered set changes (a
   // new search or a different filter selection) — adjusted during
@@ -346,7 +343,6 @@ export function BrowseClient({
   if (filteredResults !== prevFilteredResults) {
     setPrevFilteredResults(filteredResults);
     setVisibleCount(PAGE_SIZE);
-    setPageTwo(1);
   }
 
   const visibleResults = orderedResults.slice(0, visibleCount);
@@ -385,9 +381,6 @@ export function BrowseClient({
   // pagination). Reuses every piece of state/derived data above; only the
   // presentation differs. ──────────────────────────────────────────────────
   if (isBrandTwo) {
-    const pageCount = Math.max(1, Math.ceil(orderedResults.length / PAGE_SIZE));
-    const currentPage = Math.min(pageTwo, pageCount);
-    const paged = orderedResults.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const toggleFilter = (groupKey: string, optionKey: string) => {
       const toggled = (set: Set<string>) => {
         const next = new Set(set);
@@ -506,7 +499,7 @@ export function BrowseClient({
             ) : (
               <>
                 <div className={twoStyles.cardGrid}>
-                  {paged.map((p) => (
+                  {visibleResults.map((p) => (
                     <BrowseCardTwo
                       key={p.id}
                       practitioner={{
@@ -521,36 +514,9 @@ export function BrowseClient({
                     />
                   ))}
                 </div>
-                {pageCount > 1 && (
-                  <div className={twoStyles.pagination}>
-                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        className={`${twoStyles.pageSquare} ${n === currentPage ? twoStyles.pageSquareOn : ""}`}
-                        aria-current={n === currentPage ? "page" : undefined}
-                        onClick={() => {
-                          setPageTwo(n);
-                          window.scrollTo({ top: 0 });
-                        }}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className={twoStyles.pageNext}
-                      disabled={currentPage >= pageCount}
-                      onClick={() => {
-                        setPageTwo((p) => Math.min(p + 1, pageCount));
-                        window.scrollTo({ top: 0 });
-                      }}
-                    >
-                      {t("browseTwoNext")}
-                      <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
+                {/* Infinite-scroll reveal (same as brand one): the observer on
+                    this sentinel grows visibleCount as it nears the viewport. */}
+                {hasMore && <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />}
               </>
             )}
           </div>

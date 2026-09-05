@@ -250,50 +250,6 @@
   }
 }
 
-/* Pagination */
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 28px;
-  flex-wrap: wrap;
-}
-.pageSquare {
-  width: 38px;
-  height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  font: 400 0.875rem var(--font-mono);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.pageSquareOn {
-  background: var(--text-primary);
-  color: var(--bg-page);
-  border-color: var(--text-primary);
-}
-.pageNext {
-  height: 38px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  font: 500 0.875rem var(--font-ui);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-.pageNext:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 /* Result card */
 /* The whole card is the profile link (1g browse only). Border matches the card
    fill by default (invisible) so hover can swap it to black with no layout
