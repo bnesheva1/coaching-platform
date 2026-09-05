@@ -74,10 +74,17 @@
 
 /* Filter sidebar */
 .sidebar {
-  padding: 20px;
+  /* No top padding on desktop, so "Филтри" aligns with the results header
+     across the row; restored on mobile where the sidebar stacks under search. */
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+@media (max-width: 900px) {
+  .sidebar {
+    padding-top: 20px;
+  }
 }
 .sidebarTitle {
   margin: 0;
