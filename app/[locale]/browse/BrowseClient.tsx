@@ -423,7 +423,7 @@ export function BrowseClient({
               type="search"
               value={searchText}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={t("searchPlaceholder")}
+              placeholder={t("browseTwoSearchPlaceholder")}
               aria-label={t("searchAriaLabel")}
             />
           </div>
