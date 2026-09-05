@@ -432,6 +432,11 @@ export function BrowseClient({
           </button>
         </form>
         <div className={twoStyles.body}>
+          {isMobile ? (
+            // Mobile matches brand one: the compact "Filters" button + bottom
+            // sheet (BrowseFilters), not the always-open desktop sidebar.
+            <BrowseFilters groups={filterGroups} onApply={handleFiltersApply} onClear={clearAll} computeCount={computeCountFor} />
+          ) : (
           <aside className={twoStyles.sidebar}>
             <h2 className={twoStyles.sidebarTitle}>{t("browseTwoFiltersTitle")}</h2>
             {filterGroups.map(
@@ -463,6 +468,7 @@ export function BrowseClient({
               {t("clearFilters")}
             </button>
           </aside>
+          )}
 
           <div style={{ minWidth: 0 }}>
             <div className={twoStyles.resultsHeader}>

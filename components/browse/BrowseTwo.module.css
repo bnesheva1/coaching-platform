@@ -66,9 +66,10 @@
   gap: 0;
   align-items: start;
 }
-@media (max-width: 900px) {
+@media (max-width: 860px) {
   .body {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
 
@@ -81,11 +82,8 @@
   flex-direction: column;
   gap: 20px;
 }
-@media (max-width: 900px) {
-  .sidebar {
-    padding-top: 20px;
-  }
-}
+/* The desktop sidebar is only rendered above the mobile breakpoint (mobile uses
+   the BrowseFilters bottom sheet instead), so it needs no mobile override. */
 .sidebarTitle {
   margin: 0;
   /* Match the results header row height (driven by the sort control) and centre
@@ -204,6 +202,13 @@
   /* Take only the free space left of the sort control and wrap the pills
      internally — flex-basis 0 means this never pushes the sort onto a new row. */
   flex: 1 1 0;
+}
+@media (max-width: 860px) {
+  /* Mobile matches brand one: content-width left group, so the header wraps
+     naturally (the sort can drop to the next line) instead of staying pinned. */
+  .resultsHeaderLeft {
+    flex: 0 1 auto;
+  }
 }
 .activeChip {
   display: inline-flex;
