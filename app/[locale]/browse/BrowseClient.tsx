@@ -479,6 +479,25 @@ export function BrowseClient({
               </label>
             </div>
 
+            {activeChips.length > 0 && (
+              <div className={twoStyles.activeChips}>
+                {activeChips.map(({ group, key, label }) => (
+                  <button
+                    key={`${group}:${key}`}
+                    type="button"
+                    className={twoStyles.activeChip}
+                    aria-label={label}
+                    onClick={() => toggleFilter(group, key)}
+                  >
+                    {label}
+                    <span aria-hidden="true" className={twoStyles.activeChipX}>
+                      ✕
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {orderedResults.length === 0 ? (
               <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("emptyStateBody")}</p>
             ) : (
