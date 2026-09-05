@@ -785,8 +785,7 @@ export function PractitionerProfileView({
                           </div>
                           {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
                         </div>
-                        {/* Always rendered (min-height reserves 2 lines) so every card is the same height. */}
-                        <span className={styles.svc2Desc}>{service.description}</span>
+                        {service.description && <span className={styles.svc2Desc}>{service.description}</span>}
                         {!canBookNow && (
                           <button
                             type="button"
