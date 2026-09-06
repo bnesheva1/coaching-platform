@@ -29,6 +29,11 @@
   color: var(--bg-page);
   font: 500 1rem var(--font-ui);
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.searchButton:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 
 /* Mobile: stack the field + button vertically (same 12px gap). flex:none on the

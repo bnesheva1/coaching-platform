@@ -58,7 +58,7 @@
 .portraitWrap {
   position: relative;
   width: 80%;
-  max-width: 200px;
+  max-width: 220px;
   aspect-ratio: 1;
 }
 .portrait {
@@ -147,6 +147,11 @@
   color: var(--bg-page);
   font: 500 1rem var(--font-ui);
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.cardCta:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 
 /* ── Right: content column ──────────────────────────────────────────────── */
