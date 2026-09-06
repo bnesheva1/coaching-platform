@@ -147,7 +147,9 @@ export async function updateProfileText(
     practitionerPayload.bio = bio;
   }
   if (formData.has("quote")) {
-    const quote = (formData.get("quote") as string).trim();
+    // Single-line pull-quote: collapse any pasted line breaks / runs of
+    // whitespace to single spaces, then trim, before the length check.
+    const quote = (formData.get("quote") as string).replace(/\s+/g, " ").trim();
     if (quote.length > MAX_QUOTE_LENGTH) {
       return { error: t("quoteTooLong", { max: MAX_QUOTE_LENGTH }), values: submittedValues };
     }

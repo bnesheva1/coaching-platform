@@ -129,6 +129,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
       <div className={styles.contentCol}>
         {props.topics.length > 0 && (
           <div className={styles.topicPills}>
+            <span className={styles.topicPillsLabel}>{t("topicsLabel")}</span>
             {props.topics.map((key) => (
               <span key={key} className={styles.topicPill}>
                 {topicLabel(key)}

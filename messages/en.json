@@ -541,6 +541,7 @@
     "topicsHint": "Choose up to {max} topics that best describe your work ({count}/{max}).",
     "topicsMaxExceeded": "You can select up to {max} topics.",
     "seeAvailability": "See availability",
+    "topicsLabel": "Topics:",
     "bookSlotCta": "Book",
     "closeCalendar": "Close calendar",
     "hideDetails": "Hide available times",

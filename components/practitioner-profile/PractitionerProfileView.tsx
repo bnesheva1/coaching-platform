@@ -761,15 +761,13 @@ export function PractitionerProfileView({
                   };
                   return (
                     <div key={service.id} className={styles.svc2Card}>
-                      <div className={styles.svc2Grid}>
+                      <div className={`${styles.svc2Grid}${service.imageUrl ? "" : ` ${styles.svc2GridNoImage}`}`}>
                         <span className={styles.svc2Title}>{service.name}</span>
-                        {service.imageUrl ? (
+                        {service.imageUrl && (
                           <div className={styles.svc2Image}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={service.imageUrl} alt="" />
                           </div>
-                        ) : (
-                          <div className={`${styles.svc2Image} ${styles.svc2ImagePlaceholder}`} aria-hidden="true" />
                         )}
                         <div className={styles.svc2Stats}>
                           <div className={styles.svc2Stat}>

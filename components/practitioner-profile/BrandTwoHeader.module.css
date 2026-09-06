@@ -159,7 +159,12 @@
 .topicPills {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
+}
+.topicPillsLabel {
+  font: 500 0.9375rem var(--font-ui);
+  color: var(--text-secondary);
 }
 .topicPill {
   padding: 8px 16px;

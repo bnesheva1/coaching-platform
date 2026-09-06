@@ -199,6 +199,14 @@
     "image stats  button"
     "image desc   button";
 }
+/* No image → no image column at all (no placeholder). */
+.svc2GridNoImage {
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "title button"
+    "stats button"
+    "desc  button";
+}
 .svc2Image {
   grid-area: image;
   width: 100px;
@@ -210,16 +218,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-.svc2ImagePlaceholder {
-  background-color: var(--bg-surface-2);
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 8px,
-    var(--border-subtle) 8px,
-    var(--border-subtle) 9px
-  );
 }
 .svc2Title {
   grid-area: title;
@@ -299,6 +297,14 @@
       "desc   desc"
       "button button";
     align-items: center;
+  }
+  .svc2GridNoImage {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "stats"
+      "desc"
+      "button";
   }
   .svc2BookBtn {
     width: 100%;
