@@ -121,6 +121,7 @@ export default async function LocaleLayout({
   // (unlike theme) — no hydration concern.
   const brand = resolveBrand();
   const fonts = BRAND_FONTS[brand];
+  const tHeader = await getTranslations("Header");
 
   return (
     <html
@@ -144,6 +145,12 @@ export default async function LocaleLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
           <NextIntlClientProvider>
+            {/* First focusable element on every page: lets a keyboard user jump
+                past the header/nav straight to the page's <main> (id below).
+                Visually hidden until focused (see .skip-link in globals.css). */}
+            <a href="#main-content" className="skip-link">
+              {tHeader("skipToContent")}
+            </a>
             {/* Mounted once, here — not per-page — so every route gets
                 the same header by construction; no page can forget it.
                 Replaces both the old fixed-corner LanguageSwitcher and
@@ -152,8 +159,12 @@ export default async function LocaleLayout({
             <SiteHeader />
             {/* flex: 1 (body is already flex/column, see className above)
                 pins SiteFooter to the bottom of the viewport on short
-                pages instead of it floating up right under the content. */}
-            <div style={{ flex: 1 }}>{children}</div>
+                pages instead of it floating up right under the content.
+                id/tabIndex make it the skip-link target (each page renders its
+                own <main> inside). */}
+            <div id="main-content" tabIndex={-1} style={{ flex: 1 }}>
+              {children}
+            </div>
             <SiteFooter />
             {consent === null && <CookieConsentBanner />}
             <SessionCallPrompt initialSession={callSession} />

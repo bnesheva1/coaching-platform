@@ -102,7 +102,14 @@ export async function Hero() {
         <h1 style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>{t("heroSubhead")}</h1>
 
         <form action="/browse" method="get" style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-          <Input search name="q" placeholder={t("heroSearchPlaceholder")} helperText={t("heroSearchHelper")} />
+          <Input
+            search
+            name="q"
+            placeholder={t("heroSearchPlaceholder")}
+            helperText={t("heroSearchHelper")}
+            searchLabel={t("heroSearchLabel")}
+            searchButtonLabel={t("heroSearchButton")}
+          />
         </form>
 
         <HeroTopicChips topics={topics} />

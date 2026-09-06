@@ -15,6 +15,7 @@ import { EditableImage } from "./EditableImage";
 import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
 import { GallerySection, type GalleryImage } from "./GallerySection";
+import { initialsFromName } from "@/lib/initials";
 import { VideosSection, type ProfileVideo } from "./VideosSection";
 import { BrandTwoHeader } from "./BrandTwoHeader";
 import type { Brand } from "@/lib/brand-config";
@@ -457,15 +458,15 @@ export function PractitionerProfileView({
                       borderRadius: "50%",
                       border: "6px solid var(--bg-page)",
                       boxShadow: "var(--shadow-md)",
-                      background: "var(--accent-subtle)",
-                      color: "var(--accent-subtle-text)",
+                      background: "var(--bg-surface-2)",
+                      color: "var(--text-tertiary)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       font: "var(--text-heading-lg)",
                     }}
                   >
-                    {displayName.charAt(0).toUpperCase()}
+                    {initialsFromName(displayName)}
                   </div>
                 )}
                 {availableNow && !isEditing && (

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useClickOutsideAndEscape } from "@/lib/useClickOutsideAndEscape";
 import { Button } from "./Button";
@@ -13,6 +13,9 @@ export type AuthLink = NavLink & { variant: "ghost" | "primary" };
 
 export type NavBarProps = {
   wordmark: string;
+  // aria-label for the header <nav> landmark, so a screen-reader landmark list can
+  // distinguish it from the footer nav and the dashboard-sidebar nav.
+  navLabel: string;
   browseLink: NavLink;
   // "Информация"/"Info" — the desktop dropdown trigger label. Its
   // contents (infoLinks) are the same 5 marketing pages regardless of
@@ -78,7 +81,6 @@ function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
       <button
         type="button"
         className="focus-ring nav-menu-trigger"
-        aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         style={{
@@ -100,7 +102,6 @@ function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
       </button>
       {open && (
         <div
-          role="menu"
           style={{
             position: "absolute",
             top: "calc(100% + var(--space-2))",
@@ -115,7 +116,7 @@ function InfoDropdown({ label, links }: { label: string; links: NavLink[] }) {
           }}
         >
           {links.map((l) => (
-            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
+            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
               {l.label}
             </Link>
           ))}
@@ -149,7 +150,6 @@ function AccountMenu({
       <button
         type="button"
         className="focus-ring nav-menu-trigger"
-        aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         style={{
@@ -171,7 +171,6 @@ function AccountMenu({
       </button>
       {open && (
         <div
-          role="menu"
           style={{
             position: "absolute",
             top: "calc(100% + var(--space-2))",
@@ -186,7 +185,7 @@ function AccountMenu({
           }}
         >
           {links.map((l) => (
-            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
+            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="nav-menu-item" style={dropdownItemStyle}>
               {l.label}
             </Link>
           ))}
@@ -197,7 +196,6 @@ function AccountMenu({
           <form action={signOut.action} style={{ margin: 0, marginTop: "var(--space-1)", paddingTop: "var(--space-1)", borderTop: "1px solid var(--border-subtle)" }}>
             <button
               type="submit"
-              role="menuitem"
               className="nav-menu-item"
               style={{ ...dropdownItemStyle, width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer" }}
             >
@@ -217,6 +215,7 @@ function AccountMenu({
 // doesn't turn the caller into a Client Component.
 export function NavBar({
   wordmark,
+  navLabel,
   browseLink,
   infoDropdownLabel,
   infoLinks,
@@ -232,12 +231,16 @@ export function NavBar({
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
+  // Marks the active top-level destination (matches what the sidebars already do).
+  const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   useClickOutsideAndEscape(navRef, isMobile && menuOpen, () => setMenuOpen(false));
 
   return (
     <nav
       ref={navRef}
+      aria-label={navLabel}
       style={{
         position: "relative",
         padding: "20px 0",
@@ -263,11 +266,16 @@ export function NavBar({
                   browse, then the info dropdown. */}
               <div style={{ display: "flex", alignItems: "center", gap: 28, color: "var(--text-secondary)", marginLeft: 40 }}>
                 {dashboardLink && (
-                  <Link href={dashboardLink.href} className="nav-menu-trigger" style={{ ...navLinkStyle, color: "var(--text-primary)" }}>
+                  <Link
+                    href={dashboardLink.href}
+                    aria-current={isCurrent(dashboardLink.href) ? "page" : undefined}
+                    className="nav-menu-trigger"
+                    style={{ ...navLinkStyle, color: "var(--text-primary)" }}
+                  >
                     {dashboardLink.label}
                   </Link>
                 )}
-                <Link href={browseLink.href} style={navLinkStyle}>
+                <Link href={browseLink.href} aria-current={isCurrent(browseLink.href) ? "page" : undefined} style={navLinkStyle}>
                   {browseLink.label}
                 </Link>
                 <InfoDropdown label={infoDropdownLabel} links={infoLinks} />

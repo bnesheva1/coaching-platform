@@ -1,6 +1,6 @@
 "use client";
 
-import { useImperativeHandle, useRef } from "react";
+import { useId, useImperativeHandle, useRef } from "react";
 import { DialogFormActions } from "@/components/ui/DialogFormActions";
 
 export type ConfirmDialogHandle = { open: () => void };
@@ -42,6 +42,7 @@ export function ConfirmDialog({
   onCancel?: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useImperativeHandle(ref, () => ({
     open: () => dialogRef.current?.showModal(),
@@ -66,6 +67,7 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby={title ? titleId : undefined}
       onClick={(e) => {
         // A click landing directly on the <dialog> element itself
         // (never a descendant, since the form fills it) means the
@@ -83,7 +85,7 @@ export function ConfirmDialog({
       }}
     >
       <form action={handleAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-        {title && <h2 style={{ margin: 0, font: "var(--text-heading-sm)" }}>{title}</h2>}
+        {title && <h2 id={titleId} style={{ margin: 0, font: "var(--text-heading-sm)" }}>{title}</h2>}
         {message.split("\n\n").map((paragraph, i) => (
           <p key={i} style={{ margin: 0, font: "var(--text-body-md)" }}>
             {paragraph}

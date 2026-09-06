@@ -51,7 +51,7 @@ export function DashboardSidebar({ pulse, isBrandTwo = false }: { pulse: Dashboa
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "var(--space-6) var(--space-4)" }}>
-      <nav style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: 1 }}>
+      <nav aria-label={tHeader("navDashboardLabel")} style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: 1 }}>
         {(isBrandTwo ? NAV_ITEMS_TWO : NAV_ITEMS).map(({ href, key, Icon }) => (
           <NavItem
             key={href}

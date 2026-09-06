@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { initialsFromName } from "@/lib/initials";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CancelSessionDialog } from "./CancelSessionDialog";
@@ -209,7 +210,7 @@ export function CounterpartAvatar({
   size?: number;
 }) {
   const tA = useTranslations("A11y");
-  const initial = (name || "?").charAt(0).toUpperCase();
+  const initial = initialsFromName(name);
   return avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -231,12 +232,11 @@ export function CounterpartAvatar({
         height: size,
         borderRadius: "50%",
         flexShrink: 0,
-        background: "linear-gradient(160deg, var(--bg-sunken), var(--bg-surface-2))",
+        background: "var(--bg-surface-2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "var(--accent-subtle-text)",
-        opacity: 0.7,
+        color: "var(--text-tertiary)",
         font: `600 ${size * 0.42}px var(--font-display)`,
       }}
     >

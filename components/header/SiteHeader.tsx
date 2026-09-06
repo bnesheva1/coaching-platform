@@ -114,6 +114,7 @@ export async function SiteHeader() {
   return (
     <NavBar
       wordmark={siteName}
+      navLabel={tHeader("navPrimaryLabel")}
       browseLink={browseLink}
       infoDropdownLabel={infoDropdownLabel}
       infoLinks={infoLinks}

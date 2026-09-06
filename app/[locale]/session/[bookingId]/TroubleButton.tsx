@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import styles from "./session.module.css";
 
 // The "having trouble connecting?" affordance. Client-only — the reveal
@@ -15,6 +16,18 @@ export function TroubleButton({ bookingId }: { bookingId: string }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "revealed" | "unavailable">("idle");
   const [contact, setContact] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  function close() {
+    setOpen(false);
+    setState("idle");
+    setContact(null);
+  }
+
+  // Focus trap + Escape-to-close + focus restore for this hand-rolled dialog. A
+  // native <dialog> would give these for free but would restyle the panel; this
+  // keeps the existing visual exactly and just adds the behaviour.
+  useFocusTrap(dialogRef, open, close);
 
   async function reveal() {
     setState("loading");
@@ -40,14 +53,8 @@ export function TroubleButton({ bookingId }: { bookingId: string }) {
     );
   }
 
-  function close() {
-    setOpen(false);
-    setState("idle");
-    setContact(null);
-  }
-
   return (
-    <div className={styles.troubleModal} role="dialog" aria-modal="true">
+    <div ref={dialogRef} tabIndex={-1} className={styles.troubleModal} role="dialog" aria-modal="true" aria-label={t("troubleButton")}>
       <div className={styles.troublePanel}>
         {state === "idle" && (
           <>

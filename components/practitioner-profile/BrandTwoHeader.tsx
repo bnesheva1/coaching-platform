@@ -11,6 +11,7 @@ import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import domainsData from "@/data/domains.json";
+import { initialsFromName } from "@/lib/initials";
 import styles from "./BrandTwoHeader.module.css";
 
 export type BrandTwoHeaderProps = {
@@ -69,7 +70,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
     // eslint-disable-next-line @next/next/no-img-element
     <img className={styles.portrait} src={props.avatarUrl} alt={tA("avatarAlt", { name: props.displayName })} />
   ) : (
-    <div className={styles.portraitFallback}>{props.displayName.charAt(0).toUpperCase()}</div>
+    <div className={styles.portraitFallback}>{initialsFromName(props.displayName)}</div>
   );
 
   // Edit mode: no card — just the editable pieces stacked.

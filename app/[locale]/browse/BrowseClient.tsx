@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
+import { BrowseFilters, type FilterOption, type FilterGroup, type DomainGroup } from "@/components/browse/BrowseFilters";
+import domainsData from "@/data/domains.json";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
 import { BrowseCardTwo } from "@/components/browse/BrowseCardTwo";
 import { Search, ChevronDown } from "lucide-react";
@@ -128,6 +129,7 @@ export function BrowseClient({
   const isBrandTwo = brand === "two";
   const t = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
@@ -250,17 +252,6 @@ export function BrowseClient({
     return map;
   }, [results, topicOptions, selectedModalities, selectedDeliveryTypes]);
 
-  const deliveryTypeCounts = useMemo(() => {
-    const otherFiltered = results.filter(
-      (r) => matchesGroup(r.specialtyKeys, selectedModalities) && matchesGroup(r.topicKeys, selectedTopics),
-    );
-    const map = new Map<string, number>();
-    for (const option of deliveryTypeOptions) {
-      map.set(option.key, otherFiltered.filter((r) => r.deliveryTypeKeys.includes(option.key)).length);
-    }
-    return map;
-  }, [results, deliveryTypeOptions, selectedModalities, selectedTopics]);
-
   const specialtyFilterOptions: FilterOption[] = specialtyOptions.map((o) => ({
     key: o.key,
     label: o.label,
@@ -271,16 +262,28 @@ export function BrowseClient({
     label: o.label,
     count: topicCounts.get(o.key) ?? 0,
   }));
-  const deliveryTypeFilterOptions: FilterOption[] = deliveryTypeOptions.map((o) => ({
-    key: o.key,
-    label: o.label,
-    count: deliveryTypeCounts.get(o.key) ?? 0,
-  }));
+  // Specialty options grouped under their active domain (data/domains.json) for the
+  // domain-tree filter; `ungrouped` catches any specialty not in an active domain
+  // so none is ever dropped from the filter.
+  const specialtyOptionByKey = new Map(specialtyFilterOptions.map((o) => [o.key, o]));
+  const specialtyDomains: DomainGroup[] = domainsData
+    .filter((d) => d.active)
+    .map((d) => ({
+      key: d.key,
+      label: locale === "en" ? d.en : d.bg,
+      specialties: d.specialties
+        .map((k) => specialtyOptionByKey.get(k))
+        .filter((o): o is FilterOption => Boolean(o)),
+    }))
+    .filter((d) => d.specialties.length > 0);
+  const groupedSpecialtyKeys = new Set(specialtyDomains.flatMap((d) => d.specialties.map((s) => s.key)));
+  const ungroupedSpecialties = specialtyFilterOptions.filter((o) => !groupedSpecialtyKeys.has(o.key));
 
+  // Specialty group carries no label (the domain tree supplies its own headings);
+  // the delivery-type group is gone (online is always-on, so the toggle was inert).
   const filterGroups: FilterGroup[] = [
-    { key: SPECIALTY_GROUP, groupLabel: t("modalityGroupLabel"), options: specialtyFilterOptions, selected: selectedModalities },
+    { key: SPECIALTY_GROUP, groupLabel: "", options: specialtyFilterOptions, selected: selectedModalities },
     { key: TOPIC_GROUP, groupLabel: t("topicGroupLabel"), options: topicFilterOptions, selected: selectedTopics },
-    { key: DELIVERY_TYPE_GROUP, groupLabel: t("deliveryTypeGroupLabel"), options: deliveryTypeFilterOptions, selected: selectedDeliveryTypes },
   ];
 
   function computeCountFor(draft: Record<string, Set<string>>): number {
@@ -392,6 +395,14 @@ export function BrowseClient({
       else if (groupKey === TOPIC_GROUP) applyFilters(selectedModalities, toggled(selectedTopics), selectedDeliveryTypes);
       else applyFilters(selectedModalities, selectedTopics, toggled(selectedDeliveryTypes));
     };
+    // Toggle a whole domain's specialties at once: clear all if all are on, else select all.
+    const toggleDomainTwo = (keys: string[]) => {
+      const allOn = keys.length > 0 && keys.every((k) => selectedModalities.has(k));
+      const next = new Set(selectedModalities);
+      if (allOn) keys.forEach((k) => next.delete(k));
+      else keys.forEach((k) => next.add(k));
+      applyFilters(next, selectedTopics, selectedDeliveryTypes);
+    };
     return (
       <>
         <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{t("title")}</h1>
@@ -428,35 +439,95 @@ export function BrowseClient({
           {isMobile ? (
             // Mobile matches brand one: the compact "Filters" button + bottom
             // sheet (BrowseFilters), not the always-open desktop sidebar.
-            <BrowseFilters groups={filterGroups} onApply={handleFiltersApply} onClear={clearAll} computeCount={computeCountFor} />
+            <BrowseFilters groups={filterGroups} specialtyGroupKey={SPECIALTY_GROUP} specialtyDomains={specialtyDomains} ungroupedSpecialties={ungroupedSpecialties} onApply={handleFiltersApply} onClear={clearAll} computeCount={computeCountFor} />
           ) : (
           <aside className={twoStyles.sidebar}>
             <h2 className={twoStyles.sidebarTitle}>{t("browseTwoFiltersTitle")}</h2>
-            {filterGroups.map(
-              (g) =>
-                g.options.length > 0 && (
-                  <div key={g.key} className={twoStyles.group}>
-                    <p className={twoStyles.groupLabel}>{g.groupLabel}</p>
-                    {g.options.map((o) => {
-                      const on = g.selected.has(o.key);
+            {filterGroups.map((g) => {
+              if (g.options.length === 0) return null;
+              // Specialty group → domain tree (all-caps domain parent + specialty
+              // children); every other group → flat list with its label.
+              if (g.key === SPECIALTY_GROUP) {
+                return (
+                  <div key={g.key} className={twoStyles.group} style={{ gap: "var(--space-4)" }}>
+                    {specialtyDomains.map((d) => {
+                      const keys = d.specialties.map((s) => s.key);
+                      const allOn = keys.length > 0 && keys.every((k) => selectedModalities.has(k));
+                      const someOn = keys.some((k) => selectedModalities.has(k));
                       return (
-                        <label key={o.key} className={twoStyles.checkRow}>
-                          <span className={`${twoStyles.checkbox} ${on ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
-                            {on ? "✓" : ""}
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={on}
-                            onChange={() => toggleFilter(g.key, o.key)}
-                            style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
-                          />
-                          {o.label} <span className={twoStyles.count}>({o.count})</span>
-                        </label>
+                        <div
+                          key={d.key}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "var(--space-3)",
+                            paddingBottom: "var(--space-4)",
+                            borderBottom: "1px solid var(--border-subtle)",
+                          }}
+                        >
+                          <label className={twoStyles.checkRow} style={{ alignItems: "flex-start", textTransform: "uppercase", fontWeight: 700, letterSpacing: "normal", fontSize: "0.88rem" }}>
+                            <span className={`${twoStyles.checkbox} ${allOn || someOn ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
+                              {allOn ? "✓" : someOn ? "–" : ""}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={allOn}
+                              ref={(el) => {
+                                if (el) el.indeterminate = someOn && !allOn;
+                              }}
+                              onChange={() => toggleDomainTwo(keys)}
+                              style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                            />
+                            {d.label}
+                          </label>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+                            {d.specialties.map((o) => {
+                              const on = selectedModalities.has(o.key);
+                              return (
+                                <label key={o.key} className={twoStyles.checkRow} style={{ alignItems: "flex-start" }}>
+                                  <span className={`${twoStyles.checkbox} ${on ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
+                                    {on ? "✓" : ""}
+                                  </span>
+                                  <input
+                                    type="checkbox"
+                                    checked={on}
+                                    onChange={() => toggleFilter(SPECIALTY_GROUP, o.key)}
+                                    style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                                  />
+                                  {o.label} <span className={twoStyles.count}>({o.count})</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
-                ),
-            )}
+                );
+              }
+              return (
+                <div key={g.key} className={twoStyles.group}>
+                  <p className={twoStyles.groupLabel}>{g.groupLabel}</p>
+                  {g.options.map((o) => {
+                    const on = g.selected.has(o.key);
+                    return (
+                      <label key={o.key} className={twoStyles.checkRow}>
+                        <span className={`${twoStyles.checkbox} ${on ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
+                          {on ? "✓" : ""}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => toggleFilter(g.key, o.key)}
+                          style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                        />
+                        {o.label} <span className={twoStyles.count}>({o.count})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              );
+            })}
             <button type="button" className={twoStyles.clearLink} onClick={clearAll}>
               {t("clearFilters")}
             </button>
@@ -579,6 +650,9 @@ export function BrowseClient({
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "var(--space-6)", alignItems: isMobile ? "stretch" : "flex-start" }}>
         <BrowseFilters
           groups={filterGroups}
+          specialtyGroupKey={SPECIALTY_GROUP}
+          specialtyDomains={specialtyDomains}
+          ungroupedSpecialties={ungroupedSpecialties}
           onApply={handleFiltersApply}
           onClear={clearAll}
           computeCount={computeCountFor}

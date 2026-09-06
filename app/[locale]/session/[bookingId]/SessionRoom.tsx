@@ -125,7 +125,7 @@ export function SessionRoom({
 
   if (phase === "in_room" && conn && choice) {
     return (
-      <div className={styles.overlay}>
+      <main className={styles.overlay}>
         <VideoStage
           token={conn.token}
           url={conn.url}
@@ -142,13 +142,13 @@ export function SessionRoom({
           }}
           trouble={trouble}
         />
-      </div>
+      </main>
     );
   }
 
   if (phase === "disconnected") {
     return (
-      <div className={styles.overlay}>
+      <main className={styles.overlay}>
         <div className={styles.center}>
           <div className={styles.panel}>
             <Unplug size={32} aria-hidden />
@@ -165,21 +165,21 @@ export function SessionRoom({
             {trouble}
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (phase === "device_check") {
     return (
-      <div className={styles.overlay}>
+      <main className={styles.overlay}>
         <DeviceCheck onJoin={handleJoin} trouble={trouble} errorMessage={joinError} />
-      </div>
+      </main>
     );
   }
 
   // phase === "window"
   return (
-    <div className={styles.overlay}>
+    <main className={styles.overlay}>
       {/* A quiet way out of the otherwise header-less overlay — only on the
           waiting screen; the ended/unavailable states carry their own
           "back to dashboard" button. */}
@@ -240,6 +240,6 @@ export function SessionRoom({
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
