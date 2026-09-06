@@ -14,6 +14,7 @@ import { AvailabilityWidget } from "@/components/immediate/AvailabilityWidget";
 import { getPractitionerStats } from "@/lib/practitioners/stats";
 import { PractitionerStatsSummary } from "@/components/practitioners/PractitionerStats";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
+import { resolveBrand } from "@/lib/brand";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -327,6 +328,7 @@ export default async function PractitionerHomePage() {
   const homeStats = await getPractitionerStats(userId);
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
+  const isBrandTwo = resolveBrand() === "two";
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
@@ -387,6 +389,7 @@ export default async function PractitionerHomePage() {
         {nextBooking && (
           <div style={{ marginBottom: "var(--space-6)" }}>
             <Card
+              emphasized={isBrandTwo}
               eyebrow={
                 <NextSessionWhen
                   startUtc={nextBooking.startUtc}
@@ -438,7 +441,7 @@ export default async function PractitionerHomePage() {
         </div>
 
         <section style={{ marginTop: "var(--space-10)" }}>
-          <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{tStats("homeTitle")}</h2>
+          <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-4)" }}>{tStats("homeTitle")}</h2>
           <PractitionerStatsSummary stats={homeStats} />
         </section>
       </div>

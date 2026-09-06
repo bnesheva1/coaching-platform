@@ -14,9 +14,12 @@ export type CardProps = {
   description?: ReactNode;
   footer?: ReactNode;
   tone?: CardTone;
+  // Opt-in ink border (brand-two dashboards use it for the next-session card).
+  // Default keeps the existing hairline, so every other caller is unchanged.
+  emphasized?: boolean;
 };
 
-export function Card({ eyebrow, title, description, footer, tone = "surface" }: CardProps) {
+export function Card({ eyebrow, title, description, footer, tone = "surface", emphasized = false }: CardProps) {
   const bg = tone === "inverse" ? "var(--bg-inverse)" : "var(--bg-surface)";
   const color = tone === "inverse" ? "var(--text-on-inverse)" : "var(--text-primary)";
   return (
@@ -24,7 +27,7 @@ export function Card({ eyebrow, title, description, footer, tone = "surface" }: 
       style={{
         background: bg,
         color,
-        border: "1px solid var(--border-subtle)",
+        border: emphasized ? "1px solid var(--text-primary)" : "1px solid var(--border-subtle)",
         borderRadius: "var(--radius-xl)",
         padding: "var(--space-8)",
         boxShadow: "var(--shadow-md)",
