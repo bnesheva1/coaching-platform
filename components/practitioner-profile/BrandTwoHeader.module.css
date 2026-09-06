@@ -159,6 +159,16 @@
   gap: 22px;
   min-width: 0;
 }
+/* Accent-filled pill above the headline — the practitioner's single top-level
+   domain. flex-start so it hugs its label instead of stretching the column width. */
+.domainPill {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: 500 0.875rem var(--font-ui);
+}
 .topicPills {
   display: flex;
   flex-wrap: wrap;

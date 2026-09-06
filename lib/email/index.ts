@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { BookingConfirmationEmail } from "./templates/BookingConfirmationEmail";
 import { CancellationNoticeEmail } from "./templates/CancellationNoticeEmail";
 import { ContactMessageEmail } from "./templates/ContactMessageEmail";
+import { TaxonomySuggestionEmail } from "./templates/TaxonomySuggestionEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
 import { BulkCancellationSummaryEmail } from "./templates/BulkCancellationSummaryEmail";
@@ -681,6 +682,44 @@ export async function sendContactMessage({
   });
   if (!result.success) {
     console.error("sendContactMessage: email failed", { error: result.error });
+  }
+  return result;
+}
+
+// A practitioner asked us to add a domain/specialty that isn't in the taxonomy
+// yet. Same shape as sendContactMessage — the send IS the point of the caller's
+// action, `to` is the fixed CONTACT_SUPPORT_EMAIL read server-side (never derived
+// from input), and it returns the real result so the action can surface a failure.
+// One email carries both requested fields; the caller passes "" for whichever the
+// practitioner left blank, and the template renders only the ones present. All
+// text arrives pre-sanitised (newlines/control chars stripped, length-capped) by
+// the action, so nothing here can inject a header or markup.
+export async function sendTaxonomySuggestion({
+  practitionerName,
+  profileUrl,
+  requestedDomain,
+  requestedSpecialty,
+  submittedAt,
+}: {
+  practitionerName: string;
+  profileUrl: string;
+  requestedDomain: string;
+  requestedSpecialty: string;
+  submittedAt: string;
+}): Promise<SendEmailResult> {
+  const supportEmail = process.env.CONTACT_SUPPORT_EMAIL;
+  if (!supportEmail) {
+    console.error("sendTaxonomySuggestion: CONTACT_SUPPORT_EMAIL is not configured");
+    return { success: false, error: "CONTACT_SUPPORT_EMAIL is not configured" };
+  }
+
+  const result = await provider.send({
+    to: supportEmail,
+    subject: `Taxonomy suggestion: ${practitionerName}`,
+    react: TaxonomySuggestionEmail({ practitionerName, profileUrl, requestedDomain, requestedSpecialty, submittedAt }),
+  });
+  if (!result.success) {
+    console.error("sendTaxonomySuggestion: email failed", { error: result.error });
   }
   return result;
 }

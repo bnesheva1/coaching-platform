@@ -6,7 +6,20 @@
 
 .section {
   background: var(--bg-page);
-  padding: 88px 0 96px;
+}
+/* Hero wrapper (copy + search) and the discover section below it. Both sit on the
+   page background (white); the split only carries the section padding so the two
+   halves keep the original 88 / 44 / 96 rhythm. */
+.heroBand {
+  background: var(--bg-page);
+  /* No padding here — the top space (below the header) and bottom space (above the
+     discover section) live on .leftCol instead, so the image column can span the
+     FULL height from the header down to the "Попитай специалист" section. */
+  padding: 0;
+}
+.discoverBand {
+  background: var(--bg-page);
+  padding: 0 0 96px;
 }
 .container {
   box-sizing: border-box;
@@ -18,12 +31,23 @@
   gap: 44px;
 }
 
-/* Row 1 — copy (60%) + image (40%), image ends level with the sub-copy. */
+/* Row 1 — copy (56%) + image (44%), flush (no column gap); image stretches to the
+   copy block height. */
 .heroRow {
   display: grid;
-  grid-template-columns: calc(60% - 24px) calc(40% - 24px);
-  gap: 48px;
-  align-items: start;
+  grid-template-columns: 1fr 44%;
+  gap: 10px;
+  align-items: stretch;
+}
+/* Left column carries the hero's vertical spacing: 88px below the header, 44px above
+   the discover section. The image column stretches to match this full height
+   (align-items: stretch), so it runs from the header down to "Попитай специалист". */
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+  min-width: 0;
+  padding: 88px 0 44px;
 }
 .copyCol {
   display: flex;
@@ -33,7 +57,7 @@
 }
 .eyebrow {
   margin: 0;
-  font: italic 400 1.25rem/1.4 var(--font-ui);
+  font: 500 1.375rem/1.4 var(--font-ui);
   color: var(--text-secondary);
 }
 .headline {
@@ -50,8 +74,23 @@
   max-width: 34ch;
 }
 
-/* The rotating question fades in; one word carries the slow teal gradient. */
-.question {
+/* Rotating-question stack: every question overlaps in ONE grid cell, so the cell
+   (and the copy below it) is sized to the TALLEST question and never shifts as they
+   rotate. Only the active line is visible; the rest stay laid out — still
+   contributing their height — but hidden. Mobile drops this (see the media query)
+   so the hero stays compact where a small shift doesn't matter. */
+.questionStack {
+  display: grid;
+}
+.qLine {
+  grid-area: 1 / 1;
+  margin: 0;
+}
+.qLine:not(.qActive) {
+  visibility: hidden;
+}
+/* The active line fades in on each rotation (re-adding .qActive restarts it). */
+.qActive {
   animation: fadeUp 520ms ease-out;
 }
 .gradWord {
@@ -61,7 +100,10 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* Deliberately slow (7s) — not the 2–3s AI-product shimmer. */
+}
+/* Deliberately slow (7s) — not the 2–3s AI-product shimmer. Only the active line's
+   word animates; the hidden ghost lines don't run it. */
+.qActive .gradWord {
   animation: gradSlide 7s ease-in-out infinite;
 }
 @keyframes fadeUp {
@@ -84,10 +126,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .question {
+  .qActive {
     animation: none;
   }
-  .gradWord {
+  .qActive .gradWord {
     animation: none;
     background-position: 50% 50%;
   }
@@ -95,26 +137,23 @@
 
 /* Image slot — hatched placeholder (no real photography supplied yet), stretched
    to end level with the copy block. */
+/* Holds the randomly-chosen hero image (next/image fill → cover), stretched to the
+   copy block height. position:relative anchors the fill; overflow clips the radius. */
 .imageSlot {
+  position: relative;
   align-self: stretch;
-  min-height: 260px;
-  border-radius: 16px;
-  border: 1px solid var(--border-default);
-  background-color: var(--bg-surface-2);
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    var(--border-subtle) 10px,
-    var(--border-subtle) 11px
-  );
+  min-height: 340px;
+  /* Square corners for the hero image (no rounding). */
+  overflow: hidden;
+  /* Thin grey line grounding the image against the white page below. */
+  border-bottom: 1px solid var(--border-default);
 }
 
 /* Row 2 — search on its own row, aligned under the copy column (60%). */
 .searchRow {
   display: flex;
   gap: 12px;
-  width: calc(60% - 24px);
+  width: 100%;
 }
 .searchField {
   flex: 1;
@@ -174,18 +213,61 @@
   }
 }
 
-/* Row 3 — specialty tiles: auto-fit, ~5 per row, square, growing uniformly. */
+/* Row 3 — "Попитай специалист": one shared heading over the domain pills + the
+   per-specialty tile grid. */
+.discover {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.discoverHeading {
+  margin: 0;
+  font: 700 1.75rem var(--font-ui);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+/* Domain pills — a quick "browse a whole domain" filter bar above the tiles. */
+.pillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--text-primary);
+  background: transparent;
+  color: var(--text-primary);
+  font: 500 1.0625rem var(--font-ui);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.pill:hover {
+  background: var(--text-primary);
+  color: var(--bg-page);
+}
+.pill:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* Row 3 — specialty tiles: auto-fit, ~5 per row, short landscape rectangles.
+   grid-auto-rows:1fr + align-items:stretch make every tile share ONE height —
+   the tallest content in the grid (the coming-soon tile) — so no tile is taller
+   than it needs to be and they stay uniform across rows. */
 .tileGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
+  grid-auto-rows: 1fr;
   justify-content: start;
   align-items: stretch;
   gap: 14px;
 }
 .tile {
-  aspect-ratio: 1;
   box-sizing: border-box;
-  padding: 20px;
+  padding: 18px;
   border: 1px solid var(--border-default);
   border-radius: 16px;
   background: var(--bg-surface);
@@ -235,14 +317,58 @@
     grid-template-columns: 1fr;
     gap: 24px;
   }
+  /* Single column: the image stacks on top; header spacing comes from .heroBand,
+     so drop .leftCol's desktop vertical padding. */
+  .leftCol {
+    padding: 0;
+  }
+  /* Image sits BENEATH the copy + search on mobile (natural DOM order). */
   .imageSlot {
-    min-height: 200px;
-    order: -1;
+    min-height: 240px;
   }
   .searchRow {
     width: 100%;
   }
   .headline {
     font-size: 2.5rem;
+  }
+  /* Mobile: don't reserve the tallest height — render only the active question so
+     the hero stays compact; a small shift as it rotates is fine at this width. */
+  .questionStack {
+    display: block;
+  }
+  .qLine {
+    grid-area: auto;
+  }
+  .qLine:not(.qActive) {
+    display: none;
+  }
+  .heroBand {
+    padding: 56px 0 0;
+  }
+  .discoverBand {
+    padding: 44px 0 72px;
+  }
+}
+
+/* Phones — placed AFTER the base .container/.tile rules so these win (media queries
+   add no specificity, so source order decides — the earlier trap this fixes). */
+@media (max-width: 640px) {
+  .container {
+    padding: 0 30px;
+  }
+  /* Specialty tiles: exactly two per line; smaller icon + label to fit. */
+  .tileGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tile {
+    padding: 14px;
+  }
+  .tileIcon {
+    width: 44px;
+    height: 44px;
+  }
+  .tileLabel {
+    font-size: 0.9375rem;
   }
 }

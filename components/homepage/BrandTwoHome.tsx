@@ -1,93 +1,155 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Search, ArrowUpRight, Brain, MoonStar, PawPrint } from "lucide-react";
+import { Search, ArrowUpRight, Brain, MoonStar, PawPrint, Sparkles, HandHeart, Coffee, Palette, Target } from "lucide-react";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { HOME_MODALITIES } from "@/lib/homepage-modalities";
+import { HOME_MODALITIES, DOMAIN_PILLS } from "@/lib/homepage-modalities";
+import heroQuestions from "@/data/hero-questions.json";
+import questionAskedHer from "@/design/question-asked-her.webp";
+import questionAskedHim from "@/design/question-asked-him.webp";
 import styles from "./BrandTwoHome.module.css";
 
 // Brand-two homepage hero (design handoff 1b). Only rendered when the active
 // brand is "two" (see app/[locale]/page.tsx); brand one keeps its own Hero.
 
-type Question = { before: string; word: string; after: string };
+// The rotating hero questions are CONTENT, controlled in data/hero-questions.json:
+// every domain under `active`, its questions for the current locale, flattened
+// into one rotation. `reserved_drafts` there is parked copy for domains not yet
+// live (with editorial notes) and is never cycled.
+type HeroQuestionSet = { bg: string[]; en: string[] };
+function heroQuestionsForLocale(locale: string): string[] {
+  const active = heroQuestions.active as Record<string, HeroQuestionSet>;
+  return Object.values(active).flatMap((set) => (locale === "en" ? set.en : set.bg));
+}
 
-// Rotating hero questions — one word per line carries the gradient (never the
-// whole line). Brand-specific editorial copy; kept here (structured before/word/
-// after) rather than flat i18n keys. bg is the live locale; en mirrors the
-// handoff for a future bilingual brand.
-const QUESTIONS: Record<string, Question[]> = {
-  bg: [
-    { before: "Мога ли да го ", word: "уволня", after: "?" },
-    { before: "Струва ли си този ", word: "имот", after: "?" },
-    { before: "Как да си върна ", word: "съня", after: "?" },
-    { before: "Какво ме чака тази ", word: "година", after: "?" },
-  ],
-  en: [
-    { before: "Can I ", word: "fire", after: " him?" },
-    { before: "Is this property ", word: "worth", after: " it?" },
-    { before: "How do I get my ", word: "sleep", after: " back?" },
-    { before: "What does this ", word: "year", after: " hold for me?" },
-  ],
-};
+// Each question marks its one accent word with *asterisks* — split it out so only
+// that word carries the gradient (falls back to no accent if unmarked).
+function splitAccent(s: string): { before: string; word: string; after: string } {
+  const m = s.match(/^(.*?)\*([^*]+)\*(.*)$/);
+  return m ? { before: m[1], word: m[2], after: m[3] } : { before: s, word: "", after: "" };
+}
 
-const ICONS = { brain: Brain, "moon-star": MoonStar, "paw-print": PawPrint } as const;
+const ICONS = {
+  brain: Brain,
+  "moon-star": MoonStar,
+  "paw-print": PawPrint,
+  sparkles: Sparkles,
+  "hand-heart": HandHeart,
+  coffee: Coffee,
+  palette: Palette,
+  target: Target,
+} as const;
+
+// Two hero mood images (design/) — one is chosen at random on each page visit.
+const HERO_IMAGES = [questionAskedHer, questionAskedHim];
 
 export function BrandTwoHome() {
   const t = useTranslations("HomePage");
   const locale = useLocale();
-  const questions = QUESTIONS[locale] ?? QUESTIONS.bg;
+  const questions = useMemo(() => heroQuestionsForLocale(locale), [locale]);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (!questions.length) return;
     // Respect reduced motion: hold the first question static, no rotation.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % questions.length), 5000);
     return () => clearInterval(id);
   }, [questions.length]);
 
-  const q = questions[index];
+  const activeIndex = questions.length ? index % questions.length : 0;
+
+  // Random hero image per visit. Start at 0 so SSR and first client paint match
+  // (no hydration mismatch), then pick a random one on mount.
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
+  useEffect(() => {
+    setHeroImageIndex(Math.floor(Math.random() * HERO_IMAGES.length));
+  }, []);
 
   return (
     <section className={styles.section}>
-      <div className={styles.container}>
-        {/* Row 1 — copy + image (image bound to the copy block only). */}
-        <div className={styles.heroRow}>
-          <div className={styles.copyCol}>
-            <p className={styles.eyebrow}>{t("brandTwoEyebrow")}</p>
-            <h1 className={styles.headline}>
-              {/* key={index} remounts the span so the fade-in re-runs each rotation. */}
-              <span key={index} className={styles.question}>
-                {q.before}
-                <span className={styles.gradWord}>{q.word}</span>
-                {q.after}
-              </span>
-            </h1>
-            <p className={styles.subcopy}>{t("brandTwoSubcopy")}</p>
+      {/* Grey band: copy + search, full-bleed, from under the site header down to
+          the "Попитай специалист" section (which sits on the page background). */}
+      <div className={styles.heroBand}>
+        <div className={styles.container}>
+          {/* Hero row — left column (copy + search) beside the image, which stretches
+              to their full combined height, reaching down to the discover section. */}
+          <div className={styles.heroRow}>
+            <div className={styles.leftCol}>
+            <div className={styles.copyCol}>
+              <p className={styles.eyebrow}>{t("brandTwoEyebrow")}</p>
+              {/* Rotating questions — all rendered stacked in ONE grid cell so the
+                  block is sized to the TALLEST question and the copy below never
+                  shifts as they rotate (desktop). Only the active line is visible; its
+                  *asterisk*-marked word (data/hero-questions.json) carries the
+                  gradient. The fixed line beneath is the real <h1> — a rotating
+                  heading would make an unstable, poor page title. */}
+              <div className={styles.questionStack}>
+                {questions.map((q, i) => {
+                  const parts = splitAccent(q);
+                  const active = i === activeIndex;
+                  return (
+                    <p
+                      key={i}
+                      className={`${styles.headline} ${styles.qLine} ${active ? styles.qActive : ""}`}
+                      aria-hidden={!active}
+                    >
+                      {parts.before}
+                      {parts.word && <span className={styles.gradWord}>{parts.word}</span>}
+                      {parts.after}
+                    </p>
+                  );
+                })}
+              </div>
+              <h1 className={styles.subcopy}>{t("brandTwoSubcopy")}</h1>
+            </div>
+            {/* Search sits under the copy — both in the left column, so the image
+                (right) stretches to the full height of the two. Plain GET to /browse. */}
+            <form className={styles.searchRow} action="/browse" method="get" role="search">
+              <div className={styles.searchField}>
+                <Search size={20} strokeWidth={1.8} className={styles.searchIcon} aria-hidden="true" />
+                <input
+                  className={styles.searchInput}
+                  type="search"
+                  name="q"
+                  placeholder={t("brandTwoSearchPlaceholder")}
+                  aria-label={t("brandTwoSearchPlaceholder")}
+                />
+              </div>
+              <button className={styles.searchButton} type="submit">
+                {t("brandTwoSearchButton")}
+              </button>
+            </form>
+            </div>
+            <div className={styles.imageSlot}>
+              <Image
+                src={HERO_IMAGES[heroImageIndex]}
+                alt=""
+                fill
+                priority
+                sizes="(max-width: 900px) 100vw, 44vw"
+                style={{ objectFit: "contain", objectPosition: "bottom" }}
+              />
+            </div>
           </div>
-          <div className={styles.imageSlot} aria-hidden="true" />
         </div>
+      </div>
 
-        {/* Row 2 — search on its own row, under the copy column. Plain GET to
-            /browse (people + professions only), same as brand one's hero. */}
-        <form className={styles.searchRow} action="/browse" method="get" role="search">
-          <div className={styles.searchField}>
-            <Search size={20} strokeWidth={1.8} className={styles.searchIcon} aria-hidden="true" />
-            <input
-              className={styles.searchInput}
-              type="search"
-              name="q"
-              placeholder={t("brandTwoSearchPlaceholder")}
-              aria-label={t("brandTwoSearchPlaceholder")}
-            />
+      {/* Row 3 — "Попитай специалист": on the page background, below the grey band. */}
+      <div className={styles.discoverBand}>
+        <div className={styles.container}>
+        <div className={styles.discover}>
+          <h2 className={styles.discoverHeading}>{t("brandTwoAskSpecialist")}</h2>
+          <div className={styles.pillsRow}>
+            {DOMAIN_PILLS.map((p) => (
+              <Link key={p.key} href={p.landingPath} className={styles.pill}>
+                {p.label[locale as "bg" | "en"] ?? p.label.bg}
+              </Link>
+            ))}
           </div>
-          <button className={styles.searchButton} type="submit">
-            {t("brandTwoSearchButton")}
-          </button>
-        </form>
-
-        {/* Row 3 — specialty tiles from the modality config. */}
-        <div className={styles.tileGrid}>
+          <div className={styles.tileGrid}>
           {HOME_MODALITIES.map((m) => {
             const Icon = ICONS[m.icon];
             const label = m.label[locale as "bg" | "en"] ?? m.label.bg;
@@ -112,6 +174,8 @@ export function BrandTwoHome() {
               </Link>
             );
           })}
+          </div>
+        </div>
         </div>
       </div>
     </section>

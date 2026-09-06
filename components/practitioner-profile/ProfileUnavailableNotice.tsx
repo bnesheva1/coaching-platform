@@ -2,11 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 
-// Shown on a public profile URL when the practitioner is fully hidden (lapsed
-// with no outstanding bookings — see is_practitioner_fully_hidden). Deliberately
-// NOT a 404: the person existed and may return, and a "not found" would tell a
-// returning client they never existed. A quiet, neutral notice instead — no
-// reason, no blame, no mention of billing (that's the practitioner's private
+// Shown on a public profile URL when the practitioner isn't currently listed —
+// either fully hidden (lapsed with no outstanding bookings — see
+// is_practitioner_fully_hidden) or not yet onboarded (setup checklist incomplete,
+// e.g. no real specialty yet — see is_practitioner_onboarded). Deliberately NOT a
+// 404: the handle is reserved and the profile may go live, and a "not found" would
+// tell a returning client they never existed. A quiet, neutral notice instead — no
+// reason, no blame, no mention of billing or setup state (the practitioner's own
 // matter) — with a way onward to browse.
 export async function ProfileUnavailableNotice() {
   const t = await getTranslations("PublicProfile");
