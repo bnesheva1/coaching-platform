@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Clock, Wallet, CalendarDays, X } from "lucide-react";
+import { Clock, CircleEuro, CalendarDays, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
@@ -656,7 +656,20 @@ export function PractitionerProfileView({
         )}
 
         {/* Services */}
-        <div id="services" className={isBrandTwo ? styles.brandTwoServicesStrip : undefined}>
+        <div
+          id="services"
+          className={
+            isBrandTwo
+              ? // The full-bleed 100vw strip assumes a viewport-centred profile
+                // (the public page). In the dashboard editor the profile sits in
+                // the offset content column, so it'd bleed behind the sidebar and
+                // force a horizontal scroll — use a contained grey band there.
+                isOwner
+                ? styles.brandTwoServicesStripContained
+                : styles.brandTwoServicesStrip
+              : undefined
+          }
+        >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h2 style={{ margin: 0, font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{tPublic("servicesTitle")}</h2>
             {isEditing && (
@@ -776,7 +789,7 @@ export function PractitionerProfileView({
                               </span>
                             </div>
                             <div className={styles.svc2Stat}>
-                              <Wallet size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                              <CircleEuro size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
                               <span className={styles.svc2StatText}>
                                 <span className={styles.svc2StatNum}>{priceAmount}</span>
                                 <span className={styles.svc2StatUnit}>{priceSymbol}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 
 // Colors/shape ported directly from the approved design source
@@ -32,6 +32,9 @@ export function NavItem({
   // (confirmed unreliable — see ClientDashboardSidebar's own comment)
   // native hash-jump and drive the scroll itself instead.
   onClick,
+  // Optional leading icon (brand-two sidebars pass a Lucide glyph); text-only
+  // when omitted, unchanged for every existing caller.
+  icon,
 }: {
   href: string;
   label: string;
@@ -39,10 +42,13 @@ export function NavItem({
   onNavigate?: () => void;
   nativeAnchor?: boolean;
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
+  icon?: ReactNode;
 }) {
   const [hover, setHover] = useState(false);
   const style = {
-    display: "block",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
     padding: "10px 14px",
     borderRadius: "var(--radius-md)",
     font: "var(--text-body-sm)",
@@ -66,6 +72,7 @@ export function NavItem({
         onMouseLeave={() => setHover(false)}
         style={style}
       >
+        {icon}
         {label}
       </a>
     );
@@ -80,6 +87,7 @@ export function NavItem({
       aria-current={isActive ? "page" : undefined}
       style={style}
     >
+      {icon}
       {label}
     </Link>
   );

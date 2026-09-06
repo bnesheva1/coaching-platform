@@ -93,7 +93,7 @@ export default async function PractitionerDashboardLayout({ children }: { childr
 
   return (
     <DashboardShell
-      sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
+      sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} isBrandTwo={resolveBrand() === "two"} />}
       isBrandTwo={resolveBrand() === "two"}
     >
       {mod && (

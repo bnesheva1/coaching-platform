@@ -178,6 +178,13 @@
   background: var(--bg-surface-2);
   z-index: -1;
 }
+/* Dashboard editor: contained grey band (no full-bleed) — the profile isn't
+   viewport-centred there, so a 100vw strip would overflow behind the sidebar. */
+.brandTwoServicesStripContained {
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-2xl);
+  padding: 32px;
+}
 
 /* Brand-two service card (design handoff 1f): flat white on the grey strip —
    image slot, title, duration/price stats, description, and a right-pinned

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { Star, Clock, CalendarDays, Wallet } from "lucide-react";
+import { Star, Clock, CalendarDays, CircleEuro } from "lucide-react";
 import type { RenameUsage } from "@/lib/rename-limits";
 import { SaveButton } from "@/components/practitioners/SaveButton";
 import { EditableImage } from "./EditableImage";
@@ -114,7 +114,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           </div>
           {priceText && (
             <div className={styles.cardMetaRow}>
-              <Wallet size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+              <CircleEuro size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
               <span className={styles.cardMetaValue}>{tPublic("summaryPriceFrom", { price: priceText })}</span>
             </div>
           )}
