@@ -3,16 +3,30 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { PractitionerCard, type PractitionerCardData } from "@/components/browse/PractitionerCard";
+import { BrowseCardTwo, type BrowseCardTwoData } from "@/components/browse/BrowseCardTwo";
 
 // How many cards show before the see-all toggle — enough to fill a row
 // or two on desktop without this secondary zone competing with the
 // sessions list above it for attention.
 const PREVIEW_COUNT = 6;
 
+// The brand-two browse card takes a subset of the dashboard card's data.
+export function toBrowseTwoData(p: PractitionerCardData): BrowseCardTwoData {
+  return {
+    id: p.id,
+    username: p.username,
+    displayName: p.displayName,
+    bio: p.bio,
+    avatarUrl: p.avatarUrl,
+    specialtyLabels: p.specialtyLabels,
+    averageRating: p.averageRating,
+  };
+}
+
 // Same grid recipe as BrowseClient.tsx's results grid — same card,
 // same layout, deliberately not a new visual recipe for a secondary
 // zone that happens to show the identical component.
-export function BookedWithGrid({ practitioners }: { practitioners: PractitionerCardData[] }) {
+export function BookedWithGrid({ practitioners, isBrandTwo = false }: { practitioners: PractitionerCardData[]; isBrandTwo?: boolean }) {
   const t = useTranslations("Dashboard");
   const [expanded, setExpanded] = useState(false);
 
@@ -29,9 +43,13 @@ export function BookedWithGrid({ practitioners }: { practitioners: PractitionerC
           alignContent: "start",
         }}
       >
-        {visible.map((practitioner) => (
-          <PractitionerCard key={practitioner.id} practitioner={practitioner} />
-        ))}
+        {visible.map((practitioner) =>
+          isBrandTwo ? (
+            <BrowseCardTwo key={practitioner.id} elevated practitioner={toBrowseTwoData(practitioner)} />
+          ) : (
+            <PractitionerCard key={practitioner.id} practitioner={practitioner} />
+          ),
+        )}
       </div>
       {hasMore && (
         <button

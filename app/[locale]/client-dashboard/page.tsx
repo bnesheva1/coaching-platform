@@ -265,6 +265,7 @@ export default async function ClientUpcomingPage({
   const isBrandTwo = resolveBrand() === "two";
   const noUpcomingBlock = (
     <div
+      key="no-upcoming"
       style={{
         background: "var(--bg-surface)",
         border: isBrandTwo ? "1px solid var(--text-primary)" : "1px solid var(--border-subtle)",
@@ -281,23 +282,25 @@ export default async function ClientUpcomingPage({
         {t("agenda.noUpcomingRebookLine")}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginTop: "var(--space-1)" }}>
-        <a
-          href="#practitioners"
-          className="focus-ring"
-          style={{
-            display: "inline-block",
-            padding: "var(--button-padding-md)",
-            borderRadius: "var(--radius-md)",
-            background: "var(--accent)",
-            color: "var(--text-on-accent)",
-            font: "var(--text-button-md)",
-            textDecoration: "none",
-          }}
-        >
-          {t("nav.clientPractitioners")}
-        </a>
-        <Button href="/browse" variant="ghost">
-          {t("agenda.noUpcomingBrowse")}
+        {!isBrandTwo && (
+          <a
+            href="#practitioners"
+            className="focus-ring"
+            style={{
+              display: "inline-block",
+              padding: "var(--button-padding-md)",
+              borderRadius: "var(--radius-md)",
+              background: "var(--accent)",
+              color: "var(--text-on-accent)",
+              font: "var(--text-button-md)",
+              textDecoration: "none",
+            }}
+          >
+            {t("nav.clientPractitioners")}
+          </a>
+        )}
+        <Button href="/browse" variant={isBrandTwo ? "secondary" : "ghost"}>
+          {isBrandTwo ? t("agenda.browseSpecialists") : t("agenda.noUpcomingBrowse")}
         </Button>
       </div>
     </div>
@@ -443,7 +446,7 @@ export default async function ClientUpcomingPage({
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">
         <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-4)" }}>{t("nav.clientPractitioners")}</h2>
-        <BookedWithGrid practitioners={bookedWithPractitioners} />
+        <BookedWithGrid practitioners={bookedWithPractitioners} isBrandTwo={isBrandTwo} />
         <div style={{ marginTop: "var(--space-6)", display: "flex", justifyContent: "center" }}>
           <Button href="/browse" variant="secondary">
             {t("clientEmptyState.cta")}
@@ -453,7 +456,7 @@ export default async function ClientUpcomingPage({
 
       <section style={{ marginTop: "var(--space-8)" }} id="saved">
         <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-4)" }}>{tSaved("sectionTitle")}</h2>
-        <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} hiddenIds={hiddenSavedIds} />
+        <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} hiddenIds={hiddenSavedIds} isBrandTwo={isBrandTwo} />
       </section>
     </main>
   );

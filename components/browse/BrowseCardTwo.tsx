@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -15,16 +16,27 @@ export type BrowseCardTwoData = {
   averageRating: number | null;
 };
 
-// Brand-two browse result card (handoff 1g). The ENTIRE card is the link to the
-// practitioner's profile (browse-only behaviour); "Запази час" stays as text in
-// the footer, not a separate anchor (nested anchors are invalid). White border
-// at rest → black + shadow on hover.
-export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoData }) {
+// Brand-two practitioner card (browse handoff 1g), reused on the client dashboard.
+// The whole card links to the profile via a stretched-link overlay, so an optional
+// save heart (`saveControl`, a sibling above the overlay) stays independently
+// clickable. `elevated` swaps the hover-border treatment for a persistent drop
+// shadow (the dashboard's preference).
+export function BrowseCardTwo({
+  practitioner,
+  elevated = false,
+  saveControl,
+}: {
+  practitioner: BrowseCardTwoData;
+  elevated?: boolean;
+  saveControl?: ReactNode;
+}) {
   const t = useTranslations("Browse");
   const name = practitioner.displayName || `@${practitioner.username}`;
 
   return (
-    <Link href={`/p/${practitioner.username}`} className={styles.card}>
+    <div className={`${styles.card}${elevated ? ` ${styles.cardElevated}` : ""}`}>
+      <Link href={`/p/${practitioner.username}`} className={styles.cardLinkOverlay} aria-label={name} />
+
       <div className={styles.cardTop}>
         {practitioner.averageRating !== null ? (
           <span className={styles.ratingPill}>
@@ -55,6 +67,8 @@ export function BrowseCardTwo({ practitioner }: { practitioner: BrowseCardTwoDat
       <div className={styles.cardFooter}>
         <span className={styles.bookLink}>{t("bookSessionCta")}</span>
       </div>
-    </Link>
+
+      {saveControl}
+    </div>
   );
 }

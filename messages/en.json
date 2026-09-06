@@ -432,7 +432,8 @@
       "manageBookings": "Manage your bookings",
       "noUpcomingTitle": "No upcoming sessions",
       "noUpcomingRebookLine": "Book again with one of the practitioners you've seen before.",
-      "noUpcomingBrowse": "Find someone new"
+      "noUpcomingBrowse": "Find someone new",
+      "browseSpecialists": "Browse specialists"
     },
     "clientEmptyState": {
       "title": "You haven't booked a session yet",
