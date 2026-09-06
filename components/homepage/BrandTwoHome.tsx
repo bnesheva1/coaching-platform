@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Search, ArrowUpRight, Brain, MoonStar, PawPrint } from "lucide-react";
+import { Search, ArrowUpRight, Brain, MoonStar, PawPrint, Sparkles, HandHeart, Coffee, Palette, Target } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { HOME_MODALITIES } from "@/lib/homepage-modalities";
+import { HOME_MODALITIES, DOMAIN_PILLS } from "@/lib/homepage-modalities";
 import heroQuestions from "@/data/hero-questions.json";
 import styles from "./BrandTwoHome.module.css";
 
@@ -28,7 +28,16 @@ function splitAccent(s: string): { before: string; word: string; after: string }
   return m ? { before: m[1], word: m[2], after: m[3] } : { before: s, word: "", after: "" };
 }
 
-const ICONS = { brain: Brain, "moon-star": MoonStar, "paw-print": PawPrint } as const;
+const ICONS = {
+  brain: Brain,
+  "moon-star": MoonStar,
+  "paw-print": PawPrint,
+  sparkles: Sparkles,
+  "hand-heart": HandHeart,
+  coffee: Coffee,
+  palette: Palette,
+  target: Target,
+} as const;
 
 export function BrandTwoHome() {
   const t = useTranslations("HomePage");
@@ -86,8 +95,17 @@ export function BrandTwoHome() {
           </button>
         </form>
 
-        {/* Row 3 — specialty tiles from the modality config. */}
-        <div className={styles.tileGrid}>
+        {/* Row 3 — "Попитай специалист": domain pills over a per-specialty tile grid. */}
+        <div className={styles.discover}>
+          <h2 className={styles.discoverHeading}>{t("brandTwoAskSpecialist")}</h2>
+          <div className={styles.pillsRow}>
+            {DOMAIN_PILLS.map((p) => (
+              <Link key={p.key} href={p.landingPath} className={styles.pill}>
+                {p.label[locale as "bg" | "en"] ?? p.label.bg}
+              </Link>
+            ))}
+          </div>
+          <div className={styles.tileGrid}>
           {HOME_MODALITIES.map((m) => {
             const Icon = ICONS[m.icon];
             const label = m.label[locale as "bg" | "en"] ?? m.label.bg;
@@ -112,6 +130,7 @@ export function BrandTwoHome() {
               </Link>
             );
           })}
+          </div>
         </div>
       </div>
     </section>

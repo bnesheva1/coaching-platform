@@ -10,6 +10,7 @@ import { EditableSpecialties } from "./EditableSpecialties";
 import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
+import domainsData from "@/data/domains.json";
 import styles from "./BrandTwoHeader.module.css";
 
 export type BrandTwoHeaderProps = {
@@ -22,6 +23,7 @@ export type BrandTwoHeaderProps = {
   avatarUrl: string | null;
   specialties: string[];
   topics: string[];
+  domain: string | null;
   nameUsage?: RenameUsage;
   availableNow: boolean;
   averageRating: number | null;
@@ -51,6 +53,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
   const specialtyLabel = (key: string) =>
     specialtiesData.find((s) => s.key === key)?.[locale as "en" | "bg"] ?? key;
   const topicLabel = (key: string) => topicsData.find((x) => x.key === key)?.[locale as "en" | "bg"] ?? key;
+  const domainLabel = (key: string) => domainsData.find((d) => d.key === key)?.[locale as "en" | "bg"] ?? key;
   const specialtyText = props.specialties.map(specialtyLabel).join(", ");
 
   const priceText =
@@ -81,7 +84,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           </div>
         </div>
         <EditableIdentity displayName={props.displayName} headline={props.headline} location={props.location} nameUsage={props.nameUsage} />
-        <EditableSpecialties specialties={props.specialties} />
+        <EditableSpecialties specialties={props.specialties} domain={props.domain} />
         <EditableTopics topics={props.topics} />
       </div>
     );
@@ -125,8 +128,12 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         </button>
       </div>
 
-      {/* Right: content column */}
+      {/* Right: content column. Domain pill (accent) sits ABOVE the headline;
+          the bordered topic pills moved to BELOW it. Each row only renders when
+          it has content, so a practitioner with no domain/topics shows neither. */}
       <div className={styles.contentCol}>
+        {props.domain && <span className={styles.domainPill}>{domainLabel(props.domain)}</span>}
+        {props.headline && <h2 className={styles.headline}>{props.headline}</h2>}
         {props.topics.length > 0 && (
           <div className={styles.topicPills}>
             <span className={styles.topicPillsLabel}>{t("topicsLabel")}</span>
@@ -137,7 +144,6 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
             ))}
           </div>
         )}
-        {props.headline && <h2 className={styles.headline}>{props.headline}</h2>}
         {showSave && (
           <div className={styles.factRow}>
             <SaveButton

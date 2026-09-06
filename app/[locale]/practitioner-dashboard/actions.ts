@@ -10,6 +10,10 @@ import sharp from "sharp";
 import { parseVideoUrl, fetchVideoOEmbed } from "@/lib/videos";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
+import domainsData from "@/data/domains.json";
+import { checkRateLimit, suggestionLimiter } from "@/lib/rate-limit";
+import { sendTaxonomySuggestion } from "@/lib/email";
+import { SITE_URL } from "@/lib/seo";
 
 // values echoes back whatever text fields were actually submitted, on
 // an error return only — React 19 resets a <form action={...}> after
@@ -41,6 +45,17 @@ const GALLERY_WIDTH = 1200;
 const GALLERY_HEIGHT = 675; // 16:9
 const KNOWN_SPECIALTY_KEYS = new Set(specialtiesData.map((s) => s.key));
 const KNOWN_TOPIC_KEYS = new Set(topicsData.map((topic) => topic.key));
+// Domain is saved alongside specialties (it constrains them). Only ACTIVE domains
+// are selectable, and each maps to the set of specialty keys that belong to it —
+// used to reject a specialty from a different domain server-side, not just in the UI.
+const ACTIVE_DOMAINS = domainsData.filter((d) => d.active);
+const KNOWN_DOMAIN_KEYS = new Set(ACTIVE_DOMAINS.map((d) => d.key));
+const DOMAIN_SPECIALTIES = new Map<string, Set<string>>(
+  ACTIVE_DOMAINS.map((d) => [d.key, new Set(d.specialties)]),
+);
+// Cap for the free-text domain/specialty suggestion (a taxonomy name is short).
+// The DB CHECK allows up to 200 as a backstop; this is the app-layer cap.
+const MAX_SUGGESTION_LENGTH = 100;
 // A curated handful reads as focused — see EditableTopics.tsx's own
 // identical constant/comment. The UI already disables further chips at
 // this count; this is the authoritative check for a direct API call
@@ -181,16 +196,109 @@ export async function updateSpecialties(
     return { error: t("notLoggedIn") };
   }
 
-  // Checkboxes are rendered from the known specialty list, but a raw
-  // request could submit anything as a value — filter to the actual
-  // taxonomy so junk/spam text can't end up displayed on a public
-  // profile as if it were a real specialty.
-  const specialties = (formData.getAll("specialties") as string[]).filter((key) => KNOWN_SPECIALTY_KEYS.has(key));
+  // Domain is required and must be one of the ACTIVE domains. It's saved
+  // together with specialties because it constrains them — the picker only
+  // offers specialties within the chosen domain — so the two always move as
+  // a unit and can't drift into an inconsistent (domain, specialty) pair.
+  const domain = ((formData.get("domain") as string | null) ?? "").trim();
+  if (!KNOWN_DOMAIN_KEYS.has(domain)) {
+    return { error: t("domainRequired") };
+  }
+  const allowedSpecialties = DOMAIN_SPECIALTIES.get(domain) ?? new Set<string>();
 
-  const { error } = await supabase.from("practitioner_profiles").update({ specialties }).eq("id", user.id);
+  // Chips are rendered from the known specialty list, but a raw request could
+  // submit anything — filter to the actual taxonomy AND to the chosen domain, so
+  // neither junk text nor a specialty from another domain can land on a public
+  // profile. Empty is allowed: a practitioner may have a domain but still be
+  // waiting on a specialty suggestion to be approved.
+  const specialties = (formData.getAll("specialties") as string[]).filter(
+    (key) => KNOWN_SPECIALTY_KEYS.has(key) && allowedSpecialties.has(key),
+  );
+
+  const { error } = await supabase.from("practitioner_profiles").update({ domain, specialties }).eq("id", user.id);
   if (error) {
     console.error("updateSpecialties failed:", error);
     return { error: t("saveFailed") };
+  }
+
+  revalidateDashboard();
+  return { success: true };
+}
+
+// Strip everything that could break out of an email header or inject markup, then
+// cap length. Newlines/tabs collapse to a space (header-injection prevention),
+// remaining control chars are dropped, whitespace runs are collapsed. React Email
+// escapes the body on top of this; the length cap matches the DB CHECK backstop.
+function sanitizeSuggestion(raw: string | null): string {
+  return (raw ?? "")
+    .replace(/[\r\n\t\f\v]+/g, " ")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_SUGGESTION_LENGTH);
+}
+
+// "Not listed? Suggest one" — the escape hatch on the domain + specialty pickers.
+// A practitioner types free text for a domain and/or specialty that isn't in the
+// taxonomy yet. This does NOT set any real tag (no placeholder state): it stores the
+// raw text on their own row so it can be found and applied once the key is added by
+// hand, and emails the support inbox. Rate-limited per user, input sanitised + capped.
+export async function submitTaxonomySuggestion(
+  _prevState: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
+  const t = await getTranslations("Profile");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: t("notLoggedIn") };
+  }
+
+  const { success } = await checkRateLimit(suggestionLimiter, user.id);
+  if (!success) {
+    return { error: t("suggestionRateLimited") };
+  }
+
+  const requestedDomain = sanitizeSuggestion(formData.get("requestedDomain") as string | null);
+  const requestedSpecialty = sanitizeSuggestion(formData.get("requestedSpecialty") as string | null);
+  if (!requestedDomain && !requestedSpecialty) {
+    return { error: t("suggestionEmpty") };
+  }
+
+  // Durable record on the practitioner's own row — an empty field clears any
+  // previous suggestion for that axis rather than leaving a stale one behind.
+  const { error } = await supabase
+    .from("practitioner_profiles")
+    .update({
+      pending_domain_suggestion: requestedDomain || null,
+      pending_specialty_suggestion: requestedSpecialty || null,
+    })
+    .eq("id", user.id);
+  if (error) {
+    console.error("submitTaxonomySuggestion: failed to store pending suggestion", error);
+    return { error: t("saveFailed") };
+  }
+
+  // Name + profile link come from our own tables, never from the form. The name
+  // is sanitised too before it goes into the (plain-string) email subject.
+  const [{ data: nameRow }, { data: usernameRow }] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+    supabase.from("practitioner_profiles").select("username").eq("id", user.id).single(),
+  ]);
+  const practitionerName = sanitizeSuggestion(nameRow?.display_name ?? user.email ?? "") || "—";
+  const profileUrl = usernameRow?.username ? `${SITE_URL}/p/${usernameRow.username}` : SITE_URL;
+
+  const result = await sendTaxonomySuggestion({
+    practitionerName,
+    profileUrl,
+    requestedDomain,
+    requestedSpecialty,
+    submittedAt: new Date().toISOString(),
+  });
+  if (!result.success) {
+    return { error: t("suggestionSendFailed") };
   }
 
   revalidateDashboard();

@@ -67,6 +67,7 @@ export type PractitionerProfileViewProps = {
   viewerSavedTimezone?: string | null;
   specialties: string[];
   topics: string[];
+  domain: string | null;
   services: ProfileService[];
   reviews: ProfileReview[];
   averageRating: number | null;
@@ -167,6 +168,7 @@ export function PractitionerProfileView({
   timezone,
   specialties,
   topics,
+  domain,
   services,
   reviews,
   averageRating,
@@ -373,6 +375,7 @@ export function PractitionerProfileView({
           avatarUrl={avatarUrl}
           specialties={specialties}
           topics={topics}
+          domain={domain}
           nameUsage={nameUsage}
           availableNow={availableNow}
           averageRating={averageRating}
@@ -520,7 +523,7 @@ export function PractitionerProfileView({
 
             {isEditing ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-                <EditableSpecialties specialties={specialties} />
+                <EditableSpecialties specialties={specialties} domain={domain} />
                 <EditableTopics topics={topics} />
               </div>
             ) : (

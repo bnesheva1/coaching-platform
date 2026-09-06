@@ -114,6 +114,12 @@ export const videoTokenLimiter = createLimiter("rl:video-token", 20, "10 m", 10 
 // on purpose, since each reveal exposes the practitioner's personal
 // contact and flips the session to manual review.
 export const videoFallbackLimiter = createLimiter("rl:video-fallback", 5, "10 m", 10 * 60 * 1000);
+// A practitioner suggesting a domain/specialty that isn't in the taxonomy yet —
+// a free-text-to-email surface. Keyed by the authenticated user's id (this is a
+// logged-in dashboard action, so the account is the precise identifier). Tight on
+// purpose: a real practitioner suggests once or twice, and each submit both writes
+// their profile and sends an email to the support inbox.
+export const suggestionLimiter = createLimiter("rl:suggest", 3, "10 m", 10 * 60 * 1000);
 
 export type RateLimitResult = {
   success: boolean;

@@ -37,11 +37,16 @@ export async function generateMetadata({
     .single();
   if (!pp) return {};
 
-  // A fully-hidden practitioner (lapsed, no outstanding bookings) shouldn't be
-  // indexed or advertised — the page itself serves a neutral "not listed"
-  // notice, so keep search engines off it and skip the rich meta.
-  const { data: fullyHidden } = await supabase.rpc("is_practitioner_fully_hidden", { target_practitioner_id: pp.id });
-  if (fullyHidden) {
+  // A fully-hidden practitioner (lapsed, no outstanding bookings) or a not-yet-
+  // onboarded one (setup checklist incomplete — e.g. no real specialty, only a
+  // pending taxonomy suggestion) shouldn't be indexed or advertised — the page
+  // serves a neutral "not listed" notice in both cases, so keep search engines
+  // off it and skip the rich meta.
+  const [{ data: fullyHidden }, { data: onboarded }] = await Promise.all([
+    supabase.rpc("is_practitioner_fully_hidden", { target_practitioner_id: pp.id }),
+    supabase.rpc("is_practitioner_onboarded", { target_practitioner_id: pp.id }),
+  ]);
+  if (fullyHidden || !onboarded) {
     return { robots: { index: false, follow: false } };
   }
 
@@ -89,7 +94,7 @@ export default async function PublicProfilePage({
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("id, bio, quote, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
+    .select("id, bio, quote, headline, location, specialties, topics, domain, avatar_url, banner_url, username, timezone")
     .eq("username", normalizedUsername)
     .single();
 
@@ -118,10 +123,21 @@ export default async function PublicProfilePage({
   // may return; one successful payment restores this instantly). While any
   // booking is still outstanding this is false, so clients with a session to
   // keep can always reach them.
-  const { data: fullyHidden } = await supabase.rpc("is_practitioner_fully_hidden", {
-    target_practitioner_id: practitionerProfile.id,
-  });
-  if (fullyHidden) {
+  // A profile that hasn't finished the onboarding checklist (no real specialty —
+  // e.g. only a pending taxonomy suggestion — or no active service / availability /
+  // Connect) is not yet published: its direct URL serves the same neutral "not
+  // currently listed" notice rather than rendering as a live profile, matching its
+  // absence from Browse and the sitemap. This is the SAME onboarding gate the
+  // checklist uses (is_practitioner_onboarded → practitioner_bookable_flags), so
+  // approving a suggestion and tagging a real domain + specialty flips it live
+  // through the normal path with no separate publish step. Checked alongside the
+  // lapsed "fully hidden" case (set-up-but-lapsed with outstanding bookings stays
+  // reachable, so these are kept as distinct reasons for the same notice).
+  const [{ data: fullyHidden }, { data: onboarded }] = await Promise.all([
+    supabase.rpc("is_practitioner_fully_hidden", { target_practitioner_id: practitionerProfile.id }),
+    supabase.rpc("is_practitioner_onboarded", { target_practitioner_id: practitionerProfile.id }),
+  ]);
+  if (fullyHidden || !onboarded) {
     return <ProfileUnavailableNotice />;
   }
 
@@ -359,6 +375,7 @@ export default async function PublicProfilePage({
           timezone={practitionerProfile.timezone}
           specialties={practitionerProfile.specialties ?? []}
           topics={practitionerProfile.topics ?? []}
+          domain={practitionerProfile.domain ?? null}
           services={(services ?? []).map((s) => ({
             id: s.id,
             name: s.name,

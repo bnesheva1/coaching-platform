@@ -2,12 +2,12 @@
   "_readme": "Wrap exactly ONE word per question in *asterisks* — that word gets the teal gradient accent in the hero. To change the accent, move the asterisks to a different word.",
   "active": {
     "psychology": {
-      "bg": ["Защо се чувствам *блокиран/а*?", "Защо съм постоянно *тревожен*?"],
+      "bg": ["Как да спра да *се сравнявам* с всички около мен?", "Защо съм постоянно *тревожен*?"],
       "en": ["Why do I feel *stuck*?", "Why am I constantly *anxious*?"]
     },
     "intuitive_practices": {
-      "bg": ["Какво ме чака тази *година*?", "Защо усещам, че се повтарят едни и същи *модели* в връзките ми?"],
-      "en": ["What awaits me this *year*?", "Why do I keep repeating the same *patterns* in my relationships?"]
+      "bg": ["Какво ме чака тази *година*?", "Защо се повтарят едни и същи *модели* във връзките ми?", "Това ли е *човекът за мен*?"],
+      "en": ["What awaits me this *year*?", "Why do I keep repeating the same *patterns* in my relationships?", "Is this *the right person* for me?"]
     },
     "veterinary": {
       "bg": ["Нормално ли е *кучето* ми да не яде от два дни?", "Защо *котката* ми се държи така?"],
@@ -16,14 +16,12 @@
   },
   "reserved_drafts": {
     "legal": {
-      "bg": ["Мога ли да го *уволня*?"],
-      "en": ["Can I *fire* him?"],
-      "note": "Needs a softer rewrite before use — reads as asking for a legal ruling rather than 'just asking'. Revisit when this domain activates."
+      "bg": ["Какви *документи* ми трябват?","Могат ли да ме *уволнят*?"],
+      "en": ["What *papers* do I need?","can they *fire* me?"]
     },
     "real_estate": {
       "bg": ["Струва ли си този *имот*?"],
-      "en": ["Is this *property* worth it?"],
-      "note": "Parked, not yet reviewed for tone."
+      "en": ["Is this *property* worth it?"]
     },
     "financial": { "bg": [], "en": [], "note": "No draft questions yet." },
     "marketing": { "bg": [], "en": [], "note": "No draft questions yet." },

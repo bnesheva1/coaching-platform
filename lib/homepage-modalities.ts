@@ -1,52 +1,56 @@
-// Curated modality tiles for the brand-two homepage hero (design handoff 1b).
-// A deliberately SMALL launch set — not every specialty. Coaching and Reiki are
-// real, bookable specialties and filterable on /browse, but are intentionally
-// left OUT of the launch tiles (curation, not oversight — don't add them without
-// a product decision).
+import domainsData from "@/data/domains.json";
+
+// Brand-two homepage "Попитай специалист" section (design handoff 1b, revised):
+// a row of DOMAIN pills above a grid of one tile PER SPECIALTY. Both are data-
+// driven — the pills from the active domains in data/domains.json, the tiles from
+// HOME_MODALITIES below (which mirror data/specialties.json + the vet exception).
 //
-// landingPath is where a tile links. It DEFAULTS to a filtered /browse URL, which
-// works today with the existing browse route and needs no taxonomy landing page.
-// When a dedicated taxonomy landing page ships for a modality, swapping its
-// landingPath to that page's path (e.g. "/psiholog") is the ONLY change needed.
-// null landingPath = "coming soon": rendered as a non-link, for a modality with
-// zero bookable specialists.
-//
-// The rotating HERO QUESTIONS are NOT here — they're content, controlled in
-// data/hero-questions.json (keyed by domain, with a reserved-drafts pool), read
-// directly by BrandTwoHome.
+// landingPath is /browse pre-filtered by specialty key(s); repeated ?specialty
+// params are OR-ed by browse (no backend domain filter needed). null landingPath
+// + comingSoon = a non-link "coming soon" tile (veterinarian — not a real
+// specialty yet).
+
+export type ModalityIcon =
+  | "brain"
+  | "moon-star"
+  | "paw-print"
+  | "sparkles"
+  | "hand-heart"
+  | "coffee"
+  | "palette"
+  | "target";
 
 export type HomeModality = {
   id: string;
-  // Lucide icon name; the tile component maps this to the icon component.
-  icon: "brain" | "moon-star" | "paw-print";
+  icon: ModalityIcon;
   label: { bg: string; en: string };
   landingPath: string | null;
   comingSoon?: boolean;
 };
 
+// One tile per real specialty (data/specialties.json), in curated order, each
+// linking to its own /browse filter — plus the veterinarian "coming soon"
+// exception (not a real specialty). Coffee-reading / art-therapist will show zero
+// results until specialists are tagged; that's expected.
 export const HOME_MODALITIES: HomeModality[] = [
-  {
-    id: "psychologist",
-    icon: "brain",
-    label: { bg: "Психолог", en: "Psychologist" },
-    // Real specialty key `psychologist` (data/specialties.json); backed by at
-    // least one active, bookable practitioner.
-    landingPath: "/browse?specialty=psychologist",
-  },
-  {
-    id: "astro-tarolog",
-    icon: "moon-star",
-    label: { bg: "Астро-таролог", en: "Astro-tarologist" },
-    // A combined virtual tile: not one specialty key, but the union of two real
-    // ones (astrology + tarot). Browse reads repeated ?specialty params as a set.
-    landingPath: "/browse?specialty=astrology&specialty=tarot",
-  },
-  {
-    id: "veterinarian",
-    icon: "paw-print",
-    label: { bg: "Ветеринарен лекар", en: "Veterinarian" },
-    // No specialty, zero practitioners — the one genuinely "coming soon" tile.
-    landingPath: null,
-    comingSoon: true,
-  },
+  { id: "astrology", icon: "moon-star", label: { bg: "Астрология", en: "Astrology" }, landingPath: "/browse?specialty=astrology" },
+  { id: "tarot", icon: "sparkles", label: { bg: "Таро", en: "Tarot" }, landingPath: "/browse?specialty=tarot" },
+  { id: "reiki", icon: "hand-heart", label: { bg: "Рейки", en: "Reiki" }, landingPath: "/browse?specialty=reiki" },
+  { id: "coffee_reading", icon: "coffee", label: { bg: "Гледане на кафе", en: "Coffee reading" }, landingPath: "/browse?specialty=coffee_reading" },
+  { id: "psychologist", icon: "brain", label: { bg: "Психолог", en: "Psychologist" }, landingPath: "/browse?specialty=psychologist" },
+  { id: "art_therapist", icon: "palette", label: { bg: "Арт-терапевт", en: "Art therapist" }, landingPath: "/browse?specialty=art_therapist" },
+  { id: "coaching", icon: "target", label: { bg: "Коучинг", en: "Coaching" }, landingPath: "/browse?specialty=coaching" },
+  { id: "veterinarian", icon: "paw-print", label: { bg: "Ветеринарен лекар", en: "Veterinarian" }, landingPath: null, comingSoon: true },
 ];
+
+// Domain pills — one per ACTIVE domain (data/domains.json), each linking to a
+// /browse result OR-filtered across every specialty in the domain. Just repeated
+// ?specialty= keys; no backend domain filter needed.
+type DomainEntry = { key: string; bg: string; en: string; active: boolean; specialties: string[] };
+export const DOMAIN_PILLS = (domainsData as DomainEntry[])
+  .filter((d) => d.active)
+  .map((d) => ({
+    key: d.key,
+    label: { bg: d.bg, en: d.en },
+    landingPath: `/browse?${d.specialties.map((s) => `specialty=${s}`).join("&")}`,
+  }));

@@ -33,7 +33,7 @@
 }
 .eyebrow {
   margin: 0;
-  font: italic 400 1.25rem/1.4 var(--font-ui);
+  font: 500 1.375rem/1.4 var(--font-ui);
   color: var(--text-secondary);
 }
 .headline {
@@ -174,18 +174,61 @@
   }
 }
 
-/* Row 3 — specialty tiles: auto-fit, ~5 per row, square, growing uniformly. */
+/* Row 3 — "Попитай специалист": one shared heading over the domain pills + the
+   per-specialty tile grid. */
+.discover {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.discoverHeading {
+  margin: 0;
+  font: 700 1.75rem var(--font-ui);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+/* Domain pills — a quick "browse a whole domain" filter bar above the tiles. */
+.pillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--text-primary);
+  background: transparent;
+  color: var(--text-primary);
+  font: 500 1.0625rem var(--font-ui);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.pill:hover {
+  background: var(--text-primary);
+  color: var(--bg-page);
+}
+.pill:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* Row 3 — specialty tiles: auto-fit, ~5 per row, short landscape rectangles.
+   grid-auto-rows:1fr + align-items:stretch make every tile share ONE height —
+   the tallest content in the grid (the coming-soon tile) — so no tile is taller
+   than it needs to be and they stay uniform across rows. */
 .tileGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
+  grid-auto-rows: 1fr;
   justify-content: start;
   align-items: stretch;
   gap: 14px;
 }
 .tile {
-  aspect-ratio: 1;
   box-sizing: border-box;
-  padding: 20px;
+  padding: 18px;
   border: 1px solid var(--border-default);
   border-radius: 16px;
   background: var(--bg-surface);
