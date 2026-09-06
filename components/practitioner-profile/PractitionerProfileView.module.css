@@ -252,11 +252,11 @@
   gap: 5px;
 }
 .svc2StatNum {
-  font: 500 1.125rem var(--font-mono);
+  font: 600 1.125rem var(--font-ui);
   color: var(--text-primary);
 }
 .svc2StatUnit {
-  font: 400 0.75rem var(--font-mono);
+  font: 600 0.75rem var(--font-ui);
   color: var(--text-tertiary);
 }
 .svc2Desc {

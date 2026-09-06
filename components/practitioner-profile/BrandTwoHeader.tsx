@@ -106,7 +106,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
         <div className={styles.cardDivider} />
         <div className={styles.cardMeta}>
           <div className={styles.cardMetaRow}>
-            <Clock size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+            <Clock size={24} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
             <span className={styles.cardMetaText}>
               <span className={styles.cardMetaLabel}>{tPublic("nextAvailableSlotLabel")}</span>
               <span className={styles.cardMetaValue}>{props.nextSlotLabel ?? tPublic("nextAvailableSlotEmpty")}</span>
@@ -114,7 +114,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           </div>
           {priceText && (
             <div className={styles.cardMetaRow}>
-              <CircleEuro size={16} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
+              <CircleEuro size={24} strokeWidth={1.8} className={styles.pillIcon} aria-hidden="true" />
               <span className={styles.cardMetaValue}>{tPublic("summaryPriceFrom", { price: priceText })}</span>
             </div>
           )}

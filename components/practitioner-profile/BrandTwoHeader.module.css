@@ -121,13 +121,11 @@
   line-height: 1.25;
 }
 .cardMetaLabel {
-  font: 400 0.6875rem var(--font-mono);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: 400 0.85rem var(--font-ui);
   color: var(--text-tertiary);
 }
 .cardMetaValue {
-  font: 500 0.875rem var(--font-mono);
+  font: 500 1.1rem var(--font-ui);
   color: var(--text-primary);
 }
 .pillIcon {
