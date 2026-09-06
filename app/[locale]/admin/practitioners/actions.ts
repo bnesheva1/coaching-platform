@@ -60,6 +60,7 @@ export async function setModeration(
     actorId: user.id,
     actorEmail: user.email,
     action: `practitioner.moderation:${status}`,
+    targetId: practitionerId,
     previousValue: previous,
     newValue: `${status} — ${reason}`,
   });
@@ -126,6 +127,7 @@ export async function setCommissionOverride(
     actorId: user.id,
     actorEmail: user.email,
     action: `practitioner.commission:${override == null ? "clear" : "set"}`,
+    targetId: practitionerId,
     previousValue: pctLabel(previous),
     newValue: `${pctLabel(override)} — ${reason}`,
     detail: { override, reason },
@@ -231,6 +233,7 @@ export async function setSubscriptionOverride(
     actorId: user.id,
     actorEmail: user.email,
     action: `practitioner.subscription:${hasOverride ? "set" : "clear"}`,
+    targetId: practitionerId,
     previousValue: `${prevExempt ? "exempt" : eurLabel(prevPrice)}`,
     newValue: `${exempt ? "exempt" : eurLabel(priceCents)} — ${reason}`,
     detail: { exempt, priceCents, reason },
@@ -290,6 +293,7 @@ export async function setPayoutsFreeze(
     actorId: user.id,
     actorEmail: user.email,
     action: `practitioner.payouts:${frozen ? "frozen" : "released"}`,
+    targetId: practitionerId,
     previousValue: String(previous),
     newValue: `${frozen ? "frozen" : "released"} — ${reason}`,
   });

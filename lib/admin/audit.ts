@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import { isTripwireAction, alertAdminAction } from "./activityAlerts";
 
 // One row in admin_audit_log per admin action: who, when, what changed, and
 // the previous/new values. Call this AFTER requireAdmin, so the actor is a
@@ -16,6 +17,9 @@ export async function recordAdminAction(entry: {
   // Structured extra context (e.g. bulk cancel's per-booking outcomes) — stored
   // in admin_audit_log.detail jsonb alongside the text summary in new_value.
   detail?: unknown;
+  // The affected record (practitioner id), used only for the Telegram tripwire
+  // alert below — not stored in the audit row.
+  targetId?: string | null;
 }): Promise<void> {
   const { error } = await createServiceRoleClient()
     .from("admin_audit_log")
@@ -29,5 +33,16 @@ export async function recordAdminAction(entry: {
     });
   if (error) {
     console.error("recordAdminAction failed", { action: entry.action, error });
+  }
+
+  // Fire a Telegram tripwire for the short list of sensitive actions only.
+  // alertAdminAction is fully fail-safe, so it never blocks/breaks the action.
+  if (isTripwireAction(entry.action)) {
+    await alertAdminAction({
+      actorId: entry.actorId,
+      actorEmail: entry.actorEmail,
+      action: entry.action,
+      targetId: entry.targetId,
+    });
   }
 }

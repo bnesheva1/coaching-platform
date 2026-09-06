@@ -32,6 +32,7 @@ export async function runBulkCancel(
     actorId: user.id,
     actorEmail: user.email,
     action: "practitioner.bulk_cancel",
+    targetId: practitionerId,
     previousValue: `@${username} · ${result.outcomes.length} processed`,
     newValue: `refunded ${result.counts.refunded} · refund-failed ${result.counts.refundFailed} · no-payment ${result.counts.noPayment} · already-refunded ${result.counts.alreadyRefunded} — reason: ${reason}`,
     detail: {
