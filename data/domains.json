@@ -1,0 +1,58 @@
+[
+  {
+    "key": "intuitive_practices",
+    "bg": "Интуитивни практики",
+    "en": "Intuitive practices",
+    "active": true,
+    "specialties": ["astrology", "tarot", "reiki", "coffee_reading"]
+  },
+  {
+    "key": "psychology",
+    "bg": "Психология",
+    "en": "Psychology",
+    "active": true,
+    "specialties": ["psychologist", "art_therapist"]
+  },
+  {
+    "key": "coaching",
+    "bg": "Коучинг",
+    "en": "Coaching",
+    "active": true,
+    "specialties": ["coaching"]
+  },
+  {
+    "key": "veterinary",
+    "bg": "Ветеринария",
+    "en": "Veterinary",
+    "active": false,
+    "specialties": []
+  },
+  {
+    "key": "legal",
+    "bg": "Правни услуги",
+    "en": "Legal",
+    "active": false,
+    "specialties": []
+  },
+  {
+    "key": "financial",
+    "bg": "Финансови услуги",
+    "en": "Financial",
+    "active": false,
+    "specialties": []
+  },
+  {
+    "key": "marketing",
+    "bg": "Маркетинг",
+    "en": "Marketing",
+    "active": false,
+    "specialties": []
+  },
+  {
+    "key": "real_estate",
+    "bg": "Недвижими имоти",
+    "en": "Real estate",
+    "active": false,
+    "specialties": []
+  }
+]

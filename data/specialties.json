@@ -2,6 +2,8 @@
   { "key": "tarot", "en": "Tarot", "bg": "Таро" },
   { "key": "astrology", "en": "Astrology", "bg": "Астрология" },
   { "key": "reiki", "en": "Reiki", "bg": "Рейки" },
-  { "key": "coaching", "en": "Coaching", "bg": "Коучинг" },
-  { "key": "psychologist", "en": "Psychologist", "bg": "Психолог" }
+  { "key": "coffee_reading", "en": "Coffee reading", "bg": "Гледане на кафе" },
+  { "key": "psychologist", "en": "Psychologist", "bg": "Психолог" },
+  { "key": "art_therapist", "en": "Art therapist", "bg": "Арт-терапевт" },
+  { "key": "coaching", "en": "Coaching", "bg": "Коучинг" }
 ]
