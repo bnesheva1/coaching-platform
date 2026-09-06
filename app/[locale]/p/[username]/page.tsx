@@ -89,7 +89,7 @@ export default async function PublicProfilePage({
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("id, bio, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
+    .select("id, bio, quote, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
     .eq("username", normalizedUsername)
     .single();
 
@@ -353,6 +353,7 @@ export default async function PublicProfilePage({
           headline={practitionerProfile.headline ?? ""}
           location={practitionerProfile.location ?? ""}
           bio={practitionerProfile.bio ?? ""}
+          quote={practitionerProfile.quote ?? ""}
           avatarUrl={practitionerProfile.avatar_url}
           bannerUrl={practitionerProfile.banner_url}
           timezone={practitionerProfile.timezone}

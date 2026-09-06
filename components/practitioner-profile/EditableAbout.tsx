@@ -11,10 +11,12 @@ const initialState: ProfileFormState = null;
 // Mirrors MAX_BIO_LENGTH in actions.ts — see EditableIdentity.tsx's
 // identical comment on why this is duplicated rather than imported.
 const MAX_BIO_LENGTH = 1000;
+const MAX_QUOTE_LENGTH = 300;
 
 // Inline replace-with-textarea on pencil click (LinkedIn's own About-
-// section pattern) — not a modal, since it's a single field.
-export function EditableAbout({ bio }: { bio: string }) {
+// section pattern). `showQuote` adds the optional pull-quote field (brand two's
+// coloured quote box); off for brands that don't render one.
+export function EditableAbout({ bio, quote = "", showQuote = false }: { bio: string; quote?: string; showQuote?: boolean }) {
   const t = useTranslations("Profile");
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(updateProfileText, initialState);
@@ -57,6 +59,17 @@ export function EditableAbout({ bio }: { bio: string }) {
   return (
     <form key={formKey} action={formAction} style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
       <textarea name="bio" defaultValue={state?.values?.bio ?? bio} rows={6} maxLength={MAX_BIO_LENGTH} className="form-field" style={{ width: "100%" }} />
+      {showQuote && (
+        <input
+          name="quote"
+          defaultValue={state?.values?.quote ?? quote}
+          maxLength={MAX_QUOTE_LENGTH}
+          placeholder={t("quotePlaceholder")}
+          aria-label={t("editQuote")}
+          className="form-field"
+          style={{ width: "100%" }}
+        />
+      )}
       {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
       <div style={{ display: "flex", gap: "var(--space-2)" }}>
         <Button type="submit" size="sm" disabled={pending}>

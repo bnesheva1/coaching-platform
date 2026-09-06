@@ -29,6 +29,7 @@ const MAX_DISPLAY_NAME_LENGTH = 100;
 const MAX_HEADLINE_LENGTH = 150;
 const MAX_LOCATION_LENGTH = 100;
 const MAX_BIO_LENGTH = 1000;
+const MAX_QUOTE_LENGTH = 300;
 // Gallery + Videos: up to 9 of each per practitioner (also enforced by DB
 // triggers, see migration 20260905130000, so a race can't exceed it). Gallery
 // uploads accept up to 8MB of raw input, which is then re-encoded to a 16:9
@@ -88,7 +89,7 @@ export async function updateProfileText(
   // what was actually typed instead of the pre-edit value. See
   // ProfileFormState's own comment for why this is necessary at all.
   const submittedValues: Record<string, string> = {};
-  for (const key of ["displayName", "headline", "location", "bio"]) {
+  for (const key of ["displayName", "headline", "location", "bio", "quote"]) {
     if (formData.has(key)) submittedValues[key] = (formData.get(key) as string).trim();
   }
 
@@ -122,7 +123,7 @@ export async function updateProfileText(
     }
   }
 
-  const practitionerPayload: { headline?: string; location?: string; bio?: string } = {};
+  const practitionerPayload: { headline?: string; location?: string; bio?: string; quote?: string } = {};
 
   if (formData.has("headline")) {
     const headline = (formData.get("headline") as string).trim();
@@ -144,6 +145,13 @@ export async function updateProfileText(
       return { error: t("bioTooLong", { max: MAX_BIO_LENGTH }), values: submittedValues };
     }
     practitionerPayload.bio = bio;
+  }
+  if (formData.has("quote")) {
+    const quote = (formData.get("quote") as string).trim();
+    if (quote.length > MAX_QUOTE_LENGTH) {
+      return { error: t("quoteTooLong", { max: MAX_QUOTE_LENGTH }), values: submittedValues };
+    }
+    practitionerPayload.quote = quote;
   }
 
   if (Object.keys(practitionerPayload).length > 0) {

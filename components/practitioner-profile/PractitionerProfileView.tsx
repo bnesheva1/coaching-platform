@@ -53,6 +53,7 @@ export type PractitionerProfileViewProps = {
   headline: string;
   location: string;
   bio: string;
+  quote: string;
   avatarUrl: string | null;
   bannerUrl: string | null;
   // Practitioner's own scheduling timezone (practitioner_profiles.timezone)
@@ -160,6 +161,7 @@ export function PractitionerProfileView({
   headline,
   location,
   bio,
+  quote,
   avatarUrl,
   bannerUrl,
   timezone,
@@ -366,6 +368,7 @@ export function PractitionerProfileView({
           displayName={displayName}
           headline={headline}
           bio={bio}
+          quote={quote}
           location={location}
           avatarUrl={avatarUrl}
           specialties={specialties}
@@ -631,7 +634,7 @@ export function PractitionerProfileView({
               <div aria-hidden="true" />
               <div>
                 <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
-                <EditableAbout bio={bio} />
+                <EditableAbout bio={bio} quote={quote} showQuote />
               </div>
             </div>
           ) : null

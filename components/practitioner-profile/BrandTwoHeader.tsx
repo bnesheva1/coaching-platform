@@ -17,6 +17,7 @@ export type BrandTwoHeaderProps = {
   displayName: string;
   headline: string;
   bio: string;
+  quote: string;
   location: string;
   avatarUrl: string | null;
   specialties: string[];
@@ -161,9 +162,9 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           ) : (
             <p className={styles.aboutEmpty}>{t("aboutEmpty")}</p>
           )}
-          {props.headline && (
+          {props.quote && (
             <blockquote className={styles.quote}>
-              &bdquo;{props.headline}&ldquo;
+              &bdquo;{props.quote}&ldquo;
               <div className={styles.quoteBy}>&mdash; {props.displayName}</div>
             </blockquote>
           )}
