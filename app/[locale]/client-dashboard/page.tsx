@@ -10,6 +10,7 @@ import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
+import homeStyles from "@/components/dashboard/DashboardHome.module.css";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
@@ -305,7 +306,7 @@ export default async function ClientUpcomingPage({
       <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
         <GreetingText name={profile?.display_name ?? ""} />
       </p>
-      <h1 style={{ font: "var(--text-heading-lg)", margin: "var(--space-1) 0 var(--space-2)" }}>{t("agenda.heading")}</h1>
+      <h1 className={homeStyles.agendaHeading} style={{ margin: "var(--space-1) 0 var(--space-2)" }}>{t("agenda.heading")}</h1>
       <ClientTimezoneNotice savedTimezone={savedTz} />
 
       {justCancelled && (

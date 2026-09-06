@@ -1,0 +1,13 @@
+/* Brand-two dashboard home styling. Styling only — all greeting / session /
+   join-window logic is untouched. Every rule is gated to [data-brand="two"]
+   (a :global ancestor, since data-brand sits on <html>) so the warm dashboard
+   keeps its current look. The base class carries the warm default so nothing
+   changes for brand one. */
+
+.agendaHeading {
+  font: var(--text-heading-lg);
+}
+:global([data-brand="two"]) .agendaHeading {
+  font: 700 2.75rem/1.05 var(--font-ui);
+  letter-spacing: -0.02em;
+}
