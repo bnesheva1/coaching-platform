@@ -11,6 +11,7 @@ import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
 import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
+import { resolveBrand } from "@/lib/brand";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
@@ -261,11 +262,12 @@ export default async function ClientUpcomingPage({
   // this page, id="practitioners"), with browsing for someone new secondary.
   // Native <a> for the in-page anchor — Button uses the locale-aware Link,
   // which would mangle a bare "#practitioners".
+  const isBrandTwo = resolveBrand() === "two";
   const noUpcomingBlock = (
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
+        border: isBrandTwo ? "1px solid var(--text-primary)" : "1px solid var(--border-subtle)",
         borderRadius: "var(--radius-lg)",
         padding: "var(--space-6)",
         display: "flex",
@@ -303,11 +305,13 @@ export default async function ClientUpcomingPage({
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
-      <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+      <p className={homeStyles.greeting} style={{ margin: 0, color: "var(--text-secondary)" }}>
         <GreetingText name={profile?.display_name ?? ""} />
       </p>
       <h1 className={homeStyles.agendaHeading} style={{ margin: "var(--space-1) 0 var(--space-2)" }}>{t("agenda.heading")}</h1>
-      <ClientTimezoneNotice savedTimezone={savedTz} />
+      <div className={homeStyles.tzNotice}>
+        <ClientTimezoneNotice savedTimezone={savedTz} />
+      </div>
 
       {justCancelled && (
         <p style={{ color: "var(--color-success)", marginBottom: "var(--space-4)" }}>{tBooking("cancelledMessage")}</p>
@@ -340,7 +344,7 @@ export default async function ClientUpcomingPage({
               flexDirection: "column",
               gap: "var(--space-5)",
               background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
+              border: isBrandTwo ? "1px solid var(--text-primary)" : "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-xl)",
               boxShadow: "var(--shadow-md)",
               padding: "var(--space-8)",
@@ -434,10 +438,11 @@ export default async function ClientUpcomingPage({
         pastSectionId="past"
         emptyUpcomingContent={nextBooking ? undefined : noUpcomingBlock}
         documentsEnabled={documentsEnabled}
+        hideTimezoneNote={isBrandTwo}
       />
 
       <section style={{ marginTop: "var(--space-8)" }} id="practitioners">
-        <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{t("nav.clientPractitioners")}</h2>
+        <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-4)" }}>{t("nav.clientPractitioners")}</h2>
         <BookedWithGrid practitioners={bookedWithPractitioners} />
         <div style={{ marginTop: "var(--space-6)", display: "flex", justifyContent: "center" }}>
           <Button href="/browse" variant="secondary">
@@ -447,7 +452,7 @@ export default async function ClientUpcomingPage({
       </section>
 
       <section style={{ marginTop: "var(--space-8)" }} id="saved">
-        <h2 style={{ margin: "0 0 var(--space-4)", font: "var(--text-heading-md)" }}>{tSaved("sectionTitle")}</h2>
+        <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-4)" }}>{tSaved("sectionTitle")}</h2>
         <SavedPractitionersGrid practitioners={savedPractitioners} unbookableIds={unbookableSavedIds} hiddenIds={hiddenSavedIds} />
       </section>
     </main>

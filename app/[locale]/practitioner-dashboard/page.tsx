@@ -331,7 +331,7 @@ export default async function PractitionerHomePage() {
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <div>
-        <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+        <p className={homeStyles.greeting} style={{ margin: 0, color: "var(--text-secondary)" }}>
           <GreetingText name={profile?.display_name ?? ""} />
         </p>
         <h1 className={homeStyles.agendaHeading} style={{ margin: "var(--space-1) 0 var(--space-4)" }}>{t("agenda.heading")}</h1>

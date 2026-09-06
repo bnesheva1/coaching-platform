@@ -16,6 +16,7 @@ import { sessionTimeState } from "@/lib/video/sessionWindow";
 import { JoinSessionLink } from "./JoinSessionLink";
 import { SessionDocuments, type SessionDocumentSlot } from "./SessionDocuments";
 import rowStyles from "./ResponsiveImageRow.module.css";
+import homeStyles from "@/components/dashboard/DashboardHome.module.css";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -631,6 +632,9 @@ export function BookingsList({
   // and threaded down to the details disclosure (and its past-session
   // counterpart). Off = no documents block anywhere.
   documentsEnabled = false,
+  // Client dashboard (brand two) only: the timezone note is already shown once
+  // under the page headline, so suppress this list's own duplicate copy.
+  hideTimezoneNote = false,
 }: {
   upcoming: SessionBooking[];
   past: SessionBooking[];
@@ -646,6 +650,7 @@ export function BookingsList({
   upcomingRebookHref?: string;
   emptyUpcomingContent?: ReactNode;
   documentsEnabled?: boolean;
+  hideTimezoneNote?: boolean;
 }) {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -679,10 +684,12 @@ export function BookingsList({
 
   return (
     <section style={{ marginTop: "var(--space-6)" }}>
-      <h2 style={{ margin: "0 0 var(--space-2)", font: "var(--text-heading-md)" }}>{t("bookingsTitle")}</h2>
-      <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
-        {t("timesShownIn", { timezone: effectiveTimezone })}
-      </p>
+      <h2 className={homeStyles.sectionLabel} style={{ margin: "0 0 var(--space-2)" }}>{t("bookingsTitle")}</h2>
+      {!hideTimezoneNote && (
+        <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+          {t("timesShownIn", { timezone: effectiveTimezone })}
+        </p>
+      )}
 
       {showUpcomingSection && (
         <>
