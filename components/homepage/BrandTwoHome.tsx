@@ -21,6 +21,13 @@ function heroQuestionsForLocale(locale: string): string[] {
   return Object.values(active).flatMap((set) => (locale === "en" ? set.en : set.bg));
 }
 
+// Each question marks its one accent word with *asterisks* — split it out so only
+// that word carries the gradient (falls back to no accent if unmarked).
+function splitAccent(s: string): { before: string; word: string; after: string } {
+  const m = s.match(/^(.*?)\*([^*]+)\*(.*)$/);
+  return m ? { before: m[1], word: m[2], after: m[3] } : { before: s, word: "", after: "" };
+}
+
 const ICONS = { brain: Brain, "moon-star": MoonStar, "paw-print": PawPrint } as const;
 
 export function BrandTwoHome() {
@@ -37,7 +44,7 @@ export function BrandTwoHome() {
     return () => clearInterval(id);
   }, [questions.length]);
 
-  const q = questions[index % Math.max(questions.length, 1)];
+  const { before, word, after } = splitAccent(questions[index % Math.max(questions.length, 1)] ?? "");
 
   return (
     <section className={styles.section}>
@@ -48,10 +55,12 @@ export function BrandTwoHome() {
             <p className={styles.eyebrow}>{t("brandTwoEyebrow")}</p>
             <h1 className={styles.headline}>
               {/* key={index} remounts the span so the fade-in re-runs each rotation. */}
-              {/* Plain-string questions (data/hero-questions.json) → the whole
-                  line carries the gradient (no per-word split in the data). */}
+              {/* The *asterisk*-marked word (data/hero-questions.json) carries
+                  the gradient; the rest of the line stays plain. */}
               <span key={index} className={styles.question}>
-                <span className={styles.gradWord}>{q}</span>
+                {before}
+                {word && <span className={styles.gradWord}>{word}</span>}
+                {after}
               </span>
             </h1>
             <p className={styles.subcopy}>{t("brandTwoSubcopy")}</p>
