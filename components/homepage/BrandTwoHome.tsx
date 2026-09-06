@@ -1,40 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, ArrowUpRight, Brain, MoonStar, PawPrint } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { HOME_MODALITIES, type HeroQuestion } from "@/lib/homepage-modalities";
+import { HOME_MODALITIES } from "@/lib/homepage-modalities";
+import heroQuestions from "@/data/hero-questions.json";
 import styles from "./BrandTwoHome.module.css";
 
 // Brand-two homepage hero (design handoff 1b). Only rendered when the active
 // brand is "two" (see app/[locale]/page.tsx); brand one keeps its own Hero.
 
-// The rotating hero questions come from the modality config: the questions of
-// every ACTIVE modality (HOME_MODALITIES), flattened into one rotation. So the
-// hero only ever cycles the launch modalities' copy. Reserved modalities'
-// draft questions (Lawyer/Real Estate) live in RESERVED_MODALITY_DRAFTS and are
-// intentionally not cycled until those modalities activate.
-const HERO_QUESTIONS: HeroQuestion[] = HOME_MODALITIES.filter(
-  (m) => m.active && m.heroQuestions?.length,
-).flatMap((m) => m.heroQuestions ?? []);
+// The rotating hero questions are CONTENT, controlled in data/hero-questions.json:
+// every domain under `active`, its questions for the current locale, flattened
+// into one rotation. `reserved_drafts` there is parked copy for domains not yet
+// live (with editorial notes) and is never cycled.
+type HeroQuestionSet = { bg: string[]; en: string[] };
+function heroQuestionsForLocale(locale: string): string[] {
+  const active = heroQuestions.active as Record<string, HeroQuestionSet>;
+  return Object.values(active).flatMap((set) => (locale === "en" ? set.en : set.bg));
+}
 
 const ICONS = { brain: Brain, "moon-star": MoonStar, "paw-print": PawPrint } as const;
 
 export function BrandTwoHome() {
   const t = useTranslations("HomePage");
   const locale = useLocale();
-  const questions = HERO_QUESTIONS;
+  const questions = useMemo(() => heroQuestionsForLocale(locale), [locale]);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (!questions.length) return;
     // Respect reduced motion: hold the first question static, no rotation.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % questions.length), 5000);
     return () => clearInterval(id);
   }, [questions.length]);
 
-  const q = questions[index];
+  const q = questions[index % Math.max(questions.length, 1)];
 
   return (
     <section className={styles.section}>
@@ -45,10 +48,10 @@ export function BrandTwoHome() {
             <p className={styles.eyebrow}>{t("brandTwoEyebrow")}</p>
             <h1 className={styles.headline}>
               {/* key={index} remounts the span so the fade-in re-runs each rotation. */}
+              {/* Plain-string questions (data/hero-questions.json) → the whole
+                  line carries the gradient (no per-word split in the data). */}
               <span key={index} className={styles.question}>
-                {q.before}
-                <span className={styles.gradWord}>{q.word}</span>
-                {q.after}
+                <span className={styles.gradWord}>{q}</span>
               </span>
             </h1>
             <p className={styles.subcopy}>{t("brandTwoSubcopy")}</p>
