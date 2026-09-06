@@ -4,39 +4,27 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, ArrowUpRight, Brain, MoonStar, PawPrint } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { HOME_MODALITIES } from "@/lib/homepage-modalities";
+import { HOME_MODALITIES, type HeroQuestion } from "@/lib/homepage-modalities";
 import styles from "./BrandTwoHome.module.css";
 
 // Brand-two homepage hero (design handoff 1b). Only rendered when the active
 // brand is "two" (see app/[locale]/page.tsx); brand one keeps its own Hero.
 
-type Question = { before: string; word: string; after: string };
-
-// Rotating hero questions — one word per line carries the gradient (never the
-// whole line). Brand-specific editorial copy; kept here (structured before/word/
-// after) rather than flat i18n keys. bg is the live locale; en mirrors the
-// handoff for a future bilingual brand.
-const QUESTIONS: Record<string, Question[]> = {
-  bg: [
-    { before: "Мога ли да го ", word: "уволня", after: "?" },
-    { before: "Струва ли си този ", word: "имот", after: "?" },
-    { before: "Как да си върна ", word: "съня", after: "?" },
-    { before: "Какво ме чака тази ", word: "година", after: "?" },
-  ],
-  en: [
-    { before: "Can I ", word: "fire", after: " him?" },
-    { before: "Is this property ", word: "worth", after: " it?" },
-    { before: "How do I get my ", word: "sleep", after: " back?" },
-    { before: "What does this ", word: "year", after: " hold for me?" },
-  ],
-};
+// The rotating hero questions come from the modality config: the questions of
+// every ACTIVE modality (HOME_MODALITIES), flattened into one rotation. So the
+// hero only ever cycles the launch modalities' copy. Reserved modalities'
+// draft questions (Lawyer/Real Estate) live in RESERVED_MODALITY_DRAFTS and are
+// intentionally not cycled until those modalities activate.
+const HERO_QUESTIONS: HeroQuestion[] = HOME_MODALITIES.filter(
+  (m) => m.active && m.heroQuestions?.length,
+).flatMap((m) => m.heroQuestions ?? []);
 
 const ICONS = { brain: Brain, "moon-star": MoonStar, "paw-print": PawPrint } as const;
 
 export function BrandTwoHome() {
   const t = useTranslations("HomePage");
   const locale = useLocale();
-  const questions = QUESTIONS[locale] ?? QUESTIONS.bg;
+  const questions = HERO_QUESTIONS;
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
