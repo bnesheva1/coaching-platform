@@ -206,8 +206,8 @@
 .svc2Image {
   order: 1;
   flex: none;
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -302,6 +302,8 @@
   }
   .svc2Image {
     order: 2;
+    width: 100px;
+    height: 100px;
   }
   .svc2Stats {
     order: 3;
