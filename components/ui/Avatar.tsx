@@ -1,4 +1,7 @@
+"use client";
+
 import type { CSSProperties } from "react";
+import { useTranslations } from "next-intl";
 
 // One avatar, everywhere a practitioner's face appears clickable — so the
 // "available now" indicator (a coloured ring + a small label) travels WITH the
@@ -36,6 +39,7 @@ export function Avatar({
   fallbackOpacity,
   imageStyle,
 }: AvatarProps) {
+  const t = useTranslations("A11y");
   const initial = (name || "?").charAt(0).toUpperCase();
   const ringGap = Math.max(3, Math.round(size * 0.045));
 
@@ -46,7 +50,7 @@ export function Avatar({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
-            alt=""
+            alt={t("avatarAlt", { name })}
             style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block", ...imageStyle }}
           />
         ) : (

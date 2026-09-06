@@ -1,4 +1,9 @@
 {
+  "A11y": {
+    "avatarAlt": "avatar image of {name}",
+    "serviceImageAlt": "illustration of {name}",
+    "galleryImageAlt": "gallery image presenting {name}"
+  },
   "Brand": {
     "siteName": "Coaching Platform",
     "siteNameTwo": "само да попитам"

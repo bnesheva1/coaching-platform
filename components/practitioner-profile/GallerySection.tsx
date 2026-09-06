@@ -17,14 +17,15 @@ export type GalleryImage = { id: string; url: string };
 // shared MediaModal as a lightbox (prev/next wrap, arrows, swipe). In edit mode
 // each tile gets a remove control and a dashed upload tile appears under the cap.
 // Self-omits on the public view when empty.
-export function GallerySection({ images, isEditing }: { images: GalleryImage[]; isEditing: boolean }) {
+export function GallerySection({ images, isEditing, practitionerName }: { images: GalleryImage[]; isEditing: boolean; practitionerName: string }) {
   const t = useTranslations("Profile");
+  const tA = useTranslations("A11y");
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
 
   if (!isEditing && images.length === 0) return null;
 
-  const items: MediaItem[] = images.map((im) => ({ type: "image", src: im.url }));
+  const items: MediaItem[] = images.map((im) => ({ type: "image", src: im.url, alt: tA("galleryImageAlt", { name: practitionerName }) }));
 
   return (
     <section>
@@ -37,7 +38,7 @@ export function GallerySection({ images, isEditing }: { images: GalleryImage[]; 
           <div key={im.id} className={styles.item}>
             <button type="button" className={styles.tile} onClick={() => { setIndex(i); setOpen(true); }} aria-label={t("galleryOpenImage")}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className={styles.thumb} src={im.url} alt="" />
+              <img className={styles.thumb} src={im.url} alt={tA("galleryImageAlt", { name: practitionerName })} />
             </button>
             {isEditing && <GalleryRemove id={im.id} />}
           </div>

@@ -92,7 +92,8 @@ function LinkifiedText({ text }: { text: string }) {
 // service without one reads as an intentional text-only layout rather
 // than something failed to load. Capped at a third of the tile's width
 // via flex-basis so it scales instead of overflowing when it does render.
-function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
+function ServiceImage({ imageUrl, serviceName }: { imageUrl: string | null; serviceName: string }) {
+  const tA = useTranslations("A11y");
   if (!imageUrl) return null;
   return (
     <div
@@ -105,7 +106,7 @@ function ServiceImage({ imageUrl }: { imageUrl: string | null }) {
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <img src={imageUrl} alt={tA("serviceImageAlt", { name: serviceName })} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
     </div>
   );
 }
@@ -633,7 +634,7 @@ function ServiceRow({ service, enabledTypes, documentsFeatureEnabled, earnings }
   return (
     <li style={{ marginBottom: "var(--space-4)" }}>
       <div style={tileStyle}>
-        <ServiceImage imageUrl={service.image_url} />
+        <ServiceImage imageUrl={service.image_url} serviceName={service.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexWrap: "wrap" }}>
             <strong>{service.name}</strong>

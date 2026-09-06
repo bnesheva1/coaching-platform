@@ -1,4 +1,9 @@
 {
+  "A11y": {
+    "avatarAlt": "аватар на {name}",
+    "serviceImageAlt": "илюстрация на {name}",
+    "galleryImageAlt": "снимка от галерията на {name}"
+  },
   "Brand": {
     "siteName": "Платформа за консултации",
     "siteNameTwo": "само да попитам"
