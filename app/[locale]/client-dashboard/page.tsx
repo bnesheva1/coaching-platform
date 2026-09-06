@@ -366,7 +366,7 @@ export default async function ClientUpcomingPage({
             </span>
 
             <div className={rowStyles.row} style={{ gap: "var(--space-5)" }}>
-              <ServiceImageSquare imageUrl={nextBooking.serviceImageUrl} size={140} />
+              <ServiceImageSquare imageUrl={nextBooking.serviceImageUrl} size={140} serviceName={nextBooking.serviceName} />
 
               <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                 {/* Matches the practitioner dashboard's own next-session

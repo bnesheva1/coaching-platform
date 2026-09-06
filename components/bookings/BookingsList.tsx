@@ -208,12 +208,13 @@ export function CounterpartAvatar({
   avatarUrl?: string | null;
   size?: number;
 }) {
+  const tA = useTranslations("A11y");
   const initial = (name || "?").charAt(0).toUpperCase();
   return avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={avatarUrl}
-      alt=""
+      alt={tA("avatarAlt", { name })}
       style={{
         width: size,
         height: size,
@@ -250,7 +251,8 @@ export function CounterpartAvatar({
 // hero (size 140) and BookingsList's own premium cards (size 96) so the
 // two surfaces stay visually identical, not two hand-copied variants
 // that can drift.
-export function ServiceImageSquare({ imageUrl, size }: { imageUrl?: string | null; size: number }) {
+export function ServiceImageSquare({ imageUrl, size, serviceName }: { imageUrl?: string | null; size: number; serviceName?: string }) {
+  const tA = useTranslations("A11y");
   return (
     <div
       className={rowStyles.tile}
@@ -266,7 +268,7 @@ export function ServiceImageSquare({ imageUrl, size }: { imageUrl?: string | nul
     >
       {imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={imageUrl} alt={serviceName ? tA("serviceImageAlt", { name: serviceName }) : ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       )}
     </div>
   );
@@ -855,7 +857,7 @@ export function BookingsList({
                     padding: "var(--space-6)",
                   }}
                 >
-                  <ServiceImageSquare imageUrl={booking.serviceImageUrl} size={96} />
+                  <ServiceImageSquare imageUrl={booking.serviceImageUrl} size={96} serviceName={booking.serviceName} />
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                     {/* Same row-on-desktop/stack-on-mobile breakpoint as
                         the image+content split above, reused here for

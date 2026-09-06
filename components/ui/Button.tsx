@@ -52,6 +52,11 @@ export type ButtonProps = {
   // CTA (2a handoff) needs this; every prior caller sizes to content,
   // so this defaults off rather than changing existing layouts.
   fullWidth?: boolean;
+  // Forwarded to the underlying <button>/<Link> so a caller can give an
+  // icon-only button an accessible name, or announce a toggle's pressed state
+  // (e.g. SaveButton's full variant) — previously these were silently dropped.
+  "aria-label"?: string;
+  "aria-pressed"?: boolean;
 };
 
 export function Button({
@@ -63,6 +68,8 @@ export function Button({
   type = "button",
   href,
   fullWidth = false,
+  "aria-label": ariaLabel,
+  "aria-pressed": ariaPressed,
 }: ButtonProps) {
   const s = SIZES[size];
   const v = VARIANTS[variant];
@@ -93,14 +100,14 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={styles.btn} style={style} {...handlers}>
+      <Link href={href} className={styles.btn} style={style} aria-label={ariaLabel} aria-pressed={ariaPressed} {...handlers}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button type={type} disabled={disabled} onClick={onClick} className={styles.btn} style={style} {...handlers}>
+    <button type={type} disabled={disabled} onClick={onClick} className={styles.btn} style={style} aria-label={ariaLabel} aria-pressed={ariaPressed} {...handlers}>
       {children}
     </button>
   );

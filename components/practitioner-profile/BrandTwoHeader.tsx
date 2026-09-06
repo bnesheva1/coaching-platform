@@ -48,6 +48,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
   const { isEditing } = props;
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
+  const tA = useTranslations("A11y");
   const locale = useLocale();
 
   const specialtyLabel = (key: string) =>
@@ -66,7 +67,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
 
   const avatar = props.avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img className={styles.portrait} src={props.avatarUrl} alt={props.displayName} />
+    <img className={styles.portrait} src={props.avatarUrl} alt={tA("avatarAlt", { name: props.displayName })} />
   ) : (
     <div className={styles.portraitFallback}>{props.displayName.charAt(0).toUpperCase()}</div>
   );

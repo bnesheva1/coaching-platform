@@ -31,6 +31,7 @@ export function BrowseCardTwo({
   saveControl?: ReactNode;
 }) {
   const t = useTranslations("Browse");
+  const tA = useTranslations("A11y");
   const name = practitioner.displayName || `@${practitioner.username}`;
 
   return (
@@ -51,7 +52,7 @@ export function BrowseCardTwo({
       <div className={styles.cardBody}>
         {practitioner.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.portrait} src={practitioner.avatarUrl} alt="" />
+          <img className={styles.portrait} src={practitioner.avatarUrl} alt={tA("avatarAlt", { name })} />
         ) : (
           <span className={styles.portraitFallback} aria-hidden="true">
             {name.charAt(0).toUpperCase()}

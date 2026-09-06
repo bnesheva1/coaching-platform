@@ -198,6 +198,7 @@ export function PractitionerProfileView({
   const tPublic = useTranslations("PublicProfile");
   const tReviews = useTranslations("Reviews");
   const tImmediate = useTranslations("Immediate");
+  const tA = useTranslations("A11y");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -445,7 +446,7 @@ export function PractitionerProfileView({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}
-                    alt={displayName}
+                    alt={tA("avatarAlt", { name: displayName })}
                     style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
                   />
                 ) : (
@@ -805,7 +806,7 @@ export function PractitionerProfileView({
                         {service.imageUrl && (
                           <div className={styles.svc2Image}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={service.imageUrl} alt="" />
+                            <img src={service.imageUrl} alt={tA("serviceImageAlt", { name: service.name })} />
                           </div>
                         )}
                         {!canBookNow && (
@@ -850,7 +851,7 @@ export function PractitionerProfileView({
                           style={{ "--tile-size": "152px", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden" } as React.CSSProperties}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={service.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={service.imageUrl} alt={tA("serviceImageAlt", { name: service.name })} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         </div>
                       )}
                       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -909,7 +910,7 @@ export function PractitionerProfileView({
 
         {/* Gallery — after Videos. Self-omits when empty on the public view;
             the shared MediaModal handles the lightbox. */}
-        <GallerySection images={gallery} isEditing={isEditing} />
+        <GallerySection images={gallery} isEditing={isEditing} practitionerName={displayName} />
 
         {/* Reviews */}
         <div id="reviews">
