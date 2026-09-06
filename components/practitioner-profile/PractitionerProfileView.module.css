@@ -187,28 +187,25 @@
   border-radius: var(--radius-2xl);
   padding: 20px;
 }
-/* Desktop: image spanning the left, text (title/stats/desc) in the middle,
-   book button on the right. Mobile reflows the areas below. */
-.svc2Grid {
-  display: grid;
-  grid-template-columns: 100px 1fr auto;
-  gap: 8px 20px;
-  align-items: start;
-  grid-template-areas:
-    "image title  button"
-    "image stats  button"
-    "image desc   button";
+/* Desktop: image (left) | text column (title/stats/desc) | book button (right),
+   ordered with flex. A missing image just drops out of the flow — no empty
+   column, no placeholder. Mobile reflow is at the bottom of this block. */
+.svc2Main {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
 }
-/* No image → no image column at all (no placeholder). */
-.svc2GridNoImage {
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "title button"
-    "stats button"
-    "desc  button";
+.svc2Text {
+  order: 2;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .svc2Image {
-  grid-area: image;
+  order: 1;
+  flex: none;
   width: 100px;
   height: 100px;
   border-radius: 12px;
@@ -220,12 +217,10 @@
   object-fit: cover;
 }
 .svc2Title {
-  grid-area: title;
   font: 700 1.0625rem var(--font-ui);
   color: var(--text-primary);
 }
 .svc2Stats {
-  grid-area: stats;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -258,14 +253,14 @@
   color: var(--text-tertiary);
 }
 .svc2Desc {
-  grid-area: desc;
   font: 400 0.9375rem/1.5 var(--font-ui);
   color: var(--text-secondary);
 }
 /* Collapsed: solid black, matching the other brand-two action buttons (same
    --radius-lg rounding). Open: flips to white with a black border. */
 .svc2BookBtn {
-  grid-area: button;
+  order: 3;
+  flex: none;
   align-self: center;
   display: inline-flex;
   align-items: center;
@@ -287,26 +282,39 @@
   flex: none;
 }
 @media (max-width: 640px) {
-  /* Mobile: title full-width on top, then image + stat boxes side by side,
-     then the description full-width, then the book button full-width. */
-  .svc2Grid {
-    grid-template-columns: 100px 1fr;
-    grid-template-areas:
-      "title  title"
-      "image  stats"
-      "desc   desc"
-      "button button";
+  /* Mobile: title full-width on top, then image + stat boxes on one row, then
+     the description full-width, then the book button full-width. The text group
+     flattens (display:contents) so all pieces are flex siblings of .svc2Main —
+     wrapping by width, sequenced by order. A missing image just leaves the stats
+     alone on their row. */
+  .svc2Main {
+    flex-wrap: wrap;
     align-items: center;
+    row-gap: 12px;
+    column-gap: 16px;
   }
-  .svc2GridNoImage {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "title"
-      "stats"
-      "desc"
-      "button";
+  .svc2Text {
+    display: contents;
+  }
+  .svc2Title {
+    order: 1;
+    flex-basis: 100%;
+  }
+  .svc2Image {
+    order: 2;
+  }
+  .svc2Stats {
+    order: 3;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .svc2Desc {
+    order: 4;
+    flex-basis: 100%;
   }
   .svc2BookBtn {
+    order: 5;
+    flex-basis: 100%;
     width: 100%;
     justify-content: center;
   }
