@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { resolveBrand } from "@/lib/brand";
 import { ModerationNotice } from "@/components/dashboard/ModerationNotice";
 import { SubscriptionNotice } from "@/components/dashboard/SubscriptionNotice";
 import { isEnabled } from "@/lib/flags";
@@ -92,7 +93,8 @@ export default async function PractitionerDashboardLayout({ children }: { childr
 
   return (
     <DashboardShell
-      sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} />}
+      sidebar={<DashboardSidebar pulse={{ sessionCount: sessionCount ?? 0, totalUpcoming: totalUpcoming ?? 0 }} isBrandTwo={resolveBrand() === "two"} />}
+      isBrandTwo={resolveBrand() === "two"}
     >
       {mod && (
         <ModerationNotice

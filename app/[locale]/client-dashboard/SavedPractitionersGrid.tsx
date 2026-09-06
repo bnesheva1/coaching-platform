@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { PractitionerCard, type PractitionerCardData } from "@/components/browse/PractitionerCard";
+import { BrowseCardTwo } from "@/components/browse/BrowseCardTwo";
+import { toBrowseTwoData } from "./BookedWithGrid";
+import { SaveButton } from "@/components/practitioners/SaveButton";
 import { Button } from "@/components/ui/Button";
 
 // The client dashboard's saved-practitioners section. Reuses the browse card;
@@ -14,12 +17,14 @@ export function SavedPractitionersGrid({
   practitioners,
   unbookableIds,
   hiddenIds = [],
+  isBrandTwo = false,
 }: {
   practitioners: PractitionerCardData[];
   unbookableIds: string[];
   // Fully-hidden saved practitioners (lapsed, no outstanding bookings): the card
   // stays but stops linking to an unreachable profile.
   hiddenIds?: string[];
+  isBrandTwo?: boolean;
 }) {
   const t = useTranslations("Saved");
   const [list, setList] = useState(practitioners);
@@ -50,21 +55,42 @@ export function SavedPractitionersGrid({
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "var(--space-4)", alignContent: "start" }}>
-      {list.map((p) => (
-        <PractitionerCard
-          key={p.id}
-          practitioner={p}
-          saveable
-          saved
-          viewerIsGuest={false}
-          bookable={!unbookable.has(p.id)}
-          visible={!hidden.has(p.id)}
-          onToggleSave={(nowSaved) => {
-            // Unsaving from the saved list removes the card right away.
-            if (!nowSaved) setList((prev) => prev.filter((x) => x.id !== p.id));
-          }}
-        />
-      ))}
+      {list.map((p) =>
+        isBrandTwo ? (
+          <BrowseCardTwo
+            key={p.id}
+            elevated
+            practitioner={toBrowseTwoData(p)}
+            saveControl={
+              <SaveButton
+                practitionerId={p.id}
+                username={p.username}
+                initialSaved
+                viewerIsGuest={false}
+                variant="compact"
+                onToggle={(nowSaved) => {
+                  // Unsaving from the saved list removes the card right away.
+                  if (!nowSaved) setList((prev) => prev.filter((x) => x.id !== p.id));
+                }}
+              />
+            }
+          />
+        ) : (
+          <PractitionerCard
+            key={p.id}
+            practitioner={p}
+            saveable
+            saved
+            viewerIsGuest={false}
+            bookable={!unbookable.has(p.id)}
+            visible={!hidden.has(p.id)}
+            onToggleSave={(nowSaved) => {
+              // Unsaving from the saved list removes the card right away.
+              if (!nowSaved) setList((prev) => prev.filter((x) => x.id !== p.id));
+            }}
+          />
+        ),
+      )}
     </div>
   );
 }

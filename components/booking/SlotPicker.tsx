@@ -377,7 +377,8 @@ export function SlotPicker({
           // real definition, and lets the chips read clearly against a
           // true background instead of another muted one.
           background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
+          // Brand two overrides --slot-day-border to black; warm falls back to grey.
+          border: "1px solid var(--slot-day-border, var(--border-default))",
           padding,
           gap,
         }}
@@ -471,8 +472,8 @@ export function SlotPicker({
           handoff's "Избери свободен час ... Скрий свободните часове"
           layout. */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-        <div>
-          <h3 style={{ margin: 0, font: "var(--text-label)", color: "var(--text-primary)" }}>{t("chooseTimeHeading")}</h3>
+        <div className="slot-picker-head">
+          <h3 className="slot-picker-heading" style={{ margin: 0, color: "var(--text-primary)" }}>{t("chooseTimeHeading")}</h3>
           <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
             {t("timesShownIn", { timezone: clientTimezone })}
           </p>
@@ -499,7 +500,7 @@ export function SlotPicker({
 
       {hasAnyContent && !isMobile && (
         <div>
-          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "var(--slot-cal-align, flex-start)" }}>
             <button
               type="button"
               className="focus-ring"
@@ -513,8 +514,8 @@ export function SlotPicker({
                 height: 26,
                 borderRadius: "50%",
                 background: "var(--bg-surface)",
-                boxShadow: "var(--shadow-sm)",
-                border: "none",
+                boxShadow: "var(--slot-arrow-shadow, var(--shadow-sm))",
+                border: `1px solid ${desktopPageStart === 0 ? "var(--slot-arrow-border-off, transparent)" : "var(--slot-arrow-border, transparent)"}`,
                 color: "var(--text-secondary)",
                 display: "flex",
                 alignItems: "center",
@@ -543,8 +544,8 @@ export function SlotPicker({
                 height: 26,
                 borderRadius: "50%",
                 background: "var(--bg-surface)",
-                boxShadow: "var(--shadow-sm)",
-                border: "none",
+                boxShadow: "var(--slot-arrow-shadow, var(--shadow-sm))",
+                border: `1px solid ${desktopPageStart + DESKTOP_PAGE_SIZE >= windowDays ? "var(--slot-arrow-border-off, transparent)" : "var(--slot-arrow-border, transparent)"}`,
                 color: "var(--text-secondary)",
                 display: "flex",
                 alignItems: "center",

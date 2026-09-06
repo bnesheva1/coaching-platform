@@ -6,13 +6,16 @@ import { NavItem } from "@/components/dashboard/NavItem";
 import { useDashboardNavigate } from "@/components/dashboard/DashboardShell";
 import { Button } from "@/components/ui/Button";
 import { signOut } from "@/app/actions";
+import { House, CalendarDays, CircleUser, Sparkles, Clock, ChartColumn, Star, Settings, type LucideIcon } from "lucide-react";
 
 export type DashboardPulse = {
   sessionCount: number;
   totalUpcoming: number;
 };
 
-const NAV_ITEMS = [
+type NavEntry = { href: string; key: string; Icon?: LucideIcon };
+
+const NAV_ITEMS: NavEntry[] = [
   { href: "/practitioner-dashboard", key: "home" },
   { href: "/practitioner-dashboard/stats", key: "stats" },
   { href: "/practitioner-dashboard/profile", key: "profile" },
@@ -21,13 +24,26 @@ const NAV_ITEMS = [
   { href: "/practitioner-dashboard/bookings", key: "bookings" },
   { href: "/practitioner-dashboard/reviews", key: "reviews" },
   { href: "/practitioner-dashboard/settings", key: "settings" },
-] as const;
+];
+
+// Brand two: reordered (Начало, Сесии, Профил, Услуги, График, Статистика,
+// Отзиви, Настройки) with a leading Lucide icon per item.
+const NAV_ITEMS_TWO: NavEntry[] = [
+  { href: "/practitioner-dashboard", key: "home", Icon: House },
+  { href: "/practitioner-dashboard/bookings", key: "bookings", Icon: CalendarDays },
+  { href: "/practitioner-dashboard/profile", key: "profile", Icon: CircleUser },
+  { href: "/practitioner-dashboard/services", key: "services", Icon: Sparkles },
+  { href: "/practitioner-dashboard/schedule", key: "schedule", Icon: Clock },
+  { href: "/practitioner-dashboard/stats", key: "stats", Icon: ChartColumn },
+  { href: "/practitioner-dashboard/reviews", key: "reviews", Icon: Star },
+  { href: "/practitioner-dashboard/settings", key: "settings", Icon: Settings },
+];
 
 // No wordmark here — that lives in the top NavBar now, and repeating it
 // in the drawer would mean the same word ("Начало"/Home) pointing at two
 // different destinations on one screen (see NavBar.tsx's own comment on
 // this). Sidebar owns only the dashboard's internal tabs.
-export function DashboardSidebar({ pulse }: { pulse: DashboardPulse }) {
+export function DashboardSidebar({ pulse, isBrandTwo = false }: { pulse: DashboardPulse; isBrandTwo?: boolean }) {
   const t = useTranslations("Dashboard");
   const tHeader = useTranslations("Header");
   const pathname = usePathname();
@@ -36,8 +52,15 @@ export function DashboardSidebar({ pulse }: { pulse: DashboardPulse }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "var(--space-6) var(--space-4)" }}>
       <nav style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: 1 }}>
-        {NAV_ITEMS.map(({ href, key }) => (
-          <NavItem key={href} href={href} label={t(`nav.${key}`)} isActive={pathname === href} onNavigate={onNavigate} />
+        {(isBrandTwo ? NAV_ITEMS_TWO : NAV_ITEMS).map(({ href, key, Icon }) => (
+          <NavItem
+            key={href}
+            href={href}
+            label={t(`nav.${key}`)}
+            isActive={pathname === href}
+            onNavigate={onNavigate}
+            icon={Icon ? <Icon size={18} strokeWidth={1.8} /> : undefined}
+          />
         ))}
       </nav>
 

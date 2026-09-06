@@ -9,6 +9,7 @@ import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
+import { resolveBrand } from "@/lib/brand";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -115,8 +116,17 @@ export default async function BrowsePage({
         key === "online" ? tServices("deliveryTypeOnline") : key === "in_person" ? tServices("deliveryTypeInPerson") : tServices("deliveryTypePhone"),
     }));
 
+  const brand = resolveBrand();
+
   return (
-    <main style={{ padding: "var(--space-16) 0" }}>
+    <main
+      style={{
+        padding: "var(--space-16) 0",
+        // Brand two (handoff 1g): a light-grey page band so the white result
+        // cards read as distinct panels. Full-bleed since <main> spans the width.
+        ...(brand === "two" ? { background: "var(--bg-surface-2)", minHeight: "70vh" } : {}),
+      }}
+    >
       {/* No maxWidth override — falls back to the site's own
           --content-max-width token (75rem / 1200px), not a one-off
           number for this page. */}
@@ -133,6 +143,7 @@ export default async function BrowsePage({
           saveable={saveable}
           viewerIsGuest={viewerIsGuest}
           savedPractitionerIds={savedPractitionerIds}
+          brand={brand}
         />
       </ContentContainer>
     </main>

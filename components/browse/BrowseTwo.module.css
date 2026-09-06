@@ -1,0 +1,399 @@
+/* Brand-two browse/search (design handoff 1g): full-width search, 244px filter
+   sidebar + results grid, hairline result cards, numbered pagination. Shares
+   color/radius tokens so it themes; only rendered when brand === "two". */
+
+.searchRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.search {
+  flex: 1;
+  min-width: 0;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+.searchButton {
+  flex: none;
+  height: 58px;
+  padding: 0 30px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--text-primary);
+  color: var(--bg-page);
+  font: 500 1rem var(--font-ui);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+.searchButton:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* Mobile: stack the field + button vertically (same 12px gap). flex:none on the
+   field stops it growing tall in the column; align-items:stretch (default) makes
+   both span the full width. */
+@media (max-width: 640px) {
+  .searchRow {
+    flex-direction: column;
+  }
+  .search {
+    flex: none;
+  }
+}
+.search:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+.searchIcon {
+  color: var(--accent);
+  flex: none;
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font: 400 1rem var(--font-ui);
+  color: var(--text-primary);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 244px 1fr;
+  gap: 0;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Filter sidebar */
+.sidebar {
+  /* No top padding on desktop, so "Филтри" aligns with the results header
+     across the row; restored on mobile where the sidebar stacks under search. */
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* The desktop sidebar is only rendered above the mobile breakpoint (mobile uses
+   the BrowseFilters bottom sheet instead), so it needs no mobile override. */
+.sidebarTitle {
+  margin: 0;
+  /* Match the results header row height (driven by the sort control) and centre
+     the text, so "Филтри" lines up with the centred results count beside it. */
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  font: 500 1.0625rem var(--font-ui);
+  color: var(--text-primary);
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.groupLabel {
+  margin: 0;
+  font: 400 0.6875rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font: 400 0.9375rem var(--font-ui);
+  color: var(--text-primary);
+}
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+}
+.checkboxOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+.count {
+  font: 400 0.875rem var(--font-mono);
+  color: var(--text-tertiary);
+}
+.clearLink {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--accent);
+  font: 400 0.875rem var(--font-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Results */
+.resultsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.resultsCount {
+  font: 500 0.875rem var(--font-mono);
+  color: var(--text-secondary);
+}
+.sortControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 0.875rem var(--font-ui);
+  color: var(--text-secondary);
+}
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.sortSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  /* Room on the right for the custom chevron (positioned 12px from the edge). */
+  padding: 8px 34px 8px 12px;
+  font: 400 0.875rem var(--font-ui);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+/* Replace the browser's blue focus outline with the same teal ring as the
+   inputs. */
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* Active-filter pills + the results count share one wrapping row (pills first,
+   then the count); each pill removes its filter. */
+.resultsHeaderLeft {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  /* Take only the free space left of the sort control and wrap the pills
+     internally — flex-basis 0 means this never pushes the sort onto a new row. */
+  flex: 1 1 0;
+}
+@media (max-width: 860px) {
+  /* Mobile matches brand one: content-width left group, so the header wraps
+     naturally (the sort can drop to the next line) instead of staying pinned. */
+  .resultsHeaderLeft {
+    flex: 0 1 auto;
+  }
+}
+.activeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-subtle-text);
+  font: 500 0.8125rem var(--font-ui);
+  cursor: pointer;
+}
+.activeChip:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+.activeChipX {
+  opacity: 0.7;
+}
+.selectChevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  pointer-events: none;
+}
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 640px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Result card */
+/* The whole card is the profile link (1g browse only). Border matches the card
+   fill by default (invisible) so hover can swap it to black with no layout
+   shift; hover also lifts it with the standard card shadow token. */
+.card {
+  position: relative;
+  border: 1px solid var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+/* Stretched-link overlay — the whole card navigates; a save heart rendered after
+   it (same z-index, later in DOM) stays clickable above it. */
+.cardLinkOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.cardLinkOverlay:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Dashboard variant: persistent drop shadow, no hover ink-border. */
+.cardElevated {
+  box-shadow: var(--shadow-md);
+}
+.cardElevated:hover {
+  border-color: var(--bg-surface);
+}
+.card:hover {
+  border-color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  min-height: 32px;
+}
+.ratingPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: 500 0.8125rem var(--font-mono);
+}
+.ratingNew {
+  font: 400 0.75rem var(--font-mono);
+  color: var(--text-tertiary);
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  /* Kept space between the bio and the footer separator even when the card is
+     full (the footer's margin-top:auto still pins it to the bottom). */
+  margin-bottom: 14px;
+}
+.portrait {
+  width: 80%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.portraitFallback {
+  width: 80%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-2);
+  color: var(--text-tertiary);
+  font: 700 2.5rem var(--font-ui);
+}
+.name {
+  margin: 0;
+  font: 700 1.125rem/1.25 var(--font-ui);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+.practice {
+  font: 500 0.875rem var(--font-ui);
+  color: var(--accent);
+}
+.location {
+  font: 400 0.75rem var(--font-mono);
+  color: var(--text-tertiary);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.chip {
+  font: 400 0.75rem var(--font-ui);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+.bio {
+  font: 300 0.875rem/1.5 var(--font-ui);
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cardFooter {
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+/* Kept as plain text — the whole card is the link now, so this is a label, not
+   a separate anchor (nested anchors aren't valid). */
+.bookLink {
+  color: var(--accent);
+  font: 500 0.875rem var(--font-ui);
+}

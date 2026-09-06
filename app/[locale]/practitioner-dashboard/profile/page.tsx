@@ -25,7 +25,7 @@ export default async function ProfilePage() {
       supabase.from("profiles").select("display_name").eq("id", userId).single(),
       supabase
         .from("practitioner_profiles")
-        .select("bio, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
+        .select("bio, quote, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
         .eq("id", userId)
         .single(),
       // Active only — matches what the public page shows, since this
@@ -91,6 +91,7 @@ export default async function ProfilePage() {
           headline={practitionerProfile?.headline ?? ""}
           location={practitionerProfile?.location ?? ""}
           bio={practitionerProfile?.bio ?? ""}
+          quote={practitionerProfile?.quote ?? ""}
           avatarUrl={practitionerProfile?.avatar_url ?? null}
           bannerUrl={practitionerProfile?.banner_url ?? null}
           timezone={practitionerProfile?.timezone ?? "Europe/Sofia"}

@@ -1,6 +1,7 @@
 {
   "Brand": {
-    "siteName": "Платформа за консултации"
+    "siteName": "Платформа за консултации",
+    "siteNameTwo": "само да попитам"
   },
   "Admin": {
     "heading": "Админ",
@@ -192,6 +193,11 @@
   },
   "HomePage": {
     "metaDescription": "Открий проверени таролози, астролози и практици по енергийни и духовни практики в България.",
+    "brandTwoEyebrow": "Само да попитам…",
+    "brandTwoSubcopy": "Открий човека, който знае. Запази час за разговор.",
+    "brandTwoSearchPlaceholder": "Търси по име или специалност",
+    "brandTwoSearchButton": "Търси",
+    "brandTwoComingSoon": "очаквайте скоро",
     "availableNowLine": "{count, plural, one {# специалист е на разположение сега} other {# специалисти са на разположение сега}}",
     "heroEyebrow": "Хората питат",
     "heroQuestion1": "Каква е моята житейска мисия?",
@@ -210,7 +216,10 @@
     "howItWorksLink": "Как работи",
     "becomePractitionerLink": "Станете специалист",
     "browseLinkPractitioner": "Виж другите практици",
+    "specialistsLink": "Специалисти",
+    "myMeetingsLink": "Моите срещи",
     "infoDropdownLabel": "Информация",
+    "usefulDropdownLabel": "Полезно",
     "greeting": "Привет, {name}",
     "dashboardLink": "Табло",
     "dashboardLinkClient": "Моите сесии",
@@ -423,7 +432,8 @@
       "manageBookings": "Управлявай резервациите си",
       "noUpcomingTitle": "Няма предстоящи сесии",
       "noUpcomingRebookLine": "Резервирай отново при някой от специалистите, при които вече си бил/а.",
-      "noUpcomingBrowse": "Разгледай нов специалист"
+      "noUpcomingBrowse": "Разгледай нов специалист",
+      "browseSpecialists": "Разгледай специалистите"
     },
     "clientEmptyState": {
       "title": "Все още нямаш запазена консултация",
@@ -473,6 +483,9 @@
     "nameChangesRemaining": "Можеш да промениш името си още {remaining, plural, one {# път} other {# пъти}} през следващите {days} дни.",
     "usernameChangesRemaining": "Можеш да промениш потребителското си име още {remaining, plural, one {# път} other {# пъти}} през следващите {days} дни. Старият адрес ще продължи да работи.",
     "bioTooLong": "Представянето трябва да е до {max} символа.",
+    "quoteTooLong": "Цитатът трябва да е до {max} символа.",
+    "editQuote": "Редактирай цитата",
+    "quotePlaceholder": "Кратък цитат, който да се покаже в цветното поле",
     "usernameTooLong": "Потребителското име трябва да е до {max} символа.",
     "editTimezone": "Промени часовата зона",
     "timezoneLabel": "Часова зона",
@@ -529,6 +542,9 @@
     "topicsHint": "Избери до {max} теми, с които се свързва работата ти ({count}/{max}).",
     "topicsMaxExceeded": "Може да избереш най-много {max} теми.",
     "seeAvailability": "Виж свободни часове",
+    "topicsLabel": "Теми:",
+    "bookSlotCta": "Запази час",
+    "closeCalendar": "Затвори календара",
     "hideDetails": "Скрий свободните часове",
     "noServicesYet": "Все още няма добавени услуги."
   },
@@ -680,6 +696,7 @@
     "topicsLabel": "Теми",
     "modeInPerson": "На място — {city}",
     "nextAvailableSlotLabel": "Следващ свободен час",
+    "minutesShort": "мин.",
     "nextAvailableSlotEmpty": "Няма предстоящи часове",
     "summaryReviewsLabel": "Отзиви",
     "summaryPriceLabel": "Цена",
@@ -868,6 +885,11 @@
     "sortLabel": "Подредба",
     "sortDefault": "По подразбиране",
     "sortRating": "Рейтинг",
+    "browseTwoNewProfile": "нов профил",
+    "browseTwoSearchButton": "Търси",
+    "browseTwoSearchPlaceholder": "Търси по име или специалност",
+    "browseTwoNext": "Следваща",
+    "browseTwoFiltersTitle": "Филтри",
     "sortName": "Име (А-Я)",
     "sortNewest": "Най-нови"
   },

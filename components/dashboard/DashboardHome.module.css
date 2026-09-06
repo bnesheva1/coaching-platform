@@ -1,0 +1,40 @@
+/* Brand-two dashboard home styling. Styling only — all greeting / session /
+   join-window logic is untouched. Every rule is gated to [data-brand="two"]
+   (a :global ancestor, since data-brand sits on <html>) so the warm dashboard
+   keeps its current look. The base class carries the warm default so nothing
+   changes for brand one. */
+
+.agendaHeading {
+  font: var(--text-heading-lg);
+}
+:global([data-brand="two"]) .agendaHeading {
+  font: 700 2.75rem/1.05 var(--font-ui);
+  letter-spacing: -0.02em;
+}
+
+/* Greeting line ("Добро утро, …") — warm default carried on the base class. */
+.greeting {
+  font: var(--text-body-md);
+}
+:global([data-brand="two"]) .greeting {
+  font-size: 1rem;
+}
+
+/* Timezone notice under the headline — a little breathing room above it. */
+.tzNotice {
+  display: block;
+}
+:global([data-brand="two"]) .tzNotice {
+  margin-top: var(--space-3);
+}
+
+/* Section labels (Резервации / Моите специалисти / Запазени специалисти …).
+   Font moves to the class so brand two can enlarge it; padding (not margin) adds
+   the brand-two spacing so it doesn't fight each heading's own inline margin. */
+.sectionLabel {
+  font: var(--text-heading-md);
+}
+:global([data-brand="two"]) .sectionLabel {
+  font: 700 1.45rem var(--font-ui);
+  padding: var(--space-4) 0 var(--space-1);
+}

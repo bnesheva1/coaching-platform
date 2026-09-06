@@ -5,6 +5,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp, loginLimiter } from "@/lib/rate-limit";
+import { recordAdminLogin } from "@/lib/admin/activityAlerts";
 
 export type AuthFormState = { error: string } | null;
 
@@ -46,6 +47,18 @@ export async function login(
     .single();
 
   const locale = await getLocale();
+
+  // Admin login tripwire — record the (admin, IP, device) event, flag a
+  // first-seen IP/device, and alert. Runs before any redirect below so it fires
+  // regardless of the return-to path; fully fail-safe, so it can't block login.
+  if (profile?.role === "admin") {
+    await recordAdminLogin({
+      adminId: data.user.id,
+      adminEmail: data.user.email ?? null,
+      ip,
+      userAgent: (await headers()).get("user-agent"),
+    });
+  }
 
   // Return-to support (e.g. a guest who clicked "save" on a profile): honour a
   // `next` path ONLY when it's a same-site relative path — must start with a

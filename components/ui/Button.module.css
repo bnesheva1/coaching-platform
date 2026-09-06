@@ -1,0 +1,6 @@
+/* Brand two: green (accent) focus ring on every button, replacing the browser
+   default. Warm keeps its default outline (this rule is brand-gated). */
+:global([data-brand="two"]) .btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}

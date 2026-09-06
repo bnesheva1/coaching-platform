@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSiteName, resolveBrand, type Brand } from "@/lib/brand";
-import { PT_Serif, Manrope, JetBrains_Mono, Ubuntu, IBM_Plex_Mono } from "next/font/google";
+import { PT_Serif, Manrope, JetBrains_Mono, Ubuntu, Ubuntu_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -39,8 +39,8 @@ const fontMono = JetBrains_Mono({
 
 // Brand two: Ubuntu is the single family for ALL text (display + ui — no PT
 // Serif), so it drives --font-ui here and --font-display is aliased to it in
-// colors.css. IBM Plex Mono is used only for numeric/meta data (latin digits),
-// so it's latin-only — no cyrillic subset needed.
+// colors.css. Ubuntu Mono covers the numeric/meta data (latin digits), so it's
+// latin-only — no cyrillic subset needed.
 const fontTwoBody = Ubuntu({
   variable: "--font-ui",
   subsets: ["latin", "cyrillic"],
@@ -48,10 +48,12 @@ const fontTwoBody = Ubuntu({
   style: ["normal", "italic"],
 });
 
-const fontTwoMono = IBM_Plex_Mono({
+// Ubuntu Mono ships only 400/700 (no 500) — the few 500-weight mono usages fall
+// back to the nearest loaded weight (400), which is fine for meta digits.
+const fontTwoMono = Ubuntu_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "700"],
 });
 
 // Fonts are brand-selectable, the same way colors are — a brand carries as much
@@ -65,7 +67,7 @@ const BRAND_FONTS: Record<Brand, { display: string; ui: string; mono: string }> 
   warm: { display: fontDisplay.variable, ui: fontUi.variable, mono: fontMono.variable },
   // Ubuntu covers both display and ui (one family); --font-display is aliased to
   // --font-ui in colors.css, so applying the Ubuntu class (which sets --font-ui)
-  // is enough. IBM Plex Mono sets --font-mono.
+  // is enough. Ubuntu Mono sets --font-mono.
   two: { display: fontTwoBody.variable, ui: fontTwoBody.variable, mono: fontTwoMono.variable },
 };
 

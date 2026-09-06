@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Clock, CircleEuro, CalendarDays, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import type { RenameUsage } from "@/lib/rename-limits";
@@ -52,6 +53,7 @@ export type PractitionerProfileViewProps = {
   headline: string;
   location: string;
   bio: string;
+  quote: string;
   avatarUrl: string | null;
   bannerUrl: string | null;
   // Practitioner's own scheduling timezone (practitioner_profiles.timezone)
@@ -159,6 +161,7 @@ export function PractitionerProfileView({
   headline,
   location,
   bio,
+  quote,
   avatarUrl,
   bannerUrl,
   timezone,
@@ -364,6 +367,8 @@ export function PractitionerProfileView({
           isEditing={isEditing}
           displayName={displayName}
           headline={headline}
+          bio={bio}
+          quote={quote}
           location={location}
           avatarUrl={avatarUrl}
           specialties={specialties}
@@ -616,26 +621,55 @@ export function PractitionerProfileView({
       </>
       )}
 
-      {/* Sections — spacing alone separates them, no rule lines. */}
-      <div style={{ padding: "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
-        {/* About */}
-        <div>
-          <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
-          {isEditing ? (
-            <EditableAbout bio={bio} />
-          ) : bio ? (
-            bio.split("\n\n").map((paragraph, i) => (
-              <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
-                {paragraph}
-              </p>
-            ))
-          ) : (
-            <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("aboutEmpty")}</p>
-          )}
-        </div>
+      {/* Sections — spacing alone separates them, no rule lines. Brand two has a
+          flush header (BrandTwoHeader), so its sections drop the 40px side
+          padding to align with it; warm keeps the inset (its header has it too). */}
+      <div style={{ padding: isBrandTwo ? "42px 0 42px" : "8px 40px 42px", display: "flex", flexDirection: "column", gap: 44 }}>
+        {/* About. Brand two (view) renders this inside BrandTwoHeader's right
+            column so the card can stay sticky over it — so here it appears only
+            for warm, or for brand-two editing (aligned in the card-gutter grid). */}
+        {isBrandTwo ? (
+          isEditing ? (
+            <div className={styles.brandTwoAbout}>
+              <div aria-hidden="true" />
+              <div>
+                <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
+                <EditableAbout bio={bio} quote={quote} showQuote />
+              </div>
+            </div>
+          ) : null
+        ) : (
+          <div>
+            <h2 style={{ margin: "0 0 12px", font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{t("aboutHeading")}</h2>
+            {isEditing ? (
+              <EditableAbout bio={bio} />
+            ) : bio ? (
+              bio.split("\n\n").map((paragraph, i) => (
+                <p key={i} style={{ margin: i === 0 ? 0 : "var(--space-2) 0 0", font: "var(--text-body-md)", color: "var(--text-secondary)" }}>
+                  {paragraph}
+                </p>
+              ))
+            ) : (
+              <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("aboutEmpty")}</p>
+            )}
+          </div>
+        )}
 
         {/* Services */}
-        <div id="services">
+        <div
+          id="services"
+          className={
+            isBrandTwo
+              ? // The full-bleed 100vw strip assumes a viewport-centred profile
+                // (the public page). In the dashboard editor the profile sits in
+                // the offset content column, so it'd bleed behind the sidebar and
+                // force a horizontal scroll — use a contained grey band there.
+                isOwner
+                ? styles.brandTwoServicesStripContained
+                : styles.brandTwoServicesStrip
+              : undefined
+          }
+        >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h2 style={{ margin: 0, font: "var(--text-heading-lg)", color: "var(--text-primary)" }}>{tPublic("servicesTitle")}</h2>
             {isEditing && (
@@ -690,25 +724,116 @@ export function PractitionerProfileView({
                       windowDays={bookingWindowDays}
                       viewerSavedTimezone={viewerSavedTimezone}
                       headerAction={
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedServiceIds((prev) => {
-                              const next = new Set(prev);
-                              next.delete(service.id);
-                              return next;
-                            })
-                          }
-                          aria-expanded="true"
-                          aria-controls={`slotpicker-${service.id}`}
-                          style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                        >
-                          {t("hideDetails")} ⌃
-                        </button>
+                        // Brand two closes via the card's own "Затвори календара"
+                        // button, so the panel's built-in hide link would duplicate it.
+                        isBrandTwo ? undefined : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedServiceIds((prev) => {
+                                const next = new Set(prev);
+                                next.delete(service.id);
+                                return next;
+                              })
+                            }
+                            aria-expanded="true"
+                            aria-controls={`slotpicker-${service.id}`}
+                            style={{ font: "600 12px var(--font-ui)", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                          >
+                            {t("hideDetails")} ⌃
+                          </button>
+                        )
                       }
                     />
                   </div>
                 );
+                if (isBrandTwo) {
+                  // Split the formatted price into amount + symbol so each stat
+                  // can show a big mono number with a small unit beneath it.
+                  const priceParts = new Intl.NumberFormat(intlLocale, { style: "currency", currency: service.currency }).formatToParts(
+                    service.priceCents / 100,
+                  );
+                  const priceAmount = priceParts
+                    .filter((p) => p.type !== "currency" && p.type !== "literal")
+                    .map((p) => p.value)
+                    .join("");
+                  const priceSymbol = priceParts.find((p) => p.type === "currency")?.value ?? service.currency;
+                  // Toggle the panel open/closed IN PLACE — no pendingScrollId, so
+                  // the page doesn't jump; the button keeps its spot in the row.
+                  const toggleThis = () => {
+                    setExpandedServiceIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(service.id)) {
+                        next.delete(service.id);
+                      } else {
+                        next.add(service.id);
+                        trackScheduleOpen();
+                      }
+                      return next;
+                    });
+                  };
+                  return (
+                    <div key={service.id} className={styles.svc2Card}>
+                      <div className={styles.svc2Main}>
+                        {/* Text group: on desktop it's the middle column; on mobile
+                            it becomes display:contents so title/stats/desc join the
+                            flex flow and reorder around the image + button. */}
+                        <div className={styles.svc2Text}>
+                          <span className={styles.svc2Title}>{service.name}</span>
+                          <div className={styles.svc2Stats}>
+                            <div className={styles.svc2Stat}>
+                              <Clock size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                              <span className={styles.svc2StatText}>
+                                <span className={styles.svc2StatNum}>{service.durationMinutes}</span>
+                                <span className={styles.svc2StatUnit}>{tPublic("minutesShort")}</span>
+                              </span>
+                            </div>
+                            <div className={styles.svc2Stat}>
+                              <CircleEuro size={18} strokeWidth={1.8} className={styles.svc2StatIcon} aria-hidden="true" />
+                              <span className={styles.svc2StatText}>
+                                <span className={styles.svc2StatNum}>{priceAmount}</span>
+                                <span className={styles.svc2StatUnit}>{priceSymbol}</span>
+                              </span>
+                            </div>
+                            {showDeliveryBadges && <ModeBadge deliveryType={service.deliveryType} city={location} compact />}
+                          </div>
+                          {service.description && <span className={styles.svc2Desc}>{service.description}</span>}
+                        </div>
+                        {service.imageUrl && (
+                          <div className={styles.svc2Image}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={service.imageUrl} alt="" />
+                          </div>
+                        )}
+                        {!canBookNow && (
+                          <button
+                            type="button"
+                            className={styles.svc2BookBtn}
+                            onClick={toggleThis}
+                            aria-expanded={isExpanded}
+                            aria-controls={`slotpicker-${service.id}`}
+                          >
+                            {isExpanded ? (
+                              <X size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
+                            ) : (
+                              <CalendarDays size={16} strokeWidth={1.8} className={styles.svc2BookIcon} aria-hidden="true" />
+                            )}
+                            {isExpanded ? t("closeCalendar") : t("bookSlotCta")}
+                          </button>
+                        )}
+                      </div>
+                      {canBookNow ? (
+                        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                          <ImmediateBookButton practitionerId={practitionerId} serviceId={service.id} onSeeOtherTimes={toggleThis} />
+                          {isExpanded && slotPanel}
+                        </div>
+                      ) : isExpanded ? (
+                        slotPanel
+                      ) : null}
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={service.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)", padding: 20 }}>
                     <div className={rowStyles.row} style={{ gap: 20 }}>
@@ -801,7 +926,7 @@ export function PractitionerProfileView({
             <>
               <div className={styles.reviewsGrid}>
                 {reviews.slice(0, 6).map((review) => (
-                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-md)", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: isBrandTwo ? "none" : "var(--shadow-md)", border: isBrandTwo ? "1px solid var(--border-default)" : undefined, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
                     <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)" }}>
                       <StarRating rating={review.rating} size={14} />
                     </span>

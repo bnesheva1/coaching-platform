@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
+import styles from "./Button.module.css";
 
 // "surface" added for the practitioner-profile 2a handoff's .ghostbtn
 // recipe (save/favourite CTA, "see all reviews", "show less") — a
@@ -21,16 +22,18 @@ const SIZES: Record<ButtonSize, SizeStyle> = {
 
 const VARIANTS: Record<ButtonVariant, CSSProperties> = {
   primary: { background: "var(--accent)", color: "var(--text-on-accent)", border: "1px solid transparent" },
-  secondary: { background: "transparent", color: "var(--text-primary)", border: "1px solid var(--border-strong)" },
+  secondary: { background: "transparent", color: "var(--text-primary)", border: "1px solid var(--btn-outline-border, var(--border-strong))" },
   ghost: { background: "transparent", color: "var(--text-primary)", border: "1px solid transparent" },
   surface: { background: "var(--bg-surface)", color: "var(--text-primary)", border: "1px solid transparent", boxShadow: "var(--shadow-sm)" },
 };
 
 const HOVER: Record<ButtonVariant, CSSProperties> = {
   primary: { background: "var(--accent-hover)" },
-  secondary: { background: "var(--bg-surface-2)" },
-  ghost: { background: "var(--bg-surface-2)" },
-  surface: { background: "var(--bg-surface-2)" },
+  // Brand two inverts the grey hover to solid ink + on-ink text (vars default to
+  // the original grey/no-op for warm). Primary keeps its accent-hover.
+  secondary: { background: "var(--btn-hover-bg, var(--bg-surface-2))", color: "var(--btn-hover-fg, var(--text-primary))" },
+  ghost: { background: "var(--btn-hover-bg, var(--bg-surface-2))", color: "var(--btn-hover-fg, var(--text-primary))" },
+  surface: { background: "var(--btn-hover-bg, var(--bg-surface-2))", color: "var(--btn-hover-fg, var(--text-primary))" },
 };
 
 export type ButtonProps = {
@@ -90,14 +93,14 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} style={style} {...handlers}>
+      <Link href={href} className={styles.btn} style={style} {...handlers}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button type={type} disabled={disabled} onClick={onClick} style={style} {...handlers}>
+    <button type={type} disabled={disabled} onClick={onClick} className={styles.btn} style={style} {...handlers}>
       {children}
     </button>
   );

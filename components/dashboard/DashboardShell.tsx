@@ -40,9 +40,11 @@ export function useDashboardNavigate(): (() => void) | undefined {
 export function DashboardShell({
   sidebar,
   children,
+  isBrandTwo = false,
 }: {
   sidebar: ReactNode;
   children: ReactNode;
+  isBrandTwo?: boolean;
 }) {
   const t = useTranslations("Dashboard");
   const isMobile = useIsMobile();
@@ -116,10 +118,17 @@ export function DashboardShell({
             top bar"). */}
         <div
           style={{
-            padding: "var(--space-3) 0 0",
+            // Brand two: no top gap so the chevron sits at the very top and the
+            // divider (added below) starts flush, meeting the header cleanly.
+            padding: isBrandTwo ? "var(--space-2) 0" : "var(--space-3) 0 0",
             display: "flex",
             justifyContent: !isMobile && open ? "flex-end" : "flex-start",
             width: !isMobile && open ? SIDEBAR_WIDTH : undefined,
+            // Brand two: continue the sidebar's vertical divider up through this
+            // chevron row so it reads as one line from the top, not a line that
+            // starts below a floating chevron. Aligns with the sidebar's own
+            // border-right at x = SIDEBAR_WIDTH.
+            borderRight: isBrandTwo && !isMobile && open ? "1px solid var(--border-subtle)" : undefined,
           }}
         >
           <button

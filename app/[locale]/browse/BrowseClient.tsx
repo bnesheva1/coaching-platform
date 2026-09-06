@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { BrowseFilters, type FilterOption, type FilterGroup } from "@/components/browse/BrowseFilters";
 import { PractitionerCard } from "@/components/browse/PractitionerCard";
+import { BrowseCardTwo } from "@/components/browse/BrowseCardTwo";
+import { Search, ChevronDown } from "lucide-react";
+import twoStyles from "@/components/browse/BrowseTwo.module.css";
 import { useIsMobile } from "@/lib/useIsMobile";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -105,6 +108,7 @@ export function BrowseClient({
   saveable,
   viewerIsGuest,
   savedPractitionerIds,
+  brand,
 }: {
   results: BrowseResult[];
   query: string;
@@ -117,7 +121,11 @@ export function BrowseClient({
   saveable: boolean;
   viewerIsGuest: boolean;
   savedPractitionerIds: string[];
+  // Active white-label brand; "two" renders the handoff-1g layout (sidebar +
+  // hairline cards + numbered pagination), reusing all the state below.
+  brand?: string;
 }) {
+  const isBrandTwo = brand === "two";
   const t = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
   const router = useRouter();
@@ -368,6 +376,154 @@ export function BrowseClient({
     ...[...selectedTopics].map((key) => ({ group: TOPIC_GROUP, key, label: topicLabelByKey.get(key) ?? key })),
     ...[...selectedDeliveryTypes].map((key) => ({ group: DELIVERY_TYPE_GROUP, key, label: deliveryTypeLabelByKey.get(key) ?? key })),
   ];
+
+  // ── Brand two: handoff-1g layout (sidebar + hairline cards + numbered
+  // pagination). Reuses every piece of state/derived data above; only the
+  // presentation differs. ──────────────────────────────────────────────────
+  if (isBrandTwo) {
+    const toggleFilter = (groupKey: string, optionKey: string) => {
+      const toggled = (set: Set<string>) => {
+        const next = new Set(set);
+        if (next.has(optionKey)) next.delete(optionKey);
+        else next.add(optionKey);
+        return next;
+      };
+      if (groupKey === SPECIALTY_GROUP) applyFilters(toggled(selectedModalities), selectedTopics, selectedDeliveryTypes);
+      else if (groupKey === TOPIC_GROUP) applyFilters(selectedModalities, toggled(selectedTopics), selectedDeliveryTypes);
+      else applyFilters(selectedModalities, selectedTopics, toggled(selectedDeliveryTypes));
+    };
+    return (
+      <>
+        <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{t("title")}</h1>
+        <form
+          className={twoStyles.searchRow}
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Search is already live/debounced; the button (and Enter) just flush
+            // it immediately rather than waiting out the debounce.
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            router.replace(
+              { pathname, query: buildQuery(searchText, selectedModalities, selectedTopics, selectedDeliveryTypes) },
+              { scroll: false },
+            );
+          }}
+        >
+          <div className={twoStyles.search}>
+            <Search size={20} strokeWidth={1.8} className={twoStyles.searchIcon} aria-hidden="true" />
+            <input
+              className={twoStyles.searchInput}
+              type="search"
+              value={searchText}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={t("browseTwoSearchPlaceholder")}
+              aria-label={t("searchAriaLabel")}
+            />
+          </div>
+          <button type="submit" className={twoStyles.searchButton}>
+            {t("browseTwoSearchButton")}
+          </button>
+        </form>
+        <div className={twoStyles.body}>
+          {isMobile ? (
+            // Mobile matches brand one: the compact "Filters" button + bottom
+            // sheet (BrowseFilters), not the always-open desktop sidebar.
+            <BrowseFilters groups={filterGroups} onApply={handleFiltersApply} onClear={clearAll} computeCount={computeCountFor} />
+          ) : (
+          <aside className={twoStyles.sidebar}>
+            <h2 className={twoStyles.sidebarTitle}>{t("browseTwoFiltersTitle")}</h2>
+            {filterGroups.map(
+              (g) =>
+                g.options.length > 0 && (
+                  <div key={g.key} className={twoStyles.group}>
+                    <p className={twoStyles.groupLabel}>{g.groupLabel}</p>
+                    {g.options.map((o) => {
+                      const on = g.selected.has(o.key);
+                      return (
+                        <label key={o.key} className={twoStyles.checkRow}>
+                          <span className={`${twoStyles.checkbox} ${on ? twoStyles.checkboxOn : ""}`} aria-hidden="true">
+                            {on ? "✓" : ""}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => toggleFilter(g.key, o.key)}
+                            style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                          />
+                          {o.label} <span className={twoStyles.count}>({o.count})</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ),
+            )}
+            <button type="button" className={twoStyles.clearLink} onClick={clearAll}>
+              {t("clearFilters")}
+            </button>
+          </aside>
+          )}
+
+          <div style={{ minWidth: 0 }}>
+            <div className={twoStyles.resultsHeader}>
+              <div className={twoStyles.resultsHeaderLeft}>
+                {activeChips.map(({ group, key, label }) => (
+                  <button
+                    key={`${group}:${key}`}
+                    type="button"
+                    className={twoStyles.activeChip}
+                    aria-label={label}
+                    onClick={() => toggleFilter(group, key)}
+                  >
+                    {label}
+                    <span aria-hidden="true" className={twoStyles.activeChipX}>
+                      ✕
+                    </span>
+                  </button>
+                ))}
+                <span className={twoStyles.resultsCount}>{t("resultsCount", { count: orderedResults.length })}</span>
+              </div>
+              <label className={twoStyles.sortControl}>
+                {t("sortLabel")}
+                <span className={twoStyles.selectWrap}>
+                  <select className={twoStyles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                    <option value="default">{t("sortDefault")}</option>
+                    <option value="rating">{t("sortRating")}</option>
+                  </select>
+                  <ChevronDown size={16} strokeWidth={1.8} className={twoStyles.selectChevron} aria-hidden="true" />
+                </span>
+              </label>
+            </div>
+
+            {orderedResults.length === 0 ? (
+              <p style={{ font: "var(--text-body-md)", color: "var(--text-tertiary)" }}>{t("emptyStateBody")}</p>
+            ) : (
+              <>
+                <div className={twoStyles.cardGrid}>
+                  {visibleResults.map((p) => (
+                    <BrowseCardTwo
+                      key={p.id}
+                      practitioner={{
+                        id: p.id,
+                        username: p.username,
+                        displayName: p.displayName,
+                        bio: p.bio,
+                        avatarUrl: p.avatarUrl,
+                        averageRating: p.averageRating,
+                        specialtyLabels: p.specialtyKeys.map((k) => specialtyLabelByKey.get(k) ?? k),
+                      }}
+                    />
+                  ))}
+                </div>
+                {/* Infinite-scroll reveal (same as brand one): the observer on
+                    this sentinel grows visibleCount as it nears the viewport. */}
+                {hasMore && <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />}
+              </>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

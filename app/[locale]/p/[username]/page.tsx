@@ -89,7 +89,7 @@ export default async function PublicProfilePage({
 
   const { data: practitionerProfile } = await supabase
     .from("practitioner_profiles")
-    .select("id, bio, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
+    .select("id, bio, quote, headline, location, specialties, topics, avatar_url, banner_url, username, timezone")
     .eq("username", normalizedUsername)
     .single();
 
@@ -341,8 +341,10 @@ export default async function PublicProfilePage({
             specifically — PractitionerProfileView itself no longer
             applies this, since the dashboard's own Profile tab
             (practitioner-dashboard/profile/page.tsx) wants the
-            opposite: left-aligned, filling the available width. */}
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            opposite: left-aligned, filling the available width.
+            Brand two drops the cap — its wider header/sections layout
+            fills the ContentContainer width instead. */}
+        <div style={resolveBrand() === "two" ? undefined : { maxWidth: 900, margin: "0 auto" }}>
         <PractitionerProfileView
           isOwner={false}
           practitionerId={practitionerProfile.id}
@@ -351,6 +353,7 @@ export default async function PublicProfilePage({
           headline={practitionerProfile.headline ?? ""}
           location={practitionerProfile.location ?? ""}
           bio={practitionerProfile.bio ?? ""}
+          quote={practitionerProfile.quote ?? ""}
           avatarUrl={practitionerProfile.avatar_url}
           bannerUrl={practitionerProfile.banner_url}
           timezone={practitionerProfile.timezone}

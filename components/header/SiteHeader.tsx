@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
 import { routing } from "@/i18n/routing";
 import { getViewer } from "@/lib/auth/getViewer";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { signOut } from "@/app/actions";
 
 // The one header, mounted once in app/[locale]/layout.tsx — every route
@@ -20,10 +20,23 @@ export async function SiteHeader() {
   const tFooter = await getTranslations("Footer");
   const viewer = await getViewer();
 
+  // Brand two overrides the nav wording to the handoff labels (wordmark "само да
+  // попитам" via getSiteName, "Специалисти", "Моите срещи", "Полезно"); brand one
+  // keeps its own. The links, order, and role logic are identical either way —
+  // only the labels differ.
+  const brand = resolveBrand();
+
   const browseLink = {
-    label: viewer.status === "practitioner" ? tHeader("browseLinkPractitioner") : tBrowse("title"),
+    label:
+      brand === "two"
+        ? tHeader("specialistsLink")
+        : viewer.status === "practitioner"
+          ? tHeader("browseLinkPractitioner")
+          : tBrowse("title"),
     href: "/browse",
   };
+
+  const infoDropdownLabel = brand === "two" ? tHeader("usefulDropdownLabel") : tHeader("infoDropdownLabel");
 
   // The 5 marketing/info pages — same for every viewer, unlike
   // browseLink/dashboardLink/authLinks below. Reuses Footer's own
@@ -51,7 +64,15 @@ export async function SiteHeader() {
   // /admin is reachable from the account menu only (see accountLinks).
   const dashboardLink =
     isLoggedIn && !isAdmin
-      ? { label: isPractitioner ? tHeader("dashboardLinkPractitioner") : tHeader("dashboardLinkClient"), href: dashboardHref }
+      ? {
+          label:
+            brand === "two"
+              ? tHeader("myMeetingsLink")
+              : isPractitioner
+                ? tHeader("dashboardLinkPractitioner")
+                : tHeader("dashboardLinkClient"),
+          href: dashboardHref,
+        }
       : null;
 
   // The greeting is now the account-menu trigger; it still does identity
@@ -94,7 +115,7 @@ export async function SiteHeader() {
     <NavBar
       wordmark={siteName}
       browseLink={browseLink}
-      infoDropdownLabel={tHeader("infoDropdownLabel")}
+      infoDropdownLabel={infoDropdownLabel}
       infoLinks={infoLinks}
       dashboardLink={dashboardLink}
       greetingText={greetingText}

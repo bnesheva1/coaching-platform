@@ -143,3 +143,198 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Brand two, editing only: the About sits under the header's right column
+   (empty card-width gutter on the left). In view mode the About lives inside
+   BrandTwoHeader so the card can stay sticky over it. */
+.brandTwoAbout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 44px;
+  align-items: start;
+  margin-top: 40px;
+}
+@media (max-width: 860px) {
+  .brandTwoAbout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Brand two: Services on a full-bleed light-grey band (background only — the
+   content stays in the normal flow so it aligns with the header/About). */
+.brandTwoServicesStrip {
+  position: relative;
+  padding: 44px 0;
+}
+.brandTwoServicesStrip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  background: var(--bg-surface-2);
+  z-index: -1;
+}
+/* Dashboard editor: contained grey band (no full-bleed) — the profile isn't
+   viewport-centred there, so a 100vw strip would overflow behind the sidebar. */
+.brandTwoServicesStripContained {
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-2xl);
+  padding: 32px;
+}
+
+/* Brand-two service card (design handoff 1f): flat white on the grey strip —
+   image slot, title, duration/price stats, description, and a right-pinned
+   "Запази час" outline button. */
+.svc2Card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+}
+/* Desktop: image (left) | text column (title/stats/desc) | book button (right),
+   ordered with flex. A missing image just drops out of the flow — no empty
+   column, no placeholder. Mobile reflow is at the bottom of this block. */
+.svc2Main {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.svc2Text {
+  order: 2;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.svc2Image {
+  order: 1;
+  flex: none;
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.svc2Image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.svc2Title {
+  font: 700 1.0625rem var(--font-ui);
+  color: var(--text-primary);
+}
+.svc2Stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* Each value sits in a rounded, accent-tinted box (theme-aware). */
+.svc2Stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--accent-subtle);
+  border-radius: var(--radius-lg);
+}
+.svc2StatIcon {
+  color: var(--accent);
+  flex: none;
+}
+.svc2StatText {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.svc2StatNum {
+  font: 600 1.125rem var(--font-ui);
+  color: var(--text-primary);
+}
+.svc2StatUnit {
+  font: 600 0.75rem var(--font-ui);
+  color: var(--text-tertiary);
+}
+.svc2Desc {
+  font: 400 0.9375rem/1.5 var(--font-ui);
+  color: var(--text-secondary);
+}
+/* Collapsed: solid black, matching the other brand-two action buttons (same
+   --radius-lg rounding). Open: flips to white with a black border. */
+.svc2BookBtn {
+  order: 3;
+  flex: none;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid var(--text-primary);
+  border-radius: var(--radius-lg);
+  background: var(--text-primary);
+  color: var(--bg-page);
+  font: 500 0.9375rem var(--font-ui);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+/* Only the collapsed (black) state hovers to accent; the open outline state keeps its look. */
+.svc2BookBtn:not([aria-expanded="true"]):hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+.svc2BookBtn[aria-expanded="true"] {
+  background: transparent;
+  color: var(--text-primary);
+}
+.svc2BookIcon {
+  flex: none;
+}
+@media (max-width: 640px) {
+  /* Mobile: title full-width on top, then image + stat boxes on one row, then
+     the description full-width, then the book button full-width. The text group
+     flattens (display:contents) so all pieces are flex siblings of .svc2Main —
+     wrapping by width, sequenced by order. A missing image just leaves the stats
+     alone on their row. */
+  .svc2Main {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 12px;
+    column-gap: 16px;
+  }
+  .svc2Text {
+    display: contents;
+  }
+  .svc2Title {
+    order: 1;
+    flex-basis: 100%;
+  }
+  .svc2Image {
+    order: 2;
+    width: 100px;
+    height: 100px;
+  }
+  .svc2Stats {
+    order: 3;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .svc2Desc {
+    order: 4;
+    flex-basis: 100%;
+  }
+  .svc2BookBtn {
+    order: 5;
+    flex-basis: 100%;
+    width: 100%;
+    justify-content: center;
+  }
+}

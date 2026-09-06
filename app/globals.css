@@ -72,6 +72,55 @@ body {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Brand two: inputs rest with an ink border (black in light, theme-adapted in
+   dark) rather than the hairline grey. :not(:focus) leaves the focused state
+   above untouched (accent border + ring). Scoped to brand two — brand one keeps
+   its grey hairline inputs. */
+[data-brand="two"] .form-field:not(:focus) {
+  border-color: var(--text-primary);
+}
+
+/* Brand two: in the slot picker, the bookable day cards take an ink border
+   instead of the grey hairline (empty days keep their dashed grey), and the
+   day row stretches so every day box is the same height. */
+[data-brand="two"] {
+  --slot-day-border: var(--text-primary);
+  --slot-cal-align: stretch;
+  /* Buttons: ink outline, and the grey hover inverts to solid black/white (the
+     grey hover otherwise read as "disabled"). Consumed via var() in Button.tsx. */
+  --btn-outline-border: var(--text-primary);
+  --btn-hover-bg: var(--text-primary);
+  --btn-hover-fg: var(--bg-page);
+  /* Calendar paging arrows: clickable gets a clearly-visible grey border (no
+     lighter than #ccc), disabled a lighter one. */
+  --slot-arrow-border: #9e9e9e;
+  --slot-arrow-border-off: #e2e2e2;
+  /* Border replaces the shadow for the arrow circles. */
+  --slot-arrow-shadow: none;
+}
+[data-brand="two"][data-theme="dark"] {
+  --slot-arrow-border: #6e6e6e;
+  --slot-arrow-border-off: #3a3a3a;
+}
+
+/* Slot-picker "Изберете свободен час" heading — font in a class (not inline) so
+   brand two can enlarge it and, on desktop, sit it inline with the timezone note. */
+.slot-picker-heading {
+  font: var(--text-label);
+}
+[data-brand="two"] .slot-picker-heading {
+  font-size: 1rem;
+  font-weight: 700;
+}
+@media (min-width: 861px) {
+  [data-brand="two"] .slot-picker-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
 /* Generic keyboard-focus ring for interactive elements that aren't a
    .form-field (buttons, chips, link-styled controls) — same box-shadow
    recipe and --focus-ring token, opt in via className since inline
