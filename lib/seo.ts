@@ -95,3 +95,39 @@ export function profileMetaDescription({
   if (b) return truncateForMeta(b);
   return fallback;
 }
+
+// Open Graph + Twitter block for a page that wants its OWN title/description on
+// social cards rather than the site default it would otherwise inherit from the
+// root layout — a child that sets `openGraph` REPLACES the parent's whole
+// openGraph (Next's shallow metadata merge), so this re-supplies the shared
+// pieces (default brand share image, site_name, locale, card type). Spread into a
+// page's metadata return alongside its title/description.
+export function socialMetadata({
+  title,
+  description,
+  siteName,
+  locale,
+}: {
+  title: string;
+  description: string;
+  siteName: string;
+  locale: string;
+}) {
+  const image = `${SITE_URL}/og-home.jpg`;
+  return {
+    openGraph: {
+      type: "website" as const,
+      siteName,
+      locale,
+      title,
+      description,
+      images: [{ url: image, width: 1200, height: 630, alt: siteName }],
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title,
+      description,
+      images: [image],
+    },
+  };
+}

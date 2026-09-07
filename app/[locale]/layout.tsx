@@ -87,7 +87,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "HomePage" });
   const siteName = await getSiteName(locale);
   const description = t("metaDescription");
-  const shareImage = `${SITE_URL}/api/og`;
+  const shareImage = `${SITE_URL}/og-home.jpg`;
   return {
     metadataBase: new URL(SITE_URL),
     title: siteName,

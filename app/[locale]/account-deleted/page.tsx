@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "AccountDeleted" });
+  return { title: t("title"), description: t("body") };
+}
 
 // Public — reached right after deleteMyAccount signs the user out, so
 // there's no session left to gate this on by the time they land here.

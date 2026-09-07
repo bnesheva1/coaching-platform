@@ -3,7 +3,7 @@ import { getSiteName } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
-import { localizedAlternates } from "@/lib/seo";
+import { localizedAlternates, socialMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -13,10 +13,13 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "About" });
   const siteName = await getSiteName(locale);
+  const title = t("metaTitle", { siteName });
+  const description = t("metaDescription", { siteName });
   return {
-    title: t("metaTitle", { siteName }),
-    description: t("metaDescription", { siteName }),
+    title,
+    description,
     alternates: localizedAlternates(locale, "/about"),
+    ...socialMetadata({ title, description, siteName, locale }),
   };
 }
 

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { getCookieConsent } from "@/lib/cookieConsent";
 import { CookiePreferencesForm } from "./CookiePreferencesForm";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "CookieConsent" });
+  return { title: t("preferencesTitle"), description: t("preferencesIntro") };
+}
 
 // Public — no auth required. Cookie consent is a browser-level choice,
 // not an account-level one, so a logged-out visitor needs to be able to

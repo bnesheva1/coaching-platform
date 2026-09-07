@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
-import { localizedAlternates } from "@/lib/seo";
+import { localizedAlternates, socialMetadata } from "@/lib/seo";
+import { getSiteName } from "@/lib/brand";
 import { ContactForm } from "./ContactForm";
 
 export async function generateMetadata({
@@ -11,10 +12,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Contact" });
+  const siteName = await getSiteName(locale);
+  const title = t("metaTitle");
+  const description = t("metaDescription");
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
+    title,
+    description,
     alternates: localizedAlternates(locale, "/contact"),
+    ...socialMetadata({ title, description, siteName, locale }),
   };
 }
 

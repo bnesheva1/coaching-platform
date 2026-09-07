@@ -1,7 +1,14 @@
-import { getLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Auth" });
+  return { title: t("forgotPasswordTitle"), description: t("forgotPasswordIntro") };
+}
 
 // Same already-logged-in redirect as login/signup — resetting a
 // password you're already signed in with isn't a real use case this

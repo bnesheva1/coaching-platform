@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Auth" });
+  return { title: t("checkEmailTitle"), description: t("resetCheckEmailBody") };
+}
 
 // Static confirmation, reached from EVERY path through requestPasswordReset
 // (rate-limited aside) — whether or not the email matched a real
