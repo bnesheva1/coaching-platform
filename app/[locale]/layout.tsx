@@ -85,10 +85,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "HomePage" });
+  const siteName = await getSiteName(locale);
+  const description = t("metaDescription");
+  const shareImage = `${SITE_URL}/api/og`;
   return {
     metadataBase: new URL(SITE_URL),
-    title: await getSiteName(locale),
-    description: t("metaDescription"),
+    title: siteName,
+    description,
+    // Default Open Graph + Twitter card, inherited by every route that doesn't set
+    // its own (a page with its own openGraph — e.g. a profile — replaces this, per
+    // Next's shallow metadata merge). Site name + description come from the brand
+    // config + messages, never hardcoded, so it stays correct across white-label
+    // deployments; the share image is the brand-derived /api/og render.
+    openGraph: {
+      type: "website",
+      siteName,
+      title: siteName,
+      description,
+      locale,
+      images: [{ url: shareImage, width: 1200, height: 630, alt: siteName }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteName,
+      description,
+      images: [shareImage],
+    },
   };
 }
 
