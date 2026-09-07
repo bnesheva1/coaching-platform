@@ -73,13 +73,19 @@ export default async function BrowsePage({
   // specialty's own label — no hardcoded specialty names. Metadata/canonical/OG
   // are untouched (the clean-/browse dedup canonical stays as is).
   let headerText: string | null = null;
+  let headerSubhead: string | null = null;
   if (initialSpecialties.length === 1 && initialTopics.length === 0 && !query.trim()) {
     const specialtyKey = initialSpecialties[0];
     const landing = landingEntryByKey(specialtyKey);
     if (landing) {
+      // Landing block: its authored concise h1 goes in heading position, the
+      // intro becomes a paragraph subhead beneath (not the full intro as <h1>).
       const siteName = await getSiteName(locale);
-      headerText = landing.intro[locale].replace(/\{siteName\}/g, siteName);
+      const withSiteName = (text: string) => text.replace(/\{siteName\}/g, siteName);
+      headerText = withSiteName(landing.h1[locale]);
+      headerSubhead = withSiteName(landing.intro[locale]);
     } else {
+      // No landing block: a short generic line, already heading-appropriate — no subhead.
       const tBrowse = await getTranslations("Browse");
       const s = specialtiesData.find((x) => x.key === specialtyKey);
       const specialtyLabel = s ? (s[locale] ?? s.en) : specialtyKey;
@@ -172,6 +178,7 @@ export default async function BrowsePage({
           savedPractitionerIds={savedPractitionerIds}
           brand={brand}
           headerText={headerText}
+          headerSubhead={headerSubhead}
         />
       </ContentContainer>
     </main>
