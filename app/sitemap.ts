@@ -4,6 +4,7 @@ import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/lib/brand-config";
 import { SITE_URL } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
+import { landingEntries } from "@/lib/taxonomy";
 
 const urlFor = (pathname: string, locale: Locale) => `${SITE_URL}${getPathname({ href: pathname, locale })}`;
 
@@ -47,11 +48,15 @@ function entriesForPath(pathname: string): MetadataRoute.Sitemap {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries = STATIC_PATHS.flatMap(entriesForPath);
 
+  // Category landing pages — one per fully-authored taxonomy entry, each its
+  // own canonical URL (the whole point of these pages, see lib/taxonomy.ts).
+  const landingPageEntries = landingEntries.flatMap((e) => entriesForPath(`/${e.slug}`));
+
   // Only BOOKABLE practitioners — searchPractitioners defaults to
   // onlyBookable, the exact filter Browse uses. A sitemap full of unbookable
   // profiles would waste crawl budget and send visitors to dead ends.
   const practitioners = await searchPractitioners({ onlyBookable: true });
   const profileEntries = practitioners.flatMap((p) => entriesForPath(`/p/${p.username}`));
 
-  return [...staticEntries, ...profileEntries];
+  return [...staticEntries, ...landingPageEntries, ...profileEntries];
 }

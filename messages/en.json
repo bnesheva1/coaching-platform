@@ -892,7 +892,12 @@
     "metaDescription": "Find and book verified {category} practitioners across Bulgaria. Compare specialties, reviews and availability, and book online.",
     "heading": "{category} practitioners in Bulgaria",
     "emptyBody": "No one is offering {category} online right now. Browse all practitioners instead.",
-    "browseAll": "Browse all practitioners"
+    "browseAll": "Browse all practitioners",
+    "specialistsHeading": "Specialists",
+    "howItWorksHeading": "How it works",
+    "howItWorksCta": "See how it works in detail",
+    "faqHeading": "Frequently asked questions",
+    "disclaimerBody": "Every specialist's profile goes through a review by our team before it becomes visible here. Choosing the specialist who's right for you remains at your own discretion."
   },
   "Browse": {
     "title": "Find a practitioner",
@@ -1123,7 +1128,7 @@
     "step5Title": "5. Leave a review",
     "step5Body": "After the call you can leave a rating and a comment that helps the next people choose the specialist that's right for them.",
     "disclaimerHeading": "What's important to know",
-    "disclaimerBody": "We connect you with experts across a range of fields, but we do not officially verify the diplomas and certificates of the specialists on the platform — you decide for yourself how well your chosen specialist meets your needs.",
+    "disclaimerBody": "Every specialist goes through a review by our team before their profile becomes visible on the platform. This review is not a check of diplomas or licenses — before you book, look at the profile, the reviews, and the way the specialist presents themselves, and choose at your own discretion.",
     "faqHeading": "Frequently asked questions",
     "faqQ1": "Do I need to install anything to have the call?",
     "faqA1": "No. Video calls happen right in your browser — there's no need to install Zoom, Skype, or any other app.",
@@ -1156,6 +1161,7 @@
     "trustNote": "Working with people in tender moments takes trust and care. We hold the same — toward you.",
     "closingQuestion": "Is it right for you?",
     "closingBody": "Ask your cards, your tools, your intuition. If it feels like a \"yes\" — welcome.",
+    "approvalNote": "After you sign up, your profile goes through a short review by our team before it becomes publicly visible.",
     "ctaButton": "Create your profile"
   },
   "About": {

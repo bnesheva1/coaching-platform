@@ -76,6 +76,11 @@ export default async function BecomePractitionerPage() {
         <Button href="/signup?role=practitioner" size="lg">
           {t("ctaButton")}
         </Button>
+        {/* Sets applicants' expectation that a team review precedes visibility —
+            the practitioner-facing side of the client credential disclaimer. */}
+        <p style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)", margin: "var(--space-4) 0 0" }}>
+          {t("approvalNote")}
+        </p>
       </ContentContainer>
     </main>
   );
