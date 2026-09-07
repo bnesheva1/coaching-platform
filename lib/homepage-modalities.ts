@@ -54,3 +54,14 @@ export const DOMAIN_PILLS = (domainsData as DomainEntry[])
     label: { bg: d.bg, en: d.en },
     landingPath: `/browse?${d.specialties.map((s) => `specialty=${s}`).join("&")}`,
   }));
+
+// Join active-domain labels into a natural-language list, e.g.
+// "Интуитивни практики, Психология и Коучинг" — for static pages (/about,
+// /become-a-practitioner) that can't embed the DOMAIN_PILLS links themselves
+// (e.g. a meta description). Labels + order come straight from DOMAIN_PILLS, so
+// it stays accurate as domains activate/deactivate, with no hand-typed list.
+export function joinDomainLabels(labels: string[], locale: "bg" | "en"): string {
+  const conjunction = locale === "bg" ? "и" : "and";
+  if (labels.length <= 1) return labels[0] ?? "";
+  return `${labels.slice(0, -1).join(", ")} ${conjunction} ${labels[labels.length - 1]}`;
+}

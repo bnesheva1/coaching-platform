@@ -110,6 +110,7 @@ export function BrowseClient({
   viewerIsGuest,
   savedPractitionerIds,
   brand,
+  headerText,
 }: {
   results: BrowseResult[];
   query: string;
@@ -125,6 +126,9 @@ export function BrowseClient({
   // Active white-label brand; "two" renders the handoff-1g layout (sidebar +
   // hairline cards + numbered pagination), reusing all the state below.
   brand?: string;
+  // Server-computed context header for a clean single-specialty entry; replaces
+  // the generic H1 when present (null in every other state). See browse/page.tsx.
+  headerText?: string | null;
 }) {
   const isBrandTwo = brand === "two";
   const t = useTranslations("Browse");
@@ -405,7 +409,7 @@ export function BrowseClient({
     };
     return (
       <>
-        <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{t("title")}</h1>
+        <h1 style={{ font: "700 2rem var(--font-ui)", letterSpacing: "-0.015em", color: "var(--text-primary)", margin: "0 0 20px" }}>{headerText ?? t("title")}</h1>
         <form
           className={twoStyles.searchRow}
           role="search"
@@ -580,6 +584,7 @@ export function BrowseClient({
                         bio: p.bio,
                         avatarUrl: p.avatarUrl,
                         averageRating: p.averageRating,
+                        reviewCount: p.reviewCount,
                         specialtyLabels: p.specialtyKeys.map((k) => specialtyLabelByKey.get(k) ?? k),
                       }}
                     />
@@ -601,7 +606,7 @@ export function BrowseClient({
       {/* Page title is lighter/larger than the (now-bolder, smaller)
           --text-heading-lg role — it's an exact match for the unchanged
           --text-display-sm token (400 26px), not a new one. */}
-      <h1 style={{ font: "var(--text-display-sm)", color: "var(--text-primary)", margin: "0 0 var(--space-4)" }}>{t("title")}</h1>
+      <h1 style={{ font: "var(--text-display-sm)", color: "var(--text-primary)", margin: "0 0 var(--space-4)" }}>{headerText ?? t("title")}</h1>
 
       <div style={{ marginBottom: "var(--space-4)", position: "relative" }}>
         {/* Decorative only — the input already carries its accessible

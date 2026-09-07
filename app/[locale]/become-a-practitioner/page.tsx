@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { getSiteName } from "@/lib/brand";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
-import { localizedAlternates } from "@/lib/seo";
+import { Link } from "@/i18n/navigation";
+import { localizedAlternates, socialMetadata } from "@/lib/seo";
+import { DOMAIN_PILLS, joinDomainLabels } from "@/lib/homepage-modalities";
+
+type Loc = "bg" | "en";
 
 export async function generateMetadata({
   params,
@@ -13,16 +17,27 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "BecomePractitioner" });
   const siteName = await getSiteName(locale);
+  const title = t("metaTitle", { siteName });
+  // A meta tag can't carry links, so join the same active-domain labels into a
+  // plain-text list for {domains} (stays in sync with data/domains.json).
+  const domains = joinDomainLabels(
+    DOMAIN_PILLS.map((d) => d.label[locale as Loc]),
+    locale as Loc,
+  );
+  const description = t("metaDescription", { siteName, domains });
   return {
-    title: t("metaTitle", { siteName }),
-    description: t("metaDescription"),
+    title,
+    description,
     alternates: localizedAlternates(locale, "/become-a-practitioner"),
+    ...socialMetadata({ title, description, siteName, locale }),
   };
 }
 
 export default async function BecomePractitionerPage() {
   const t = await getTranslations("BecomePractitioner");
   const siteName = await getSiteName();
+  const locale = (await getLocale()) as Loc;
+  const conjunction = locale === "bg" ? "и" : "and";
 
   const benefits = [
     { title: t("benefit1Title"), body: t("benefit1Body") },
@@ -40,7 +55,24 @@ export default async function BecomePractitionerPage() {
           {t("subheading")}
         </p>
 
-        <p style={{ font: "var(--text-body-md)", margin: "0 0 var(--space-4)" }}>{t("introBody")}</p>
+        <p style={{ font: "var(--text-body-md)", margin: "0 0 var(--space-4)" }}>
+          {t.rich("introBody", {
+            siteName,
+            // Inject the active-domain inline links (text + href from DOMAIN_PILLS)
+            // into the <domains/> slot — same pattern as /about and /how-it-works.
+            domains: () =>
+              DOMAIN_PILLS.flatMap((d, i) => {
+                const link = (
+                  <Link key={d.key} href={d.landingPath} style={{ color: "var(--accent)" }}>
+                    {d.label[locale]}
+                  </Link>
+                );
+                if (i === 0) return [link];
+                const separator = i === DOMAIN_PILLS.length - 1 ? ` ${conjunction} ` : ", ";
+                return [separator, link];
+              }),
+          })}
+        </p>
         <p style={{ font: "var(--text-body-md)", margin: "0 0 var(--space-8)" }}>
           {t("pitchIntro")} <strong>{t("pitchBold", { siteName })}</strong>
         </p>

@@ -4,18 +4,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
-import { DOMAIN_PILLS } from "@/lib/homepage-modalities";
+import { DOMAIN_PILLS, joinDomainLabels } from "@/lib/homepage-modalities";
 
 type Loc = "bg" | "en";
-
-// Active-domain labels + order come straight from DOMAIN_PILLS (the active
-// entries of data/domains.json) — so both the body2 links and the meta string
-// below stay accurate as domains activate/deactivate, with no hand-typed list.
-function joinDomainLabels(labels: string[], locale: Loc): string {
-  const conjunction = locale === "bg" ? "и" : "and";
-  if (labels.length <= 1) return labels[0] ?? "";
-  return `${labels.slice(0, -1).join(", ")} ${conjunction} ${labels[labels.length - 1]}`;
-}
 
 export async function generateMetadata({
   params,

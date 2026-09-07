@@ -151,6 +151,13 @@ export function landingEntryBySlug(slug: string): LandingEntry | undefined {
   return landingEntries.find((e) => e.slug === slug);
 }
 
+// Lookup by specialty/topic KEY (not slug) — used to reuse a landing entry's
+// authored copy elsewhere (e.g. the /browse single-specialty context header).
+// This is copy reuse, NOT a nav link, so it doesn't touch the no-link rule below.
+export function landingEntryByKey(key: string): LandingEntry | undefined {
+  return landingEntries.find((e) => e.key === key);
+}
+
 // NOTE: internal navigation NEVER links to a taxonomy landing page — pills,
 // tiles and in-page links always point at /browse. Taxonomy pages are entry
 // points for external/organic search only (they embed their own practitioner

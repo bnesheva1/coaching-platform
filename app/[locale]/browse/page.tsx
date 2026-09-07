@@ -6,6 +6,7 @@ import { getSavedPractitionerIds } from "@/lib/practitioners/saved";
 import { createClient } from "@/lib/supabase/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
+import { landingEntryByKey } from "@/lib/taxonomy";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
@@ -63,6 +64,28 @@ export default async function BrowsePage({
     // the phone flag never had — the filter was previously reachable by URL.
     .filter((v): v is DeliveryType => enabledDelivery.has(v as DeliveryType));
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
+
+  // Single-specialty context header — shown ONLY on a clean single-specialty
+  // entry (exactly one specialty, no topic, no search). Deliberately not for
+  // multi-specialty (domain pills send 2+, e.g. psychologist+art_therapist) or
+  // combined queries. Reuses an authored taxonomy intro when the specialty has
+  // one (only psychologist today), else a generic line built from the
+  // specialty's own label — no hardcoded specialty names. Metadata/canonical/OG
+  // are untouched (the clean-/browse dedup canonical stays as is).
+  let headerText: string | null = null;
+  if (initialSpecialties.length === 1 && initialTopics.length === 0 && !query.trim()) {
+    const specialtyKey = initialSpecialties[0];
+    const landing = landingEntryByKey(specialtyKey);
+    if (landing) {
+      const siteName = await getSiteName(locale);
+      headerText = landing.intro[locale].replace(/\{siteName\}/g, siteName);
+    } else {
+      const tBrowse = await getTranslations("Browse");
+      const s = specialtiesData.find((x) => x.key === specialtyKey);
+      const specialtyLabel = s ? (s[locale] ?? s.en) : specialtyKey;
+      headerText = tBrowse("singleSpecialtyHeader", { specialtyLabel });
+    }
+  }
 
   const practitioners = await searchPractitioners({ searchText: query });
 
@@ -148,6 +171,7 @@ export default async function BrowsePage({
           viewerIsGuest={viewerIsGuest}
           savedPractitionerIds={savedPractitionerIds}
           brand={brand}
+          headerText={headerText}
         />
       </ContentContainer>
     </main>

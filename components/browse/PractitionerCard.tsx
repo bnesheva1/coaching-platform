@@ -212,6 +212,7 @@ export function PractitionerCard({
         >
           <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
             <Star size={12} fill="currentColor" /> {practitioner.averageRating.toFixed(1)}
+            {practitioner.reviewCount > 0 ? ` (${practitioner.reviewCount})` : ""}
           </span>
         </span>
       )}

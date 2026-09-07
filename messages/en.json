@@ -901,6 +901,7 @@
   },
   "Browse": {
     "title": "Find a practitioner",
+    "singleSpecialtyHeader": "{specialtyLabel} specialists — reviewed by our team, ready to help you.",
     "metaTitle": "Browse practitioners — tarot, astrology & spiritual guidance",
     "metaDescription": "Search verified tarot readers, astrologers, and energy and spiritual practitioners in Bulgaria. Compare specialties, reviews and availability, and book online.",
     "searchPlaceholder": "Search by name, practice, or your question",
@@ -1141,10 +1142,10 @@
   },
   "BecomePractitioner": {
     "metaTitle": "Become a practitioner — join {siteName}",
-    "metaDescription": "List your tarot, astrology, reiki, or coaching practice. Your own profile, a calendar that works for you, and secure bookings and payments — handled for you.",
+    "metaDescription": "{siteName} invites specialists from various fields — {domains} — to join and reach new clients online.",
     "heading": "Become a practitioner",
-    "subheading": "You tend to your gift. We'll handle the rest.",
-    "introBody": "If you have a gift — to read, to heal, to guide — you probably know the other side of it too: the bookings, the calendar, the payments, keeping an online presence, finding the people who need exactly you. The hours that go to admin instead of to the work itself.",
+    "subheading": "You take care of your practice — we take care of clients finding you.",
+    "introBody": "Whether you work in <domains></domains> or another field, your expertise helps people at important moments in their lives — and {siteName} gives you a way to reach them, without needing your own website or advertising.",
     "pitchIntro": "That's why we're here.",
     "pitchBold": "{siteName} takes on the technical and the organizational — so you can focus on what you do best.",
     "benefitsHeading": "What you get:",
@@ -1160,7 +1161,7 @@
     "benefit5Body": "You decide your services, your prices, your time.",
     "trustNote": "Working with people in tender moments takes trust and care. We hold the same — toward you.",
     "closingQuestion": "Is it right for you?",
-    "closingBody": "Ask your cards, your tools, your intuition. If it feels like a \"yes\" — welcome.",
+    "closingBody": "Whatever your field — trust your experience. We'll take care of clients finding you.",
     "approvalNote": "After you sign up, your profile goes through a short review by our team before it becomes publicly visible.",
     "ctaButton": "Create your profile"
   },
