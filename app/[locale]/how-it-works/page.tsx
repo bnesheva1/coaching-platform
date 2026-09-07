@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/Card";
 import { Image as ImageIcon } from "lucide-react";
 import { localizedAlternates } from "@/lib/seo";
 import { DOMAIN_PILLS } from "@/lib/homepage-modalities";
-import { landingPathForKey } from "@/lib/taxonomy";
 
 export async function generateMetadata({
   params,
@@ -72,9 +71,7 @@ export default async function HowItWorksPage() {
           <p style={{ font: "var(--text-body-lg)", color: "var(--text-secondary)", margin: 0 }}>
             {t.rich("areas", {
               psychology: (chunks) => (
-                // Points at the dedicated /psiholog landing page when it exists
-                // (the domain's flagship specialty), else the domain browse filter.
-                <Link href={landingPathForKey("psychologist") ?? domainHref("psychology")} style={{ color: "var(--accent)" }}>
+                <Link href={domainHref("psychology")} style={{ color: "var(--accent)" }}>
                   {chunks}
                 </Link>
               ),

@@ -4,6 +4,7 @@ import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
 import { getSiteName } from "@/lib/brand";
+import { isDeliveryTypeEnabled } from "@/lib/delivery";
 
 export async function generateMetadata({
   params,
@@ -27,9 +28,15 @@ export default async function FAQPage() {
   const t = await getTranslations("FAQ");
   const tBrowse = await getTranslations("Browse");
 
+  // a7 ("in person or online?") is gated on the same per-deployment config as
+  // the rest of the in-person UI (lib/delivery.ts). In-person disabled (the
+  // default, ENABLED_DELIVERY_TYPES unset) → the "everything is online" answer;
+  // enabled → the original "depends on the specialist/service" answer. The
+  // JSON-LD below is built from this same qa[], so it flips in lockstep.
+  const inPersonEnabled = isDeliveryTypeEnabled("in_person");
   const qa = [1, 2, 3, 4, 5, 6, 7].map((n) => ({
     question: t(`q${n}` as "q1"),
-    answer: t(`a${n}` as "a1"),
+    answer: n === 7 && !inPersonEnabled ? t("a7Online") : t(`a${n}` as "a1"),
   }));
 
   // FAQPage structured data — https://schema.org/FAQPage, the shape

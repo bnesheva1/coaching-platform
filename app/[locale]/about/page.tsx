@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
 import { getSiteName } from "@/lib/brand";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
+import { DOMAIN_PILLS } from "@/lib/homepage-modalities";
+
+type Loc = "bg" | "en";
+
+// Active-domain labels + order come straight from DOMAIN_PILLS (the active
+// entries of data/domains.json) — so both the body2 links and the meta string
+// below stay accurate as domains activate/deactivate, with no hand-typed list.
+function joinDomainLabels(labels: string[], locale: Loc): string {
+  const conjunction = locale === "bg" ? "и" : "and";
+  if (labels.length <= 1) return labels[0] ?? "";
+  return `${labels.slice(0, -1).join(", ")} ${conjunction} ${labels[labels.length - 1]}`;
+}
 
 export async function generateMetadata({
   params,
@@ -14,7 +26,13 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "About" });
   const siteName = await getSiteName(locale);
   const title = t("metaTitle", { siteName });
-  const description = t("metaDescription", { siteName });
+  // A meta tag can't carry links, so join the same active-domain labels into a
+  // plain-text list for {domains} (stays in sync with data/domains.json).
+  const domains = joinDomainLabels(
+    DOMAIN_PILLS.map((d) => d.label[locale as Loc]),
+    locale as Loc,
+  );
+  const description = t("metaDescription", { siteName, domains });
   return {
     title,
     description,
@@ -28,6 +46,8 @@ export default async function AboutPage() {
   const tHeader = await getTranslations("Header");
   const tBrowse = await getTranslations("Browse");
   const siteName = await getSiteName();
+  const locale = (await getLocale()) as Loc;
+  const conjunction = locale === "bg" ? "и" : "and";
 
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>
@@ -36,7 +56,22 @@ export default async function AboutPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <p style={{ font: "var(--text-body-lg)", margin: 0 }}>{t("body1", { siteName })}</p>
           <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)", margin: 0 }}>
-            {t("body2")}
+            {t.rich("body2", {
+              // Inject the active-domain inline links (text + href from DOMAIN_PILLS)
+              // into the <domains/> slot — same DOMAIN_PILLS-sourced pattern as
+              // /how-it-works, joined naturally with commas + the locale conjunction.
+              domains: () =>
+                DOMAIN_PILLS.flatMap((d, i) => {
+                  const link = (
+                    <Link key={d.key} href={d.landingPath} style={{ color: "var(--accent)" }}>
+                      {d.label[locale]}
+                    </Link>
+                  );
+                  if (i === 0) return [link];
+                  const separator = i === DOMAIN_PILLS.length - 1 ? ` ${conjunction} ` : ", ";
+                  return [separator, link];
+                }),
+            })}
           </p>
           <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)", margin: 0 }}>
             {t("body3", { siteName })}

@@ -151,11 +151,7 @@ export function landingEntryBySlug(slug: string): LandingEntry | undefined {
   return landingEntries.find((e) => e.slug === slug);
 }
 
-// The landing path for a specialty/topic key, if it has a published page — used
-// by internal links (homepage tiles, /how-it-works) so they point at the real
-// landing page rather than a raw /browse filter. null when the key has no page,
-// letting callers fall back to their existing /browse link.
-export function landingPathForKey(key: string): string | null {
-  const e = landingEntries.find((x) => x.key === key);
-  return e ? `/${e.slug}` : null;
-}
+// NOTE: internal navigation NEVER links to a taxonomy landing page — pills,
+// tiles and in-page links always point at /browse. Taxonomy pages are entry
+// points for external/organic search only (they embed their own practitioner
+// grid). So there is deliberately no "landingPathForKey" nav helper here.

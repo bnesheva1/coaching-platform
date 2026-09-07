@@ -1166,10 +1166,10 @@
   },
   "About": {
     "metaTitle": "About {siteName}",
-    "metaDescription": "{siteName} connects people seeking clarity with verified tarot, astrology, energy, and coaching practitioners across Bulgaria.",
+    "metaDescription": "{siteName} connects people with trusted specialists in areas like {domains} — for online consultations at their own pace.",
     "heading": "About {siteName}",
     "body1": "{siteName} is a meeting place — between people seeking clarity and practitioners who can help them find it.",
-    "body2": "We believe everyone reaches a crossroads sometimes — in love, in work, in themselves — and that what helps most is often a conversation with someone who sees a little further. Tarot, astrology, energy practices, coaching — different paths toward the same thing: understanding yourself, and your moment, a little better.",
+    "body2": "Here people meet trusted specialists in areas like <domains></domains>, to find clarity, direction, or support at a moment that matters. Whatever you're looking for, here you'll find someone to walk alongside you — online, at your own pace.",
     "body3": "We built {siteName} to make that meeting easy, safe, and full of trust — for seekers and practitioners alike."
   },
   "FAQ": {
@@ -1190,6 +1190,7 @@
     "a6": "Every profile shows ratings and reviews from real clients who actually had a session — so you can see others' experience before you choose.",
     "q7": "In person or online?",
     "a7": "It depends on the practitioner and the service — you'll see it on their profile and when you book.",
+    "a7Online": "All consultations happen online, via video call right in the browser — no installation needed.",
     "contactPrompt": "Have another question? <contact>Contact us</contact>"
   },
   "Footer": {
