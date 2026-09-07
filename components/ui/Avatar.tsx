@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { useTranslations } from "next-intl";
+import { initialsFromName } from "@/lib/initials";
 
 // One avatar, everywhere a practitioner's face appears clickable — so the
 // "available now" indicator (a coloured ring + a small label) travels WITH the
@@ -33,14 +34,14 @@ export function Avatar({
   size,
   availableNow = false,
   availableLabel,
-  fallbackBackground = "var(--accent-subtle)",
-  fallbackColor = "var(--accent-subtle-text)",
+  fallbackBackground = "var(--bg-surface-2)",
+  fallbackColor = "var(--text-tertiary)",
   fallbackFont,
   fallbackOpacity,
   imageStyle,
 }: AvatarProps) {
   const t = useTranslations("A11y");
-  const initial = (name || "?").charAt(0).toUpperCase();
+  const initial = initialsFromName(name);
   const ringGap = Math.max(3, Math.round(size * 0.045));
 
   return (

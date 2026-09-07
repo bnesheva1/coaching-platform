@@ -277,7 +277,7 @@ export default async function ClientUpcomingPage({
         gap: "var(--space-3)",
       }}
     >
-      <h3 style={{ margin: 0, font: "var(--text-heading-sm)" }}>{t("agenda.noUpcomingTitle")}</h3>
+      <h2 style={{ margin: 0, font: "var(--text-heading-sm)" }}>{t("agenda.noUpcomingTitle")}</h2>
       <p style={{ margin: 0, color: "var(--text-secondary)", font: "var(--text-body-md)" }}>
         {t("agenda.noUpcomingRebookLine")}
       </p>
@@ -377,9 +377,9 @@ export default async function ClientUpcomingPage({
                     (chip full width) on mobile, same as the upcoming
                     list cards. */}
                 <div className={rowStyles.stackRow} style={{ gap: "var(--space-2)" }}>
-                  <h3 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
+                  <h2 style={{ margin: 0, font: "var(--text-heading-lg)" }}>
                     {nextBooking.serviceName} {tBooking("withInline")}
-                  </h3>
+                  </h2>
                   <PractitionerChip name={nextBooking.counterpartName} avatarUrl={nextBooking.counterpartAvatarUrl} username={nextBooking.counterpartUsername} />
                 </div>
                 <p style={{ margin: 0, font: "var(--text-body-md)", color: "var(--text-secondary)" }}>

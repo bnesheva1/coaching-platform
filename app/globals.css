@@ -133,6 +133,28 @@ body {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+/* Skip-to-content link: off-screen until keyboard focus, then it slides into the
+   top-left so a keyboard user can jump past the header/nav straight to the page's
+   main content. Visible ONLY while focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -200px;
+  z-index: 1000;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font: var(--text-label);
+  text-decoration: none;
+  transition: top var(--duration-fast) var(--ease-standard);
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
+
 /* Header dropdowns (info + account menus in NavBar.tsx). Real :hover, same
    "inline styles can't express :hover" reasoning as .form-field/.slot-chip:
    the trigger shifts toward the accent so the greeting reads as interactive,

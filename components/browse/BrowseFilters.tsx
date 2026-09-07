@@ -18,8 +18,20 @@ export type FilterGroup = {
   selected: Set<string>;
 };
 
+// A domain groups several specialty options under one all-caps parent checkbox
+// (data/domains.json). Domains are a UI convenience over the flat specialty set —
+// checking a domain toggles all its specialties; the actual filter is still the
+// specialty keys, so no new backend concept.
+export type DomainGroup = { key: string; label: string; specialties: FilterOption[] };
+
 export type BrowseFiltersProps = {
   groups: FilterGroup[];
+  // The specialty group (matched by `specialtyGroupKey`) renders as a domain tree
+  // instead of a flat list; every other group stays a flat OptionList. `ungrouped`
+  // catches any specialty not in an active domain so none can silently vanish.
+  specialtyGroupKey: string;
+  specialtyDomains: DomainGroup[];
+  ungroupedSpecialties: FilterOption[];
   // Desktop: called with the full next state (every group, not just the
   // one that changed) on every checkbox click — instant-apply, since the
   // sidebar sits beside the grid, not over it. Mobile: called once, when
@@ -43,6 +55,18 @@ function toggleInSet(set: Set<string>, key: string): Set<string> {
 
 function groupsToMap(groups: FilterGroup[]): Record<string, Set<string>> {
   return Object.fromEntries(groups.map((g) => [g.key, g.selected]));
+}
+
+const domainAllOn = (keys: string[], value: Set<string>) => keys.length > 0 && keys.every((k) => value.has(k));
+const domainSomeOn = (keys: string[], value: Set<string>) => keys.some((k) => value.has(k));
+
+// Toggle a whole domain: if all its specialties are already selected, clear them
+// all; otherwise select them all. Individual specialties can then be un/re-checked.
+function toggleDomainInSet(set: Set<string>, keys: string[]): Set<string> {
+  const next = new Set(set);
+  if (domainAllOn(keys, set)) keys.forEach((k) => next.delete(k));
+  else keys.forEach((k) => next.add(k));
+  return next;
 }
 
 function totalSelected(map: Record<string, Set<string>>): number {
@@ -109,7 +133,119 @@ function OptionList({
   );
 }
 
-export function BrowseFilters({ groups, onApply, onClear, computeCount }: BrowseFiltersProps) {
+// The specialty filter as a domain tree: each domain is an ALL-CAPS parent
+// checkbox (checked when all its specialties are on, indeterminate when only some),
+// with its specialties nested beneath. No group label — the domains ARE the
+// headings. Zero-count specialties stay enabled here (a seeker may want to filter
+// by a specialty no one is tagged with yet), unlike the flat OptionList.
+function SpecialtyTree({
+  domains,
+  ungrouped,
+  value,
+  onToggleSpecialty,
+  onToggleDomain,
+}: {
+  domains: DomainGroup[];
+  ungrouped: FilterOption[];
+  value: Set<string>;
+  onToggleSpecialty: (key: string) => void;
+  onToggleDomain: (keys: string[]) => void;
+}) {
+  // Checkboxes align flush-left (no indent — specialties line up with the topic
+  // group below); align-items:flex-start keeps the checkbox at the top when a label
+  // wraps to two lines. Text is wrapped in a <span> so it wraps beside, not under.
+  const checkbox = (checked: boolean, onChange: () => void, indeterminate = false) => (
+    <input
+      type="checkbox"
+      checked={checked}
+      ref={(el) => {
+        if (el) el.indeterminate = indeterminate;
+      }}
+      onChange={onChange}
+      style={{ width: 14, height: 14, marginTop: 2, flexShrink: 0, accentColor: "var(--accent)", touchAction: "manipulation" }}
+    />
+  );
+
+  const childLabel = (o: FilterOption) => (
+    <label
+      key={o.key}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "var(--space-2)",
+        font: "var(--text-body-xs)",
+        color: "var(--text-primary)",
+        cursor: "pointer",
+        touchAction: "manipulation",
+      }}
+    >
+      {checkbox(value.has(o.key), () => onToggleSpecialty(o.key))}
+      <span>
+        {o.label} ({o.count})
+      </span>
+    </label>
+  );
+
+  return (
+    <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+        {domains.map((d) => {
+          const keys = d.specialties.map((s) => s.key);
+          const allOn = domainAllOn(keys, value);
+          const someOn = domainSomeOn(keys, value);
+          return (
+            // Padding + a hairline outline each domain group without indenting it.
+            <div
+              key={d.key}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--space-3)",
+                paddingBottom: "var(--space-4)",
+                borderBottom: "1px solid var(--border-subtle)",
+              }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "var(--space-2)",
+                  font: "var(--text-label)",
+                  fontSize: "0.88rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "normal",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  touchAction: "manipulation",
+                }}
+              >
+                {checkbox(allOn, () => onToggleDomain(keys), someOn && !allOn)}
+                <span>{d.label}</span>
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+                {d.specialties.map(childLabel)}
+              </div>
+            </div>
+          );
+        })}
+        {ungrouped.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>{ungrouped.map(childLabel)}</div>
+        )}
+      </div>
+    </fieldset>
+  );
+}
+
+export function BrowseFilters({
+  groups,
+  specialtyGroupKey,
+  specialtyDomains,
+  ungroupedSpecialties,
+  onApply,
+  onClear,
+  computeCount,
+}: BrowseFiltersProps) {
   const t = useTranslations("Browse");
   const isMobile = useIsMobile();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -152,15 +288,26 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
         }}
       >
         <span style={{ font: "var(--text-label)", fontWeight: 700, color: "var(--text-primary)" }}>{t("filtersHeading")}</span>
-        {groups.map((group) => (
-          <OptionList
-            key={group.key}
-            groupLabel={group.groupLabel}
-            options={group.options}
-            value={group.selected}
-            onToggle={(key) => onApply({ ...committedMap, [group.key]: toggleInSet(group.selected, key) })}
-          />
-        ))}
+        {groups.map((group) =>
+          group.key === specialtyGroupKey ? (
+            <SpecialtyTree
+              key={group.key}
+              domains={specialtyDomains}
+              ungrouped={ungroupedSpecialties}
+              value={group.selected}
+              onToggleSpecialty={(key) => onApply({ ...committedMap, [group.key]: toggleInSet(group.selected, key) })}
+              onToggleDomain={(keys) => onApply({ ...committedMap, [group.key]: toggleDomainInSet(group.selected, keys) })}
+            />
+          ) : (
+            <OptionList
+              key={group.key}
+              groupLabel={group.groupLabel}
+              options={group.options}
+              value={group.selected}
+              onToggle={(key) => onApply({ ...committedMap, [group.key]: toggleInSet(group.selected, key) })}
+            />
+          ),
+        )}
         <button
           type="button"
           className="focus-ring"
@@ -241,11 +388,41 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
         <div style={{ display: "flex", flexDirection: "column", maxHeight: "80dvh" }}>
           <div
             style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--space-3)",
               padding: "var(--space-4)",
               borderBottom: "1px solid var(--border-subtle)",
             }}
           >
             <span style={{ font: "var(--text-heading-sm)" }}>{t("filtersHeading")}</span>
+            {/* Closing applies the current draft (same as the backdrop tap and the
+                "Show results" button — the sheet has no cancel-without-apply). */}
+            <button
+              type="button"
+              className="focus-ring"
+              onClick={() => dialogRef.current?.close()}
+              aria-label={t("filtersClose")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                marginRight: "calc(-1 * var(--space-1))",
+                background: "none",
+                border: "none",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text-secondary)",
+                fontSize: "1.25rem",
+                lineHeight: 1,
+                cursor: "pointer",
+              }}
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
           </div>
 
           {/* pan-y (not the default auto/none) — tells mobile browsers
@@ -255,17 +432,32 @@ export function BrowseFilters({ groups, onApply, onClear, computeCount }: Browse
               touchAction note on each checkbox row below — same root
               cause, the container-level half of the same fix). */}
           <div style={{ padding: "var(--space-4)", overflowY: "auto", touchAction: "pan-y", display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-            {groups.map((group) => (
-              <OptionList
-                key={group.key}
-                groupLabel={group.groupLabel}
-                options={group.options}
-                value={draft[group.key] ?? new Set()}
-                onToggle={(key) =>
-                  setDraft((prev) => ({ ...prev, [group.key]: toggleInSet(prev[group.key] ?? new Set(), key) }))
-                }
-              />
-            ))}
+            {groups.map((group) =>
+              group.key === specialtyGroupKey ? (
+                <SpecialtyTree
+                  key={group.key}
+                  domains={specialtyDomains}
+                  ungrouped={ungroupedSpecialties}
+                  value={draft[group.key] ?? new Set()}
+                  onToggleSpecialty={(key) =>
+                    setDraft((prev) => ({ ...prev, [group.key]: toggleInSet(prev[group.key] ?? new Set(), key) }))
+                  }
+                  onToggleDomain={(keys) =>
+                    setDraft((prev) => ({ ...prev, [group.key]: toggleDomainInSet(prev[group.key] ?? new Set(), keys) }))
+                  }
+                />
+              ) : (
+                <OptionList
+                  key={group.key}
+                  groupLabel={group.groupLabel}
+                  options={group.options}
+                  value={draft[group.key] ?? new Set()}
+                  onToggle={(key) =>
+                    setDraft((prev) => ({ ...prev, [group.key]: toggleInSet(prev[group.key] ?? new Set(), key) }))
+                  }
+                />
+              ),
+            )}
             <button
               type="button"
               className="focus-ring"

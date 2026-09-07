@@ -13,6 +13,10 @@ export type InputProps = {
   // Ported as a prop rather than the bundle's hardcoded Bulgarian
   // aria-label — this is shared, brand/language-agnostic infrastructure.
   searchButtonLabel?: string;
+  // Accessible name for the search FIELD itself (the button has its own
+  // searchButtonLabel). A placeholder is not a reliable accessible name, so a
+  // labelless search input is effectively unnamed without this.
+  searchLabel?: string;
   // Lets Input participate in an uncontrolled, plain <form method="get">
   // submission (no value/onChange/client state needed) — required for
   // e.g. the homepage hero's search box, which posts straight to
@@ -28,6 +32,7 @@ export function Input({
   search = false,
   onSearch,
   searchButtonLabel = "Search",
+  searchLabel,
   name,
 }: InputProps) {
   const [focused, setFocused] = useState(false);
@@ -56,6 +61,7 @@ export function Input({
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             placeholder={placeholder}
+            aria-label={searchLabel}
             style={{
               flex: 1,
               border: "none",

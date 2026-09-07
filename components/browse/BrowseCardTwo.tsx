@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { initialsFromName } from "@/lib/initials";
 import styles from "./BrowseTwo.module.css";
 
 export type BrowseCardTwoData = {
@@ -55,7 +56,7 @@ export function BrowseCardTwo({
           <img className={styles.portrait} src={practitioner.avatarUrl} alt={tA("avatarAlt", { name })} />
         ) : (
           <span className={styles.portraitFallback} aria-hidden="true">
-            {name.charAt(0).toUpperCase()}
+            {initialsFromName(name)}
           </span>
         )}
         <p className={styles.name}>{name}</p>

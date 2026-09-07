@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { localizedAlternates } from "@/lib/seo";
+import { localizedAlternates, socialMetadata } from "@/lib/seo";
 import { searchPractitioners } from "@/lib/practitioners/search";
 import { getSavedPractitionerIds } from "@/lib/practitioners/saved";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +9,7 @@ import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
-import { resolveBrand } from "@/lib/brand";
+import { resolveBrand, getSiteName } from "@/lib/brand";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -24,10 +24,14 @@ import { resolveBrand } from "@/lib/brand";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Browse" });
+  const siteName = await getSiteName(locale);
+  const title = t("metaTitle");
+  const description = t("metaDescription");
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
+    title,
+    description,
     alternates: localizedAlternates(locale, "/browse"),
+    ...socialMetadata({ title, description, siteName, locale }),
   };
 }
 

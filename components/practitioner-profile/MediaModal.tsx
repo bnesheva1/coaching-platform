@@ -68,6 +68,7 @@ export function MediaModal({
     <dialog
       ref={dialogRef}
       className={styles.dialog}
+      aria-label={t("mediaDialogLabel")}
       // Fires on Escape (via cancel) and on programmatic close(); parent state
       // update is idempotent, so a redundant call is harmless.
       onClose={onClose}

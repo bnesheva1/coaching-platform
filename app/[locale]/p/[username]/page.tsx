@@ -32,7 +32,7 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data: pp } = await supabase
     .from("practitioner_profiles")
-    .select("id, headline, bio, specialties, username")
+    .select("id, headline, bio, specialties, username, avatar_url")
     .eq("username", username.toLowerCase())
     .single();
   if (!pp) return {};
@@ -62,14 +62,36 @@ export async function generateMetadata({
     .filter((l): l is string => Boolean(l))
     .slice(0, 3);
 
+  const title = profileMetaTitle(name, specialtyLabels, siteName);
+  const description = profileMetaDescription({
+    headline: pp.headline,
+    bio: pp.bio,
+    fallback: t("metaDescriptionFallback", { name, site: siteName }),
+  });
+  // Practitioner's own photo as the share image (their avatar, an absolute URL);
+  // falls back to the site default render when they haven't set one.
+  const image = pp.avatar_url || `${SITE_URL}/api/og`;
   return {
-    title: profileMetaTitle(name, specialtyLabels, siteName),
-    description: profileMetaDescription({
-      headline: pp.headline,
-      bio: pp.bio,
-      fallback: t("metaDescriptionFallback", { name, site: siteName }),
-    }),
+    title,
+    description,
     alternates: localizedAlternates(locale, `/p/${pp.username}`),
+    // Profile-specific OG/Twitter — the practitioner's own name + photo. Setting
+    // openGraph here replaces the site-default one inherited from the root layout
+    // (Next shallow-merges metadata, and a child that sets openGraph wins).
+    openGraph: {
+      type: "profile",
+      siteName,
+      locale,
+      title,
+      description,
+      images: [{ url: image, alt: name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
   };
 }
 

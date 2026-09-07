@@ -26,7 +26,7 @@ export function ClientDashboardSidebar() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "var(--space-6) var(--space-4)" }}>
-      <nav style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: 1 }}>
+      <nav aria-label={tHeader("navDashboardLabel")} style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: 1 }}>
         {NAV_ITEMS.map(({ href, key }) => (
           <NavItem
             key={href}

@@ -51,6 +51,7 @@ export default function DesignSystemPage() {
     <div>
       <NavBar
         wordmark="Coaching Platform"
+        navLabel="Main navigation"
         browseLink={{ label: "Find a practitioner", href: "/browse" }}
         infoDropdownLabel="Info"
         infoLinks={[

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useTranslations } from "next-intl";
 import {
   setAvailableNow,
@@ -129,15 +130,11 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
     return () => clearInterval(id);
   }, [available]);
 
-  // Dismiss the block modal on Escape.
-  useEffect(() => {
-    if (!blockReason) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setBlockReason(null);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [blockReason]);
+  // Focus trap + Escape-to-close + focus restore for the block dialog (replaces a
+  // bare Escape listener — same dismissal behaviour, plus a real trap so Tab can't
+  // leave the modal, and focus returns to the trigger on close).
+  const blockDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(blockDialogRef, blockReason !== null, () => setBlockReason(null));
 
   async function respond(id: string, action: (id: string) => Promise<unknown>) {
     setBusy(true);
@@ -213,6 +210,8 @@ export function AvailabilityWidget({ initialAvailable }: { initialAvailable: boo
 
       {blockReason && (
         <div
+          ref={blockDialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-labelledby="imm-block-title"
