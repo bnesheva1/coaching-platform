@@ -62,8 +62,12 @@ export default async function FAQPage() {
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript }} />
-      <ContentContainer maxWidth={720}>
-        <h1 style={{ font: "var(--text-display-md)", margin: "0 0 var(--space-8)" }}>{t("heading")}</h1>
+      <ContentContainer>
+        {/* Match /how-it-works: default (wide) container, content left-aligned in a
+            720 column (same width as /how-it-works' FAQ section). Same H1 style
+            as /how-it-works (700/2rem/--font-ui). */}
+        <div style={{ maxWidth: 720 }}>
+          <h1 style={{ fontWeight: 700, fontSize: "2rem", lineHeight: 1.2, margin: "0 0 var(--space-4)" }}>{t("heading")}</h1>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
           {qa.map((item) => (
@@ -99,6 +103,7 @@ export default async function FAQPage() {
             {tBrowse("title")}
           </Link>
         </p>
+        </div>
       </ContentContainer>
     </main>
   );

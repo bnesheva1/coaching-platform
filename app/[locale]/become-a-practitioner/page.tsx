@@ -49,8 +49,11 @@ export default async function BecomePractitionerPage() {
 
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>
-      <ContentContainer maxWidth={720}>
-        <h1 style={{ font: "var(--text-display-md)", margin: "0 0 var(--space-2)" }}>{t("heading")}</h1>
+      <ContentContainer>
+        {/* Match /how-it-works: default (wide) container, content left-aligned in a
+            ~680 reading column. Same H1 style as /how-it-works (700/2rem/--font-ui). */}
+        <div style={{ maxWidth: 680 }}>
+          <h1 style={{ fontWeight: 700, fontSize: "2rem", lineHeight: 1.2, margin: "0 0 var(--space-4)" }}>{t("heading")}</h1>
         <p style={{ font: "var(--text-body-lg)", color: "var(--text-secondary)", margin: "0 0 var(--space-6)" }}>
           {t("subheading")}
         </p>
@@ -77,7 +80,7 @@ export default async function BecomePractitionerPage() {
           {t("pitchIntro")} <strong>{t("pitchBold", { siteName })}</strong>
         </p>
 
-        <h2 style={{ font: "var(--text-heading-lg)", margin: "0 0 var(--space-4)" }}>{t("benefitsHeading")}</h2>
+        <h2 style={{ fontWeight: 700, fontSize: "1.5rem", lineHeight: 1.25, margin: "0 0 var(--space-4)" }}>{t("benefitsHeading")}</h2>
         <ul style={{ margin: "0 0 var(--space-8)", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           {benefits.map((b) => (
             <li key={b.title}>
@@ -113,6 +116,7 @@ export default async function BecomePractitionerPage() {
         <p style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)", margin: "var(--space-4) 0 0" }}>
           {t("approvalNote")}
         </p>
+        </div>
       </ContentContainer>
     </main>
   );

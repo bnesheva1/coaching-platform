@@ -42,8 +42,12 @@ export default async function AboutPage() {
 
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>
-      <ContentContainer maxWidth={640}>
-        <h1 style={{ font: "var(--text-display-md)", margin: "0 0 var(--space-6)" }}>{t("heading", { siteName })}</h1>
+      <ContentContainer>
+        {/* Match /how-it-works: default (wide) container with the content left-
+            aligned in a ~680 reading column (this inner cap), not a centered
+            narrow box. Same H1 style as /how-it-works (700/2rem/--font-ui). */}
+        <div style={{ maxWidth: 680 }}>
+          <h1 style={{ fontWeight: 700, fontSize: "2rem", lineHeight: 1.2, margin: "0 0 var(--space-4)" }}>{t("heading", { siteName })}</h1>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <p style={{ font: "var(--text-body-lg)", margin: 0 }}>{t("body1", { siteName })}</p>
           <p style={{ font: "var(--text-body-md)", color: "var(--text-secondary)", margin: 0 }}>
@@ -79,6 +83,7 @@ export default async function AboutPage() {
           <Link href="/browse" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
             {tBrowse("title")}
           </Link>
+        </div>
         </div>
       </ContentContainer>
     </main>
