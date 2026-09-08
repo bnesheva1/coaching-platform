@@ -1228,7 +1228,14 @@
     "q7": "In person or online?",
     "a7": "It depends on the practitioner and the service — you'll see it on their profile and when you book.",
     "a7Online": "All consultations happen online, via video call right in the browser — no installation needed.",
-    "contactPrompt": "Have another question? <contact>Contact us</contact>"
+    "contactPrompt": "Have another question? <contact>Contact us</contact>",
+    "heroIntro": "Here are answers to the most common questions from people just getting to know <brand>само да попитам</brand>.",
+    "metaLine": "{questions} questions · {categories} categories",
+    "heroImageLabel": "questions",
+    "group1Title": "Bookings & payment",
+    "group1Blurb": "Everything that matters for booking a session and payments.",
+    "group2Title": "Trust & peace of mind",
+    "group2Blurb": "Your safety and comfort matter to us."
   },
   "Footer": {
     "navLabel": "Footer",

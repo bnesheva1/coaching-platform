@@ -3,8 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { isDeliveryTypeEnabled } from "@/lib/delivery";
+import kit from "@/components/brand-two-pages/kit.module.css";
+import { ImageSlot, InkButton, FaqAccordion, type FaqItem } from "@/components/brand-two-pages/kit";
+import { Calendar, CreditCard, CircleX, Laptop, Lock, User, Users, MessageCircle } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -58,6 +61,67 @@ export default async function FAQPage() {
     })),
   };
   const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+
+  // ── Brand two: handoff 1k. Presentation restructure only — the same 7 Q&A,
+  // regrouped into two panels; the JSON-LD above (built from qa[] in original
+  // order) is untouched. Warm keeps its flat list below. ──────────────────────
+  if (resolveBrand() === "two") {
+    const answerFor = (n: number) => (n === 7 && !inPersonEnabled ? t("a7Online") : t(`a${n}` as "a1"));
+    const group1: FaqItem[] = [
+      { Icon: Calendar, question: t("q1"), answer: answerFor(1) },
+      { Icon: CreditCard, question: t("q2"), answer: answerFor(2) },
+      { Icon: CircleX, question: t("q3"), answer: answerFor(3) },
+      { Icon: Laptop, question: t("q7"), answer: answerFor(7) },
+    ];
+    const group2: FaqItem[] = [
+      { Icon: Lock, question: t("q4"), answer: answerFor(4) },
+      { Icon: User, question: t("q5"), answer: answerFor(5) },
+      { Icon: Users, question: t("q6"), answer: answerFor(6) },
+    ];
+    return (
+      <main>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript }} />
+        <ContentContainer>
+          {/* Hero */}
+          <div className={kit.hero}>
+            <div>
+              <h1 className={kit.h1}>{t("heading")}</h1>
+              <p className={kit.lede}>{t.rich("heroIntro", { brand: (chunks) => <strong>{chunks}</strong> })}</p>
+              <p className={kit.monoMeta}>{t("metaLine", { questions: qa.length, categories: 2 })}</p>
+            </div>
+            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
+          </div>
+
+          {/* Group 01 */}
+          <div className={kit.groupPanel}>
+            <div className={kit.panelHead}>
+              <h2 className={kit.h2}>{t("group1Title")}</h2>
+              <p className={kit.panelBlurb}>{t("group1Blurb")}</p>
+            </div>
+            <FaqAccordion items={group1} />
+          </div>
+
+          {/* Group 02 */}
+          <div className={kit.groupPanel}>
+            <div className={kit.panelHead}>
+              <h2 className={kit.h2}>{t("group2Title")}</h2>
+              <p className={kit.panelBlurb}>{t("group2Blurb")}</p>
+            </div>
+            <FaqAccordion items={group2} />
+          </div>
+
+          {/* Fallback row */}
+          <div className={kit.fallbackRow}>
+            <span className={kit.fallbackText}>
+              <MessageCircle size={40} strokeWidth={1.6} aria-hidden="true" />
+              {t.rich("contactPrompt", { contact: (chunks) => <Link href="/kontakti">{chunks}</Link> })}
+            </span>
+            <InkButton href="/browse">{tBrowse("title")}</InkButton>
+          </div>
+        </ContentContainer>
+      </main>
+    );
+  }
 
   return (
     <main style={{ padding: "var(--space-12) 0 var(--space-16)" }}>

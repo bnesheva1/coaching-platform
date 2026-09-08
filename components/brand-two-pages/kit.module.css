@@ -156,7 +156,7 @@
   padding: var(--space-4);
 }
 .imageSlotLabel {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
@@ -354,6 +354,64 @@
 .faqCtaLink {
   display: inline-block;
   font-family: var(--font-ui);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- FAQ (1k): mono meta, group panels, fallback row ---- */
+.monoMeta {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin: var(--space-4) 0 0;
+}
+.groupPanel {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  margin-top: var(--space-8);
+}
+.panelHead {
+  margin-bottom: var(--space-6);
+  max-width: 60ch;
+}
+.panelBlurb {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: var(--space-2) 0 0;
+}
+.fallbackRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  padding: var(--space-5) var(--space-6);
+  margin-top: var(--space-12);
+}
+.fallbackText {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+}
+.fallbackText svg {
+  color: var(--accent);
+  flex: none;
+}
+.fallbackText a {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
