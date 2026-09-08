@@ -1,0 +1,379 @@
+/* Brand-two content/funnel pages kit (handoff design_handoff_brand_two_pages).
+   High-contrast B&W + teal accent, hairline borders, NO shadows. Every colour /
+   font here is a token (resolves to the brand-two values under
+   :root[data-brand="two"]); only radii/spacing use the handoff's literal px.
+   These components render only inside the brand-two branch of each page. */
+
+/* ---- primitives ---- */
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--accent);
+  margin: 0 0 var(--space-4);
+}
+.eyebrowMuted {
+  color: var(--text-tertiary);
+}
+
+.h1 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw, 3.25rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-5);
+}
+.h2 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3);
+}
+.lede {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.1875rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 40ch;
+}
+.body {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.sectionIntro {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-8);
+  max-width: 60ch;
+}
+
+/* ---- buttons ---- */
+.inkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--text-primary);
+  color: var(--bg-surface);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  line-height: 1;
+  padding: 17px 28px;
+  border: 1px solid var(--text-primary);
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+.inkBtn:hover {
+  opacity: 0.88;
+}
+.inkBtn svg {
+  color: var(--bg-surface);
+}
+
+/* ---- section band (full-bleed grey) ---- */
+.band {
+  background: var(--bg-surface-2);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-14, 72px) 0;
+  margin-top: var(--space-16);
+}
+.bandGrid {
+  display: grid;
+  grid-template-columns: calc(56% - 24px) calc(44% - 24px);
+  gap: 48px;
+  align-items: center;
+}
+
+/* ---- hero ---- */
+.hero {
+  display: grid;
+  grid-template-columns: calc(52% - 24px) calc(48% - 24px);
+  gap: 48px;
+  align-items: start;
+  padding: var(--space-12) 0 var(--space-16);
+}
+.heroCtaRow {
+  margin: var(--space-8) 0 var(--space-6);
+}
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-6) 0;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+.chip svg {
+  color: var(--accent);
+  flex: none;
+}
+
+/* ---- image slot (hatched placeholder) ---- */
+.imageSlot {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background-color: var(--bg-surface-2);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 9px,
+    var(--border-subtle) 9px,
+    var(--border-subtle) 10px
+  );
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-4);
+}
+.imageSlotLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* ---- step cards (card variant) ---- */
+/* Steps section — full-bleed band. .stepsAura is a full-width layer BEHIND the
+   cards, reserved for an aura animation (added later): pointer-events-none,
+   aria-hidden, its own stacking context under the cards. The faint teal radial
+   glow is only a placeholder — replace this background with the real animation
+   layer (canvas/SVG/CSS). .stepsContent lifts the cards above it. */
+.stepsBand {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-12) 0;
+}
+.stepsAura {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(55% 45% at 28% 38%, var(--accent-glow), transparent 72%),
+    radial-gradient(50% 42% at 76% 64%, var(--accent-glow), transparent 72%);
+}
+.stepsContent {
+  position: relative;
+  z-index: 1;
+}
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.stepCard {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.stepCard:hover {
+  border-color: var(--accent);
+}
+.stepNumeral {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.stepIcon {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--accent);
+}
+.stepTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.stepBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- FAQ + trust row ---- */
+.faqRow {
+  display: grid;
+  grid-template-columns: calc(62% - 20px) calc(38% - 20px);
+  gap: 40px;
+  align-items: start;
+}
+.qList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.qItem {
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.qItem:hover {
+  border-color: var(--accent);
+}
+.qSummary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.qSummary::-webkit-details-marker {
+  display: none;
+}
+.qSummary svg:first-child {
+  color: var(--accent);
+  flex: none;
+}
+.qChevron {
+  margin-left: auto;
+  color: var(--text-secondary);
+  flex: none;
+  transition: transform var(--duration-fast, 150ms) ease;
+}
+.qItem[open] .qChevron {
+  transform: rotate(180deg);
+}
+.qAnswer {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  /* aligns the answer under the question text: 20px row pad + 40px icon + 14px gap */
+  padding: 0 20px 18px 74px;
+}
+
+/* ---- trust card ---- */
+.trustCard {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 26px;
+}
+.trustIcon {
+  color: var(--accent);
+}
+.trustHeading {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-3);
+}
+.trustBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.trustTicks {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-5) 0 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trustTick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.trustTick svg {
+  color: var(--accent);
+  flex: none;
+  margin-top: 2px;
+}
+
+.faqCtaLink {
+  display: inline-block;
+  font-family: var(--font-ui);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- responsive: every grid collapses to one column ---- */
+@media (max-width: 860px) {
+  .hero,
+  .bandGrid,
+  .faqRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  .hero {
+    padding: var(--space-10) 0 var(--space-12);
+  }
+  .stepGrid {
+    grid-template-columns: 1fr;
+  }
+  .lede {
+    max-width: none;
+  }
+}

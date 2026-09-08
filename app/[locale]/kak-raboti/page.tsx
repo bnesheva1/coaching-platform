@@ -4,9 +4,12 @@ import { Link } from "@/i18n/navigation";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Search, Calendar, CreditCard, Video, Star, Laptop, Clock, CalendarX } from "lucide-react";
 import { localizedAlternates } from "@/lib/seo";
 import { DOMAIN_PILLS } from "@/lib/homepage-modalities";
+import { resolveBrand } from "@/lib/brand";
+import kit from "@/components/brand-two-pages/kit.module.css";
+import { Eyebrow, InkButton, ImageSlot, CheckChips, StepCards, FaqAccordion, TrustCard, SectionBand, type StepItem, type FaqItem } from "@/components/brand-two-pages/kit";
 
 export async function generateMetadata({
   params,
@@ -26,6 +29,102 @@ export async function generateMetadata({
 // for a Client Component boundary anywhere on this page.
 export default async function HowItWorksPage() {
   const t = await getTranslations("HowItWorks");
+  const brand = resolveBrand();
+
+  // ── Brand two: the design_handoff_brand_two_pages 1j layout. Reuses the
+  // existing HowItWorks copy (step titles stripped of their "N. " prefix since
+  // the numeral lives in the teal circle) + the brand-two content-page kit.
+  // Warm keeps its own layout below. ──────────────────────────────────────────
+  if (brand === "two") {
+    // Brand-two copy is informal (ти-address) and lives under HowItWorks.two,
+    // separate from warm's formal (вие) shared keys. Titles are pre-stripped of
+    // numbers (the numeral is in the teal circle). step3Body has no person
+    // marker, so it reuses the shared key; faqA4 is brand-two-only (edited ти
+    // in place).
+    const twoSteps: StepItem[] = [
+      { n: 1, Icon: Search, title: t("two.step1Title"), body: t("two.step1Body") },
+      { n: 2, Icon: Calendar, title: t("two.step2Title"), body: t("two.step2Body") },
+      { n: 3, Icon: CreditCard, title: t("two.step3Title"), body: t("step3Body") },
+      { n: 4, Icon: Video, title: t("two.step4Title"), body: t("two.step4Body") },
+      { n: 5, Icon: Star, title: t("two.step5Title"), body: t("two.step5Body") },
+    ];
+    const twoFaqs: FaqItem[] = [
+      { Icon: Laptop, question: t("faqQ1"), answer: t("two.faqA1") },
+      { Icon: Clock, question: t("faqQ3"), answer: t("two.faqA3") },
+      { Icon: CalendarX, question: t("faqQ4"), answer: t("faqA4") },
+    ];
+    const twoFaqJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: twoFaqs.map((f) => ({ "@type": "Question", name: f.question, acceptedAnswer: { "@type": "Answer", text: f.answer } })),
+    };
+    const twoFaqScript = JSON.stringify(twoFaqJsonLd).replace(/</g, "\\u003c");
+    return (
+      <main>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: twoFaqScript }} />
+        <ContentContainer>
+          {/* Hero */}
+          <div className={kit.hero}>
+            <div>
+              <Eyebrow>{t("heroEyebrow")}</Eyebrow>
+              <h1 className={kit.h1}>{t("heading")}</h1>
+              <p className={kit.lede}>
+                {t.rich("two.intro", { brand: (chunks) => <strong>{chunks}</strong> })}
+              </p>
+              <div className={kit.heroCtaRow}>
+                <InkButton href="/browse">{t("two.ctaButton")}</InkButton>
+              </div>
+              <hr className={kit.hairline} />
+              <CheckChips items={[t("heroChip1"), t("heroChip2"), t("heroChip3")]} />
+            </div>
+            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
+          </div>
+
+        </ContentContainer>
+
+        {/* Steps — full-bleed band with a full-width aura-animation placeholder
+            (.stepsAura) behind the cards; swap its background for the real
+            animation layer when ready. */}
+        <section className={kit.stepsBand}>
+          <div className={kit.stepsAura} aria-hidden="true" data-aura-slot="steps" />
+          <ContentContainer>
+            <div className={kit.stepsContent}>
+              <Eyebrow muted>{t("stepsEyebrow")}</Eyebrow>
+              <h2 className={kit.h2}>{t("stepsHeading")}</h2>
+              <p className={kit.sectionIntro}>{t("stepsIntro")}</p>
+              <StepCards steps={twoSteps} />
+            </div>
+          </ContentContainer>
+        </section>
+
+        <ContentContainer>
+          {/* FAQ + trust */}
+          <section style={{ marginTop: "var(--space-16)" }}>
+            <h2 className={kit.h2}>{t("faqHeading")}</h2>
+            <p className={kit.sectionIntro}>{t("faqIntro")}</p>
+            <div className={kit.faqRow}>
+              <FaqAccordion items={twoFaqs} />
+              <TrustCard
+                heading={t("disclaimerHeading")}
+                body={t("two.disclaimerBody")}
+                ticks={[]}
+              />
+            </div>
+          </section>
+        </ContentContainer>
+
+        {/* Closing CTA band (full-bleed) */}
+        <SectionBand
+          eyebrow={t("two.ctaQuestion")}
+          heading={t("ctaHeading")}
+          body={t("ctaBody")}
+          ctaHref="/browse"
+          ctaLabel={t("two.ctaButton")}
+          imageLabel={t("ctaImageLabel")}
+        />
+      </main>
+    );
+  }
 
   const steps = [
     { title: t("step1Title"), body: t("step1Body") },
