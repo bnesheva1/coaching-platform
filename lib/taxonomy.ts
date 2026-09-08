@@ -67,6 +67,14 @@ export const RESERVED_CATEGORY_SLUGS = new Set<string>([
   "settings",
   "signup",
   "supabase-test",
+  // Bulgarian route slugs — the content/funnel pages migrated from their English
+  // paths (folder-rename; see next.config.ts redirects). Reserved so a taxonomy
+  // landing slug can't collide with a real route; the English slugs above stay
+  // reserved too since they remain live as 308 redirects.
+  "kak-raboti",
+  "vaprosi",
+  "stanete-specialist",
+  "kontakti",
 ]);
 
 export function isReservedSlug(slug: string): boolean {

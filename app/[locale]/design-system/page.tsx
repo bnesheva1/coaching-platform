@@ -55,11 +55,11 @@ export default function DesignSystemPage() {
         browseLink={{ label: "Find a practitioner", href: "/browse" }}
         infoDropdownLabel="Info"
         infoLinks={[
-          { label: "How it works", href: "/how-it-works" },
-          { label: "Become a practitioner", href: "/become-a-practitioner" },
+          { label: "How it works", href: "/kak-raboti" },
+          { label: "Become a practitioner", href: "/stanete-specialist" },
           { label: "About", href: "/about" },
-          { label: "FAQ", href: "/faq" },
-          { label: "Contact", href: "/contact" },
+          { label: "FAQ", href: "/vaprosi" },
+          { label: "Contact", href: "/kontakti" },
         ]}
         dashboardLink={null}
         greetingText={null}

@@ -28,7 +28,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: localizedAlternates(locale, "/become-a-practitioner"),
+    alternates: localizedAlternates(locale, "/stanete-specialist"),
     ...socialMetadata({ title, description, siteName, locale }),
   };
 }

@@ -18,7 +18,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: localizedAlternates(locale, "/contact"),
+    alternates: localizedAlternates(locale, "/kontakti"),
     ...socialMetadata({ title, description, siteName, locale }),
   };
 }

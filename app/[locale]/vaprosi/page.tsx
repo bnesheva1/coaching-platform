@@ -19,7 +19,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: localizedAlternates(locale, "/faq"),
+    alternates: localizedAlternates(locale, "/vaprosi"),
     ...socialMetadata({ title, description, siteName, locale }),
   };
 }
@@ -91,7 +91,7 @@ export default async function FAQPage() {
         <p style={{ font: "var(--text-body-md)", margin: "var(--space-8) 0 0" }}>
           {t.rich("contactPrompt", {
             contact: (chunks) => (
-              <Link href="/contact" style={{ color: "var(--accent)" }}>
+              <Link href="/kontakti" style={{ color: "var(--accent)" }}>
                 {chunks}
               </Link>
             ),

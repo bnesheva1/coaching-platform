@@ -15,11 +15,11 @@ export async function SiteFooter() {
   const year = new Date().getFullYear();
 
   const links: { href: string; label: string }[] = [
-    { href: "/how-it-works", label: t("howItWorksLink") },
-    { href: "/become-a-practitioner", label: t("becomePractitionerLink") },
+    { href: "/kak-raboti", label: t("howItWorksLink") },
+    { href: "/stanete-specialist", label: t("becomePractitionerLink") },
     { href: "/about", label: t("aboutLink") },
-    { href: "/faq", label: t("faqLink") },
-    { href: "/contact", label: t("contactLink") },
+    { href: "/vaprosi", label: t("faqLink") },
+    { href: "/kontakti", label: t("contactLink") },
     { href: "/browse", label: t("browseLink") },
     { href: "/privacy", label: t("privacyLink") },
     { href: "/cookie-preferences", label: t("cookiePreferencesLink") },

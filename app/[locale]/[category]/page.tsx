@@ -158,7 +158,7 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
               </li>
             ))}
           </ul>
-          <Link href="/how-it-works" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
+          <Link href="/kak-raboti" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
             {t("howItWorksCta")} →
           </Link>
         </section>

@@ -77,7 +77,7 @@ export default async function AboutPage() {
             has two obvious next steps: understand the booking flow, or
             go straight to browsing. */}
         <div style={{ marginTop: "var(--space-8)", display: "flex", gap: "var(--space-4)", flexWrap: "wrap" }}>
-          <Link href="/how-it-works" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
+          <Link href="/kak-raboti" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
             {tHeader("howItWorksLink")}
           </Link>
           <Link href="/browse" style={{ font: "var(--text-label)", color: "var(--accent)" }}>
