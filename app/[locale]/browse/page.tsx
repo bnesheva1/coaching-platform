@@ -6,6 +6,7 @@ import { getSavedPractitionerIds } from "@/lib/practitioners/saved";
 import { createClient } from "@/lib/supabase/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BrowseClient, type BrowseResult } from "./BrowseClient";
+import { landingEntryByKey } from "@/lib/taxonomy";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
@@ -63,6 +64,34 @@ export default async function BrowsePage({
     // the phone flag never had — the filter was previously reachable by URL.
     .filter((v): v is DeliveryType => enabledDelivery.has(v as DeliveryType));
   const query = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
+
+  // Single-specialty context header — shown ONLY on a clean single-specialty
+  // entry (exactly one specialty, no topic, no search). Deliberately not for
+  // multi-specialty (domain pills send 2+, e.g. psychologist+art_therapist) or
+  // combined queries. Reuses an authored taxonomy intro when the specialty has
+  // one (only psychologist today), else a generic line built from the
+  // specialty's own label — no hardcoded specialty names. Metadata/canonical/OG
+  // are untouched (the clean-/browse dedup canonical stays as is).
+  let headerText: string | null = null;
+  let headerSubhead: string | null = null;
+  if (initialSpecialties.length === 1 && initialTopics.length === 0 && !query.trim()) {
+    const specialtyKey = initialSpecialties[0];
+    const landing = landingEntryByKey(specialtyKey);
+    if (landing) {
+      // Landing block: its authored concise h1 goes in heading position, the
+      // intro becomes a paragraph subhead beneath (not the full intro as <h1>).
+      const siteName = await getSiteName(locale);
+      const withSiteName = (text: string) => text.replace(/\{siteName\}/g, siteName);
+      headerText = withSiteName(landing.h1[locale]);
+      headerSubhead = withSiteName(landing.intro[locale]);
+    } else {
+      // No landing block: a short generic line, already heading-appropriate — no subhead.
+      const tBrowse = await getTranslations("Browse");
+      const s = specialtiesData.find((x) => x.key === specialtyKey);
+      const specialtyLabel = s ? (s[locale] ?? s.en) : specialtyKey;
+      headerText = tBrowse("singleSpecialtyHeader", { specialtyLabel });
+    }
+  }
 
   const practitioners = await searchPractitioners({ searchText: query });
 
@@ -148,6 +177,8 @@ export default async function BrowsePage({
           viewerIsGuest={viewerIsGuest}
           savedPractitionerIds={savedPractitionerIds}
           brand={brand}
+          headerText={headerText}
+          headerSubhead={headerSubhead}
         />
       </ContentContainer>
     </main>

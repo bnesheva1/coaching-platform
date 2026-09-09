@@ -37,10 +37,7 @@ export const HOME_MODALITIES: HomeModality[] = [
   { id: "tarot", icon: "sparkles", label: { bg: "Таро", en: "Tarot" }, landingPath: "/browse?specialty=tarot" },
   { id: "reiki", icon: "hand-heart", label: { bg: "Рейки", en: "Reiki" }, landingPath: "/browse?specialty=reiki" },
   { id: "coffee_reading", icon: "coffee", label: { bg: "Гледане на кафе", en: "Coffee reading" }, landingPath: "/browse?specialty=coffee_reading" },
-  // Points at the dedicated /psiholog taxonomy landing page (slug in
-  // data/specialties.json) rather than a raw /browse filter. When another
-  // specialty gets its own landing page, repoint its tile the same way.
-  { id: "psychologist", icon: "brain", label: { bg: "Психолог", en: "Psychologist" }, landingPath: "/psiholog" },
+  { id: "psychologist", icon: "brain", label: { bg: "Психолог", en: "Psychologist" }, landingPath: "/browse?specialty=psychologist" },
   { id: "art_therapist", icon: "palette", label: { bg: "Арт-терапевт", en: "Art therapist" }, landingPath: "/browse?specialty=art_therapist" },
   { id: "coaching", icon: "target", label: { bg: "Коучинг", en: "Coaching" }, landingPath: "/browse?specialty=coaching" },
   { id: "veterinarian", icon: "paw-print", label: { bg: "Ветеринарен лекар", en: "Veterinarian" }, landingPath: null, comingSoon: true },
@@ -57,3 +54,14 @@ export const DOMAIN_PILLS = (domainsData as DomainEntry[])
     label: { bg: d.bg, en: d.en },
     landingPath: `/browse?${d.specialties.map((s) => `specialty=${s}`).join("&")}`,
   }));
+
+// Join active-domain labels into a natural-language list, e.g.
+// "Интуитивни практики, Психология и Коучинг" — for static pages (/about,
+// /become-a-practitioner) that can't embed the DOMAIN_PILLS links themselves
+// (e.g. a meta description). Labels + order come straight from DOMAIN_PILLS, so
+// it stays accurate as domains activate/deactivate, with no hand-typed list.
+export function joinDomainLabels(labels: string[], locale: "bg" | "en"): string {
+  const conjunction = locale === "bg" ? "и" : "and";
+  if (labels.length <= 1) return labels[0] ?? "";
+  return `${labels.slice(0, -1).join(", ")} ${conjunction} ${labels[labels.length - 1]}`;
+}

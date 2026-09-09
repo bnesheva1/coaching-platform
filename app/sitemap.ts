@@ -18,11 +18,11 @@ export const dynamic = "force-dynamic";
 const STATIC_PATHS = [
   "",
   "/browse",
-  "/how-it-works",
-  "/become-a-practitioner",
+  "/kak-raboti",
+  "/stani-specialist",
   "/about",
-  "/faq",
-  "/contact",
+  "/vaprosi",
+  "/kontakti",
   "/privacy",
 ];
 

@@ -67,6 +67,14 @@ export const RESERVED_CATEGORY_SLUGS = new Set<string>([
   "settings",
   "signup",
   "supabase-test",
+  // Bulgarian route slugs — the content/funnel pages migrated from their English
+  // paths (folder-rename; see next.config.ts redirects). Reserved so a taxonomy
+  // landing slug can't collide with a real route; the English slugs above stay
+  // reserved too since they remain live as 308 redirects.
+  "kak-raboti",
+  "vaprosi",
+  "stani-specialist",
+  "kontakti",
 ]);
 
 export function isReservedSlug(slug: string): boolean {
@@ -151,11 +159,14 @@ export function landingEntryBySlug(slug: string): LandingEntry | undefined {
   return landingEntries.find((e) => e.slug === slug);
 }
 
-// The landing path for a specialty/topic key, if it has a published page — used
-// by internal links (homepage tiles, /how-it-works) so they point at the real
-// landing page rather than a raw /browse filter. null when the key has no page,
-// letting callers fall back to their existing /browse link.
-export function landingPathForKey(key: string): string | null {
-  const e = landingEntries.find((x) => x.key === key);
-  return e ? `/${e.slug}` : null;
+// Lookup by specialty/topic KEY (not slug) — used to reuse a landing entry's
+// authored copy elsewhere (e.g. the /browse single-specialty context header).
+// This is copy reuse, NOT a nav link, so it doesn't touch the no-link rule below.
+export function landingEntryByKey(key: string): LandingEntry | undefined {
+  return landingEntries.find((e) => e.key === key);
 }
+
+// NOTE: internal navigation NEVER links to a taxonomy landing page — pills,
+// tiles and in-page links always point at /browse. Taxonomy pages are entry
+// points for external/organic search only (they embed their own practitioner
+// grid). So there is deliberately no "landingPathForKey" nav helper here.

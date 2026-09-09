@@ -1,0 +1,766 @@
+/* Brand-two content/funnel pages kit (handoff design_handoff_brand_two_pages).
+   High-contrast B&W + teal accent, hairline borders, NO shadows. Every colour /
+   font here is a token (resolves to the brand-two values under
+   :root[data-brand="two"]); only radii/spacing use the handoff's literal px.
+   These components render only inside the brand-two branch of each page. */
+
+/* ---- primitives ---- */
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--accent);
+  margin: 0 0 var(--space-4);
+}
+.eyebrowMuted {
+  color: var(--text-tertiary);
+}
+
+.h1 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 5vw, 3.25rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-5);
+}
+.h2 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3);
+}
+.lede {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.1875rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 40ch;
+}
+.body {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.sectionIntro {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-8);
+  max-width: 60ch;
+}
+
+/* ---- buttons ---- */
+.inkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--text-primary);
+  color: var(--bg-surface);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  line-height: 1;
+  padding: 17px 28px;
+  border: 1px solid var(--text-primary);
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+.inkBtn:hover {
+  opacity: 0.88;
+}
+.inkBtn svg {
+  color: var(--bg-surface);
+}
+
+/* ---- section band (full-bleed grey) ---- */
+.band {
+  background: var(--bg-surface-2);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-14, 72px) 0;
+  margin-top: var(--space-16);
+}
+.bandGrid {
+  display: grid;
+  grid-template-columns: calc(56% - 24px) calc(44% - 24px);
+  gap: 48px;
+  align-items: center;
+}
+
+/* ---- hero ---- */
+.hero {
+  display: grid;
+  grid-template-columns: calc(52% - 24px) calc(48% - 24px);
+  gap: 48px;
+  align-items: start;
+  padding: var(--space-12) 0 var(--space-16);
+}
+.heroCtaRow {
+  margin: var(--space-8) 0 var(--space-6);
+}
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-6) 0;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+.chip svg {
+  color: var(--accent);
+  flex: none;
+}
+
+/* ---- image slot (hatched placeholder) ---- */
+.imageSlot {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background-color: var(--bg-surface-2);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 9px,
+    var(--border-subtle) 9px,
+    var(--border-subtle) 10px
+  );
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-4);
+}
+.image {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+}
+.imageSlotLabel {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* ---- step cards (card variant) ---- */
+/* Steps section — full-bleed band. .stepsAura is a full-width layer BEHIND the
+   cards, reserved for an aura animation (added later): pointer-events-none,
+   aria-hidden, its own stacking context under the cards. The faint teal radial
+   glow is only a placeholder — replace this background with the real animation
+   layer (canvas/SVG/CSS). .stepsContent lifts the cards above it. */
+.stepsBand {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-12) 0;
+}
+.stepsAura {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(55% 45% at 28% 38%, var(--accent-glow), transparent 72%),
+    radial-gradient(50% 42% at 76% 64%, var(--accent-glow), transparent 72%);
+}
+.stepsContent {
+  position: relative;
+  z-index: 1;
+}
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.stepCard {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.stepCard:hover {
+  border-color: var(--accent);
+}
+.stepNumeral {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.stepIcon {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--accent);
+}
+.stepTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.stepBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- FAQ + trust row ---- */
+.faqRow {
+  display: grid;
+  grid-template-columns: calc(62% - 20px) calc(38% - 20px);
+  gap: 40px;
+  align-items: start;
+}
+.qList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.qItem {
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.qItem:hover {
+  border-color: var(--accent);
+}
+.qSummary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.qSummary::-webkit-details-marker {
+  display: none;
+}
+.qSummary svg:first-child {
+  color: var(--accent);
+  flex: none;
+}
+.qChevron {
+  margin-left: auto;
+  color: var(--text-secondary);
+  flex: none;
+  transition: transform var(--duration-fast, 150ms) ease;
+}
+.qItem[open] .qChevron {
+  transform: rotate(180deg);
+}
+.qAnswer {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  /* aligns the answer under the question text: 20px row pad + 40px icon + 14px gap */
+  padding: 0 20px 18px 74px;
+}
+
+/* ---- trust card ---- */
+.trustCard {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 26px;
+}
+.trustIcon {
+  color: var(--accent);
+}
+.trustHeading {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-3);
+}
+.trustBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.trustTicks {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-5) 0 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trustTick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.trustTick svg {
+  color: var(--accent);
+  flex: none;
+  margin-top: 2px;
+}
+
+.faqCtaLink {
+  display: inline-block;
+  font-family: var(--font-ui);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- FAQ (1k): mono meta, group panels, fallback row ---- */
+.monoMeta {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin: var(--space-4) 0 0;
+}
+.groupPanel {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  margin-top: var(--space-8);
+}
+.panelHead {
+  margin-bottom: var(--space-6);
+  max-width: 60ch;
+}
+.panelBlurb {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: var(--space-2) 0 0;
+}
+.fallbackRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  padding: var(--space-5) var(--space-6);
+  margin-top: var(--space-12);
+}
+.fallbackText {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+}
+.fallbackText svg {
+  color: var(--accent);
+  flex: none;
+}
+.fallbackText a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- feature cards (1i benefits): icon + title + body, no numeral ---- */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.featureCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.featureCard:hover {
+  border-color: var(--accent);
+}
+.featureIcon {
+  color: var(--accent);
+}
+.featureTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.featureBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- connected-circle steps (1i): teal numerals on a continuous rule ---- */
+.connectedSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.connectedStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+/* the 1px rule runs behind the circles; masked before the first and after the
+   last so it spans first-center → last-center only. The opaque teal circle
+   (z-index 1) covers it at each node, leaving it visible only in the gaps. */
+.connectedStep::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-default);
+  z-index: 0;
+}
+.connectedStep:first-child::before {
+  left: 50%;
+}
+.connectedStep:last-child::before {
+  right: 50%;
+}
+.connectedNumeral {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.375rem;
+  margin-bottom: var(--space-4);
+}
+.connectedTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+.connectedBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- quote band (1i) ---- */
+.quoteBand {
+  background: var(--bg-surface-2);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-14, 72px) 0;
+  margin-top: var(--space-16);
+}
+.quote {
+  font-family: var(--font-ui);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  margin: 0;
+  max-width: 34ch;
+}
+.quoteAttribution {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin: var(--space-4) 0 0;
+}
+
+/* ---- two-block trust pair (1i) ---- */
+.trustPair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: var(--space-8);
+  margin-top: var(--space-10);
+}
+.trustBlockTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+.trustBlockBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- practice chips (1i hero, decorative) ---- */
+.practiceChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+.practiceChip {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+/* ---- specialty template (1m): hero meta row, 5-col steps, sparse grid ---- */
+.heroMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+}
+.heroMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+}
+.heroMetaItem svg {
+  flex: none;
+}
+.heroMetaCount {
+  color: var(--text-tertiary);
+}
+.stepGrid5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.stepGrid5 .stepCard {
+  position: relative;
+}
+/* a hairline arrow glyph sitting in each gap (not after the last card) */
+.stepGrid5 .stepCard:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  top: 34px;
+  right: calc(-1 * var(--space-4) / 2);
+  transform: translateX(50%);
+  color: var(--border-default);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+.sparseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 300px));
+  justify-content: start;
+  gap: var(--space-4);
+}
+.sectionHeadRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+/* ---- contact (1l): two equal columns, reassurance list, form card ---- */
+.contactGrid {
+  display: grid;
+  grid-template-columns: calc(50% - 20px) calc(50% - 20px);
+  gap: 40px;
+  align-items: start;
+  padding: var(--space-12) 0 var(--space-16);
+}
+.reassureList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.reassureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.reassureIcon {
+  color: var(--accent);
+  flex: none;
+}
+.reassureTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+.reassureBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.formCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  background: var(--bg-surface);
+}
+
+/* ---- two-sided CTA cards (1n /about) ---- */
+.ctaCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.ctaCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: var(--space-8);
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.ctaCard:hover {
+  border-color: var(--accent);
+}
+.ctaCardIcon {
+  color: var(--accent);
+}
+.ctaCardTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-2);
+}
+.ctaCardBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-5);
+}
+
+/* ---- responsive: every grid collapses to one column ---- */
+@media (max-width: 860px) {
+  .hero,
+  .bandGrid,
+  .faqRow,
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  .hero {
+    padding: var(--space-10) 0 var(--space-12);
+  }
+  .stepGrid,
+  .stepGrid5,
+  .featureGrid,
+  .connectedSteps,
+  .ctaCardGrid {
+    grid-template-columns: 1fr;
+  }
+  .stepGrid5 .stepCard::after {
+    display: none;
+  }
+  /* drop the connector rule + column padding when steps stack */
+  .connectedStep::before {
+    display: none;
+  }
+  .connectedStep {
+    padding: 0;
+    margin-bottom: var(--space-8);
+  }
+  .lede {
+    max-width: none;
+  }
+}

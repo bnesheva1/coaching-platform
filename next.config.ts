@@ -39,8 +39,19 @@ const nextConfig: NextConfig = {
             { source: `/${locales[0]}`, destination: "/", permanent: true },
           ]
         : [];
+    // Content/funnel pages migrated to Bulgarian slugs (folder-rename). 308 so
+    // indexed/shared English URLs consolidate onto the new slugs. Unprefixed —
+    // this brand is single-locale (bg), served at the root; add /:locale
+    // variants here if a multi-locale brand ever needs them.
+    const slugMigration = [
+      { source: "/how-it-works", destination: "/kak-raboti", permanent: true },
+      { source: "/faq", destination: "/vaprosi", permanent: true },
+      { source: "/become-a-practitioner", destination: "/stani-specialist", permanent: true },
+      { source: "/contact", destination: "/kontakti", permanent: true },
+    ];
     return [
       ...stripSoleLocalePrefix,
+      ...slugMigration,
       {
         // Old Vercel alias → the real domain, 308 permanent (permanent: true).
         // Stops the old host serving duplicate content at all, and — since auth

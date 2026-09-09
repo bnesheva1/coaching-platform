@@ -15,6 +15,9 @@ export type BrowseCardTwoData = {
   avatarUrl: string | null;
   specialtyLabels: string[];
   averageRating: number | null;
+  // Optional so existing callers (client-dashboard grids) stay valid; the review
+  // count renders next to the rating only when provided and > 0.
+  reviewCount?: number;
 };
 
 // Brand-two practitioner card (browse handoff 1g), reused on the client dashboard.
@@ -44,6 +47,7 @@ export function BrowseCardTwo({
           <span className={styles.ratingPill}>
             <Star size={12} fill="currentColor" strokeWidth={0} aria-hidden="true" />
             {practitioner.averageRating.toFixed(1)}
+            {practitioner.reviewCount && practitioner.reviewCount > 0 ? ` (${practitioner.reviewCount})` : ""}
           </span>
         ) : (
           <span className={styles.ratingNew}>{t("browseTwoNewProfile")}</span>

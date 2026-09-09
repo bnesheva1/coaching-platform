@@ -43,11 +43,11 @@ export async function SiteHeader() {
   // labels for About/FAQ/Contact rather than duplicating those 3
   // strings under Header too.
   const infoLinks = [
-    { label: tHeader("howItWorksLink"), href: "/how-it-works" },
-    { label: tHeader("becomePractitionerLink"), href: "/become-a-practitioner" },
+    { label: tHeader("howItWorksLink"), href: "/kak-raboti" },
+    { label: tHeader("becomePractitionerLink"), href: "/stani-specialist" },
     { label: tFooter("aboutLink"), href: "/about" },
-    { label: tFooter("faqLink"), href: "/faq" },
-    { label: tFooter("contactLink"), href: "/contact" },
+    { label: tFooter("faqLink"), href: "/vaprosi" },
+    { label: tFooter("contactLink"), href: "/kontakti" },
   ];
 
   const isLoggedIn = viewer.status !== "logged-out";

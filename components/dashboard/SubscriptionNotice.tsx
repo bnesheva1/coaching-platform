@@ -48,7 +48,7 @@ export async function SubscriptionNotice({ subscriptionStatus }: { subscriptionS
               {t("fixAction")}
             </Button>
           </form>
-          <Link href="/contact" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+          <Link href="/kontakti" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
             {t("contact")}
           </Link>
         </div>
