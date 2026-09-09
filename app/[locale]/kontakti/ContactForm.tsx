@@ -20,7 +20,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function ContactForm() {
+export function ContactForm({ inkSubmit = false }: { inkSubmit?: boolean }) {
   const t = useTranslations("Contact");
   const [state, formAction, pending] = useActionState(submitContact, initialState);
   const errors = state?.errors;
@@ -158,9 +158,36 @@ export function ContactForm() {
         </p>
       )}
 
-      <Button type="submit" disabled={pending}>
-        {pending ? t("submitButtonPending") : t("submitButton")}
-      </Button>
+      {inkSubmit ? (
+        // Brand-two: ink fill + white text (the handoff's "no teal CTA" rule),
+        // not the accent Button. Same action/pending wiring.
+        <button
+          type="submit"
+          disabled={pending}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            background: "var(--text-primary)",
+            color: "var(--bg-surface)",
+            fontFamily: "var(--font-ui)",
+            fontWeight: 500,
+            fontSize: "1.0625rem",
+            padding: "17px 28px",
+            border: "1px solid var(--text-primary)",
+            borderRadius: 12,
+            cursor: pending ? "default" : "pointer",
+            opacity: pending ? 0.7 : 1,
+          }}
+        >
+          {pending ? t("submitButtonPending") : t("submitButton")}
+        </button>
+      ) : (
+        <Button type="submit" disabled={pending}>
+          {pending ? t("submitButtonPending") : t("submitButton")}
+        </Button>
+      )}
     </form>
   );
 }

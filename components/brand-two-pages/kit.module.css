@@ -641,11 +641,56 @@
   margin-bottom: var(--space-5);
 }
 
+/* ---- contact (1l): two equal columns, reassurance list, form card ---- */
+.contactGrid {
+  display: grid;
+  grid-template-columns: calc(50% - 20px) calc(50% - 20px);
+  gap: 40px;
+  align-items: start;
+  padding: var(--space-12) 0 var(--space-16);
+}
+.reassureList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.reassureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.reassureIcon {
+  color: var(--accent);
+  flex: none;
+}
+.reassureTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+.reassureBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.formCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  background: var(--bg-surface);
+}
+
 /* ---- responsive: every grid collapses to one column ---- */
 @media (max-width: 860px) {
   .hero,
   .bandGrid,
-  .faqRow {
+  .faqRow,
+  .contactGrid {
     grid-template-columns: 1fr;
     gap: var(--space-8);
   }
