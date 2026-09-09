@@ -16,7 +16,7 @@ export async function SiteFooter() {
 
   const links: { href: string; label: string }[] = [
     { href: "/kak-raboti", label: t("howItWorksLink") },
-    { href: "/stanete-specialist", label: t("becomePractitionerLink") },
+    { href: "/stani-specialist", label: t("becomePractitionerLink") },
     { href: "/about", label: t("aboutLink") },
     { href: "/vaprosi", label: t("faqLink") },
     { href: "/kontakti", label: t("contactLink") },

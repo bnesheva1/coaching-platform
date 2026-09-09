@@ -19,7 +19,7 @@ const STATIC_PATHS = [
   "",
   "/browse",
   "/kak-raboti",
-  "/stanete-specialist",
+  "/stani-specialist",
   "/about",
   "/vaprosi",
   "/kontakti",

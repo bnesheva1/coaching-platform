@@ -15,7 +15,7 @@ import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import domainsData from "@/data/domains.json";
 import kit from "@/components/brand-two-pages/kit.module.css";
-import { Eyebrow, ImageSlot, InkButton, StepCards, FaqAccordion, TrustCard, type StepItem, type FaqItem } from "@/components/brand-two-pages/kit";
+import { Eyebrow, InkButton, StepCards, FaqAccordion, TrustCard, type StepItem, type FaqItem } from "@/components/brand-two-pages/kit";
 import { User, Calendar, CreditCard, Video, Star, Laptop, Lock, Award, Clock, MessageCircle } from "lucide-react";
 
 // Render author copy with the {siteName} token bolded (kept white-label —
@@ -182,21 +182,18 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
       <main>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLdScript }} />
         <ContentContainer>
-          {/* Hero */}
-          <div className={kit.hero}>
-            <div>
-              <Eyebrow>{eyebrow}</Eyebrow>
-              <h1 className={kit.h1}>{entry.h1[locale]}</h1>
-              <p className={kit.lede}>{withSiteNameBold(entry.intro[locale], siteName)}</p>
-              <hr className={kit.hairline} />
-              <div className={kit.heroMeta}>
-                <span className={kit.heroMetaItem}>
-                  <Clock size={18} strokeWidth={1.7} aria-hidden="true" /> {t("onlineMeta")}
-                </span>
-                <span className={kit.heroMetaCount}>{t("specialistCount", { count: matches.length })}</span>
-              </div>
+          {/* Hero — single column (no image) */}
+          <div style={{ padding: "var(--space-12) 0 var(--space-8)", maxWidth: "65ch" }}>
+            <Eyebrow>{eyebrow}</Eyebrow>
+            <h1 className={kit.h1}>{entry.h1[locale]}</h1>
+            <p className={kit.lede}>{withSiteNameBold(entry.intro[locale], siteName)}</p>
+            <hr className={kit.hairline} />
+            <div className={kit.heroMeta}>
+              <span className={kit.heroMetaItem}>
+                <Clock size={18} strokeWidth={1.7} aria-hidden="true" /> {t("onlineMeta")}
+              </span>
+              <span className={kit.heroMetaCount}>{t("specialistCount", { count: matches.length })}</span>
             </div>
-            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
           </div>
 
           {/* Why online */}

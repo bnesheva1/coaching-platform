@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
     const slugMigration = [
       { source: "/how-it-works", destination: "/kak-raboti", permanent: true },
       { source: "/faq", destination: "/vaprosi", permanent: true },
-      { source: "/become-a-practitioner", destination: "/stanete-specialist", permanent: true },
+      { source: "/become-a-practitioner", destination: "/stani-specialist", permanent: true },
       { source: "/contact", destination: "/kontakti", permanent: true },
     ];
     return [

@@ -56,7 +56,7 @@ export default function DesignSystemPage() {
         infoDropdownLabel="Info"
         infoLinks={[
           { label: "How it works", href: "/kak-raboti" },
-          { label: "Become a practitioner", href: "/stanete-specialist" },
+          { label: "Become a practitioner", href: "/stani-specialist" },
           { label: "About", href: "/about" },
           { label: "FAQ", href: "/vaprosi" },
           { label: "Contact", href: "/kontakti" },

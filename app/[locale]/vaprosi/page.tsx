@@ -89,7 +89,7 @@ export default async function FAQPage() {
               <p className={kit.lede}>{t.rich("heroIntro", { brand: (chunks) => <strong>{chunks}</strong> })}</p>
               <p className={kit.monoMeta}>{t("metaLine", { questions: qa.length, categories: 2 })}</p>
             </div>
-            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
+            <ImageSlot label={t("heroImageLabel")} src="/hero/vaprosi.webp" aspectRatio="4 / 3" />
           </div>
 
           {/* Group 01 */}

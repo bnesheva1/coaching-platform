@@ -28,7 +28,23 @@ export function InkButton({ href, children }: { href: string; children: ReactNod
 
 // Hatched placeholder — no photography supplied yet; keeps the intended aspect
 // ratio and a mono subject label.
-export function ImageSlot({ label, aspectRatio = "4 / 3" }: { label: string; aspectRatio?: string }) {
+export function ImageSlot({
+  label,
+  aspectRatio = "4 / 3",
+  src,
+  alt,
+}: {
+  label: string;
+  aspectRatio?: string;
+  src?: string;
+  alt?: string;
+}) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt={alt ?? label} className={styles.image} style={{ aspectRatio }} />
+    );
+  }
   return (
     <div className={styles.imageSlot} style={{ aspectRatio }} aria-hidden="true">
       <span className={styles.imageSlotLabel}>image slot · {label}</span>

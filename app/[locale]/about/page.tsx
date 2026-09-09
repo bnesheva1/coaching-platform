@@ -116,7 +116,7 @@ export default async function AboutPage() {
                 </Link>
               </div>
             </div>
-            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
+            <ImageSlot label={t("heroImageLabel")} src="/hero/about.webp" aspectRatio="4 / 3" />
           </div>
         </ContentContainer>
 
@@ -153,7 +153,7 @@ export default async function AboutPage() {
                 <BarChart3 className={kit.ctaCardIcon} size={40} strokeWidth={1.6} aria-hidden="true" />
                 <h3 className={kit.ctaCardTitle}>{t("cta2Title")}</h3>
                 <p className={kit.ctaCardBody}>{t("cta2Body")}</p>
-                <InkButton href="/stanete-specialist">{t("cta2Button")}</InkButton>
+                <InkButton href="/stani-specialist">{t("cta2Button")}</InkButton>
               </div>
             </div>
           </section>

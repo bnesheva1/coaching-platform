@@ -77,7 +77,7 @@ export default async function HowItWorksPage() {
               <hr className={kit.hairline} />
               <CheckChips items={[t("heroChip1"), t("heroChip2"), t("heroChip3")]} />
             </div>
-            <ImageSlot label={t("heroImageLabel")} aspectRatio="4 / 3" />
+            <ImageSlot label={t("heroImageLabel")} src="/hero/kak-raboti.webp" aspectRatio="4 / 3" />
           </div>
 
         </ContentContainer>

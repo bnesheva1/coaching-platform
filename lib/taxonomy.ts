@@ -73,7 +73,7 @@ export const RESERVED_CATEGORY_SLUGS = new Set<string>([
   // reserved too since they remain live as 308 redirects.
   "kak-raboti",
   "vaprosi",
-  "stanete-specialist",
+  "stani-specialist",
   "kontakti",
 ]);
 

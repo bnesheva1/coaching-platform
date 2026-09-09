@@ -31,7 +31,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: localizedAlternates(locale, "/stanete-specialist"),
+    alternates: localizedAlternates(locale, "/stani-specialist"),
     ...socialMetadata({ title, description, siteName, locale }),
   };
 }
@@ -79,7 +79,7 @@ export default async function BecomePractitionerPage() {
               <CheckChips items={[t("two.check1"), t("two.check2"), t("two.check3")]} />
             </div>
             <div>
-              <ImageSlot label={t("two.heroImageLabel")} aspectRatio="4 / 3" />
+              <ImageSlot label={t("two.heroImageLabel")} src="/hero/stani-specialist.webp" aspectRatio="4 / 3" />
               <div className={kit.practiceChips}>
                 {practices.map((p) => (
                   <span key={p} className={kit.practiceChip}>

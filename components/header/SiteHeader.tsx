@@ -44,7 +44,7 @@ export async function SiteHeader() {
   // strings under Header too.
   const infoLinks = [
     { label: tHeader("howItWorksLink"), href: "/kak-raboti" },
-    { label: tHeader("becomePractitionerLink"), href: "/stanete-specialist" },
+    { label: tHeader("becomePractitionerLink"), href: "/stani-specialist" },
     { label: tFooter("aboutLink"), href: "/about" },
     { label: tFooter("faqLink"), href: "/vaprosi" },
     { label: tFooter("contactLink"), href: "/kontakti" },
