@@ -10,19 +10,19 @@
     "landing": {
       "slug": "psiholog",
       "metaTitle": {
-        "bg": "Психолог онлайн — намерете специалист и запазете час",
+        "bg": "Психолог онлайн — намери специалист и запази час",
         "en": "Online psychologist — find a specialist and book a session"
       },
       "metaDescription": {
-        "bg": "Психологическа консултация онлайн с практикуващ психолог. Изберете онлайн психолог, запазете час и проведете видео разговор от вкъщи — без чакане и без пътуване.",
+        "bg": "Психологическа консултация онлайн с практикуващ психолог. Избери онлайн психолог, запази час и проведи видео разговор от вкъщи — без чакане и без пътуване.",
         "en": "Online psychological consultation with a practising psychologist. Choose an online psychologist, book a session, and talk over video from home — no waiting, no travel."
       },
       "h1": {
-        "bg": "Психолог онлайн — намерете специалист и запазете час за разговор",
+        "bg": "Психолог онлайн — намери специалист и запази час за разговор",
         "en": "Online psychologist — find a specialist and book a session"
       },
       "intro": {
-        "bg": "Търсите психолог онлайн? На {siteName} намирате истински, практикуващи психолози, с които можете да проведете видео разговор направо от дома си — без чакане за свободен час на живо и без значение дали сте в София, Пловдив, Варна или друг град.",
+        "bg": "Търсиш психолог онлайн? На {siteName} намираш истински, практикуващи психолози, с които можеш да проведеш видео разговор направо от дома си — без чакане за свободен час на живо и без значение дали си в София, Пловдив, Варна или друг град.",
         "en": "Looking for a psychologist online? On {siteName} you'll find real, practising psychologists you can have a video conversation with right from home — with no waiting for an in-person opening, wherever you are in the country."
       },
       "whyOnlineHeading": {
@@ -30,7 +30,7 @@
         "en": "Why an online psychological consultation"
       },
       "whyOnlineBody": {
-        "bg": "Онлайн сесията с психолог протича по същия начин като среща на живо — само през видео връзка вместо в кабинет. Предимствата: избирате си час, който ви пасва, без пътуване, и разговаряте от място, където се чувствате спокойни.",
+        "bg": "Онлайн сесията с психолог протича по същия начин като среща на живо — само през видео връзка вместо в кабинет. Предимствата: избираш си час, който ти пасва, без пътуване, и разговаряш от място, където се чувстваш спокойно.",
         "en": "An online session with a psychologist works exactly like an in-person meeting — just over a video connection instead of in an office. The advantages: you pick a time that suits you, with no travel, and you talk from a place where you feel at ease."
       },
       "faq": [
@@ -40,7 +40,7 @@
             "en": "Is an online psychological consultation as effective as meeting in person?"
           },
           "a": {
-            "bg": "За повечето теми — да. Изследванията показват, че онлайн разговорът с психолог е също толкова ефективен, колкото срещата на живо, за широк кръг въпроси. Психологът ще ви каже, ако прецени, че за вашия случай е по-подходяща среща на живо.",
+            "bg": "За повечето теми — да. Изследванията показват, че онлайн разговорът с психолог е също толкова ефективен, колкото срещата на живо, за широк кръг въпроси. Психологът ще ти каже, ако прецени, че за твоя случай е по-подходяща среща на живо.",
             "en": "For most concerns, yes. Research shows that talking to a psychologist online is just as effective as meeting in person for a wide range of issues. Your psychologist will tell you if they feel an in-person meeting would suit your situation better."
           }
         },
@@ -50,7 +50,7 @@
             "en": "How does the session work technically — do I need a special app?"
           },
           "a": {
-            "bg": "Не. Разговорът се провежда директно в браузъра — не е нужно да инсталирате Zoom, Skype или друго приложение. Достатъчни са устройство с камера и микрофон и стабилна интернет връзка.",
+            "bg": "Не. Разговорът се провежда директно в браузъра — не е нужно да инсталираш Zoom, Skype или друго приложение. Достатъчни са устройство с камера и микрофон и стабилна интернет връзка.",
             "en": "No. The conversation happens right in your browser — there's no need to install Zoom, Skype, or any other app. All you need is a device with a camera and microphone and a stable internet connection."
           }
         },
@@ -60,17 +60,17 @@
             "en": "Are the conversations confidential?"
           },
           "a": {
-            "bg": "Да. Видео разговорът е между вас и психолога и не се записва от платформата. Психолозите работят при спазване на професионална поверителност, както при среща на живо.",
+            "bg": "Да. Видео разговорът е между теб и психолога и не се записва от платформата. Психолозите работят при спазване на професионална поверителност, както при среща на живо.",
             "en": "Yes. The video conversation is between you and the psychologist and is not recorded by the platform. Psychologists work under professional confidentiality, just as they would in person."
           }
         },
         {
           "q": {
-            "bg": "Проверявате ли квалификацията на психолозите?",
-            "en": "Do you verify the psychologists' qualifications?"
+            "bg": "Квалификацията на психолозите проверена ли е?",
+            "en": "Are the psychologists' qualifications verified?"
           },
           "a": {
-            "bg": "Профилът на всеки психолог преминава през преглед от нашия екип, преди да стане видим в платформата. Този преглед не е проверка на дипломи или лицензи — затова разгледайте профила и отзивите и изберете по своя собствена преценка.",
+            "bg": "Профилът на всеки психолог преминава през преглед от нашия екип, преди да стане видим в платформата. Този преглед не е проверка на дипломи или лицензи — затова разгледай профила и отзивите и избери по своя собствена преценка.",
             "en": "Every psychologist's profile goes through a review by our team before it becomes visible on the platform. This review is not a check of diplomas or licenses — so look at the profile and the reviews and choose at your own discretion."
           }
         }

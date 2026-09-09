@@ -123,7 +123,7 @@ export function SectionBand({
   ctaLabel,
   imageLabel,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   heading: string;
   body: string;
   ctaHref: string;
@@ -135,7 +135,7 @@ export function SectionBand({
       <ContentContainer>
         <div className={styles.bandGrid}>
           <div>
-            <Eyebrow>{eyebrow}</Eyebrow>
+            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             <h2 className={styles.h2}>{heading}</h2>
             <p className={styles.body} style={{ margin: "var(--space-4) 0 var(--space-8)", maxWidth: "48ch" }}>
               {body}
@@ -144,6 +144,54 @@ export function SectionBand({
           </div>
           <ImageSlot label={imageLabel} aspectRatio="16 / 10" />
         </div>
+      </ContentContainer>
+    </section>
+  );
+}
+
+export type FeatureItem = { Icon: LucideIcon; title: string; body: string };
+
+// Benefit cards (1i): hairline card, standalone 40px accent icon, title, body.
+// 3-column grid; 5 items flow 3+2.
+export function FeatureCards({ items }: { items: FeatureItem[] }) {
+  return (
+    <div className={styles.featureGrid}>
+      {items.map(({ Icon, title, body }) => (
+        <div key={title} className={styles.featureCard}>
+          <Icon className={styles.featureIcon} size={40} strokeWidth={1.6} aria-hidden="true" />
+          <h3 className={styles.featureTitle}>{title}</h3>
+          <p className={styles.featureBody}>{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export type ConnectedStepItem = { n: number; title: string; body: string };
+
+// Connected-circle step row (1i): centred columns, teal numeral circles on a
+// continuous hairline rule (masked at the ends via CSS). No icons.
+export function ConnectedSteps({ steps }: { steps: ConnectedStepItem[] }) {
+  return (
+    <div className={styles.connectedSteps}>
+      {steps.map(({ n, title, body }) => (
+        <div key={n} className={styles.connectedStep}>
+          <span className={styles.connectedNumeral}>{n}</span>
+          <h3 className={styles.connectedTitle}>{title}</h3>
+          <p className={styles.connectedBody}>{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Full-bleed grey quote band (1i). Wraps the quote in Bulgarian „…“ marks.
+export function QuoteBand({ quote, attribution }: { quote: string; attribution: string }) {
+  return (
+    <section className={styles.quoteBand}>
+      <ContentContainer>
+        <p className={styles.quote}>„{quote}“</p>
+        <p className={styles.quoteAttribution}>{attribution}</p>
       </ContentContainer>
     </section>
   );

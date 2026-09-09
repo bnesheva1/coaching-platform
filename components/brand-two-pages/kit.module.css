@@ -417,6 +417,175 @@
   text-underline-offset: 3px;
 }
 
+/* ---- feature cards (1i benefits): icon + title + body, no numeral ---- */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.featureCard {
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.featureCard:hover {
+  border-color: var(--accent);
+}
+.featureIcon {
+  color: var(--accent);
+}
+.featureTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.featureBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- connected-circle steps (1i): teal numerals on a continuous rule ---- */
+.connectedSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.connectedStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+/* the 1px rule runs behind the circles; masked before the first and after the
+   last so it spans first-center → last-center only. The opaque teal circle
+   (z-index 1) covers it at each node, leaving it visible only in the gaps. */
+.connectedStep::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-default);
+  z-index: 0;
+}
+.connectedStep:first-child::before {
+  left: 50%;
+}
+.connectedStep:last-child::before {
+  right: 50%;
+}
+.connectedNumeral {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 1.375rem;
+  margin-bottom: var(--space-4);
+}
+.connectedTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+.connectedBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- quote band (1i) ---- */
+.quoteBand {
+  background: var(--bg-surface-2);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-14, 72px) 0;
+  margin-top: var(--space-16);
+}
+.quote {
+  font-family: var(--font-ui);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  margin: 0;
+  max-width: 34ch;
+}
+.quoteAttribution {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin: var(--space-4) 0 0;
+}
+
+/* ---- two-block trust pair (1i) ---- */
+.trustPair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: var(--space-8);
+  margin-top: var(--space-10);
+}
+.trustBlockTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+.trustBlockBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- practice chips (1i hero, decorative) ---- */
+.practiceChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+.practiceChip {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
 /* ---- responsive: every grid collapses to one column ---- */
 @media (max-width: 860px) {
   .hero,
@@ -428,8 +597,18 @@
   .hero {
     padding: var(--space-10) 0 var(--space-12);
   }
-  .stepGrid {
+  .stepGrid,
+  .featureGrid,
+  .connectedSteps {
     grid-template-columns: 1fr;
+  }
+  /* drop the connector rule + column padding when steps stack */
+  .connectedStep::before {
+    display: none;
+  }
+  .connectedStep {
+    padding: 0;
+    margin-bottom: var(--space-8);
   }
   .lede {
     max-width: none;

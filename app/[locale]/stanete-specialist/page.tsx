@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { getSiteName } from "@/lib/brand";
+import { getSiteName, resolveBrand } from "@/lib/brand";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
 import { DOMAIN_PILLS, joinDomainLabels } from "@/lib/homepage-modalities";
+import kit from "@/components/brand-two-pages/kit.module.css";
+import { Eyebrow, InkButton, ImageSlot, CheckChips, FeatureCards, ConnectedSteps, QuoteBand, SectionBand, type FeatureItem, type ConnectedStepItem } from "@/components/brand-two-pages/kit";
+import { Contact, CalendarCheck, Lock, Users, SlidersHorizontal } from "lucide-react";
 
 type Loc = "bg" | "en";
 
@@ -38,6 +41,100 @@ export default async function BecomePractitionerPage() {
   const siteName = await getSiteName();
   const locale = (await getLocale()) as Loc;
   const conjunction = locale === "bg" ? "и" : "and";
+
+  // ── Brand two: handoff 1i. Distinct copy under BecomePractitioner.two;
+  // reuses trustNote (quote), closingQuestion/closingBody + approvalNote (the
+  // two trust blocks) and ctaButton. Warm layout kept below. ──────────────────
+  if (resolveBrand() === "two") {
+    const benefitCards: FeatureItem[] = [
+      { Icon: Contact, title: t("two.b1Title"), body: t("two.b1Body") },
+      { Icon: CalendarCheck, title: t("two.b2Title"), body: t("two.b2Body") },
+      { Icon: Lock, title: t("two.b3Title"), body: t("two.b3Body") },
+      { Icon: Users, title: t("two.b4Title"), body: t("two.b4Body") },
+      { Icon: SlidersHorizontal, title: t("two.b5Title"), body: t("two.b5Body") },
+    ];
+    const steps: ConnectedStepItem[] = [
+      { n: 1, title: t("two.s1Title"), body: t("two.s1Body") },
+      { n: 2, title: t("two.s2Title"), body: t("two.s2Body") },
+      { n: 3, title: t("two.s3Title"), body: t("two.s3Body") },
+    ];
+    const practices = DOMAIN_PILLS.map((d) => d.label[locale]);
+    return (
+      <main>
+        <ContentContainer>
+          {/* Hero */}
+          <div className={kit.hero}>
+            <div>
+              <Eyebrow>{t("two.eyebrow")}</Eyebrow>
+              <h1 className={kit.h1}>
+                {t("two.line1")}
+                <br />
+                {t("two.line2")}
+              </h1>
+              <p className={kit.lede}>{t.rich("two.lede", { brand: (chunks) => <strong>{chunks}</strong> })}</p>
+              <div className={kit.heroCtaRow}>
+                <InkButton href="/signup?role=practitioner">{t("ctaButton")}</InkButton>
+              </div>
+              <hr className={kit.hairline} />
+              <CheckChips items={[t("two.check1"), t("two.check2"), t("two.check3")]} />
+            </div>
+            <div>
+              <ImageSlot label={t("two.heroImageLabel")} aspectRatio="4 / 3" />
+              <div className={kit.practiceChips}>
+                {practices.map((p) => (
+                  <span key={p} className={kit.practiceChip}>
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Benefits */}
+          <section style={{ marginTop: "var(--space-8)" }}>
+            <Eyebrow muted>{t("two.benefitsEyebrow")}</Eyebrow>
+            <h2 className={kit.h2}>{t("two.benefitsTitle")}</h2>
+            <p className={kit.sectionIntro}>{t("two.benefitsIntro")}</p>
+            <FeatureCards items={benefitCards} />
+          </section>
+        </ContentContainer>
+
+        {/* Quote band (full-bleed) */}
+        <QuoteBand quote={t("trustNote")} attribution={siteName} />
+
+        <ContentContainer>
+          {/* How it works — connected-circle steps */}
+          <section style={{ marginTop: "var(--space-16)" }}>
+            <Eyebrow muted>{t("two.stepsEyebrow")}</Eyebrow>
+            <h2 className={kit.h2}>{t("two.stepsTitle")}</h2>
+            <p className={kit.sectionIntro}>{t("two.stepsIntro")}</p>
+            <ConnectedSteps steps={steps} />
+          </section>
+
+          {/* Two-block trust pair */}
+          <div className={kit.trustPair}>
+            <div>
+              <p className={kit.trustBlockTitle}>{t("closingQuestion")}</p>
+              <p className={kit.trustBlockBody}>{t("closingBody")}</p>
+            </div>
+            <div>
+              <p className={kit.trustBlockTitle}>{t("two.trustBlock2Title")}</p>
+              <p className={kit.trustBlockBody}>{t("approvalNote")}</p>
+            </div>
+          </div>
+        </ContentContainer>
+
+        {/* Closing CTA band (full-bleed, no eyebrow) */}
+        <SectionBand
+          heading={t("two.ctaBandTitle")}
+          body={t("two.ctaBandBody")}
+          ctaHref="/signup?role=practitioner"
+          ctaLabel={t("ctaButton")}
+          imageLabel={t("two.ctaBandImageLabel")}
+        />
+      </main>
+    );
+  }
 
   const benefits = [
     { title: t("benefit1Title"), body: t("benefit1Body") },

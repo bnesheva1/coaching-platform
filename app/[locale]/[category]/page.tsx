@@ -101,12 +101,14 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
 
   // Condensed how-it-works recap — reuses the five step TITLES already authored
   // for /how-it-works (one source of truth) and links out to the full page.
+  // ти step titles (HowItWorks.two.*, no "N." prefix) so the recap matches the
+  // taxonomy pages' informal voice; warm's вие step titles stay for /kak-raboti.
   const stepTitles = [
-    tHow("step1Title"),
-    tHow("step2Title"),
-    tHow("step3Title"),
-    tHow("step4Title"),
-    tHow("step5Title"),
+    tHow("two.step1Title"),
+    tHow("two.step2Title"),
+    tHow("two.step3Title"),
+    tHow("two.step4Title"),
+    tHow("two.step5Title"),
   ];
 
   // FAQPage structured data — same shape and defensive `</` escaping as /faq and
