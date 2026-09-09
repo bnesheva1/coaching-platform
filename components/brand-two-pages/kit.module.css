@@ -685,6 +685,44 @@
   background: var(--bg-surface);
 }
 
+/* ---- two-sided CTA cards (1n /about) ---- */
+.ctaCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.ctaCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: var(--space-8);
+  background: var(--bg-surface);
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+.ctaCard:hover {
+  border-color: var(--accent);
+}
+.ctaCardIcon {
+  color: var(--accent);
+}
+.ctaCardTitle {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-2);
+}
+.ctaCardBody {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-5);
+}
+
 /* ---- responsive: every grid collapses to one column ---- */
 @media (max-width: 860px) {
   .hero,
@@ -700,7 +738,8 @@
   .stepGrid,
   .stepGrid5,
   .featureGrid,
-  .connectedSteps {
+  .connectedSteps,
+  .ctaCardGrid {
     grid-template-columns: 1fr;
   }
   .stepGrid5 .stepCard::after {
