@@ -897,7 +897,22 @@
     "howItWorksHeading": "How it works",
     "howItWorksCta": "See how it works in detail",
     "faqHeading": "Frequently asked questions",
-    "disclaimerBody": "Every specialist's profile goes through a review by our team before it becomes visible here. Choosing the specialist who's right for you remains at your own discretion."
+    "disclaimerBody": "Every specialist's profile goes through a review by our team before it becomes visible here. Choosing the specialist who's right for you remains at your own discretion.",
+    "heroImageLabel": "specialist",
+    "onlineMeta": "Online sessions, from the comfort of home",
+    "specialistCount": "{count, plural, one {# specialist} other {# specialists}} in this area",
+    "stepsIntro": "Simple and secure — so you can focus on what matters.",
+    "specialistsIntro": "Get to know the specialists and choose the one who suits you.",
+    "step1Title": "Find your specialist",
+    "step1Body": "Browse profiles by what you're looking for and what you need.",
+    "step2Title": "Book a time",
+    "step2Body": "Pick a moment that suits you and book a time in the online calendar.",
+    "step3Title": "Pay securely online",
+    "step3Body": "Payment is processed through the platform the moment you book.",
+    "step4Title": "Have the call online",
+    "step4Body": "The session happens over video — no extra software needed.",
+    "step5Title": "Leave a review",
+    "step5Body": "Share your experience and help others find the right specialist."
   },
   "Browse": {
     "title": "Find a practitioner",

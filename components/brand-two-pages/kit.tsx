@@ -54,9 +54,9 @@ export type StepItem = { n: number; Icon: LucideIcon; title: string; body: strin
 // Card-variant step row (1j, 1m): teal numeral circle top-left, outline icon
 // top-right. 3-column grid; 5 items flow 3+2 (never auto-fit — it orphans the
 // last row).
-export function StepCards({ steps }: { steps: StepItem[] }) {
+export function StepCards({ steps, columns = 3 }: { steps: StepItem[]; columns?: 3 | 5 }) {
   return (
-    <div className={styles.stepGrid}>
+    <div className={columns === 5 ? styles.stepGrid5 : styles.stepGrid}>
       {steps.map(({ n, Icon, title, body }) => (
         <div key={n} className={styles.stepCard}>
           <span className={styles.stepNumeral}>{n}</span>
