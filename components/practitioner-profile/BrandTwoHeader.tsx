@@ -52,6 +52,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
   const tPublic = useTranslations("PublicProfile");
   const tA = useTranslations("A11y");
   const tDeleted = useTranslations("DeletedUser");
+  const tImmediate = useTranslations("Immediate");
   const deleted = isAnonymised(props.displayName);
   const shownName = deleted ? tDeleted("label") : props.displayName;
   const locale = useLocale();
@@ -70,11 +71,16 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
       : null;
   const showSave = !props.isOwnProfile && props.viewerRole !== "practitioner";
 
+  const avail = props.availableNow;
   const avatar = props.avatarUrl && !deleted ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img className={styles.portrait} src={props.avatarUrl} alt={tA("avatarAlt", { name: shownName })} />
+    <img
+      className={`${styles.portrait}${avail ? ` ${styles.portraitAvail}` : ""}`}
+      src={props.avatarUrl}
+      alt={tA("avatarAlt", { name: shownName })}
+    />
   ) : (
-    <div className={styles.portraitFallback}>{deleted ? "?" : initialsFromName(props.displayName)}</div>
+    <div className={`${styles.portraitFallback}${avail ? ` ${styles.portraitAvail}` : ""}`}>{deleted ? "?" : initialsFromName(props.displayName)}</div>
   );
 
   // Edit mode: no card — just the editable pieces stacked.
@@ -106,11 +112,17 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
             {props.averageRating.toFixed(1)}
           </span>
         )}
-        <div className={styles.portraitWrap}>
+        <div className={`${styles.portraitWrap}${avail ? ` ${styles.portraitWrapAvail}` : ""}`}>
           {avatar}
-          {props.availableNow && <span className={styles.availDot} aria-hidden="true" />}
+          {avail && <span className={`${styles.availDot} available-now-dot`} aria-hidden="true" />}
         </div>
         <h1 className={styles.cardName}>{shownName}</h1>
+        {avail && (
+          <span className={styles.availLine}>
+            <span className={`${styles.availLineDot} available-now-dot`} aria-hidden="true" />
+            {tImmediate("availableNowLabel")}
+          </span>
+        )}
         {props.specialties.length > 0 && <span className={styles.cardPractice}>{specialtyText}</span>}
         <div className={styles.cardDivider} />
         <div className={styles.cardMeta}>

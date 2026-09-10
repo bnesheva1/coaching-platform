@@ -11,6 +11,7 @@ import { landingEntryBySlug, type LandingEntry } from "@/lib/taxonomy";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
 import { getSiteName, resolveBrand } from "@/lib/brand";
 import { searchPractitioners, type PractitionerSearchResult } from "@/lib/practitioners/search";
+import { getSpecialtyState } from "@/lib/specialties/availability";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import domainsData from "@/data/domains.json";
@@ -56,6 +57,16 @@ async function matchesFor(entry: LandingEntry): Promise<PractitionerSearchResult
   return all.filter((p) => p.topics.includes(entry.key));
 }
 
+// "active" (≥1 bookable practitioner) landing pages render normally and stay
+// indexed; hidden/coming_soon ones keep their URL (no 404 — preserves any SEO
+// value already earned) but get noindex + the page's existing empty "check back
+// soon" state. For a specialty this reuses the roster classifier; a topic page
+// is active iff it currently has bookable matches.
+async function isEntryActive(entry: LandingEntry): Promise<boolean> {
+  if (entry.kind === "specialty") return (await getSpecialtyState(entry.key)) === "active";
+  return (await matchesFor(entry)).length > 0;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -67,6 +78,7 @@ export async function generateMetadata({
   const siteName = await getSiteName(locale);
   const title = withSiteName(entry.metaTitle[locale as Loc], siteName);
   const description = withSiteName(entry.metaDescription[locale as Loc], siteName);
+  const active = await isEntryActive(entry);
   return {
     title,
     description,
@@ -75,6 +87,9 @@ export async function generateMetadata({
     // canonical URLs is the entire point.
     alternates: localizedAlternates(locale, `/${entry.slug}`),
     ...socialMetadata({ title, description, siteName, locale }),
+    // Don't let a not-yet-available category get (or keep) indexed; keep follow
+    // so internal links are still crawled. Active pages stay fully indexable.
+    ...(active ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
@@ -176,6 +191,7 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
       averageRating: p.averageRating,
       reviewCount: p.reviewCount,
       specialtyLabels: p.specialties.map((k) => specialtyLabelByKey.get(k) ?? k),
+      availableNow: p.availableNow,
     }));
 
     return (

@@ -593,6 +593,7 @@ export function BrowseClient({
                         averageRating: p.averageRating,
                         reviewCount: p.reviewCount,
                         specialtyLabels: p.specialtyKeys.map((k) => specialtyLabelByKey.get(k) ?? k),
+                        availableNow: p.availableNow,
                       }}
                     />
                   ))}

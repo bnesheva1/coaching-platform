@@ -252,6 +252,14 @@
   outline: none;
   box-shadow: var(--focus-ring-shadow);
 }
+/* coming_soon domain — non-clickable, muted (dashed border), clearly labelled. */
+.pillComingSoon {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  color: var(--text-tertiary);
+  cursor: default;
+  font-weight: 400;
+}
 
 /* Row 3 — specialty tiles: auto-fit, ~5 per row, short landscape rectangles.
    grid-auto-rows:1fr + align-items:stretch make every tile share ONE height —
