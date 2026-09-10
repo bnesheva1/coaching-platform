@@ -22,6 +22,10 @@ type RawLanding = {
   whyOnlineHeading?: Localized;
   whyOnlineBody?: Localized;
   faq?: LandingFaqItem[];
+  // Optional per-entry trust/disclaimer paragraph. When absent the page falls
+  // back to the shared Taxonomy.disclaimerBody string; when present (both
+  // locales) it overrides it, so a specialty can carry its own specific wording.
+  disclaimer?: Localized;
 };
 
 type RawTaxonomyEntry = {
@@ -93,6 +97,8 @@ export type LandingEntry = {
   whyOnlineHeading: Localized;
   whyOnlineBody: Localized;
   faq: LandingFaqItem[];
+  // Optional — see RawLanding.disclaimer. Undefined → page uses the shared string.
+  disclaimer?: Localized;
 };
 
 function bothLocales(v?: Localized): v is Localized {
@@ -144,6 +150,9 @@ function toLandingEntry(kind: TaxonomyKind, raw: RawTaxonomyEntry): LandingEntry
     whyOnlineHeading,
     whyOnlineBody,
     faq,
+    // Optional override; only carried through when fully bilingual, else the
+    // page falls back to the shared disclaimer string.
+    disclaimer: bothLocales(l.disclaimer) ? l.disclaimer : undefined,
   };
 }
 

@@ -1,6 +1,160 @@
 [
-  { "key": "tarot", "en": "Tarot", "bg": "Таро" },
-  { "key": "astrology", "en": "Astrology", "bg": "Астрология" },
+  {
+    "key": "tarot",
+    "en": "Tarot",
+    "bg": "Таро",
+    "landing": {
+      "slug": "taro",
+      "metaTitle": {
+        "bg": "Таро онлайн — говори с таролог | {siteName}",
+        "en": "Tarot online — talk to a tarot reader | {siteName}"
+      },
+      "metaDescription": {
+        "bg": "Открий проверени таролози в {siteName} и запази час за разчитане онлайн — за посока, яснота или отговор на въпрос, който те вълнува.",
+        "en": "Find vetted tarot readers on {siteName} and book an online reading — for direction, clarity, or an answer to a question on your mind."
+      },
+      "h1": {
+        "bg": "Таро онлайн",
+        "en": "Tarot online"
+      },
+      "intro": {
+        "bg": "Таро разчитането тръгва от въпрос или ситуация, които те вълнуват точно сега, и предлага различен ъгъл, от който да ги погледнеш. Не е предсказание с абсолютна точност, а начин да видиш повече възможности и да решиш какво е следващата ти крачка.",
+        "en": "A tarot reading starts from a question or situation that is on your mind right now and offers a different angle to look at it from. It isn't a prediction with absolute certainty, but a way to see more possibilities and decide what your next step is."
+      },
+      "whyOnlineHeading": {
+        "bg": "Защо онлайн Таро разчитане",
+        "en": "Why an online tarot reading"
+      },
+      "whyOnlineBody": {
+        "bg": "Онлайн разчитането работи добре за Таро — важното е разговорът и вниманието към въпроса ти, не физическото присъствие. Можеш да говориш с таролог от вкъщи, по удобен за теб час, без да пътуваш.",
+        "en": "Reading online works well for tarot — what matters is the conversation and attention to your question, not physical presence. You can talk with a tarot reader from home, at a time that suits you, without travelling."
+      },
+      "faq": [
+        {
+          "q": {
+            "bg": "Трябва ли да имам конкретен въпрос за разчитането?",
+            "en": "Do I need to have a specific question for the reading?"
+          },
+          "a": {
+            "bg": "Не е задължително, но помага. Ако имаш конкретна ситуация или решение, което тежи, кажи го на таролога — разчитането става по-насочено. Ако просто искаш обща перспектива за момента, това също е добър подход.",
+            "en": "It isn't required, but it helps. If you have a specific situation or a decision weighing on you, tell the tarot reader — the reading becomes more focused. If you just want a general perspective on the moment, that's a good approach too."
+          }
+        },
+        {
+          "q": {
+            "bg": "Картите предсказват точно какво ще се случи?",
+            "en": "Do the cards predict exactly what will happen?"
+          },
+          "a": {
+            "bg": "Не. Таро разчитането предлага перспектива и възможности, не сигурни отговори за бъдещето. То не замества медицинска, юридическа или финансова консултация — решенията, които вземаш, си остават твои.",
+            "en": "No. A tarot reading offers perspective and possibilities, not certain answers about the future. It is not a substitute for medical, legal, or financial advice — the decisions you make remain your own."
+          }
+        },
+        {
+          "q": {
+            "bg": "Каква е разликата между Таро и астрология?",
+            "en": "What's the difference between Tarot and astrology?"
+          },
+          "a": {
+            "bg": "Таро работи с моментната ситуация и въпросите, които имаш точно сега. Астрологията тръгва от рождената ти карта и позициите на планетите — по-структуриран, дългосрочен поглед. Много хора комбинират и двете, но не е задължително.",
+            "en": "Tarot works with the present situation and the questions you have right now. Astrology starts from your birth chart and the positions of the planets — a more structured, long-term view. Many people combine the two, but it isn't required."
+          }
+        },
+        {
+          "q": {
+            "bg": "Колко често е добре да правя разчитане?",
+            "en": "How often should I get a reading?"
+          },
+          "a": {
+            "bg": "Няма фиксирано правило — зависи от теб и от ситуацията. Някои хора се обръщат към Таро при конкретен въпрос или преход в живота, други предпочитат по-регулярни разговори. Тарологът може да ти помогне да намериш подходящия за теб ритъм.",
+            "en": "There's no fixed rule — it depends on you and the situation. Some people turn to tarot for a specific question or a life transition, others prefer more regular conversations. The tarot reader can help you find the rhythm that suits you."
+          }
+        }
+      ],
+      "disclaimer": {
+        "bg": "Преди да се появи в {siteName}, профилът на всеки таролог преминава през преглед от нашия екип — не проверка на дипломи или лицензи, а поглед към това кой стои зад профила. Изборът на подходящия за теб специалист остава твой, въз основа на профила, отзивите и начина, по който говори за работата си.",
+        "en": "Before appearing on {siteName}, every tarot reader's profile goes through a review by our team — not a check of diplomas or licenses, but a look at who is behind the profile. Choosing the right specialist for you remains yours, based on the profile, the reviews, and the way they talk about their work."
+      }
+    }
+  },
+  {
+    "key": "astrology",
+    "en": "Astrology",
+    "bg": "Астрология",
+    "landing": {
+      "slug": "astrologiya",
+      "metaTitle": {
+        "bg": "Астрология онлайн — говори с астролог | {siteName}",
+        "en": "Astrology online — talk to an astrologer | {siteName}"
+      },
+      "metaDescription": {
+        "bg": "Открий проверени астролози в {siteName} и говори с тях онлайн — за важни решения, взаимоотношения или просто повече яснота за себе си.",
+        "en": "Find vetted astrologers on {siteName} and talk to them online — for important decisions, relationships, or simply more clarity about yourself."
+      },
+      "h1": {
+        "bg": "Астрология онлайн",
+        "en": "Astrology online"
+      },
+      "intro": {
+        "bg": "Астрологията ти помага да погледнеш на живота си от разстояние — през позицията на планетите в момента на раждането ти и през това, което се случва с тях точно сега. Не търси предсказания с абсолютна точност, а перспектива, която ти помага да мислиш за себе си по нов начин.",
+        "en": "Astrology helps you look at your life from a distance — through the position of the planets at the moment of your birth and through what is happening with them right now. It doesn't seek predictions with absolute certainty, but a perspective that helps you think about yourself in a new way."
+      },
+      "whyOnlineHeading": {
+        "bg": "Защо онлайн астрологично разчитане",
+        "en": "Why an online astrology reading"
+      },
+      "whyOnlineBody": {
+        "bg": "Онлайн разговорът работи добре за астрологично разчитане — не изисква присъствие, а спокойствие и достатъчно време за разговор. Можеш да говориш с астролог от вкъщи, по удобен за теб час, без да пътуваш.",
+        "en": "Talking online works well for an astrology reading — it doesn't require being there in person, just calm and enough time to talk. You can speak with an astrologer from home, at a time that suits you, without travelling."
+      },
+      "faq": [
+        {
+          "q": {
+            "bg": "От какво има нужда астрологът, за да ми направи разчитане?",
+            "en": "What does the astrologer need in order to do a reading for me?"
+          },
+          "a": {
+            "bg": "Обикновено от точна дата, час и място на раждане. Ако не знаеш точния час, кажи го на астролога — той/тя ще ти обясни какво остава възможно да се разчете и какво не.",
+            "en": "Usually an exact date, time, and place of birth. If you don't know the exact time, tell the astrologer — they'll explain what can still be read and what can't."
+          }
+        },
+        {
+          "q": {
+            "bg": "Каква е разликата между астрология и Таро?",
+            "en": "What's the difference between astrology and Tarot?"
+          },
+          "a": {
+            "bg": "Астрологията тръгва от рождената ти карта и позициите на планетите — по-структуриран, дългосрочен поглед. Таро работи с моментната ситуация и въпросите, които имаш точно сега. Много хора комбинират и двете, но не е задължително.",
+            "en": "Astrology starts from your birth chart and the positions of the planets — a more structured, long-term view. Tarot works with the present situation and the questions you have right now. Many people combine the two, but it isn't required."
+          }
+        },
+        {
+          "q": {
+            "bg": "Астрологичното разчитане гарантира ли какво ще се случи?",
+            "en": "Does an astrology reading guarantee what will happen?"
+          },
+          "a": {
+            "bg": "Не. Астрологията предлага перспектива и посока, не сигурни отговори. Тя не замества медицинска, юридическа или финансова консултация — решенията, които вземаш, си остават твои.",
+            "en": "No. Astrology offers perspective and direction, not certain answers. It is not a substitute for medical, legal, or financial advice — the decisions you make remain your own."
+          }
+        },
+        {
+          "q": {
+            "bg": "Какво става, ако не знам точния си час на раждане?",
+            "en": "What if I don't know my exact birth time?"
+          },
+          "a": {
+            "bg": "Много астролози могат да работят и с приблизителен час, макар че някои техники (например точните домове в картата) стават по-малко точни. Кажи на астролога какво знаеш — той/тя ще прецени какво може да каже с увереност.",
+            "en": "Many astrologers can work with an approximate time, though some techniques (for example the exact houses in the chart) become less precise. Tell the astrologer what you know — they'll judge what they can say with confidence."
+          }
+        }
+      ],
+      "disclaimer": {
+        "bg": "Преди да се появи в {siteName}, профилът на всеки астролог преминава през преглед от нашия екип — не проверка на дипломи или лицензи, а поглед към това кой стои зад профила. Изборът на подходящия за теб специалист остава твой, въз основа на профила, отзивите и начина, по който говори за работата си.",
+        "en": "Before appearing on {siteName}, every astrologer's profile goes through a review by our team — not a check of diplomas or licenses, but a look at who is behind the profile. Choosing the right specialist for you remains yours, based on the profile, the reviews, and the way they talk about their work."
+      }
+    }
+  },
   { "key": "reiki", "en": "Reiki", "bg": "Рейки" },
   { "key": "coffee_reading", "en": "Coffee reading", "bg": "Гледане на кафе" },
   {

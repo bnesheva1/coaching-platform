@@ -259,7 +259,11 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
             <h2 className={kit.h2}>{t("faqHeading")}</h2>
             <div className={kit.faqRow}>
               <FaqAccordion items={faqItems} />
-              <TrustCard heading={tHow("disclaimerHeading")} body={t("disclaimerBody")} ticks={[]} />
+              <TrustCard
+                heading={tHow("disclaimerHeading")}
+                body={entry.disclaimer ? withSiteName(entry.disclaimer[locale], siteName) : t("disclaimerBody")}
+                ticks={[]}
+              />
             </div>
           </section>
         </ContentContainer>
@@ -387,7 +391,9 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
           <h2 style={{ fontWeight: 700, fontSize: "1.25rem", lineHeight: 1.25, margin: "0 0 var(--space-3)" }}>
             {tHow("disclaimerHeading")}
           </h2>
-          <p style={{ font: "var(--text-body-md)", color: "var(--text-primary)", margin: 0 }}>{t("disclaimerBody")}</p>
+          <p style={{ font: "var(--text-body-md)", color: "var(--text-primary)", margin: 0 }}>
+            {entry.disclaimer ? withSiteName(entry.disclaimer[locale], siteName) : t("disclaimerBody")}
+          </p>
         </section>
       </ContentContainer>
     </main>
