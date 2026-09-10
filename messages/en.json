@@ -1,4 +1,7 @@
 {
+  "DeletedUser": {
+    "label": "Deleted user"
+  },
   "A11y": {
     "avatarAlt": "avatar image of {name}",
     "serviceImageAlt": "illustration of {name}",

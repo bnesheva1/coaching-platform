@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import {
   BookingDetailsDisclosure,
   CANCELLED_STATUSES,
@@ -72,6 +73,7 @@ export function PastSessionsSection({
 }) {
   const t = useTranslations("Booking");
   const tReviews = useTranslations("Reviews");
+  const tDeleted = useTranslations("DeletedUser");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [filter, setFilter] = useState<Filter>("all");
@@ -147,6 +149,9 @@ export function PastSessionsSection({
           <ul style={{ listStyle: "none", padding: 0, marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             {filteredBookings.map((booking) => {
               const isCancelled = CANCELLED_STATUSES.has(booking.status);
+              const counterpartDisplay = isMissingOrDeleted(booking.counterpartName)
+                ? tDeleted("label")
+                : booking.counterpartName;
               // Past & not cancelled = the time has passed and it wasn't
               // called off, so it's effectively completed for display even
               // if the daily completion cron hasn't flipped the stored
@@ -196,7 +201,7 @@ export function PastSessionsSection({
                   <span style={{ textDecoration: isCancelled ? "line-through" : "none" }}>
                     <strong>{formatter.format(new Date(booking.startUtc))}</strong>
                     {" — "}
-                    {t(counterpartLabelKey, { name: booking.counterpartName })}
+                    {t(counterpartLabelKey, { name: counterpartDisplay })}
                     {" · "}
                     {booking.serviceName}
                   </span>

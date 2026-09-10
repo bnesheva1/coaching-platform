@@ -8,6 +8,7 @@ import { ClientLocalTime, ClientTimezoneNotice } from "@/components/dashboard/Cl
 import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { getSavedTimezone } from "@/lib/profile/savedTimezone";
 import { splitUpcomingPast, ACTIVE_STATUSES } from "@/lib/booking-time";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
@@ -39,6 +40,7 @@ export default async function ClientUpcomingPage({
   const tBooking = await getTranslations("Booking");
   const tPublicProfile = await getTranslations("PublicProfile");
   const tSaved = await getTranslations("Saved");
+  const tDeleted = await getTranslations("DeletedUser");
   const locale = (await getLocale()) as "bg" | "en";
   const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
@@ -413,7 +415,7 @@ export default async function ClientUpcomingPage({
                 <div style={{ alignSelf: "flex-end" }}>
                   <NextSessionCancelAction
                     bookingId={nextBooking.id}
-                    counterpartName={nextBooking.counterpartName}
+                    counterpartName={isMissingOrDeleted(nextBooking.counterpartName) ? tDeleted("label") : nextBooking.counterpartName}
                     startUtc={nextBooking.startUtc}
                     minNoticeHours={nextBooking.minNoticeHours ?? 24}
                   />

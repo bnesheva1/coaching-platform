@@ -15,6 +15,9 @@ export type AvatarProps = {
   src?: string | null;
   name: string;
   size: number;
+  // When the person this avatar represents has been deleted/anonymised, force
+  // the neutral "?" glyph (ignoring any stale src or name-derived initials).
+  deleted?: boolean;
   availableNow?: boolean;
   // The translated „На разположение сега" label; rendered beneath the avatar
   // only when set AND availableNow. Omit for surfaces that show the ring alone.
@@ -32,6 +35,7 @@ export function Avatar({
   src,
   name,
   size,
+  deleted = false,
   availableNow = false,
   availableLabel,
   fallbackBackground = "var(--bg-surface-2)",
@@ -41,16 +45,19 @@ export function Avatar({
   imageStyle,
 }: AvatarProps) {
   const t = useTranslations("A11y");
-  const initial = initialsFromName(name);
+  // A deleted user shows the neutral "?" glyph and never an image, even if a
+  // stale src/name is still passed in.
+  const initial = deleted ? "?" : initialsFromName(name);
+  const showImage = !deleted && !!src;
   const ringGap = Math.max(3, Math.round(size * 0.045));
 
   return (
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "var(--space-2)" }}>
       <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-        {src ? (
+        {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={src}
+            src={src!}
             alt={t("avatarAlt", { name })}
             style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block", ...imageStyle }}
           />

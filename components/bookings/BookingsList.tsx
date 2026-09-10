@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState, useSyncExternalStore, type ReactNode } f
 import { TriangleAlert } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { initialsFromName } from "@/lib/initials";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { CancelSessionDialog } from "./CancelSessionDialog";
@@ -204,14 +205,20 @@ export function CounterpartAvatar({
   name,
   avatarUrl,
   size = AVATAR_SIZE,
+  deleted,
 }: {
   name: string;
   avatarUrl?: string | null;
   size?: number;
+  // When the counterpart is deleted/anonymised, show the neutral "?" glyph and
+  // no photo. Defaults to auto-detecting from the (raw) name, so callers that
+  // pass a stored name straight through are covered without extra wiring.
+  deleted?: boolean;
 }) {
   const tA = useTranslations("A11y");
-  const initial = initialsFromName(name);
-  return avatarUrl ? (
+  const isDeleted = deleted ?? isMissingOrDeleted(name);
+  const initial = isDeleted ? "?" : initialsFromName(name);
+  return !isDeleted && avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={avatarUrl}
@@ -286,7 +293,13 @@ export function ServiceImageSquare({ imageUrl, size, serviceName }: { imageUrl?:
 // plain, non-interactive card rather than a dead link.
 export function PractitionerChip({ name, avatarUrl, username }: { name: string; avatarUrl?: string | null; username?: string | null }) {
   const t = useTranslations("Booking");
+  const tDeleted = useTranslations("DeletedUser");
   const [hover, setHover] = useState(false);
+  // Historical context: a blank/missing name means the counterpart's account is
+  // gone; the stored anonymise marker means the same. Either → localized label
+  // + "?" avatar, and never a profile link.
+  const deleted = isMissingOrDeleted(name);
+  const shownName = deleted ? tDeleted("label") : name;
 
   const baseStyle = {
     display: "inline-flex",
@@ -301,12 +314,12 @@ export function PractitionerChip({ name, avatarUrl, username }: { name: string; 
 
   const inner = (
     <>
-      <CounterpartAvatar name={name} avatarUrl={avatarUrl} size={32} />
-      <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{name}</span>
+      <CounterpartAvatar name={shownName} avatarUrl={avatarUrl} size={32} deleted={deleted} />
+      <span style={{ font: "var(--text-body-sm)", fontWeight: 600 }}>{shownName}</span>
     </>
   );
 
-  if (!username) {
+  if (!username || deleted) {
     return (
       <div className={rowStyles.tile} style={baseStyle}>
         {inner}
@@ -318,7 +331,7 @@ export function PractitionerChip({ name, avatarUrl, username }: { name: string; 
     <Link
       href={`/p/${username}`}
       className={`${rowStyles.tile} focus-ring`}
-      aria-label={t("viewProfileAria", { name })}
+      aria-label={t("viewProfileAria", { name: shownName })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{ ...baseStyle, textDecoration: "none", color: "inherit", cursor: "pointer" }}
@@ -655,6 +668,7 @@ export function BookingsList({
   hideTimezoneNote?: boolean;
 }) {
   const t = useTranslations("Booking");
+  const tDeleted = useTranslations("DeletedUser");
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
 
@@ -726,6 +740,12 @@ export function BookingsList({
         <div style={{ display: "flex", flexDirection: "column", gap: premium ? "var(--space-4)" : "var(--space-3)" }}>
           {upcoming.map((booking) => {
             const sessionTimeLabel = formatter.format(new Date(booking.startUtc));
+            // Deleted/anonymised counterpart → localized placeholder everywhere
+            // this booking's name is shown (chip handles its own; this covers
+            // the compact card + cancel dialogs).
+            const counterpartDisplay = isMissingOrDeleted(booking.counterpartName)
+              ? tDeleted("label")
+              : booking.counterpartName;
             // Time state (upcoming / in-progress / past), from the same
             // config-driven window the room uses. Computed here (before the
             // cancel action) because a live session must not offer the
@@ -746,7 +766,7 @@ export function BookingsList({
             const cancelAction = ACTIVE_STATUSES.has(booking.status) && (
               perspective === "practitioner" ? (
                 <CancelSessionDialog
-                  counterpartName={booking.counterpartName}
+                  counterpartName={counterpartDisplay}
                   sessionTimeLabel={sessionTimeLabel}
                   perspective="practitioner"
                   action={cancelBookingAsPractitioner.bind(null, booking.id)}
@@ -757,7 +777,7 @@ export function BookingsList({
                 </span>
               ) : (
                 <CancelSessionDialog
-                  counterpartName={booking.counterpartName}
+                  counterpartName={counterpartDisplay}
                   sessionTimeLabel={sessionTimeLabel}
                   perspective="client"
                   action={cancelBookingAsClient.bind(null, booking.id, effectiveTimezone)}
@@ -911,7 +931,7 @@ export function BookingsList({
               >
                 <strong style={{ font: "var(--text-body-md)" }}>{sessionTimeLabel}</strong>
                 <p style={{ margin: "var(--space-1) 0 0", color: "var(--text-secondary)" }}>
-                  {t(counterpartLabelKey, { name: booking.counterpartName })}
+                  {t(counterpartLabelKey, { name: counterpartDisplay })}
                 </p>
                 <p style={{ margin: "var(--space-1) 0 0", font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
                   {booking.serviceName} · <span style={isLive ? { color: "var(--accent)" } : undefined}>{statusLabel}</span>

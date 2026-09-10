@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { SaveButton } from "@/components/practitioners/SaveButton";
+import { isAnonymised } from "@/lib/deleted-user";
 
 export type PractitionerCardData = {
   id: string;
@@ -68,7 +69,13 @@ export function PractitionerCard({
   const tBrowse = useTranslations("Browse");
   const tImmediate = useTranslations("Immediate");
   const tSaved = useTranslations("Saved");
+  const tDeleted = useTranslations("DeletedUser");
   const profileHref = `/p/${practitioner.username}`;
+
+  // Live-entity context: a blank display_name is a legitimate onboarding state
+  // (falls back to @username); only the anonymise marker means deleted.
+  const deleted = isAnonymised(practitioner.displayName);
+  const nameText = deleted ? tDeleted("label") : practitioner.displayName || `@${practitioner.username}`;
 
   const profileBlockStyle = {
     color: "inherit",
@@ -87,7 +94,8 @@ export function PractitionerCard({
     <>
       <Avatar
         src={practitioner.avatarUrl}
-        name={practitioner.displayName || practitioner.username}
+        name={nameText}
+        deleted={deleted}
         size={AVATAR_SIZE}
         availableNow={practitioner.availableNow}
         availableLabel={tImmediate("availableNowLabel")}
@@ -100,7 +108,7 @@ export function PractitionerCard({
 
       <div>
         <div style={{ font: "var(--text-heading-sm)", fontWeight: 700, color: "var(--text-primary)" }}>
-          {practitioner.displayName || `@${practitioner.username}`}
+          {nameText}
         </div>
         {practitioner.specialtyLabels.length > 0 && (
           <div style={{ font: "var(--text-body-xs)", color: "var(--text-tertiary)", letterSpacing: "0.02em", marginTop: "var(--space-1)" }}>
@@ -178,7 +186,7 @@ export function PractitionerCard({
       {visible && (
         <Link
           href={profileHref}
-          aria-label={practitioner.displayName || practitioner.username}
+          aria-label={nameText}
           style={{ position: "absolute", inset: 0, zIndex: 1, borderRadius: "var(--radius-2xl)" }}
         />
       )}

@@ -1,4 +1,5 @@
 import { createTranslator } from "next-intl";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import type { EmailProvider } from "./types";
 import { ResendEmailProvider } from "./providers/resend";
 import enMessages from "@/messages/en.json";
@@ -23,6 +24,19 @@ export function normalizeLocale(value: string | null): Locale {
 
 export function translator(locale: Locale) {
   return createTranslator({ locale, messages: MESSAGES[locale], namespace: "Email" });
+}
+
+// The localized "Deleted user" placeholder in the recipient's locale, for a
+// counterparty whose account was deleted/anonymised by the time the email is
+// sent. Mirrors lib/deleted-user.ts's render-time fallback for the email side.
+export function deletedUserLabel(locale: Locale): string {
+  return createTranslator({ locale, messages: MESSAGES[locale], namespace: "DeletedUser" })("label");
+}
+
+// Resolve a counterparty display name for an email: the localized placeholder
+// when the name is missing/blank or the stored anonymise marker, else the name.
+export function counterpartyNameOrDeleted(name: string | null | undefined, locale: Locale): string {
+  return isMissingOrDeleted(name) ? deletedUserLabel(locale) : (name as string);
 }
 
 // The email footer, with the brand name (Brand.siteName) interpolated in the

@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { initialsFromName } from "@/lib/initials";
+import { isAnonymised } from "@/lib/deleted-user";
 import styles from "./BrowseTwo.module.css";
 
 export type BrowseCardTwoData = {
@@ -36,7 +37,11 @@ export function BrowseCardTwo({
 }) {
   const t = useTranslations("Browse");
   const tA = useTranslations("A11y");
-  const name = practitioner.displayName || `@${practitioner.username}`;
+  const tDeleted = useTranslations("DeletedUser");
+  // Live-entity context: blank display_name falls back to @username; only the
+  // anonymise marker is treated as a deleted user (→ label + "?" portrait).
+  const deleted = isAnonymised(practitioner.displayName);
+  const name = deleted ? tDeleted("label") : practitioner.displayName || `@${practitioner.username}`;
 
   return (
     <div className={`${styles.card}${elevated ? ` ${styles.cardElevated}` : ""}`}>
@@ -55,12 +60,12 @@ export function BrowseCardTwo({
       </div>
 
       <div className={styles.cardBody}>
-        {practitioner.avatarUrl ? (
+        {!deleted && practitioner.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.portrait} src={practitioner.avatarUrl} alt={tA("avatarAlt", { name })} />
         ) : (
           <span className={styles.portraitFallback} aria-hidden="true">
-            {initialsFromName(name)}
+            {deleted ? "?" : initialsFromName(name)}
           </span>
         )}
         <p className={styles.name}>{name}</p>

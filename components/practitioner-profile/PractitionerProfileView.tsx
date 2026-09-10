@@ -16,6 +16,7 @@ import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
 import { GallerySection, type GalleryImage } from "./GallerySection";
 import { initialsFromName } from "@/lib/initials";
+import { isAnonymised } from "@/lib/deleted-user";
 import { VideosSection, type ProfileVideo } from "./VideosSection";
 import { BrandTwoHeader } from "./BrandTwoHeader";
 import type { Brand } from "@/lib/brand-config";
@@ -200,6 +201,12 @@ export function PractitionerProfileView({
   const tReviews = useTranslations("Reviews");
   const tImmediate = useTranslations("Immediate");
   const tA = useTranslations("A11y");
+  const tDeleted = useTranslations("DeletedUser");
+  // Defensive: an anonymised practitioner (should be unreachable — username is
+  // nulled on deletion) renders the localized placeholder + "?" portrait rather
+  // than the stored English marker. Never applies while the owner is editing.
+  const deleted = isAnonymised(displayName);
+  const shownName = deleted ? tDeleted("label") : displayName;
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -443,11 +450,11 @@ export function PractitionerProfileView({
                 banner, not the quote/pills below it too. */}
             <div className={styles.identityRow}>
               <div className={styles.portrait} style={{ position: "relative", flex: "none" }}>
-                {avatarUrl ? (
+                {!deleted && avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}
-                    alt={tA("avatarAlt", { name: displayName })}
+                    alt={tA("avatarAlt", { name: shownName })}
                     style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
                   />
                 ) : (
@@ -466,7 +473,7 @@ export function PractitionerProfileView({
                       font: "var(--text-heading-lg)",
                     }}
                   >
-                    {initialsFromName(displayName)}
+                    {deleted ? "?" : initialsFromName(displayName)}
                   </div>
                 )}
                 {availableNow && !isEditing && (
@@ -493,7 +500,7 @@ export function PractitionerProfileView({
                 </div>
               ) : (
                 <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-                  <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{displayName}</h1>
+                  <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{shownName}</h1>
                   {specialties.length > 0 && (
                     <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
                       {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}

@@ -7,7 +7,7 @@ import { TaxonomySuggestionEmail } from "./templates/TaxonomySuggestionEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
 import { BulkCancellationSummaryEmail } from "./templates/BulkCancellationSummaryEmail";
-import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, type Locale } from "./shared";
+import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, counterpartyNameOrDeleted, type Locale } from "./shared";
 import { raiseAlert } from "@/lib/alerts";
 import type { SendEmailResult } from "./types";
 
@@ -164,13 +164,13 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
     const clientResult = await provider.send({
       to: context.client_email,
       subject: tClient("bookingConfirmationClientSubject", {
-        counterpartyName: context.practitioner_display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(context.practitioner_display_name, clientLocale),
       }),
       react: BookingConfirmationEmail({
         heading: tClient("bookingConfirmationClientHeading"),
         body: tClient("bookingConfirmationClientBody", {
           recipientName: context.client_display_name ?? "",
-          counterpartyName: context.practitioner_display_name ?? "",
+          counterpartyName: counterpartyNameOrDeleted(context.practitioner_display_name, clientLocale),
           serviceName: context.service_name,
           sessionTime: clientTime,
         }),
@@ -211,13 +211,13 @@ export async function sendBookingConfirmationEmails(bookingId: string, clientLoc
   const practitionerResult = await provider.send({
     to: context.practitioner_email,
     subject: tPractitioner("bookingConfirmationPractitionerSubject", {
-      counterpartyName: context.client_display_name ?? "",
+      counterpartyName: counterpartyNameOrDeleted(context.client_display_name, practitionerLocale),
     }),
     react: BookingConfirmationEmail({
       heading: tPractitioner("bookingConfirmationPractitionerHeading"),
       body: tPractitioner("bookingConfirmationPractitionerBody", {
         recipientName: context.practitioner_display_name ?? "",
-        counterpartyName: context.client_display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(context.client_display_name, practitionerLocale),
         serviceName: context.service_name,
         sessionTime: practitionerTime,
       }),
@@ -311,7 +311,7 @@ export async function sendCancellationNoticeEmail(
       heading: t("cancellationNoticeHeading"),
       body: t(bodyKey, {
         recipientName: recipient.name ?? "",
-        counterpartyName: recipient.counterpartyName ?? "",
+        counterpartyName: counterpartyNameOrDeleted(recipient.counterpartyName, recipient.locale),
         serviceName: context.service_name,
         sessionTime,
       }),
@@ -474,13 +474,13 @@ export async function sendPaidBookingConfirmationEmails(
     const clientResult = await provider.send({
       to: context.client_email,
       subject: tClient("bookingConfirmationClientSubject", {
-        counterpartyName: context.practitioner_display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(context.practitioner_display_name, clientLocale),
       }),
       react: BookingConfirmationEmail({
         heading: tClient("bookingConfirmationClientHeading"),
         body: tClient("bookingConfirmationClientBody", {
           recipientName: context.client_display_name ?? "",
-          counterpartyName: context.practitioner_display_name ?? "",
+          counterpartyName: counterpartyNameOrDeleted(context.practitioner_display_name, clientLocale),
           serviceName: context.service_name,
           sessionTime: clientTime,
         }),
@@ -510,13 +510,13 @@ export async function sendPaidBookingConfirmationEmails(
   const practitionerResult = await provider.send({
     to: context.practitioner_email,
     subject: tPractitioner("bookingConfirmationPractitionerSubject", {
-      counterpartyName: context.client_display_name ?? "",
+      counterpartyName: counterpartyNameOrDeleted(context.client_display_name, practitionerLocale),
     }),
     react: BookingConfirmationEmail({
       heading: tPractitioner("bookingConfirmationPractitionerHeading"),
       body: tPractitioner("bookingConfirmationPractitionerBody", {
         recipientName: context.practitioner_display_name ?? "",
-        counterpartyName: context.client_display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(context.client_display_name, practitionerLocale),
         serviceName: context.service_name,
         sessionTime: practitionerTime,
       }),
@@ -591,7 +591,7 @@ export async function sendPaymentRefundedNotice({
       heading: t("paymentRefundedHeading"),
       body: t("paymentRefundedBody", {
         recipientName: client.display_name ?? "",
-        counterpartyName: practitioner?.display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(practitioner?.display_name, locale),
         amount,
       }),
       footer: footerText(locale),
@@ -636,7 +636,7 @@ export async function sendEmergencyContactRevealedNotice(bookingId: string): Pro
       heading: t("emergencyContactRevealedHeading"),
       body: t("emergencyContactRevealedBody", {
         recipientName: context.practitioner_display_name ?? "",
-        counterpartyName: context.client_display_name ?? "",
+        counterpartyName: counterpartyNameOrDeleted(context.client_display_name, locale),
         serviceName: context.service_name,
         sessionTime,
       }),

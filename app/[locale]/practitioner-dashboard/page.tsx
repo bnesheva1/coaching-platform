@@ -10,6 +10,7 @@ import { JoinSessionLink } from "@/components/bookings/JoinSessionLink";
 import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { notPastEndCutoffIso } from "@/lib/video/sessionWindow";
 import { isEnabled } from "@/lib/flags";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import { AvailabilityWidget } from "@/components/immediate/AvailabilityWidget";
 import { getPractitionerStats } from "@/lib/practitioners/stats";
 import { PractitionerStatsSummary } from "@/components/practitioners/PractitionerStats";
@@ -65,6 +66,7 @@ export default async function PractitionerHomePage() {
   const t = await getTranslations("Dashboard");
   const tBooking = await getTranslations("Booking");
   const tPublicProfile = await getTranslations("PublicProfile");
+  const tDeleted = await getTranslations("DeletedUser");
   const locale = await getLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const supabase = await createClient();
@@ -313,7 +315,7 @@ export default async function PractitionerHomePage() {
 
   const upcoming = (bookings ?? []).map((b) => ({
     id: b.id,
-    clientName: clientNameById.get(b.client_id) ?? "",
+    clientName: isMissingOrDeleted(clientNameById.get(b.client_id)) ? tDeleted("label") : clientNameById.get(b.client_id)!,
     serviceName: serviceById.get(b.service_id)?.name ?? "",
     durationMinutes: serviceById.get(b.service_id)?.duration_minutes ?? 0,
     deliveryType: serviceById.get(b.service_id)?.delivery_type ?? null,

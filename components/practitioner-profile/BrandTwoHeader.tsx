@@ -12,6 +12,7 @@ import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import domainsData from "@/data/domains.json";
 import { initialsFromName } from "@/lib/initials";
+import { isAnonymised } from "@/lib/deleted-user";
 import styles from "./BrandTwoHeader.module.css";
 
 export type BrandTwoHeaderProps = {
@@ -50,6 +51,9 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
   const tA = useTranslations("A11y");
+  const tDeleted = useTranslations("DeletedUser");
+  const deleted = isAnonymised(props.displayName);
+  const shownName = deleted ? tDeleted("label") : props.displayName;
   const locale = useLocale();
 
   const specialtyLabel = (key: string) =>
@@ -66,11 +70,11 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
       : null;
   const showSave = !props.isOwnProfile && props.viewerRole !== "practitioner";
 
-  const avatar = props.avatarUrl ? (
+  const avatar = props.avatarUrl && !deleted ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img className={styles.portrait} src={props.avatarUrl} alt={tA("avatarAlt", { name: props.displayName })} />
+    <img className={styles.portrait} src={props.avatarUrl} alt={tA("avatarAlt", { name: shownName })} />
   ) : (
-    <div className={styles.portraitFallback}>{initialsFromName(props.displayName)}</div>
+    <div className={styles.portraitFallback}>{deleted ? "?" : initialsFromName(props.displayName)}</div>
   );
 
   // Edit mode: no card — just the editable pieces stacked.
@@ -106,7 +110,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           {avatar}
           {props.availableNow && <span className={styles.availDot} aria-hidden="true" />}
         </div>
-        <h1 className={styles.cardName}>{props.displayName}</h1>
+        <h1 className={styles.cardName}>{shownName}</h1>
         {props.specialties.length > 0 && <span className={styles.cardPractice}>{specialtyText}</span>}
         <div className={styles.cardDivider} />
         <div className={styles.cardMeta}>
@@ -174,7 +178,7 @@ export function BrandTwoHeader(props: BrandTwoHeaderProps) {
           {props.quote && (
             <blockquote className={styles.quote}>
               &bdquo;{props.quote}&ldquo;
-              <div className={styles.quoteBy}>&mdash; {props.displayName}</div>
+              <div className={styles.quoteBy}>&mdash; {shownName}</div>
             </blockquote>
           )}
         </div>

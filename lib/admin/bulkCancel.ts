@@ -61,7 +61,9 @@ async function loadUpcoming(supabase: ServiceClient, practitionerId: string) {
     supabase.from("profiles").select("id, display_name").in("id", clientIds),
     supabase.from("payments").select("booking_id, amount_cents, currency, status").in("booking_id", bookingIds).in("status", ["succeeded", "refunded"]),
   ]);
-  const clientName = new Map((profiles ?? []).map((p) => [p.id as string, (p.display_name as string) ?? "—"]));
+  // Blank (not "—") for a missing/hard-deleted client, so the consumer can
+  // detect it and render the localized deleted-user placeholder.
+  const clientName = new Map((profiles ?? []).map((p) => [p.id as string, (p.display_name as string) ?? ""]));
   const payment = new Map(
     (payments ?? []).map((p) => [p.booking_id as string, { amountCents: p.amount_cents as number, currency: p.currency as string, status: p.status as string }]),
   );
@@ -77,7 +79,7 @@ export async function previewBulkCancel(practitionerId: string): Promise<BulkCan
     const p = payment.get(b.id as string);
     return {
       bookingId: b.id as string,
-      clientName: clientName.get(b.client_id as string) ?? "—",
+      clientName: clientName.get(b.client_id as string) ?? "",
       startUtc: b.start_utc as string,
       amountCents: p ? p.amountCents : null,
       currency: p ? p.currency : null,
@@ -146,7 +148,7 @@ export async function executeBulkCancel(
 
   for (const b of rows) {
     const bookingId = b.id as string;
-    const name = clientName.get(b.client_id as string) ?? "—";
+    const name = clientName.get(b.client_id as string) ?? "";
     const p = payment.get(bookingId);
 
     // 1. EMAIL FIRST — idempotent via the per-booking marker.

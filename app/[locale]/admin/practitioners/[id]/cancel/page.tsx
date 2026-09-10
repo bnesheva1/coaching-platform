@@ -5,6 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { previewBulkCancel } from "@/lib/admin/bulkCancel";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { BulkCancelConfirm } from "@/components/admin/BulkCancelConfirm";
+import { isAnonymised } from "@/lib/deleted-user";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +13,15 @@ export default async function BulkCancelPage({ params }: { params: Promise<{ id:
   await requireAdmin();
   const { id } = await params;
   const t = await getTranslations("Admin");
+  const tDeleted = await getTranslations("DeletedUser");
 
   const supabase = createServiceRoleClient();
   const { data: prof } = await supabase.from("practitioner_profiles").select("username").eq("id", id).single();
   const { data: nameRow } = await supabase.from("profiles").select("display_name").eq("id", id).single();
   const username = (prof?.username as string | null) ?? null;
-  const name = (nameRow?.display_name as string | null) ?? username ?? "—";
+  const name = isAnonymised(nameRow?.display_name as string | null)
+    ? tDeleted("label")
+    : (nameRow?.display_name as string | null) ?? username ?? "—";
 
   const preview = await previewBulkCancel(id);
 

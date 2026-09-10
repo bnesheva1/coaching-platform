@@ -5,6 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getPractitionerStats } from "@/lib/practitioners/stats";
 import { PractitionerStats } from "@/components/practitioners/PractitionerStats";
 import { ContentContainer } from "@/components/ui/ContentContainer";
+import { isAnonymised } from "@/lib/deleted-user";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +15,16 @@ export default async function AdminPractitionerStatsPage({ params }: { params: P
   await requireAdmin();
   const { id } = await params;
   const t = await getTranslations("Stats");
+  const tDeleted = await getTranslations("DeletedUser");
 
   const supabase = createServiceRoleClient();
   const [{ data: prof }, { data: nameRow }] = await Promise.all([
     supabase.from("practitioner_profiles").select("username").eq("id", id).single(),
     supabase.from("profiles").select("display_name").eq("id", id).single(),
   ]);
-  const name = (nameRow?.display_name as string | null) ?? (prof?.username as string | null) ?? "—";
+  const name = isAnonymised(nameRow?.display_name as string | null)
+    ? tDeleted("label")
+    : (nameRow?.display_name as string | null) ?? (prof?.username as string | null) ?? "—";
 
   const stats = await getPractitionerStats(id);
 
