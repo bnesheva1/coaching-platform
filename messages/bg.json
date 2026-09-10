@@ -1,4 +1,7 @@
 {
+  "DeletedUser": {
+    "label": "Изтрит потребител"
+  },
   "A11y": {
     "avatarAlt": "аватар на {name}",
     "serviceImageAlt": "илюстрация на {name}",

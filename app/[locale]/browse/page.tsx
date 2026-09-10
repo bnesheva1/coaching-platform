@@ -9,6 +9,7 @@ import { BrowseClient, type BrowseResult } from "./BrowseClient";
 import { landingEntryByKey } from "@/lib/taxonomy";
 import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
+import { getSpecialtyStates } from "@/lib/specialties/availability";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
 import { resolveBrand, getSiteName } from "@/lib/brand";
 
@@ -128,10 +129,16 @@ export default async function BrowsePage({
     availableNow: p.availableNow,
   }));
 
-  const specialtyOptions = specialtiesData.map((s) => ({
-    key: s.key,
-    label: s[locale] ?? s.en,
-  }));
+  // Only ACTIVE specialties are offered as filter options (roster-driven,
+  // consistent with the homepage pills/tiles and taxonomy pages) — reversing the
+  // earlier "keep zero-count specialties enabled" behaviour.
+  const specialtyStates = await getSpecialtyStates();
+  const specialtyOptions = specialtiesData
+    .filter((s) => specialtyStates[s.key] === "active")
+    .map((s) => ({
+      key: s.key,
+      label: s[locale] ?? s.en,
+    }));
   const topicOptions = topicsData.map((topic) => ({
     key: topic.key,
     label: topic[locale] ?? topic.en,

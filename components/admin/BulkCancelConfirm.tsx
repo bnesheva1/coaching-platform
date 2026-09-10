@@ -4,6 +4,7 @@ import { useState, useActionState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { runBulkCancel, type BulkCancelActionState } from "@/app/[locale]/admin/practitioners/bulk-cancel-actions";
 import type { BulkCancelPreview } from "@/lib/admin/bulkCancel";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 import { Button } from "@/components/ui/Button";
 
 const OUTCOME_COLOR: Record<string, string> = {
@@ -25,6 +26,8 @@ export function BulkCancelConfirm({
   preview: BulkCancelPreview;
 }) {
   const t = useTranslations("Admin");
+  const tDeleted = useTranslations("DeletedUser");
+  const clientNameOf = (name: string) => (isMissingOrDeleted(name) ? tDeleted("label") : name);
   const locale = useLocale();
   const intl = INTL_LOCALES[locale] ?? "en-US";
   const dateFmt = new Intl.DateTimeFormat(intl, { dateStyle: "medium", timeStyle: "short" });
@@ -59,7 +62,7 @@ export function BulkCancelConfirm({
         <div style={{ display: "flex", flexDirection: "column" }}>
           {result.outcomes.map((o) => (
             <div key={o.bookingId} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", font: "var(--text-body-sm)", borderBottom: "1px solid var(--border-subtle)", padding: "var(--space-1) 0" }}>
-              <span>{o.clientName}</span>
+              <span>{clientNameOf(o.clientName)}</span>
               <span style={{ color: OUTCOME_COLOR[o.outcome] ?? "var(--text-secondary)", whiteSpace: "nowrap" }}>
                 {t(`bulkOutcome_${o.outcome}` as Parameters<typeof t>[0])}
               </span>
@@ -98,7 +101,7 @@ export function BulkCancelConfirm({
             <tbody>
               {preview.bookings.map((b) => (
                 <tr key={b.bookingId}>
-                  <td style={cellStyle}>{b.clientName}</td>
+                  <td style={cellStyle}>{clientNameOf(b.clientName)}</td>
                   <td style={{ ...cellStyle, whiteSpace: "nowrap" }}>{dateFmt.format(new Date(b.startUtc))}</td>
                   <td style={cellStyle}>
                     {b.amountCents == null ? t("bulkNoPayment") : b.alreadyRefunded ? t("bulkAlreadyRefunded") : money(b.amountCents, b.currency ?? cur)}

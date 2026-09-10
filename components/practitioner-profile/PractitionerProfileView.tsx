@@ -16,6 +16,7 @@ import { EditableIdentity } from "./EditableIdentity";
 import { EditableAbout } from "./EditableAbout";
 import { GallerySection, type GalleryImage } from "./GallerySection";
 import { initialsFromName } from "@/lib/initials";
+import { isAnonymised } from "@/lib/deleted-user";
 import { VideosSection, type ProfileVideo } from "./VideosSection";
 import { BrandTwoHeader } from "./BrandTwoHeader";
 import type { Brand } from "@/lib/brand-config";
@@ -200,6 +201,12 @@ export function PractitionerProfileView({
   const tReviews = useTranslations("Reviews");
   const tImmediate = useTranslations("Immediate");
   const tA = useTranslations("A11y");
+  const tDeleted = useTranslations("DeletedUser");
+  // Defensive: an anonymised practitioner (should be unreachable — username is
+  // nulled on deletion) renders the localized placeholder + "?" portrait rather
+  // than the stored English marker. Never applies while the owner is editing.
+  const deleted = isAnonymised(displayName);
+  const shownName = deleted ? tDeleted("label") : displayName;
   const locale = useLocale();
   const intlLocale = INTL_LOCALES[locale] ?? "en-US";
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -443,41 +450,58 @@ export function PractitionerProfileView({
                 banner, not the quote/pills below it too. */}
             <div className={styles.identityRow}>
               <div className={styles.portrait} style={{ position: "relative", flex: "none" }}>
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt={tA("avatarAlt", { name: displayName })}
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: "50%",
-                      border: "6px solid var(--bg-page)",
-                      boxShadow: "var(--shadow-md)",
-                      background: "var(--bg-surface-2)",
-                      color: "var(--text-tertiary)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      font: "var(--text-heading-lg)",
-                    }}
-                  >
-                    {initialsFromName(displayName)}
-                  </div>
-                )}
-                {availableNow && !isEditing && (
-                  // Availability ring — sits just outside the portrait's own
-                  // page-coloured border, same indicator the Avatar component
-                  // carries on the browse/dashboard surfaces.
-                  <span
-                    aria-hidden="true"
-                    style={{ position: "absolute", inset: -5, borderRadius: "50%", border: "3px solid var(--accent)", pointerEvents: "none" }}
-                  />
-                )}
+                {(() => {
+                  // When available-now, the photo is framed by a thin white ring
+                  // then a thicker accent-gradient ring (nested border-box padding
+                  // rings, so the footprint stays exactly the portrait size). The
+                  // page-coloured 6px frame is used only in the non-available state.
+                  const availRing = availableNow && !isEditing;
+                  const frame = availRing ? {} : { border: "6px solid var(--bg-page)", boxShadow: "var(--shadow-md)" };
+                  const media = !deleted && avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt={tA("avatarAlt", { name: shownName })}
+                      style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", ...frame }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        ...frame,
+                        background: "var(--bg-surface-2)",
+                        color: "var(--text-tertiary)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        font: "var(--text-heading-lg)",
+                      }}
+                    >
+                      {deleted ? "?" : initialsFromName(displayName)}
+                    </div>
+                  );
+                  if (!availRing) return media;
+                  return (
+                    <span
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, var(--accent), var(--accent-on-inverse))",
+                        padding: 8,
+                        boxSizing: "border-box",
+                        boxShadow: "var(--shadow-md)",
+                      }}
+                    >
+                      <span style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%", background: "#ffffff", padding: 4, boxSizing: "border-box" }}>
+                        {media}
+                      </span>
+                    </span>
+                  );
+                })()}
                 {isEditing && (
                   <div style={{ position: "absolute", bottom: 0, right: 0 }}>
                     <EditableImage kind="avatar" label={t("editPhoto")} removeLabel={t("removePhoto")} hasImage={!!avatarUrl}>
@@ -493,7 +517,7 @@ export function PractitionerProfileView({
                 </div>
               ) : (
                 <div style={{ paddingBottom: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-                  <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{displayName}</h1>
+                  <h1 style={{ margin: 0, font: "var(--text-display-sm)", color: "var(--text-primary)" }}>{shownName}</h1>
                   {specialties.length > 0 && (
                     <span style={{ font: "600 14px var(--font-ui)", color: "var(--accent)" }}>
                       {specialties.map((key) => specialtyLabelFor(key, locale)).join(", ")}

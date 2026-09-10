@@ -5,6 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
 import { PractitionerControls } from "@/components/admin/PractitionerControls";
+import { isAnonymised } from "@/lib/deleted-user";
 import { COMMISSION_RATE } from "@/lib/payments/stripe/checkout";
 import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/payments";
 
@@ -44,6 +45,7 @@ export default async function AdminPractitionersPage({
 }) {
   await requireAdmin();
   const t = await getTranslations("Admin");
+  const tDeleted = await getTranslations("DeletedUser");
   const locale = await getLocale();
   const numberFmt = new Intl.NumberFormat(INTL_LOCALES[locale] ?? "en-US");
   const dateFmt = new Intl.DateTimeFormat(INTL_LOCALES[locale] ?? "en-US", { day: "numeric", month: "short", year: "numeric" });
@@ -104,11 +106,12 @@ export default async function AdminPractitionersPage({
             {rows.map((r) => {
               const connect = connectLabel(r);
               const rating = r.average_rating != null ? `${r.average_rating.toFixed(1)} (${numberFmt.format(r.review_count)})` : "—";
+              const rDeleted = isAnonymised(r.display_name);
               return (
                 <div key={r.id} style={cardStyle}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", alignItems: "baseline", flexWrap: "wrap" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ font: "var(--text-body-md)", fontWeight: 600 }}>{r.display_name ?? "—"}</span>
+                      <span style={{ font: "var(--text-body-md)", fontWeight: 600 }}>{rDeleted ? tDeleted("label") : r.display_name ?? "—"}</span>
                       {r.username && (
                         <Link href={`/p/${r.username}`} style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
                           @{r.username}
@@ -137,7 +140,7 @@ export default async function AdminPractitionersPage({
 
                   <PractitionerControls
                     practitionerId={r.id}
-                    name={r.display_name ?? r.username ?? "—"}
+                    name={rDeleted ? tDeleted("label") : r.display_name ?? r.username ?? "—"}
                     moderationStatus={r.moderation_status}
                     payoutsFrozen={r.payouts_frozen}
                     commissionOverride={r.commission_rate_override == null ? null : Number(r.commission_rate_override)}

@@ -6,6 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { EARLY_JOIN_MS } from "@/lib/video/sessionWindow";
 import { NextSessionWhen } from "@/components/dashboard/NextSessionWhen";
 import { getImminentCallSession, type CallPromptSession } from "@/app/session-call-actions";
+import { isMissingOrDeleted } from "@/lib/deleted-user";
 
 const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 
@@ -18,6 +19,7 @@ const INTL_LOCALES: Record<string, string> = { bg: "bg-BG", en: "en-US" };
 export function SessionCallPrompt({ initialSession }: { initialSession: CallPromptSession | null }) {
   const t = useTranslations("SessionPrompt");
   const tBooking = useTranslations("Booking");
+  const tDeleted = useTranslations("DeletedUser");
   const locale = useLocale();
   const pathname = usePathname();
 
@@ -150,7 +152,7 @@ export function SessionCallPrompt({ initialSession }: { initialSession: CallProm
           </span>
           <strong style={{ font: "var(--text-heading-md)" }}>{session.serviceName}</strong>
           <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>
-            {t("withCounterpart", { name: session.counterpartName })} · {timeLabel}
+            {t("withCounterpart", { name: isMissingOrDeleted(session.counterpartName) ? tDeleted("label") : session.counterpartName })} · {timeLabel}
           </p>
         </div>
 

@@ -45,7 +45,15 @@ const ICONS = {
 // Two hero mood images (design/) — one is chosen at random on each page visit.
 const HERO_IMAGES = [questionAskedHer, questionAskedHim];
 
-export function BrandTwoHome() {
+export function BrandTwoHome({
+  domainStates,
+  modalityStates,
+}: {
+  // Roster-driven visibility, computed server-side (lib/specialties/availability).
+  // Keyed by domain key / modality id → "active" | "coming_soon" | "hidden".
+  domainStates: Record<string, "active" | "coming_soon" | "hidden">;
+  modalityStates: Record<string, "active" | "coming_soon" | "hidden">;
+}) {
   const t = useTranslations("HomePage");
   const locale = useLocale();
   const questions = useMemo(() => heroQuestionsForLocale(locale), [locale]);
@@ -143,17 +151,31 @@ export function BrandTwoHome() {
         <div className={styles.discover}>
           <h2 className={styles.discoverHeading}>{t("brandTwoAskSpecialist")}</h2>
           <div className={styles.pillsRow}>
-            {DOMAIN_PILLS.map((p) => (
-              <Link key={p.key} href={p.landingPath} className={styles.pill}>
-                {p.label[locale as "bg" | "en"] ?? p.label.bg}
-              </Link>
-            ))}
+            {/* Only active/coming_soon domains render (roster-driven). coming_soon
+                is a non-clickable, clearly-labelled pill — never linked to /browse. */}
+            {DOMAIN_PILLS.filter((p) => (domainStates[p.key] ?? "hidden") !== "hidden").map((p) => {
+              const label = p.label[locale as "bg" | "en"] ?? p.label.bg;
+              if (domainStates[p.key] === "coming_soon") {
+                return (
+                  <span key={p.key} className={`${styles.pill} ${styles.pillComingSoon}`} aria-disabled="true">
+                    {label} · {t("brandTwoComingSoon")}
+                  </span>
+                );
+              }
+              return (
+                <Link key={p.key} href={p.landingPath} className={styles.pill}>
+                  {label}
+                </Link>
+              );
+            })}
           </div>
           <div className={styles.tileGrid}>
-          {HOME_MODALITIES.map((m) => {
+          {HOME_MODALITIES.filter((m) => (modalityStates[m.id] ?? "hidden") !== "hidden").map((m) => {
             const Icon = ICONS[m.icon];
             const label = m.label[locale as "bg" | "en"] ?? m.label.bg;
-            if (m.comingSoon || !m.landingPath) {
+            // coming_soon (or a curated placeholder with no landing path) → the
+            // existing non-clickable "coming soon" tile treatment.
+            if (modalityStates[m.id] === "coming_soon" || !m.landingPath) {
               return (
                 <div key={m.id} className={`${styles.tile} ${styles.tileComingSoon}`} aria-disabled="true">
                   <Icon size={64} strokeWidth={1.6} className={styles.tileIcon} aria-hidden="true" />

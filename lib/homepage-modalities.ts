@@ -26,6 +26,10 @@ export type HomeModality = {
   label: { bg: string; en: string };
   landingPath: string | null;
   comingSoon?: boolean;
+  // For a curated tile that isn't a real specialty (the veterinarian
+  // placeholder): the data/domains.json domain it stands in for, so the
+  // roster classifier can inherit that domain's (master-switch-gated) state.
+  domainKey?: string;
 };
 
 // One tile per real specialty (data/specialties.json), in curated order, each
@@ -40,7 +44,7 @@ export const HOME_MODALITIES: HomeModality[] = [
   { id: "psychologist", icon: "brain", label: { bg: "Психолог", en: "Psychologist" }, landingPath: "/browse?specialty=psychologist" },
   { id: "art_therapist", icon: "palette", label: { bg: "Арт-терапевт", en: "Art therapist" }, landingPath: "/browse?specialty=art_therapist" },
   { id: "coaching", icon: "target", label: { bg: "Коучинг", en: "Coaching" }, landingPath: "/browse?specialty=coaching" },
-  { id: "veterinarian", icon: "paw-print", label: { bg: "Ветеринарен лекар", en: "Veterinarian" }, landingPath: null, comingSoon: true },
+  { id: "veterinarian", icon: "paw-print", label: { bg: "Ветеринарен лекар", en: "Veterinarian" }, landingPath: null, comingSoon: true, domainKey: "veterinary" },
 ];
 
 // Domain pills — one per ACTIVE domain (data/domains.json), each linking to a

@@ -88,6 +88,32 @@
   background: var(--accent);
   border: 3px solid var(--bg-surface);
 }
+/* Available-now: photo → thin white ring → thicker accent-gradient ring, via
+   nested border-box padding so the portrait footprint is unchanged. */
+.portraitWrapAvail {
+  padding: 7px;
+  border-radius: 999px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, var(--accent), var(--accent-on-inverse));
+}
+.portraitAvail {
+  border: 4px solid #ffffff;
+  box-sizing: border-box;
+}
+.availLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font: 600 0.8125rem var(--font-ui);
+  color: var(--accent);
+}
+.availLineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
 .cardName {
   margin: 0;
   font: 700 1.5rem/1.2 var(--font-ui);

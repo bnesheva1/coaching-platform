@@ -6,6 +6,7 @@ import { getPathname } from "@/i18n/navigation";
 import { Hero } from "./Hero";
 import { HomeAvailableNowLine } from "./HomeAvailableNowLine";
 import { BrandTwoHome } from "@/components/homepage/BrandTwoHome";
+import { getDomainStates, getModalityStates } from "@/lib/specialties/availability";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -59,11 +60,17 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   // Brand two gets its own hero (handoff 1b); brand one keeps the existing one.
+  const brandTwo = resolveBrand() === "two";
+  // Roster-driven visibility for the pills/tiles — computed only for brand two
+  // (the only homepage that renders them).
+  const [domainStates, modalityStates] = brandTwo
+    ? await Promise.all([getDomainStates(), getModalityStates()])
+    : [null, null];
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript }} />
-      {resolveBrand() === "two" ? (
-        <BrandTwoHome />
+      {brandTwo ? (
+        <BrandTwoHome domainStates={domainStates!} modalityStates={modalityStates!} />
       ) : (
         <div>
           <Hero />

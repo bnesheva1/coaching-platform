@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { initialsFromName } from "@/lib/initials";
+import { isAnonymised } from "@/lib/deleted-user";
 import styles from "./BrowseTwo.module.css";
 
 export type BrowseCardTwoData = {
@@ -18,6 +19,9 @@ export type BrowseCardTwoData = {
   // Optional so existing callers (client-dashboard grids) stay valid; the review
   // count renders next to the rating only when provided and > 0.
   reviewCount?: number;
+  // Drives the availability ring + "available now" line. Optional/false on the
+  // dashboard grids (worked-with / saved), where it isn't shown.
+  availableNow?: boolean;
 };
 
 // Brand-two practitioner card (browse handoff 1g), reused on the client dashboard.
@@ -36,7 +40,13 @@ export function BrowseCardTwo({
 }) {
   const t = useTranslations("Browse");
   const tA = useTranslations("A11y");
-  const name = practitioner.displayName || `@${practitioner.username}`;
+  const tDeleted = useTranslations("DeletedUser");
+  const tImmediate = useTranslations("Immediate");
+  // Live-entity context: blank display_name falls back to @username; only the
+  // anonymise marker is treated as a deleted user (→ label + "?" portrait).
+  const deleted = isAnonymised(practitioner.displayName);
+  const name = deleted ? tDeleted("label") : practitioner.displayName || `@${practitioner.username}`;
+  const avail = !!practitioner.availableNow && !deleted;
 
   return (
     <div className={`${styles.card}${elevated ? ` ${styles.cardElevated}` : ""}`}>
@@ -55,15 +65,23 @@ export function BrowseCardTwo({
       </div>
 
       <div className={styles.cardBody}>
-        {practitioner.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.portrait} src={practitioner.avatarUrl} alt={tA("avatarAlt", { name })} />
-        ) : (
-          <span className={styles.portraitFallback} aria-hidden="true">
-            {initialsFromName(name)}
+        <span className={`${styles.portraitWrap}${avail ? ` ${styles.portraitWrapAvail}` : ""}`}>
+          {!deleted && practitioner.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={`${styles.portrait}${avail ? ` ${styles.portraitAvail}` : ""}`} src={practitioner.avatarUrl} alt={tA("avatarAlt", { name })} />
+          ) : (
+            <span className={`${styles.portraitFallback}${avail ? ` ${styles.portraitAvail}` : ""}`} aria-hidden="true">
+              {deleted ? "?" : initialsFromName(name)}
+            </span>
+          )}
+        </span>
+        <p className={styles.name}>{name}</p>
+        {avail && (
+          <span className={styles.availLine}>
+            <span className={`${styles.availLineDot} available-now-dot`} aria-hidden="true" />
+            {tImmediate("availableNowLabel")}
           </span>
         )}
-        <p className={styles.name}>{name}</p>
         {practitioner.specialtyLabels.length > 0 && (
           <span className={styles.practice}>{practitioner.specialtyLabels.join(" · ")}</span>
         )}

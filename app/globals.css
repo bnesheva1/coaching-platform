@@ -269,3 +269,25 @@ dialog::backdrop {
 dialog:modal {
   margin: auto !important;
 }
+
+/* "Available now" status dot: a gentle colour pulse between the two accent
+   tokens the availability gradient ring uses (updated via the tokens, not
+   here). Shared by every surface's dot — inline-styled or CSS-module — so the
+   reduced-motion guard lives in one place. */
+@keyframes availNowPulse {
+  0%,
+  100% {
+    background-color: var(--accent);
+  }
+  50% {
+    background-color: var(--accent-on-inverse);
+  }
+}
+.available-now-dot {
+  animation: availNowPulse 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .available-now-dot {
+    animation: none;
+  }
+}

@@ -15,6 +15,9 @@ export type AvatarProps = {
   src?: string | null;
   name: string;
   size: number;
+  // When the person this avatar represents has been deleted/anonymised, force
+  // the neutral "?" glyph (ignoring any stale src or name-derived initials).
+  deleted?: boolean;
   availableNow?: boolean;
   // The translated „На разположение сега" label; rendered beneath the avatar
   // only when set AND availableNow. Omit for surfaces that show the ring alone.
@@ -32,6 +35,7 @@ export function Avatar({
   src,
   name,
   size,
+  deleted = false,
   availableNow = false,
   availableLabel,
   fallbackBackground = "var(--bg-surface-2)",
@@ -41,18 +45,46 @@ export function Avatar({
   imageStyle,
 }: AvatarProps) {
   const t = useTranslations("A11y");
-  const initial = initialsFromName(name);
-  const ringGap = Math.max(3, Math.round(size * 0.045));
+  // A deleted user shows the neutral "?" glyph and never an image, even if a
+  // stale src/name is still passed in.
+  const initial = deleted ? "?" : initialsFromName(name);
+  const showImage = !deleted && !!src;
+  // "Available now" ring: photo → thin white gap → thicker accent-gradient ring.
+  // Two discs sized just outside the avatar, painted BEHIND the media (which
+  // sits at zIndex 1) so only their rims show; the white disc covers the
+  // gradient's inner part, leaving a clean white gap between photo and gradient.
+  const whiteRing = Math.max(2, Math.round(size * 0.03));
+  const gradRing = Math.max(4, Math.round(size * 0.055));
+  const mediaZ = { position: "relative" as const, zIndex: 1 };
 
   return (
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "var(--space-2)" }}>
       <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-        {src ? (
+        {availableNow && (
+          <>
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: -(whiteRing + gradRing),
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, var(--accent), var(--accent-on-inverse))",
+                pointerEvents: "none",
+                zIndex: 0,
+              }}
+            />
+            <span
+              aria-hidden="true"
+              style={{ position: "absolute", inset: -whiteRing, borderRadius: "50%", background: "#ffffff", pointerEvents: "none", zIndex: 0 }}
+            />
+          </>
+        )}
+        {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={src}
+            src={src!}
             alt={t("avatarAlt", { name })}
-            style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block", ...imageStyle }}
+            style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", display: "block", ...mediaZ, ...imageStyle }}
           />
         ) : (
           <span
@@ -68,25 +100,12 @@ export function Avatar({
               alignItems: "center",
               justifyContent: "center",
               font: fallbackFont ?? `600 ${Math.round(size * 0.4)}px var(--font-display)`,
+              ...mediaZ,
               ...imageStyle,
             }}
           >
             {initial}
           </span>
-        )}
-        {availableNow && (
-          // Sibling overlay, not the image's border — sits `ringGap` outside the
-          // avatar and composes with any frame the surface already applied.
-          <span
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              inset: -ringGap,
-              borderRadius: "50%",
-              border: "3px solid var(--accent)",
-              pointerEvents: "none",
-            }}
-          />
         )}
       </span>
       {availableNow && availableLabel && (
