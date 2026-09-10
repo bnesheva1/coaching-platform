@@ -19,9 +19,19 @@ import styles from "./BrandTwoHome.module.css";
 // into one rotation. `reserved_drafts` there is parked copy for domains not yet
 // live (with editorial notes) and is never cycled.
 type HeroQuestionSet = { bg: string[]; en: string[] };
-function heroQuestionsForLocale(locale: string): string[] {
-  const active = heroQuestions.active as Record<string, HeroQuestionSet>;
-  return Object.values(active).flatMap((set) => (locale === "en" ? set.en : set.bg));
+type DomainState = "active" | "coming_soon" | "hidden";
+// Only surface questions whose DOMAIN currently classifies as active (roster-
+// driven, the same rule as the pills/tiles — active only, not coming_soon). The
+// JSON's `active` block is keyed by domain key, so we filter by that. Fallback:
+// if nothing classifies active (e.g. an empty roster), keep the full authored
+// set so the hero never renders a blank rotating line — the fixed <h1> below it
+// is the real, stable page title regardless.
+function heroQuestionsForLocale(locale: string, domainStates: Record<string, DomainState>): string[] {
+  const authored = heroQuestions.active as Record<string, HeroQuestionSet>;
+  const pick = (entries: [string, HeroQuestionSet][]) =>
+    entries.flatMap(([, set]) => (locale === "en" ? set.en : set.bg));
+  const active = pick(Object.entries(authored).filter(([domainKey]) => domainStates[domainKey] === "active"));
+  return active.length > 0 ? active : pick(Object.entries(authored));
 }
 
 // Each question marks its one accent word with *asterisks* — split it out so only
@@ -56,7 +66,7 @@ export function BrandTwoHome({
 }) {
   const t = useTranslations("HomePage");
   const locale = useLocale();
-  const questions = useMemo(() => heroQuestionsForLocale(locale), [locale]);
+  const questions = useMemo(() => heroQuestionsForLocale(locale, domainStates), [locale, domainStates]);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
