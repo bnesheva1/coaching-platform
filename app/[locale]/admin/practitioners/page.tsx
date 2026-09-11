@@ -17,7 +17,7 @@ type Row = {
   id: string;
   username: string | null;
   display_name: string | null;
-  moderation_status: "active" | "hidden" | "bookings_frozen" | "suspended";
+  moderation_status: "pending" | "active" | "changes_requested" | "hidden" | "bookings_frozen" | "suspended";
   payouts_frozen: boolean;
   is_bookable: boolean;
   connect_transfers_active: boolean | null;
@@ -41,7 +41,7 @@ type Row = {
 export default async function AdminPractitionersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   await requireAdmin();
   const t = await getTranslations("Admin");
@@ -49,11 +49,40 @@ export default async function AdminPractitionersPage({
   const locale = await getLocale();
   const numberFmt = new Intl.NumberFormat(INTL_LOCALES[locale] ?? "en-US");
   const dateFmt = new Intl.DateTimeFormat(INTL_LOCALES[locale] ?? "en-US", { day: "numeric", month: "short", year: "numeric" });
-  const q = (await searchParams).q?.trim() ?? "";
+  const params = await searchParams;
+  const q = params.q?.trim() ?? "";
+  const STATUS_FILTERS = ["pending", "changes_requested", "active", "hidden", "bookings_frozen", "suspended"] as const;
+  const status = (STATUS_FILTERS as readonly string[]).includes(params.status ?? "") ? params.status! : "";
 
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase.rpc("admin_list_practitioners", { search: q || null });
-  const rows = (data ?? []) as Row[];
+  const allRows = (data ?? []) as Row[];
+  // Per-status counts across the full (search-scoped) set — drives the tab
+  // counts so an admin sees at a glance how many are awaiting review / mid-revision.
+  const countByStatus = new Map<string, number>();
+  for (const r of allRows) countByStatus.set(r.moderation_status, (countByStatus.get(r.moderation_status) ?? 0) + 1);
+  const rows = status ? allRows.filter((r) => r.moderation_status === status) : allRows;
+
+  // A filter tab's href — preserves the current search query.
+  const tabHref = (s: string) => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (s) sp.set("status", s);
+    const qs = sp.toString();
+    return `/admin/practitioners${qs ? `?${qs}` : ""}`;
+  };
+
+  // admin_list_practitioners doesn't carry the review reason; fetch it just for
+  // the changes_requested rows so the note can be previewed inline. Display-only
+  // — the review-gate flow itself is untouched.
+  const changesIds = rows.filter((r) => r.moderation_status === "changes_requested").map((r) => r.id);
+  const reasonById = new Map<string, string>();
+  if (changesIds.length) {
+    const { data: reasons } = await supabase.from("practitioner_profiles").select("id, moderation_reason").in("id", changesIds);
+    for (const row of reasons ?? []) {
+      if (row.moderation_reason) reasonById.set(row.id as string, row.moderation_reason as string);
+    }
+  }
 
   function connectLabel(r: Row): { text: string; warn: boolean } {
     if (r.billing_model !== "commission") return { text: t("practConnectNA"), warn: false };
@@ -83,7 +112,7 @@ export default async function AdminPractitionersPage({
           </Link>
         </div>
 
-        <form method="get" style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-6)" }}>
+        <form method="get" style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
           <input
             type="search"
             name="q"
@@ -92,10 +121,39 @@ export default async function AdminPractitionersPage({
             className="form-field"
             style={{ flex: 1, maxWidth: 360 }}
           />
+          {/* Keep the active status filter when searching. */}
+          {status && <input type="hidden" name="status" value={status} />}
           <Button type="submit" variant="secondary" size="sm">
             {t("practSearch")}
           </Button>
         </form>
+
+        {/* Status filter tabs, with per-status counts (across the search-scoped set). */}
+        <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", marginBottom: "var(--space-6)" }}>
+          {["", ...STATUS_FILTERS].map((s) => {
+            const activeTab = s === status;
+            const label = s === "" ? t("filterAll") : t(`modStatus_${s}` as Parameters<typeof t>[0]);
+            const count = s === "" ? allRows.length : countByStatus.get(s) ?? 0;
+            return (
+              <Link
+                key={s || "all"}
+                href={tabHref(s)}
+                style={{
+                  font: "var(--text-body-sm)",
+                  textDecoration: "none",
+                  padding: "var(--space-1) var(--space-3)",
+                  borderRadius: "var(--radius-pill)",
+                  border: `1px solid ${activeTab ? "var(--accent)" : "var(--border-default)"}`,
+                  background: activeTab ? "var(--accent-subtle)" : "transparent",
+                  color: activeTab ? "var(--accent-subtle-text)" : "var(--text-secondary)",
+                  fontWeight: activeTab ? 600 : 400,
+                }}
+              >
+                {label} ({numberFmt.format(count)})
+              </Link>
+            );
+          })}
+        </div>
 
         {error ? (
           <p style={{ font: "var(--text-body-md)", color: "var(--color-danger)" }}>{t("practLoadError")}</p>
@@ -116,6 +174,21 @@ export default async function AdminPractitionersPage({
                         <Link href={`/p/${r.username}`} style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
                           @{r.username}
                         </Link>
+                      )}
+                      {/* Awaiting review → jump straight to the review queue. */}
+                      {r.moderation_status === "pending" && (
+                        <Link href="/admin/review" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+                          {t("reviewLink")} →
+                        </Link>
+                      )}
+                      {/* Changes requested → preview the reason (truncated; full text on hover). */}
+                      {r.moderation_status === "changes_requested" && reasonById.get(r.id) && (
+                        <span
+                          title={reasonById.get(r.id)}
+                          style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)", maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                        >
+                          <strong>{t("modReasonLabel")}</strong> {reasonById.get(r.id)}
+                        </span>
                       )}
                     </div>
                     <span style={{ font: "var(--text-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: r.is_bookable ? "var(--color-success)" : "var(--text-tertiary)" }}>
