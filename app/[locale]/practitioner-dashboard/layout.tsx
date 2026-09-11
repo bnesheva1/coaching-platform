@@ -76,10 +76,11 @@ export default async function PractitionerDashboardLayout({ children }: { childr
   // Moderation state for the practitioner-facing notice (owner-scoped RPC).
   const { data: moderation } = await supabase.rpc("get_my_moderation_status").single();
   const mod = moderation as {
-    moderation_status: "active" | "hidden" | "bookings_frozen" | "suspended";
+    moderation_status: "pending" | "active" | "changes_requested" | "hidden" | "bookings_frozen" | "suspended";
     moderation_reason: string | null;
     payouts_frozen: boolean;
     payouts_reason: string | null;
+    review_submitted_at: string | null;
   } | null;
 
   // Subscription state for the grace/lapsed banner — only when the feature is
@@ -100,6 +101,7 @@ export default async function PractitionerDashboardLayout({ children }: { childr
         <ModerationNotice
           moderationStatus={mod.moderation_status}
           moderationReason={mod.moderation_reason}
+          reviewSubmittedAt={mod.review_submitted_at}
           payoutsFrozen={mod.payouts_frozen}
           payoutsReason={mod.payouts_reason}
         />

@@ -33,6 +33,13 @@ export function deletedUserLabel(locale: Locale): string {
   return createTranslator({ locale, messages: MESSAGES[locale], namespace: "DeletedUser" })("label");
 }
 
+// The brand name for {siteName} interpolation in an email subject/body — the
+// same Brand.siteName footerText already resolves, so emails stay consistent
+// with no request context needed.
+export function brandSiteName(locale: Locale): string {
+  return createTranslator({ locale, messages: MESSAGES[locale], namespace: "Brand" })("siteName");
+}
+
 // Resolve a counterparty display name for an email: the localized placeholder
 // when the name is missing/blank or the stored anonymise marker, else the name.
 export function counterpartyNameOrDeleted(name: string | null | undefined, locale: Locale): string {
