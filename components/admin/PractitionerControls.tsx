@@ -11,7 +11,7 @@ const fmtPct = (rate: number) => `${+(rate * 100).toFixed(4)}`;
 // Cents → a clean euro string ("15", "12.5").
 const fmtEur = (cents: number) => `${+(cents / 100).toFixed(2)}`;
 
-type ModStatus = "active" | "hidden" | "bookings_frozen" | "suspended";
+type ModStatus = "pending" | "active" | "changes_requested" | "hidden" | "bookings_frozen" | "suspended";
 type SubStatus = "not_required" | "active" | "grace" | "lapsed" | "exempt";
 
 const SUB_STATUS_COLOR: Record<SubStatus, string> = {
@@ -24,6 +24,10 @@ const SUB_STATUS_COLOR: Record<SubStatus, string> = {
 const MOD_TARGETS: ModStatus[] = ["hidden", "bookings_frozen", "suspended", "active"];
 
 const STATUS_COLOR: Record<ModStatus, string> = {
+  // Review-gate states (pre-approval): awaiting review reads as an actionable
+  // accent, changes-requested as an amber "needs work".
+  pending: "var(--accent)",
+  changes_requested: "var(--color-warning)",
   active: "var(--text-secondary)",
   hidden: "var(--color-warning)",
   bookings_frozen: "var(--color-warning)",
