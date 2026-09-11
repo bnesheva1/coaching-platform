@@ -172,6 +172,9 @@ export default async function AdminPage({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-4)", flexWrap: "wrap", margin: "0 0 var(--space-6)" }}>
           <h1 style={{ font: "var(--text-heading-lg)", margin: 0 }}>{t("heading")}</h1>
           <div style={{ display: "flex", gap: "var(--space-4)" }}>
+            <Link href="/admin/review" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+              {t("reviewLink")} →
+            </Link>
             <Link href="/admin/practitioners" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
               {t("practLink")} →
             </Link>

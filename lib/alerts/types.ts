@@ -9,7 +9,8 @@ export type AlertType =
   | "session_failed"
   | "unresolved_outcome"
   | "video_cost"
-  | "storage_low";
+  | "storage_low"
+  | "practitioner_review_pending";
 
 // What a call site hands to an adapter — what happened and how urgent, never
 // how it's delivered.
@@ -72,5 +73,11 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
   storage_low: {
     severity: "warning",
     description: "Total Supabase storage (shared 1GB free tier, incl. session documents) crossed the usage warning threshold.",
+  },
+  practitioner_review_pending: {
+    // Raised immediate so it pushes to Telegram — review shouldn't wait on
+    // someone happening to open the admin review queue.
+    severity: "critical",
+    description: "A practitioner submitted their profile for review and is waiting in the admin review queue.",
   },
 };

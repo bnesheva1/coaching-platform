@@ -7,7 +7,7 @@ import { TaxonomySuggestionEmail } from "./templates/TaxonomySuggestionEmail";
 import { PasswordResetEmail } from "./templates/PasswordResetEmail";
 import { EmailConfirmationEmail } from "./templates/EmailConfirmationEmail";
 import { BulkCancellationSummaryEmail } from "./templates/BulkCancellationSummaryEmail";
-import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, counterpartyNameOrDeleted, type Locale } from "./shared";
+import { provider, translator, footerText, normalizeLocale, formatSessionTime, formatMoney, counterpartyNameOrDeleted, brandSiteName, type Locale } from "./shared";
 import { raiseAlert } from "@/lib/alerts";
 import type { SendEmailResult } from "./types";
 
@@ -599,6 +599,69 @@ export async function sendPaymentRefundedNotice({
   });
   if (!result.success) {
     console.error("sendPaymentRefundedNotice: email failed", { clientId, recipient: client.email, error: result.error });
+  }
+}
+
+// Practitioner review-gate notices. Both read a single profile (email/name/
+// locale) via get_profile_contact and reuse CancellationNoticeEmail's shape
+// (heading/body[/note]) — the same "here's what happened with something you're
+// waiting on" family. Sent to the practitioner in THEIR stored locale.
+type ProfileContactRow = { email: string | null; display_name: string | null; locale: string };
+
+async function fetchProfileContact(practitionerId: string, label: string): Promise<ProfileContactRow | null> {
+  const supabase = createServiceRoleClient();
+  const { data, error } = await supabase.rpc("get_profile_contact", { target_profile_id: practitionerId }).single();
+  const contact = data as ProfileContactRow | null;
+  if (error || !contact) {
+    console.error(`${label}: get_profile_contact failed`, { practitionerId, error });
+    return null;
+  }
+  if (!contact.email) {
+    console.error(`${label}: practitioner email is null, skipping`, { practitionerId });
+    return null;
+  }
+  return contact;
+}
+
+// Approved → live. Sent when an admin approves a pending profile.
+export async function sendProfileApprovedEmail(practitionerId: string): Promise<void> {
+  const contact = await fetchProfileContact(practitionerId, "sendProfileApprovedEmail");
+  if (!contact) return;
+  const locale = normalizeLocale(contact.locale);
+  const t = translator(locale);
+  const result = await provider.send({
+    to: contact.email!,
+    subject: t("profileApprovedSubject", { siteName: brandSiteName(locale) }),
+    react: CancellationNoticeEmail({
+      heading: t("profileApprovedHeading"),
+      body: t("profileApprovedBody"),
+      footer: footerText(locale),
+    }),
+  });
+  if (!result.success) {
+    console.error("sendProfileApprovedEmail: email failed", { practitionerId, recipient: contact.email, error: result.error });
+  }
+}
+
+// Changes requested → sent back with the admin's reason (shown as the note).
+export async function sendProfileChangesRequestedEmail(practitionerId: string, reason: string): Promise<void> {
+  const contact = await fetchProfileContact(practitionerId, "sendProfileChangesRequestedEmail");
+  if (!contact) return;
+  const locale = normalizeLocale(contact.locale);
+  const t = translator(locale);
+  const result = await provider.send({
+    to: contact.email!,
+    subject: t("profileChangesSubject"),
+    react: CancellationNoticeEmail({
+      heading: t("profileChangesHeading"),
+      body: t("profileChangesBody"),
+      footer: footerText(locale),
+      noteLabel: t("profileChangesReasonLabel"),
+      note: reason,
+    }),
+  });
+  if (!result.success) {
+    console.error("sendProfileChangesRequestedEmail: email failed", { practitionerId, recipient: contact.email, error: result.error });
   }
 }
 
