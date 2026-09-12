@@ -251,10 +251,11 @@ async function refundUnconfirmablePayment(
   const feeCents = commission.cents;
 
   try {
+    // Separate charges & transfers: this charge never transferred (no booking
+    // was created, so the payout sweep never touched it) and carries no
+    // application fee — a plain charge refund is all that's needed.
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
-      reverse_transfer: true,
-      refund_application_fee: feeCents > 0,
     });
 
     const { error } = await supabase.from("payments").insert({
@@ -307,10 +308,11 @@ async function refundLateImmediatePayment(
   const feeCents = commission.cents;
 
   try {
+    // Separate charges & transfers: this charge never transferred (no booking
+    // was created, so the payout sweep never touched it) and carries no
+    // application fee — a plain charge refund is all that's needed.
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
-      reverse_transfer: true,
-      refund_application_fee: feeCents > 0,
     });
 
     const { error } = await supabase.from("payments").insert({

@@ -76,19 +76,19 @@ export async function createBookingCheckoutSession(
         quantity: 1,
       },
     ],
-    payment_intent_data: {
-      // Omit application_fee_amount entirely at a zero rate rather than passing
-      // 0 — Stripe has historically rejected an explicit 0, and omission is the
-      // idiomatic zero-fee destination charge (the full amount transfers to the
-      // connected account, the platform keeps nothing).
-      ...(commissionCents > 0 ? { application_fee_amount: commissionCents } : {}),
-      transfer_data: { destination: connectedAccountId },
-    },
+    // Separate charges & transfers: NO transfer_data here — the full amount
+    // settles to the platform balance, and the practitioner's share is
+    // transferred later by the payout-release sweep (lib/payments/stripe/
+    // transfer.ts), after the hold window past session end. The commission is
+    // simply never transferred (no application-fee object needed).
     metadata: {
       practitioner_id: request.practitionerId,
       client_id: request.clientId,
       service_id: request.serviceId,
       start_utc: request.startUtc,
+      // Recorded for audit/debugging; the sweep re-reads the live connected
+      // account from practitioner_profiles at release time.
+      connected_account_id: connectedAccountId,
       // Snapshot carriers: the resolved rate and the exact fee charged, so
       // the webhook records what was actually applied rather than
       // recomputing from a rate that may have changed since.
@@ -142,16 +142,13 @@ export async function createImmediateCheckoutSession(
         quantity: 1,
       },
     ],
-    payment_intent_data: {
-      // Same zero-fee handling as the scheduled path — omit rather than pass 0.
-      ...(commissionCents > 0 ? { application_fee_amount: commissionCents } : {}),
-      transfer_data: { destination: connectedAccountId },
-    },
+    // Separate charges & transfers: no transfer_data (see the scheduled path).
     metadata: {
       immediate_request_id: input.immediateRequestId,
       practitioner_id: input.practitionerId,
       client_id: input.clientId,
       service_id: input.serviceId,
+      connected_account_id: connectedAccountId,
       // Same snapshot carriers as the scheduled path — the immediate
       // finalize (in the webhook) reads these to record the payments row.
       commission_rate: String(effectiveRate),

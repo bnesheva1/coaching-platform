@@ -13,7 +13,7 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
 
   const { data: payment } = await supabase
     .from("payments")
-    .select("id, status, provider_ref, commission_cents")
+    .select("id, status, provider_ref, commission_cents, transfer_status, stripe_transfer_id")
     .eq("booking_id", bookingId)
     .eq("status", "succeeded")
     .maybeSingle();
@@ -32,20 +32,33 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
     return { refunded: false, reason: "missing_payment_intent" };
   }
 
-  // Only reverse an application fee if one was actually charged — at a zero
-  // commission rate the charge carries no application fee, so there's nothing to
-  // reverse (this is the source of truth: what THIS payment recorded, not the
-  // current rate, which could differ from when the charge was created).
-  const hadApplicationFee = ((payment.commission_cents as number | null) ?? 0) > 0;
-
   const stripe = getStripeClient();
+
+  // Separate charges & transfers: the charge carries no destination transfer or
+  // application fee. Normally the practitioner hasn't been paid yet (funds still
+  // in the platform balance), so a refund is just refunding the client's charge.
+  // Only in the rare case the payout ALREADY released (a refund after the hold
+  // window) must we first reverse that transfer to claw the share back.
+  const wasReleased = (payment as { transfer_status?: string }).transfer_status === "released";
+  const transferId = (payment as { stripe_transfer_id?: string | null }).stripe_transfer_id ?? null;
+  if (wasReleased && transferId) {
+    try {
+      await stripe.transfers.createReversal(transferId); // full reversal
+    } catch (err) {
+      await raiseAlert({
+        type: "transfer_failed",
+        subject: bookingId,
+        message: "Refund could not reverse an already-released payout — the practitioner was paid for a session now being refunded.",
+        context: { bookingId, paymentId: payment.id, transferId, error: err instanceof Error ? err.message : String(err) },
+        immediate: true,
+      });
+      throw err; // don't refund the client while the clawback is unresolved — needs manual follow-up
+    }
+  }
+
   let refund;
   try {
-    refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      reverse_transfer: true,
-      refund_application_fee: hadApplicationFee,
-    });
+    refund = await stripe.refunds.create({ payment_intent: paymentIntentId });
   } catch (err) {
     // Stripe rejected the refund — the client is owed money and doesn't have
     // it. Inline raise point (raised at the failure); a warning, so it lands
@@ -70,6 +83,9 @@ export async function refundBookingPayment(bookingId: string): Promise<{ refunde
     .from("payments")
     .update({
       status: "refunded",
+      // reversed if we clawed back a released payout; otherwise no payout will
+      // ever happen for this (refunded) booking.
+      transfer_status: transferId ? "reversed" : "not_applicable",
       provider_ref: { ...(payment.provider_ref as object), refund_id: refund.id },
       updated_at: new Date().toISOString(),
     })
