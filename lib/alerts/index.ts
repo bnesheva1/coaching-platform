@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getAdapters } from "./adapters";
+import { pushAdaptersEnabled } from "./pushGate";
 import { ALERT_TYPES, type Alert, type AlertSeverity, type AlertType } from "./types";
 
 export { ALERT_TYPES } from "./types";
@@ -113,6 +114,9 @@ export async function raiseAlert(input: {
 // Deliver one alert to every configured adapter, in parallel; one adapter
 // failing never blocks the others (or, upstream, the caller).
 export async function pushToAdapters(alert: Alert): Promise<void> {
+  // Single choke point for every outbound push: dev/test/preview record the
+  // alert row (upstream) but never push, so verification runs don't page anyone.
+  if (!pushAdaptersEnabled()) return;
   const adapters = getAdapters();
   await Promise.all(
     adapters.map((a) =>

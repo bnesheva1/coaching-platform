@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import { pushAdaptersEnabled } from "@/lib/alerts/pushGate";
 
 // Telegram admin-activity tripwire. Deliberately separate from the lib/alerts
 // health-alert seam (which dedupes and records to the alerts table) — these are
@@ -16,6 +17,9 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 const SEND_TIMEOUT_MS = 5000;
 
 async function sendTelegram(text: string): Promise<void> {
+  // Production-only push, same gate as the alerts adapters — dev/test/preview
+  // never page the live channel (a first-seen-device tripwire in dev is noise).
+  if (!pushAdaptersEnabled()) return;
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   // Not configured → skip silently (same posture as the alerts telegram adapter).
