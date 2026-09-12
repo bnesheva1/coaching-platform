@@ -10,7 +10,9 @@ export type AlertType =
   | "unresolved_outcome"
   | "video_cost"
   | "storage_low"
-  | "practitioner_review_pending";
+  | "practitioner_review_pending"
+  | "transfer_failed"
+  | "platform_balance_low";
 
 // What a call site hands to an adapter — what happened and how urgent, never
 // how it's delivered.
@@ -79,5 +81,17 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
     // someone happening to open the admin review queue.
     severity: "critical",
     description: "A practitioner submitted their profile for review and is waiting in the admin review queue.",
+  },
+  transfer_failed: {
+    // A practitioner's payout (or a refund's clawback of one) didn't move —
+    // money owed that didn't settle. Same family as failed_refund.
+    severity: "critical",
+    description: "A scheduled payout Transfer to a practitioner's connected account, or its reversal during a refund, failed.",
+  },
+  platform_balance_low: {
+    // Separate charges & transfers means the platform holds funds until release;
+    // if the balance can't cover pending payouts, transfers start failing.
+    severity: "critical",
+    description: "The platform Stripe balance is below the practitioner payouts owed for release.",
   },
 };

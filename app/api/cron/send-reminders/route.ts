@@ -5,6 +5,7 @@ import { reconcilePaidCheckoutSessions } from "@/lib/payments/stripe/reconcile";
 import { reconcileVideoRooms } from "@/lib/video/reconcile";
 import { runAlertSweep } from "@/lib/alerts/sweep";
 import { runSessionDocumentRetention } from "@/lib/documents/retention";
+import { runPayoutReleaseSweep } from "@/lib/payments/stripe/transfer";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 // Vercel's standard cron-protection mechanism: set CRON_SECRET as an
@@ -57,6 +58,11 @@ export async function GET(request: Request) {
   // currently exposed. Best-effort (never throws); a no-op if the tables
   // don't exist yet.
   const documentRetentionResult = await runSessionDocumentRetention();
+  // Payout release: transfer each practitioner's held share once past its
+  // release time (session end + hold window). Standalone function so it (and
+  // reconcileVideoRooms) can move to their own more-frequent cron on Vercel Pro
+  // — a fast-follow, not built here.
+  const payoutResult = await runPayoutReleaseSweep();
 
   const summary = {
     ...reconciliationResult,
@@ -65,6 +71,7 @@ export async function GET(request: Request) {
     ...videoResult,
     ...alertResult,
     ...documentRetentionResult,
+    ...payoutResult,
   };
 
   // Heartbeat: record that this run happened, so the admin health page can tell
