@@ -109,6 +109,8 @@ export type SessionBooking = {
   sessionOutcome?: "both_attended" | "client_no_show" | "practitioner_no_show" | "neither_attended" | "manual_review" | null;
   refundAmountCents?: number | null;
   refundCurrency?: string | null;
+  // Client-only: the client's own refund request for this booking, if any.
+  refundRequest?: { status: "pending" | "approved" | "denied"; denialReason: string | null } | null;
   // "What actually happened", from get_my_client_past_session_details (client
   // past-sessions only). hasVideoSession distinguishes an online session
   // from one that never had a room; roomCreated says whether a room was ever

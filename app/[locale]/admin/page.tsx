@@ -178,6 +178,9 @@ export default async function AdminPage({
             <Link href="/admin/payouts" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
               {t("payoutsLink")} →
             </Link>
+            <Link href="/admin/refunds" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
+              {t("refundsLink")} →
+            </Link>
             <Link href="/admin/practitioners" style={{ font: "var(--text-body-sm)", color: "var(--accent)" }}>
               {t("practLink")} →
             </Link>

@@ -127,6 +127,14 @@ export default async function ClientUpcomingPage({
   };
   const pastMetaByBookingId = new Map((pastMetaRows ?? []).map((row) => [row.booking_id, row]));
 
+  // The client's own refund requests (owner-scoped RLS). Resilient to the table
+  // not existing yet (migration not applied) → empty map, base UI still renders.
+  const refundRequestByBookingId = new Map<string, { status: "pending" | "approved" | "denied"; denialReason: string | null }>();
+  {
+    const { data: rr, error: rrErr } = await supabase.from("refund_requests").select("booking_id, status, denial_reason");
+    if (!rrErr) for (const r of rr ?? []) refundRequestByBookingId.set(r.booking_id as string, { status: r.status as "pending" | "approved" | "denied", denialReason: (r.denial_reason as string | null) ?? null });
+  }
+
   const practitionerNameById = new Map((practitioners ?? []).map((p) => [p.id, p.display_name ?? ""]));
   const practitionerAvatarById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.avatar_url ?? null]));
   const practitionerUsernameById = new Map((practitionerSettings ?? []).map((p) => [p.id, p.username ?? null]));
@@ -157,6 +165,7 @@ export default async function ClientUpcomingPage({
     priceCents: b.price_cents,
     currency: b.currency,
     createdAt: b.created_at,
+    refundRequest: refundRequestByBookingId.get(b.id) ?? null,
     minNoticeHours: minNoticeHoursById.get(b.practitioner_id) ?? 24,
     hasReview: pastMetaByBookingId.get(b.id)?.review_rating != null,
     reviewRating: pastMetaByBookingId.get(b.id)?.review_rating ?? null,
