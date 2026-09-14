@@ -5,10 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, reviewLimiter } from "@/lib/rate-limit";
 import { raiseAlert } from "@/lib/alerts";
-
-// Ratings at or below this (1–5 scale) ping admins as a proactive quality
-// signal. Env-overridable in case the band widens (e.g. to <= 2) later.
-const LOW_RATING_THRESHOLD = Number(process.env.LOW_RATING_THRESHOLD ?? "1") || 1;
+import { isLowRating } from "@/lib/reviews/lowRating";
 
 // Matches the existing bio-length convention (no DB-level length CHECK
 // on free text anywhere in this schema — app-level bound only).
@@ -111,7 +108,7 @@ export async function createReview(
   // Proactive quality signal — a lowest-band rating pings admins (Telegram in
   // prod) regardless of whether a refund was ever requested. Best-effort: an
   // alert hiccup must never fail the review submission.
-  if (rating <= LOW_RATING_THRESHOLD) {
+  if (isLowRating(rating)) {
     try {
       await raiseAlert({
         type: "low_rating",
