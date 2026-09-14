@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, reviewLimiter } from "@/lib/rate-limit";
 import { raiseAlert } from "@/lib/alerts";
-import { isLowRating } from "@/lib/reviews/lowRating";
+import { notifyLowRating } from "@/lib/reviews/lowRating";
 
 // Matches the existing bio-length convention (no DB-level length CHECK
 // on free text anywhere in this schema — app-level bound only).
@@ -108,19 +108,10 @@ export async function createReview(
   // Proactive quality signal — a lowest-band rating pings admins (Telegram in
   // prod) regardless of whether a refund was ever requested. Best-effort: an
   // alert hiccup must never fail the review submission.
-  if (isLowRating(rating)) {
-    try {
-      await raiseAlert({
-        type: "low_rating",
-        severity: "critical",
-        immediate: true,
-        subject: bookingId,
-        message: `Low rating (${rating}★) left on a completed session.`,
-        context: { bookingId, practitionerId: booking.practitioner_id, rating, hasText: !!reviewText },
-      });
-    } catch (err) {
-      console.error("createReview: low_rating alert failed (review still saved)", { bookingId, err });
-    }
+  try {
+    await notifyLowRating({ rating, bookingId, practitionerId: booking.practitioner_id, hasText: !!reviewText }, raiseAlert);
+  } catch (err) {
+    console.error("createReview: low_rating alert failed (review still saved)", { bookingId, err });
   }
 
   revalidatePath("/client-dashboard");
