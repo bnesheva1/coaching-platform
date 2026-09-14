@@ -12,7 +12,8 @@ export type AlertType =
   | "storage_low"
   | "practitioner_review_pending"
   | "transfer_failed"
-  | "platform_balance_low";
+  | "platform_balance_low"
+  | "low_rating";
 
 // What a call site hands to an adapter — what happened and how urgent, never
 // how it's delivered.
@@ -93,5 +94,11 @@ export const ALERT_TYPES: Record<AlertType, { severity: AlertSeverity; descripti
     // if the balance can't cover pending payouts, transfers start failing.
     severity: "critical",
     description: "The platform Stripe balance is below the practitioner payouts owed for release.",
+  },
+  low_rating: {
+    // Proactive quality signal: a client left a lowest-band rating. Pushed so a
+    // quality problem surfaces even when no refund was ever requested.
+    severity: "critical",
+    description: "A client left a low rating (<= threshold) on a completed session.",
   },
 };

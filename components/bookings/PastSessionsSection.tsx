@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { isMissingOrDeleted } from "@/lib/deleted-user";
+import { RefundRequestControl } from "./RefundRequestControl";
 import {
   BookingDetailsDisclosure,
   CANCELLED_STATUSES,
@@ -223,6 +224,12 @@ export function PastSessionsSection({
                         {t("refundedNote", { amount: refundLabel })}
                       </span>
                     </div>
+                  )}
+
+                  {/* Client-initiated refund request (or its status), for a past
+                      session not already refunded. */}
+                  {perspective === "client" && booking.refundAmountCents == null && (
+                    <RefundRequestControl bookingId={booking.id} existing={booking.refundRequest} />
                   )}
 
                   <BookingDetailsDisclosure
