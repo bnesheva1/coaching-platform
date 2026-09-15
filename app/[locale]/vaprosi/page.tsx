@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { isDeliveryTypeEnabled } from "@/lib/delivery";
 import kit from "@/components/brand-two-pages/kit.module.css";
 import { ImageSlot, InkButton, FaqAccordion, type FaqItem } from "@/components/brand-two-pages/kit";
@@ -65,7 +65,7 @@ export default async function FAQPage() {
   // ── Brand two: handoff 1k. Presentation restructure only — the same 7 Q&A,
   // regrouped into two panels; the JSON-LD above (built from qa[] in original
   // order) is untouched. Warm keeps its flat list below. ──────────────────────
-  if (resolveBrand() === "two") {
+  if (layoutBrand() === "two") {
     const answerFor = (n: number) => (n === 7 && !inPersonEnabled ? t("a7Online") : t(`a${n}` as "a1"));
     const group1: FaqItem[] = [
       { Icon: Calendar, question: t("q1"), answer: answerFor(1) },

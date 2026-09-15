@@ -1,0 +1,294 @@
+/* Floating-pill header + mega-menu, brand three only (SiteHeader mounts this
+   component solely for brand three, so no [data-brand] gate is needed here).
+   EVERY colour is derived from the existing design tokens — the frosted fills
+   use color-mix() over --bg-surface / --border-subtle so they inherit whatever
+   palette the tokens carry (including the brand-redesign-v3 pass, once it lands)
+   with nothing hardcoded from the reference site. */
+
+/* Sticky so the pill floats and page/hero content scrolls softly behind its
+   frost. It still occupies flow space (no page needs a top offset) — this is a
+   header-only restyle. Inset from the top + sides via padding + the bar's own
+   max-width/margin. */
+.wrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+/* The pill itself: large rounded corners, frosted translucent fill + blur. */
+/* Full-viewport blur of the page behind, while a mega-menu is open. Sits below
+   the bar/panel (which keep their own z-index) but above page content, so the
+   header + panel stay sharp and float over a softly blurred page. Token-tinted
+   only. Clicking it closes the menu. */
+.blurBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: color-mix(in oklab, var(--bg-page) 22%, transparent);
+}
+
+.bar {
+  position: relative;
+  z-index: 1;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* logo | centered nav | actions */
+  align-items: center;
+  gap: var(--space-4);
+  /* Taller bar (more vertical padding) + 14px corners — this box only; the
+     mega-panel keeps its own larger radius. */
+  padding: var(--space-4) var(--space-3) var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--bg-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 85%, transparent);
+  box-shadow: var(--shadow-lg);
+}
+/* When a menu is open, flatten the bar's bottom corners so it reads as one
+   continuous surface with the panel that drops beneath it. */
+.barMenuOpen {
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.logo {
+  font: var(--text-wordmark);
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.navLink {
+  color: var(--text-primary);
+  text-decoration: none;
+  font: var(--text-nav);
+  white-space: nowrap;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+}
+.navLink:hover {
+  background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+}
+
+/* Dropdown trigger ("Полезно") — a nav link that carries a chevron and, while
+   open, its own subtle pill highlight. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font: var(--text-nav);
+  white-space: nowrap;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+}
+.trigger:hover {
+  background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+}
+.triggerOpen,
+.triggerOpen:hover {
+  background: color-mix(in oklab, var(--text-primary) 10%, transparent);
+}
+.chevron {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  white-space: nowrap;
+}
+.loginLink {
+  color: var(--text-primary);
+  text-decoration: none;
+  font: var(--text-nav);
+  white-space: nowrap;
+}
+.loginLink:hover {
+  text-decoration: underline;
+}
+
+/* Signed-in account menu — same frosted family as the mega panel, right-anchored
+   and content-sized (account-level links only, not content nav). */
+.accountWrap {
+  position: relative;
+}
+.accountPanel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 200px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--bg-surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 85%, transparent);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2);
+  z-index: 51;
+}
+.accountItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  text-decoration: none;
+  font: var(--text-nav);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.accountItem:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+.signoutForm {
+  margin: var(--space-1) 0 0;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Mega-menu panel — same frosted/rounded treatment as the bar, dropped directly
+   below it so the two read as one continuous floating surface. */
+.panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  /* Anchored under the centre zone; left/right auto keeps it from spilling past
+     the pill on long Bulgarian labels. */
+  left: var(--space-5);
+  right: var(--space-5);
+  margin: 0 auto;
+  max-width: 720px;
+  border-radius: var(--radius-2xl);
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--bg-surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--border-subtle) 85%, transparent);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+}
+
+/* Up to three columns; today only the middle (links) column has content, so the
+   grid holds a single track. The left intro/CTA column and right feature card
+   slot in as additional tracks + a divider later, without restructuring. */
+.panelGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+.linksCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.megaLink {
+  display: block;
+  text-decoration: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+.megaLink:hover {
+  background: color-mix(in oklab, var(--text-primary) 6%, transparent);
+}
+.megaLabel {
+  display: block;
+  font: var(--text-body-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.megaDesc {
+  display: block;
+  margin-top: 2px;
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Mobile: the pill collapses to logo + hamburger; a slide-out drawer holds
+   the flat list (mirrors the existing NavBar drawer pattern). ---- */
+.mobileBtn {
+  justify-self: end;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font: var(--text-icon);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: min(300px, 84vw);
+  overflow: hidden;
+  transform: translateX(100%);
+  transition: transform var(--duration-base) var(--ease-standard);
+  background: var(--bg-surface);
+  z-index: 55;
+}
+.drawerOpen {
+  transform: translateX(0);
+  box-shadow: var(--shadow-lg);
+}
+.drawerInner {
+  width: min(300px, 84vw);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-6) var(--space-5);
+  overflow-y: auto;
+}
+.drawerPrimaryLink {
+  font: var(--text-nav);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  padding: var(--space-2) 0;
+}
+.drawerLink {
+  text-decoration: none;
+  padding: var(--space-2) 0;
+}
+.drawerCluster {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-scrim);
+  z-index: 54;
+}

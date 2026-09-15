@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Image as ImageIcon, Search, Calendar, CreditCard, Video, Star, Laptop, Clock, CalendarX } from "lucide-react";
 import { localizedAlternates } from "@/lib/seo";
 import { DOMAIN_PILLS } from "@/lib/homepage-modalities";
-import { resolveBrand } from "@/lib/brand";
+import { layoutBrand } from "@/lib/brand";
 import kit from "@/components/brand-two-pages/kit.module.css";
 import { Eyebrow, InkButton, ImageSlot, CheckChips, StepCards, FaqAccordion, TrustCard, SectionBand, type StepItem, type FaqItem } from "@/components/brand-two-pages/kit";
 
@@ -29,7 +29,7 @@ export async function generateMetadata({
 // for a Client Component boundary anywhere on this page.
 export default async function HowItWorksPage() {
   const t = await getTranslations("HowItWorks");
-  const brand = resolveBrand();
+  const brand = layoutBrand();
 
   // ── Brand two: the design_handoff_brand_two_pages 1j layout. Reuses the
   // existing HowItWorks copy (step titles stripped of their "N. " prefix since

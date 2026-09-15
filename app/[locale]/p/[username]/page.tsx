@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, resolveBrand, layoutBrand } from "@/lib/brand";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getPathname } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -382,7 +382,7 @@ export default async function PublicProfilePage({
             opposite: left-aligned, filling the available width.
             Brand two drops the cap — its wider header/sections layout
             fills the ContentContainer width instead. */}
-        <div style={resolveBrand() === "two" ? undefined : { maxWidth: 900, margin: "0 auto" }}>
+        <div style={layoutBrand() === "two" ? undefined : { maxWidth: 900, margin: "0 auto" }}>
         <PractitionerProfileView
           isOwner={false}
           practitionerId={practitionerProfile.id}

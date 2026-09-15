@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { getTranslations } from "next-intl/server";
 import { localizedAlternates, SITE_URL } from "@/lib/seo";
 import { getPathname } from "@/i18n/navigation";
@@ -60,7 +60,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   // Brand two gets its own hero (handoff 1b); brand one keeps the existing one.
-  const brandTwo = resolveBrand() === "two";
+  const brandTwo = layoutBrand() === "two";
   // Roster-driven visibility for the pills/tiles — computed only for brand two
   // (the only homepage that renders them).
   const [domainStates, modalityStates] = brandTwo

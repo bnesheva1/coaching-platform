@@ -292,6 +292,11 @@
   "Header": {
     "howItWorksLink": "Как работи",
     "becomePractitionerLink": "Стани специалист",
+    "howItWorksDesc": "Целият процес от резервация до сесия, обяснен просто.",
+    "becomePractitionerDesc": "Присъединете се към само да попитам и предлагайте своите услуги.",
+    "aboutDesc": "Кои сме ние и защо създадохме само да попитам.",
+    "faqDesc": "Отговори на най-често задаваните въпроси.",
+    "contactDesc": "Свържете се директно с нашия екип.",
     "browseLinkPractitioner": "Виж другите практици",
     "specialistsLink": "Специалисти",
     "myMeetingsLink": "Моите срещи",

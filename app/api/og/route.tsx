@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { resolveBrand, brandLocales } from "@/lib/brand-config";
+import { layoutBrand, brandLocales } from "@/lib/brand-config";
 import bgMessages from "@/messages/bg.json";
 import enMessages from "@/messages/en.json";
 
@@ -14,7 +14,7 @@ import enMessages from "@/messages/en.json";
 const ALL_MESSAGES = { bg: bgMessages, en: enMessages } as const;
 
 function resolveSiteName(): string {
-  const brand = resolveBrand();
+  const brand = layoutBrand();
   const locale = (brandLocales()[0] ?? "bg") as keyof typeof ALL_MESSAGES;
   const brandMessages = (ALL_MESSAGES[locale] ?? ALL_MESSAGES.bg).Brand;
   return brand === "two" ? brandMessages.siteNameTwo : brandMessages.siteName;

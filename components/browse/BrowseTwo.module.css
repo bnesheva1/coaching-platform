@@ -35,6 +35,11 @@
   background: var(--accent);
   color: var(--text-on-accent);
 }
+/* Brand three: pill (semicircle-ended) search bar — field + button. */
+:global([data-brand="three"]) .search,
+:global([data-brand="three"]) .searchButton {
+  border-radius: var(--radius-pill);
+}
 
 /* Mobile: stack the field + button vertically (same 12px gap). flex:none on the
    field stops it growing tall in the column; align-items:stretch (default) makes

@@ -291,3 +291,14 @@ dialog:modal {
     animation: none;
   }
 }
+
+/* Brand three: every h1/h2 renders in the serif display font (Vollkorn). The
+   brand-two components (which brand three reuses) hardcode var(--font-ui) on
+   headings — brand two is a single Ubuntu family — often via a `font:` shorthand
+   or a [data-brand="two"]-scoped rule, so forcing the family on the h1/h2
+   ELEMENTS with !important is the reliable way to serif every heading regardless
+   of how it's styled. Only the family is overridden; size/weight are preserved.
+   Scoped to brand three — brand two and warm are untouched. */
+:root[data-brand="three"] :is(h1, h2) {
+  font-family: var(--font-display) !important;
+}

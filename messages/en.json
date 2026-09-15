@@ -292,6 +292,11 @@
   "Header": {
     "howItWorksLink": "How it works",
     "becomePractitionerLink": "Become a practitioner",
+    "howItWorksDesc": "The whole journey from booking to session, explained simply.",
+    "becomePractitionerDesc": "Join само да попитам and offer your own services.",
+    "aboutDesc": "Who we are and why we built само да попитам.",
+    "faqDesc": "Answers to the most frequently asked questions.",
+    "contactDesc": "Get in touch with our team directly.",
     "browseLinkPractitioner": "Browse other practitioners",
     "specialistsLink": "Specialists",
     "myMeetingsLink": "My meetings",

@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
-import { resolveBrand } from "./brand-config";
+import { layoutBrand } from "./brand-config";
 
 // Brand palette/locale config lives in lib/brand-config.ts (framework-free, so
 // the edge middleware + next.config can import it). Re-exported here so existing
 // importers of resolveBrand/Brand from "@/lib/brand" keep working.
-export { BRANDS, resolveBrand, brandLocales, BRAND_LOCALES, type Brand, type Locale } from "./brand-config";
+export { BRANDS, resolveBrand, layoutBrand, brandLocales, BRAND_LOCALES, type Brand, type Locale } from "./brand-config";
 
 // The platform's display name — the single dedicated source (Brand.siteName).
 // Consumers (metadata titles, the nav wordmark, structured data) ask "what is
@@ -16,6 +16,8 @@ export async function getSiteName(locale?: string): Promise<string> {
     ? await getTranslations({ locale, namespace: "Brand" })
     : await getTranslations("Brand");
   // Brand two carries its own product name ("само да попитам"); it flows through
-  // to the header wordmark, footer, and metadata titles the same way.
-  return resolveBrand() === "two" ? t("siteNameTwo") : t("siteName");
+  // to the header wordmark, footer, and metadata titles the same way. Brand
+  // three re-skins brand two and inherits that same name (layoutBrand maps it
+  // to "two").
+  return layoutBrand() === "two" ? t("siteNameTwo") : t("siteName");
 }

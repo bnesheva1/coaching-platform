@@ -95,6 +95,31 @@
   --overlay-scrim: oklch(5% 0.006 var(--hue-neutral) / .6);
 }
 
+/* ── Brand: three (brand two's notebook LAYOUT, warm/v1 PALETTE) ──────────────
+   Brand three mostly INHERITS the warm palette rather than redefining it: warm
+   IS the default (the bare `:root` block above sets warm light, and the shared
+   [data-theme="dark"] block sets warm dark), so with data-brand="three" every
+   token — including the soft warm --shadow-color (220 10% 10%, brought back on
+   purpose, vs brand two's near-shadowless 0 0% 4%) and --accent-glow — falls
+   through to those warm defaults. It differs from warm in layout (layoutBrand()
+   in the components), fonts (Vollkorn/Roboto in the layout), and the small set
+   of token overrides below. It must NOT alias --font-display to --font-ui the
+   way brand two does — it has a distinct display family (Vollkorn). If a future
+   change scopes the warm defaults to `:root[data-brand="warm"]` only, add a full
+   [data-brand="three"] block mirroring warm.
+
+   The override below is LIGHT-theme only (:not([data-theme="dark"])) so dark
+   mode still falls through to the shared warm-dark block untouched — otherwise
+   the higher-specificity [data-brand="three"] selector would wrongly apply this
+   light-theme black in dark mode too (invisible dark text on a dark bg). */
+:root[data-brand="three"]:not([data-theme="dark"]) {
+  /* "The black": the primary ink used for text, hairline borders, and the dark
+     button/section fills across brand two's components — plus the inverse-surface
+     black — set to a single cool near-black. */
+  --text-primary: #0e0c21;
+  --bg-inverse: #0e0c21;
+}
+
 /* ── Brand: two (high-contrast black-and-white / notebook; deep-teal accent) ──
    Hex-literal palette straight from design/design_handoff_brand_two (light is
    primary; the dark block overrides under [data-theme="dark"]). Every color

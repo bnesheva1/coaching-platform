@@ -3,7 +3,7 @@ import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { resolveBrand } from "@/lib/brand";
+import { layoutBrand } from "@/lib/brand";
 import { ClientDashboardSidebar } from "./ClientDashboardSidebar";
 
 // Auth + role guard, mirroring practitioner-dashboard/layout.tsx —
@@ -49,7 +49,7 @@ export default async function ClientDashboardLayout({ children }: { children: Re
   }
 
   return (
-    <DashboardShell sidebar={<ClientDashboardSidebar />} isBrandTwo={resolveBrand() === "two"}>
+    <DashboardShell sidebar={<ClientDashboardSidebar />} isBrandTwo={layoutBrand() === "two"}>
       {children}
     </DashboardShell>
   );
