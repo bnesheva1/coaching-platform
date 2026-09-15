@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { StarRating } from "@/components/ui/StarRating";
+import { ReviewReplyEditor } from "@/components/practitioner-profile/ReviewReplyEditor";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -32,7 +33,7 @@ export default async function ReviewsPage() {
     supabase.from("practitioner_profiles").select("username").eq("id", userId).single(),
     supabase
       .from("reviews")
-      .select("id, rating, review_text, created_at")
+      .select("id, rating, review_text, created_at, reply_text")
       .eq("practitioner_id", userId)
       .order("created_at", { ascending: false }),
   ]);
@@ -82,6 +83,7 @@ export default async function ReviewsPage() {
                     {t("verifiedUser")}
                   </p>
                   {review.review_text && <p style={{ margin: "var(--space-2) 0 0" }}>{review.review_text}</p>}
+                  <ReviewReplyEditor reviewId={review.id} reply={review.reply_text ?? null} />
                 </li>
               ))}
             </ul>

@@ -179,7 +179,7 @@ export default async function PublicProfilePage({
       // practitioner alike, never any identifying detail.
       supabase
         .from("reviews")
-        .select("id, rating, review_text, created_at")
+        .select("id, rating, review_text, created_at, reply_text")
         .eq("practitioner_id", practitionerProfile.id)
         .order("created_at", { ascending: false }),
       // Boolean-only, single source of truth shared with Browse/search
@@ -413,6 +413,7 @@ export default async function PublicProfilePage({
             rating: r.rating,
             reviewText: r.review_text,
             createdAt: r.created_at,
+            replyText: r.reply_text ?? null,
           }))}
           averageRating={averageRating}
           slotsByServiceId={slotsByServiceId}
