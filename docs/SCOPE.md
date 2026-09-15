@@ -136,17 +136,16 @@ Status values: `shipped` · `in_progress` · `queued` · `deferred`
 - Summary: Investigate and safely (dry-run first) clean up test accounts; add a
   "DELETED USER" fallback label for orphaned historical records.
 - Reconciled 2026-09-15: `scripts/cleanup-test-accounts.mjs` + `lib/deleted-user.ts` (wired
-  into Avatar, bookings lists, browse/profile cards). Was `queued`. Verify the search-sync
-  cascade-delete guard migration `20260910120000` is applied on prod before relying on
-  hard-deletes.
+  into Avatar, bookings lists, browse/profile cards). Was `queued`. The search-sync
+  cascade-delete guard migration `20260910120000` is confirmed applied on prod (2026-09-15).
 
 ### Bulgarian-slug routing migration
 - Status: `shipped`
 - Requested by: Bo
 - Summary: Migrate key routes to Bulgarian slugs: `/kak-raboti`, `/vaprosi`,
-  `/stanete-specialist`, `/kontakti`.
-- Reconciled 2026-09-15: routes exist with 308 redirects. Actual "become a specialist" slug
-  shipped as `/stani-specialist` (not `/stanete-specialist` as written above). Was `queued`.
+  `/stani-specialist`, `/kontakti`.
+- Reconciled 2026-09-15: routes exist with 308 redirects. Was `queued`. (Slug corrected from
+  `/stanete-specialist` to the shipped `/stani-specialist`.)
 
 ### Practitioner profile review gate
 - Status: `shipped`
