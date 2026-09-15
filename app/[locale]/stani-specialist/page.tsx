@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Button } from "@/components/ui/Button";
@@ -45,7 +45,7 @@ export default async function BecomePractitionerPage() {
   // ── Brand two: handoff 1i. Distinct copy under BecomePractitioner.two;
   // reuses trustNote (quote), closingQuestion/closingBody + approvalNote (the
   // two trust blocks) and ctaButton. Warm layout kept below. ──────────────────
-  if (resolveBrand() === "two") {
+  if (layoutBrand() === "two") {
     const benefitCards: FeatureItem[] = [
       { Icon: Contact, title: t("two.b1Title"), body: t("two.b1Body") },
       { Icon: CalendarCheck, title: t("two.b2Title"), body: t("two.b2Body") },

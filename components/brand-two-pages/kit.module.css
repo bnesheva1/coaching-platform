@@ -19,7 +19,7 @@
 }
 
 .h1 {
-  font-family: var(--font-ui);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(2.5rem, 5vw, 3.25rem);
   line-height: 1.06;
@@ -28,7 +28,7 @@
   margin: 0 0 var(--space-5);
 }
 .h2 {
-  font-family: var(--font-ui);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(1.75rem, 3vw, 2rem);
   line-height: 1.15;
@@ -83,6 +83,10 @@
 }
 .inkBtn:hover {
   opacity: 0.88;
+}
+/* Brand three: pill (semicircle-ended) primary button. */
+:global([data-brand="three"]) .inkBtn {
+  border-radius: var(--radius-pill);
 }
 .inkBtn svg {
   color: var(--bg-surface);

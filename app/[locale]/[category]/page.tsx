@@ -9,7 +9,7 @@ import { PractitionerCard, type PractitionerCardData } from "@/components/browse
 import { BrowseCardTwo, type BrowseCardTwoData } from "@/components/browse/BrowseCardTwo";
 import { landingEntryBySlug, type LandingEntry } from "@/lib/taxonomy";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { searchPractitioners, type PractitionerSearchResult } from "@/lib/practitioners/search";
 import { getSpecialtyState } from "@/lib/specialties/availability";
 import specialtiesData from "@/data/specialties.json";
@@ -159,7 +159,7 @@ export default async function CategoryLandingPage({ params }: { params: Promise<
   // ── Brand two: handoff 1m — the specialty landing template. One brand-branch
   // here dresses EVERY taxonomy page (psiholog + future taro/astrolog/…) in the
   // brand-two design. Warm keeps the original layout below. ───────────────────
-  if (resolveBrand() === "two") {
+  if (layoutBrand() === "two") {
     // Eyebrow = the specialty's active DOMAIN label (e.g. "Психология"), falling
     // back to the specialty's own label.
     const domain = (domainsData as { key: string; bg: string; en: string; active: boolean; specialties: string[] }[]).find(

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getSiteName, resolveBrand, type Brand } from "@/lib/brand";
-import { PT_Serif, Manrope, JetBrains_Mono, Ubuntu, Ubuntu_Mono } from "next/font/google";
+import { getSiteName, resolveBrand, layoutBrand, type Brand } from "@/lib/brand";
+import { PT_Serif, Manrope, JetBrains_Mono, Ubuntu, Ubuntu_Mono, Vollkorn, Roboto, Roboto_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -56,6 +56,34 @@ const fontTwoMono = Ubuntu_Mono({
   weight: ["400", "700"],
 });
 
+// Brand three: Vollkorn drives the DISPLAY font (headings — a warm humanist
+// serif), Roboto the UI/body font — two distinct families (unlike brand two's
+// single Ubuntu), so brand three does NOT alias --font-display in colors.css.
+// Cyrillic is explicit on both (Bulgarian-first). Display weights in use are
+// 400/700; body weights 400/500/600/700 with 400 italic (placeholders) — matched
+// to the type scale in typography.css, nothing speculative.
+const fontThreeDisplay = Vollkorn({
+  variable: "--font-display",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "700"],
+});
+
+const fontThreeBody = Roboto({
+  variable: "--font-ui",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+});
+
+// Roboto Mono pairs with Roboto for the numeric/meta data brand two's layout
+// surfaces (latin digits only, like Ubuntu Mono above). Weights match the warm
+// mono usage (400/500).
+const fontThreeMono = Roboto_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
 // Fonts are brand-selectable, the same way colors are — a brand carries as much
 // identity in its type as its palette. Each brand maps to the next/font
 // instances whose CSS variables (--font-display/ui/mono) typography.css reads;
@@ -69,6 +97,9 @@ const BRAND_FONTS: Record<Brand, { display: string; ui: string; mono: string }> 
   // --font-ui in colors.css, so applying the Ubuntu class (which sets --font-ui)
   // is enough. Ubuntu Mono sets --font-mono.
   two: { display: fontTwoBody.variable, ui: fontTwoBody.variable, mono: fontTwoMono.variable },
+  // Brand three: distinct display (Vollkorn) + ui (Roboto) families, so both
+  // variable classes are applied (no alias). Roboto Mono for --font-mono.
+  three: { display: fontThreeDisplay.variable, ui: fontThreeBody.variable, mono: fontThreeMono.variable },
 };
 
 // metadataBase — needed for every page's relative/absolute URL resolution
@@ -149,6 +180,11 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       data-brand={brand}
+      // Palette keys on data-brand (three inherits warm); LAYOUT keys on
+      // data-layout, which maps three → two (layoutBrand). CSS-module rules that
+      // style brand two's structure use [data-layout="two"] so brand three gets
+      // them too, without pulling in brand two's palette.
+      data-layout={layoutBrand()}
       className={`${fonts.display} ${fonts.ui} ${fonts.mono} h-full antialiased`}
       // The theme is decided client-side, before paint, by next-themes'
       // own blocking script (see ThemeProvider) — the server can't know

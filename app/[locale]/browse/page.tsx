@@ -11,7 +11,7 @@ import specialtiesData from "@/data/specialties.json";
 import topicsData from "@/data/topics.json";
 import { getSpecialtyStates } from "@/lib/specialties/availability";
 import { enabledDeliveryTypes, type DeliveryType } from "@/lib/delivery";
-import { resolveBrand, getSiteName } from "@/lib/brand";
+import { layoutBrand, getSiteName } from "@/lib/brand";
 
 // specialty_keys is deliberately never sent to the RPC here — modality
 // filtering now happens entirely client-side in BrowseClient (see its
@@ -156,7 +156,7 @@ export default async function BrowsePage({
         key === "online" ? tServices("deliveryTypeOnline") : key === "in_person" ? tServices("deliveryTypeInPerson") : tServices("deliveryTypePhone"),
     }));
 
-  const brand = resolveBrand();
+  const brand = layoutBrand();
 
   return (
     <main

@@ -1,10 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { NavBar, type NavLink } from "@/components/ui/NavBar";
+import { PillNav, type MegaMenuLink } from "./PillNav";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LangToggle } from "./LangToggle";
 import { routing } from "@/i18n/routing";
 import { getViewer } from "@/lib/auth/getViewer";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, resolveBrand, layoutBrand } from "@/lib/brand";
 import { signOut } from "@/app/actions";
 
 // The one header, mounted once in app/[locale]/layout.tsx — every route
@@ -24,7 +25,9 @@ export async function SiteHeader() {
   // попитам" via getSiteName, "Специалисти", "Моите срещи", "Полезно"); brand one
   // keeps its own. The links, order, and role logic are identical either way —
   // only the labels differ.
-  const brand = resolveBrand();
+  // Brand three uses brand two's header (wordmark styling, "Полезно" dropdown);
+  // layoutBrand maps three → two.
+  const brand = layoutBrand();
 
   const browseLink = {
     label:
@@ -42,12 +45,15 @@ export async function SiteHeader() {
   // browseLink/dashboardLink/authLinks below. Reuses Footer's own
   // labels for About/FAQ/Contact rather than duplicating those 3
   // strings under Header too.
-  const infoLinks = [
-    { label: tHeader("howItWorksLink"), href: "/kak-raboti" },
-    { label: tHeader("becomePractitionerLink"), href: "/stani-specialist" },
-    { label: tFooter("aboutLink"), href: "/about" },
-    { label: tFooter("faqLink"), href: "/vaprosi" },
-    { label: tFooter("contactLink"), href: "/kontakti" },
+  // Descriptions (Header namespace) are shown only by the brand-three PillNav
+  // mega-menu + drawer; NavBar (warm/two) ignores the extra field. All five
+  // sit under Header for one lookup, even where the label comes from Footer.
+  const infoLinks: MegaMenuLink[] = [
+    { label: tHeader("howItWorksLink"), href: "/kak-raboti", description: tHeader("howItWorksDesc") },
+    { label: tHeader("becomePractitionerLink"), href: "/stani-specialist", description: tHeader("becomePractitionerDesc") },
+    { label: tFooter("aboutLink"), href: "/about", description: tHeader("aboutDesc") },
+    { label: tFooter("faqLink"), href: "/vaprosi", description: tHeader("faqDesc") },
+    { label: tFooter("contactLink"), href: "/kontakti", description: tHeader("contactDesc") },
   ];
 
   const isLoggedIn = viewer.status !== "logged-out";
@@ -111,21 +117,25 @@ export async function SiteHeader() {
         { label: tHeader("register"), href: "/signup", variant: "primary" as const },
       ];
 
-  return (
-    <NavBar
-      wordmark={siteName}
-      navLabel={tHeader("navPrimaryLabel")}
-      browseLink={browseLink}
-      infoDropdownLabel={infoDropdownLabel}
-      infoLinks={infoLinks}
-      dashboardLink={dashboardLink}
-      greetingText={greetingText}
-      accountLinks={accountLinks}
-      signOut={signOutItem}
-      authLinks={authLinks}
-      langToggle={routing.locales.length > 1 ? <LangToggle /> : null}
-      themeToggle={<ThemeToggle compact switchToLightLabel={tHeader("switchToLight")} switchToDarkLabel={tHeader("switchToDark")} />}
-      mobileMenuLabel={{ open: tHeader("mobileMenuOpen"), close: tHeader("mobileMenuClose") }}
-    />
-  );
+  const headerProps = {
+    wordmark: siteName,
+    navLabel: tHeader("navPrimaryLabel"),
+    browseLink,
+    infoDropdownLabel,
+    infoLinks,
+    dashboardLink,
+    greetingText,
+    accountLinks,
+    signOut: signOutItem,
+    authLinks,
+    langToggle: routing.locales.length > 1 ? <LangToggle /> : null,
+    themeToggle: <ThemeToggle compact switchToLightLabel={tHeader("switchToLight")} switchToDarkLabel={tHeader("switchToDark")} />,
+    mobileMenuLabel: { open: tHeader("mobileMenuOpen"), close: tHeader("mobileMenuClose") },
+  };
+
+  // Brand three gets the floating-pill / mega-menu header; warm and brand two
+  // keep the existing NavBar. Same structured data either way — a presentation
+  // swap, not new navigation. (resolveBrand, not layoutBrand: this is the one
+  // place brand three must differ from brand two, not inherit it.)
+  return resolveBrand() === "three" ? <PillNav {...headerProps} /> : <NavBar {...headerProps} />;
 }

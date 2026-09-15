@@ -19,7 +19,7 @@ import { initialsFromName } from "@/lib/initials";
 import { isAnonymised } from "@/lib/deleted-user";
 import { VideosSection, type ProfileVideo } from "./VideosSection";
 import { BrandTwoHeader } from "./BrandTwoHeader";
-import type { Brand } from "@/lib/brand-config";
+import { layoutBrand, type Brand } from "@/lib/brand-config";
 import { EditableSpecialties } from "./EditableSpecialties";
 import { EditableTopics } from "./EditableTopics";
 import specialtiesData from "@/data/specialties.json";
@@ -198,7 +198,11 @@ export function PractitionerProfileView({
   gallery = [],
   brand = "warm",
 }: PractitionerProfileViewProps) {
-  const isBrandTwo = brand === "two";
+  // Layout follows brand two for both two and three (layoutBrand maps three →
+  // two). The raw `brand` is still used where the two brands must DIFFER — e.g.
+  // the review-card shadow below: brand three brings the warm/v1 soft shadow
+  // back, brand two stays flat.
+  const isBrandTwo = layoutBrand(brand) === "two";
   const t = useTranslations("Profile");
   const tPublic = useTranslations("PublicProfile");
   const tReviews = useTranslations("Reviews");
@@ -958,7 +962,7 @@ export function PractitionerProfileView({
             <>
               <div className={styles.reviewsGrid}>
                 {reviews.slice(0, 6).map((review) => (
-                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: isBrandTwo ? "none" : "var(--shadow-md)", border: isBrandTwo ? "1px solid var(--border-default)" : undefined, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div key={review.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: brand === "two" ? "none" : "var(--shadow-md)", border: isBrandTwo ? "1px solid var(--border-default)" : undefined, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
                     <span aria-label={tReviews("ratingAriaLabel", { rating: review.rating })} style={{ color: "var(--accent)" }}>
                       <StarRating rating={review.rating} size={14} />
                     </span>

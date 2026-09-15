@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
@@ -61,7 +61,7 @@ export default async function AboutPage() {
   // sections + AboutPage JSON-LD. The "Защо създадохме" empty slot is omitted
   // (kept out of the DOM until Bo supplies copy — do not ship a placeholder).
   // Warm layout kept below the branch. ────────────────────────────────────────
-  if (resolveBrand() === "two") {
+  if (layoutBrand() === "two") {
     const trust: FeatureItem[] = [
       { Icon: User, title: t("trust1Title"), body: t("trust1Body") },
       { Icon: Lock, title: t("trust2Title"), body: t("trust2Body") },

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ContentContainer } from "@/components/ui/ContentContainer";
 import { Link } from "@/i18n/navigation";
 import { localizedAlternates, socialMetadata } from "@/lib/seo";
-import { getSiteName, resolveBrand } from "@/lib/brand";
+import { getSiteName, layoutBrand } from "@/lib/brand";
 import { ContactForm } from "./ContactForm";
 import kit from "@/components/brand-two-pages/kit.module.css";
 import { Eyebrow } from "@/components/brand-two-pages/kit";
@@ -34,7 +34,7 @@ export default async function ContactPage() {
   // reusing the working ContactForm (ink submit). The handoff's unconfirmed
   // response-time / support-email block is deliberately omitted — ship neither
   // until confirmed. Warm single-column layout kept below. ─────────────────────
-  if (resolveBrand() === "two") {
+  if (layoutBrand() === "two") {
     const reassurance = [
       { Icon: Mail, title: t("r1Title"), body: t("r1Body") },
       { Icon: Users, title: t("r2Title"), body: t("r2Body") },

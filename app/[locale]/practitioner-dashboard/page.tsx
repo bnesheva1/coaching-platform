@@ -15,7 +15,7 @@ import { AvailabilityWidget } from "@/components/immediate/AvailabilityWidget";
 import { getPractitionerStats } from "@/lib/practitioners/stats";
 import { PractitionerStatsSummary } from "@/components/practitioners/PractitionerStats";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
-import { resolveBrand } from "@/lib/brand";
+import { layoutBrand } from "@/lib/brand";
 
 const INTL_LOCALES: Record<string, string> = {
   bg: "bg-BG",
@@ -330,7 +330,7 @@ export default async function PractitionerHomePage() {
   const homeStats = await getPractitionerStats(userId);
 
   const formatter = new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium", timeStyle: "short", timeZone: timezone });
-  const isBrandTwo = resolveBrand() === "two";
+  const isBrandTwo = layoutBrand() === "two";
 
   return (
     <main style={{ padding: "var(--space-8) 0" }}>

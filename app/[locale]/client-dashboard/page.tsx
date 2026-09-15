@@ -12,7 +12,7 @@ import { isMissingOrDeleted } from "@/lib/deleted-user";
 import { resolveOverdueSessionsForUser } from "@/lib/video/resolveOverdueForUser";
 import rowStyles from "@/components/bookings/ResponsiveImageRow.module.css";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
-import { resolveBrand } from "@/lib/brand";
+import { layoutBrand } from "@/lib/brand";
 import { Button } from "@/components/ui/Button";
 import { type PractitionerCardData } from "@/components/browse/PractitionerCard";
 import { BookedWithGrid } from "./BookedWithGrid";
@@ -273,7 +273,7 @@ export default async function ClientUpcomingPage({
   // this page, id="practitioners"), with browsing for someone new secondary.
   // Native <a> for the in-page anchor — Button uses the locale-aware Link,
   // which would mangle a bare "#practitioners".
-  const isBrandTwo = resolveBrand() === "two";
+  const isBrandTwo = layoutBrand() === "two";
   const noUpcomingBlock = (
     <div
       key="no-upcoming"

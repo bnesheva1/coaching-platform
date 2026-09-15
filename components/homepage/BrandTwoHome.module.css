@@ -62,7 +62,7 @@
 }
 .headline {
   margin: 0;
-  font: 700 3.5rem/1.12 var(--font-ui);
+  font: 700 3.5rem/1.12 var(--font-display);
   letter-spacing: -0.02em;
   color: var(--text-primary);
   text-wrap: balance;
@@ -72,6 +72,14 @@
   font: 300 1.375rem/1.5 var(--font-ui);
   color: var(--text-secondary);
   max-width: 34ch;
+}
+/* Brand three forces every h1/h2 to the serif display font via
+   `:root[data-brand="three"] :is(h1,h2)` in globals.css (specificity 0,2,1,
+   !important). This hero subcopy is a subtitle — an <h1> only for document
+   structure — and must stay sans, so this override matches :root + the h1
+   element + the class (0,3,1, !important) to outrank that global rule. */
+:global(:root[data-brand="three"]) h1.subcopy {
+  font-family: var(--font-ui) !important;
 }
 
 /* Rotating-question stack: every question overlaps in ONE grid cell, so the cell
@@ -100,6 +108,13 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+}
+/* Brand three re-skins this animated wordmark with the warm/v1 accent (a gold
+   shimmer) instead of brand two's hardcoded teal ramp — the only hardcoded
+   color in brand two's structural CSS that the token swap can't reach. Brand
+   two ([data-brand="two"]) keeps the teal above. */
+:global([data-brand="three"]) .gradWord {
+  background-image: linear-gradient(100deg, var(--accent) 0%, var(--accent-on-inverse) 45%, var(--accent) 100%);
 }
 /* Deliberately slow (7s) — not the 2–3s AI-product shimmer. Only the active line's
    word animates; the hidden ghost lines don't run it. */
@@ -200,6 +215,11 @@
   background: var(--accent);
   color: var(--text-on-accent);
 }
+/* Brand three: pill (semicircle-ended) search bar — field + button. */
+:global([data-brand="three"]) .searchField,
+:global([data-brand="three"]) .searchButton {
+  border-radius: var(--radius-pill);
+}
 
 /* Mobile: stack the field + button vertically (same 12px gap), matching the
    browse search. Placed AFTER the base .searchField/.searchButton rules so it
@@ -222,7 +242,7 @@
 }
 .discoverHeading {
   margin: 0;
-  font: 700 1.75rem var(--font-ui);
+  font: 700 1.75rem var(--font-display);
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }

@@ -1,5 +1,5 @@
 /* Brand-two dashboard home styling. Styling only — all greeting / session /
-   join-window logic is untouched. Every rule is gated to [data-brand="two"]
+   join-window logic is untouched. Every rule is gated to [data-layout="two"]
    (a :global ancestor, since data-brand sits on <html>) so the warm dashboard
    keeps its current look. The base class carries the warm default so nothing
    changes for brand one. */
@@ -7,7 +7,7 @@
 .agendaHeading {
   font: var(--text-heading-lg);
 }
-:global([data-brand="two"]) .agendaHeading {
+:global([data-layout="two"]) .agendaHeading {
   font: 700 2.75rem/1.05 var(--font-ui);
   letter-spacing: -0.02em;
 }
@@ -16,15 +16,21 @@
 .greeting {
   font: var(--text-body-md);
 }
-:global([data-brand="two"]) .greeting {
+:global([data-layout="two"]) .greeting {
   font-size: 1rem;
+}
+/* Extra breathing room below the greeting — BRAND THREE ONLY (brand two keeps
+   its original spacing). !important beats the inline `margin: 0` the page sets
+   on this <p> (inline would otherwise win over a normal margin rule). */
+:global([data-brand="three"]) .greeting {
+  margin-bottom: var(--space-4) !important;
 }
 
 /* Timezone notice under the headline — a little breathing room above it. */
 .tzNotice {
   display: block;
 }
-:global([data-brand="two"]) .tzNotice {
+:global([data-layout="two"]) .tzNotice {
   margin-top: var(--space-3);
 }
 
@@ -34,7 +40,7 @@
 .sectionLabel {
   font: var(--text-heading-md);
 }
-:global([data-brand="two"]) .sectionLabel {
+:global([data-layout="two"]) .sectionLabel {
   font: 700 1.45rem var(--font-ui);
   padding: var(--space-4) 0 var(--space-1);
 }
