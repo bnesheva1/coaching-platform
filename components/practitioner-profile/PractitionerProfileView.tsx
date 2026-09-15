@@ -45,6 +45,9 @@ export type ProfileReview = {
   rating: number;
   reviewText: string | null;
   createdAt: string;
+  // The practitioner's single public reply, shown beneath the review
+  // (Google/Airbnb host-reply pattern). Null when they haven't replied.
+  replyText?: string | null;
 };
 
 export type PractitionerProfileViewProps = {
@@ -963,6 +966,12 @@ export function PractitionerProfileView({
                     <span style={{ font: "var(--text-caption)", color: "var(--text-tertiary)" }}>
                       {tReviews("verifiedUser")} · {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
                     </span>
+                    {review.replyText && (
+                      <div style={{ marginTop: 4, paddingLeft: 12, borderLeft: "2px solid var(--border-default)", display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span style={{ font: "var(--text-caption)", fontWeight: 600, color: "var(--text-secondary)" }}>{tReviews("responseFrom", { name: displayName })}</span>
+                        <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)", whiteSpace: "pre-wrap" }}>{review.replyText}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -986,6 +995,12 @@ export function PractitionerProfileView({
                       — {tReviews("verifiedUser")} · {new Intl.DateTimeFormat(intlLocale, { dateStyle: "medium" }).format(new Date(review.createdAt))}
                     </span>
                     {review.reviewText && <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{review.reviewText}</span>}
+                    {review.replyText && (
+                      <div style={{ marginTop: 4, paddingLeft: 12, borderLeft: "2px solid var(--border-default)", display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span style={{ font: "var(--text-caption)", fontWeight: 600, color: "var(--text-secondary)" }}>{tReviews("responseFrom", { name: displayName })}</span>
+                        <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)", whiteSpace: "pre-wrap" }}>{review.replyText}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

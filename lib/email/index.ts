@@ -665,6 +665,45 @@ export async function sendProfileChangesRequestedEmail(practitionerId: string, r
   }
 }
 
+// Notifies the CLIENT that the practitioner posted a public reply to their
+// review. Service-role: review → booking.client_id → get_profile_contact. Sent
+// in the client's locale, reusing CancellationNoticeEmail's shape (the reply
+// text as the note). Best-effort — never throws (the reply is already saved).
+export async function sendReviewReplyEmail(reviewId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: review } = await supabase.from("reviews").select("booking_id, practitioner_id, reply_text").eq("id", reviewId).maybeSingle();
+  if (!review || !review.reply_text) return;
+  const { data: booking } = await supabase.from("bookings").select("client_id").eq("id", review.booking_id as string).maybeSingle();
+  if (!booking) {
+    console.error("sendReviewReplyEmail: booking not found", { reviewId });
+    return;
+  }
+  const [client, prac] = await Promise.all([
+    fetchProfileContact(booking.client_id as string, "sendReviewReplyEmail:client"),
+    fetchProfileContact(review.practitioner_id as string, "sendReviewReplyEmail:practitioner"),
+  ]);
+  if (!client?.email) {
+    console.error("sendReviewReplyEmail: client email is null, skipping", { reviewId });
+    return;
+  }
+  const locale = normalizeLocale(client.locale);
+  const t = translator(locale);
+  const result = await provider.send({
+    to: client.email,
+    subject: t("reviewReplySubject"),
+    react: CancellationNoticeEmail({
+      heading: t("reviewReplyHeading"),
+      body: t("reviewReplyBody", { counterpartyName: counterpartyNameOrDeleted(prac?.display_name, locale) }),
+      footer: footerText(locale),
+      noteLabel: t("reviewReplyNoteLabel"),
+      note: review.reply_text as string,
+    }),
+  });
+  if (!result.success) {
+    console.error("sendReviewReplyEmail: email failed", { reviewId, recipient: client.email, error: result.error });
+  }
+}
+
 // Notifies the PRACTITIONER that their client used the emergency-contact
 // fallback during a session (the "having trouble connecting" flow). A
 // side effect of the client's reveal, so it never throws — logged and

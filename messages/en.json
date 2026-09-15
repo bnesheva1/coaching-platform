@@ -1039,7 +1039,19 @@
     "bookingNotFound": "We couldn't find that booking.",
     "notCompletedYet": "This session isn't completed yet, so it can't be reviewed.",
     "alreadyReviewed": "You've already reviewed this booking.",
-    "saveFailed": "Unable to save your review right now. Please try again."
+    "saveFailed": "Unable to save your review right now. Please try again.",
+    "responseFrom": "Response from {name}"
+  },
+  "ReviewReply": {
+    "replyCta": "Reply to this review",
+    "editCta": "Edit reply",
+    "cancel": "Cancel",
+    "save": "Post reply",
+    "placeholder": "Write a public reply…",
+    "yourReplyLabel": "Your reply",
+    "guideline": "Your reply is public and shown next to the review. Address the substance of what was written. Never offer or imply compensation in exchange for changing the review.",
+    "tooLong": "Your reply is too long (maximum {max} characters).",
+    "genericError": "Your reply wasn't saved. Please try again."
   },
   "Email": {
     "bookingConfirmationClientSubject": "Your booking with {counterpartyName} is confirmed",
@@ -1053,6 +1065,10 @@
     "cancellationNoticeBodyByClient": "Hi {recipientName}, {counterpartyName} cancelled their {serviceName} session that was scheduled for {sessionTime}.",
     "cancellationNoticeBodyByPractitioner": "Hi {recipientName}, {counterpartyName} cancelled the {serviceName} session that was scheduled for {sessionTime}.",
     "cancellationNoticeNoteLabel": "Message from the practitioner:",
+    "reviewReplySubject": "{counterpartyName} replied to your review",
+    "reviewReplyHeading": "A reply to your review",
+    "reviewReplyBody": "{counterpartyName} posted a public reply to the review you left. Here's what they wrote:",
+    "reviewReplyNoteLabel": "Reply:",
     "immediatePaymentFailedSubject": "The client didn't complete payment",
     "immediatePaymentFailedHeading": "Immediate request lapsed",
     "immediatePaymentFailedBody": "You confirmed an immediate {service} session, but the client didn't complete payment in time. Nothing was booked, and you're available again — your \"available now\" status has been switched back on.",
