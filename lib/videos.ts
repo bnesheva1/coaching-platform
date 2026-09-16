@@ -72,8 +72,11 @@ export function parseVideoUrl(raw: string): ParsedVideo | null {
 
 // The embed URL the app constructs itself — never derived from user markup.
 export function buildEmbedUrl(platform: VideoPlatform, videoId: string): string {
+  // youtube-nocookie.com: YouTube's privacy-enhanced host (no tracking cookies
+  // until playback). Used sitewide — the public profile-media embeds and the
+  // gated-content embeds both build their URL here, never from stored markup.
   return platform === "youtube"
-    ? `https://www.youtube.com/embed/${videoId}`
+    ? `https://www.youtube-nocookie.com/embed/${videoId}`
     : `https://player.vimeo.com/video/${videoId}`;
 }
 
