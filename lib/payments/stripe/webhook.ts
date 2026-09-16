@@ -5,6 +5,8 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPaidBookingConfirmationEmails, sendPaymentRefundedNotice } from "@/lib/email";
 import { ensureVideoSession } from "@/lib/video";
 import { finalizeImmediatePayment } from "@/lib/immediate/booking";
+import { finalizeContentPurchase } from "../content";
+import { CONTENT_PAYOUT_HOLD_HOURS } from "@/lib/content/config";
 import {
   handleSubscriptionEvent,
   handleSubscriptionInvoicePaid,
@@ -118,6 +120,23 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
     // Shouldn't occur for this event with card-only payment methods
     // (see checkout.ts), but defensive: only a confirmed charge should
     // ever reach confirm_paid_booking.
+    return;
+  }
+
+  // Gated-content sessions carry content_purchase_id — no booking at all, just
+  // flip the pending purchase to completed and start its payout hold. Checked
+  // first so a content session never falls through into the booking paths.
+  const contentPurchaseId = session.metadata?.content_purchase_id;
+  if (contentPurchaseId) {
+    const contentPi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+    const contentCommission = readCommission(session, session.amount_total ?? 0);
+    await finalizeContentPurchase({
+      contentPurchaseId,
+      paymentIntentId: contentPi,
+      commissionRate: contentCommission.rate,
+      commissionCents: contentCommission.cents,
+      holdHours: CONTENT_PAYOUT_HOLD_HOURS,
+    });
     return;
   }
 

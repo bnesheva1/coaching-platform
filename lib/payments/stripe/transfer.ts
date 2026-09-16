@@ -108,6 +108,70 @@ export async function releaseBookingPayout(bookingId: string): Promise<ReleaseRe
   }
 }
 
+// Content-purchase payout — the same separate-charges-&-transfers release as
+// releaseBookingPayout, over a content_purchases row instead of a booking's
+// payments row. Shared by the sweep's content pass and any future "release now".
+export async function releaseContentPayout(purchaseId: string): Promise<ReleaseResult> {
+  const supabase = createServiceRoleClient();
+  const { data: purchase } = await supabase
+    .from("content_purchases")
+    .select("id, practitioner_id, amount_cents, commission_cents, currency, status, transfer_status, stripe_payment_intent_id")
+    .eq("id", purchaseId)
+    .maybeSingle();
+  if (!purchase) return { released: false, reason: "no_purchase" };
+  if (purchase.status !== "completed") return { released: false, reason: "not_completed" };
+  if (!["pending", "held"].includes(purchase.transfer_status as string)) return { released: false, reason: "already_" + purchase.transfer_status };
+
+  const { data: prof } = await supabase
+    .from("practitioner_profiles")
+    .select("billing_model, stripe_connected_account_id, payouts_frozen")
+    .eq("id", purchase.practitioner_id as string)
+    .maybeSingle();
+  if (!prof || prof.billing_model !== "commission") {
+    await supabase.from("content_purchases").update({ transfer_status: "not_applicable", updated_at: new Date().toISOString() }).eq("id", purchase.id);
+    return { released: false, reason: "not_commission" };
+  }
+  if (prof.payouts_frozen) return { released: false, reason: "payouts_frozen" };
+  const destination = prof.stripe_connected_account_id as string | null;
+  if (!destination) return { released: false, reason: "no_connected_account" };
+
+  const shareCents = (purchase.amount_cents as number) - ((purchase.commission_cents as number | null) ?? 0);
+  if (shareCents <= 0) {
+    await supabase.from("content_purchases").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", purchase.id);
+    return { released: true };
+  }
+  const paymentIntentId = purchase.stripe_payment_intent_id as string | null;
+  if (!paymentIntentId) return { released: false, reason: "missing_payment_intent" };
+
+  const stripe = getStripeClient();
+  try {
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] });
+    const charge = pi.latest_charge && typeof pi.latest_charge === "object" ? pi.latest_charge : null;
+    if (pi.transfer_data || charge?.transfer) {
+      await supabase.from("content_purchases").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", purchase.id);
+      return { released: true };
+    }
+    const transfer = await stripe.transfers.create({
+      amount: shareCents,
+      currency: (purchase.currency as string).toLowerCase(),
+      destination,
+      ...(charge?.id ? { source_transaction: charge.id } : {}),
+      metadata: { content_purchase_id: purchaseId },
+    });
+    await supabase.from("content_purchases").update({ transfer_status: "released", stripe_transfer_id: transfer.id, updated_at: new Date().toISOString() }).eq("id", purchase.id);
+    return { released: true };
+  } catch (err) {
+    await raiseAlert({
+      type: "transfer_failed",
+      subject: purchaseId,
+      message: "A scheduled payout transfer for a content purchase failed.",
+      context: { contentPurchaseId: purchaseId, destination, amountCents: shareCents, error: err instanceof Error ? err.message : String(err) },
+      immediate: true,
+    });
+    return { released: false, reason: "transfer_error" };
+  }
+}
+
 export type PayoutSweepSummary = {
   payoutsReleased: number;
   payoutsHeldFrozen: number;
@@ -172,6 +236,43 @@ export async function runPayoutReleaseSweep(): Promise<PayoutSweepSummary> {
 
     owedNow += r.amount_cents - r.commission_cents;
     const res = await releaseBookingPayout(r.booking_id as string);
+    if (res.released) summary.payoutsReleased++;
+    else summary.payoutsFailed++;
+  }
+
+  // ── Content-purchase payout pass: the same release mechanism over
+  //    content_purchases. release_at was set at completion (purchased_at +
+  //    CONTENT_PAYOUT_HOLD_HOURS), so no backfill. Shares add to owedNow so the
+  //    low-balance guard below covers content transfers too.
+  const { data: contentRows } = await supabase
+    .from("content_purchases")
+    .select("id, practitioner_id, amount_cents, commission_cents, transfer_status, release_at")
+    .eq("status", "completed")
+    .in("transfer_status", ["pending", "held"]);
+  const cPracIds = [...new Set((contentRows ?? []).map((r) => r.practitioner_id as string))];
+  const { data: cPracs } = cPracIds.length
+    ? await supabase.from("practitioner_profiles").select("id, billing_model, payouts_frozen").in("id", cPracIds)
+    : { data: [] as { id: string; billing_model: string; payouts_frozen: boolean }[] };
+  const cPracById = new Map((cPracs ?? []).map((p) => [p.id as string, p]));
+  for (const r of contentRows ?? []) {
+    const releaseAt = r.release_at ? new Date(r.release_at as string).getTime() : null;
+    if (releaseAt === null) continue; // should never happen (finalize sets it); skip defensively
+    if (now < releaseAt) {
+      summary.payoutsNotYetDue++;
+      continue;
+    }
+    const prof = cPracById.get(r.practitioner_id as string);
+    if (!prof || prof.billing_model !== "commission") {
+      await supabase.from("content_purchases").update({ transfer_status: "not_applicable", updated_at: new Date().toISOString() }).eq("id", r.id);
+      continue;
+    }
+    if (prof.payouts_frozen) {
+      if (r.transfer_status !== "held") await supabase.from("content_purchases").update({ transfer_status: "held", updated_at: new Date().toISOString() }).eq("id", r.id);
+      summary.payoutsHeldFrozen++;
+      continue;
+    }
+    owedNow += (r.amount_cents as number) - ((r.commission_cents as number | null) ?? 0);
+    const res = await releaseContentPayout(r.id as string);
     if (res.released) summary.payoutsReleased++;
     else summary.payoutsFailed++;
   }
