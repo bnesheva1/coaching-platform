@@ -9,6 +9,15 @@ import type { BillingModel } from "./types";
 // transfer_data; the practitioner's share is transferred later by the release
 // sweep's content pass). NOT a new billing model. The webhook finalises the
 // content_purchases row from the metadata stamped here.
+//
+// Refunds (policy): content purchases are intentionally OUTSIDE the self-serve
+// refund-request flow (which is booking-only — see
+// client-dashboard/refund-request-actions.ts). The consent checkbox at checkout
+// waives the 14-day EU digital-withdrawal right, so only a genuine technical
+// failure warrants a refund, handled admin-manual via the Stripe dashboard: a
+// refund of the charge there reverses the released transfer automatically. The
+// CONTENT_PAYOUT_HOLD_HOURS window (default 24h) exists precisely so most such
+// refunds land before the practitioner payout is even released.
 
 export type ContentPurchaseResult =
   | { type: "redirect"; url: string }
