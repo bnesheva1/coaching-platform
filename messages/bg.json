@@ -1058,6 +1058,24 @@
     "tooLong": "Отговорът е твърде дълъг (максимум {max} знака).",
     "genericError": "Отговорът не беше запазен. Опитай отново."
   },
+  "DigitalProducts": {
+    "navLabel": "Дигитални продукти",
+    "genericError": "Нещо се обърка. Опитай отново.",
+    "titleRequired": "Въведи заглавие.",
+    "descTooLong": "Описанието е твърде дълго.",
+    "priceRange": "Цената трябва да е между €1 и €5000.",
+    "badVideo": "Постави валиден YouTube линк или ID.",
+    "cannotDeletePurchased": "Този продукт вече е купуван и не може да се изтрие. Скрий го вместо това.",
+    "pdfRequired": "Избери PDF файл.",
+    "pdfTooLarge": "Файлът е твърде голям.",
+    "pdfNotPdf": "Файлът не е валиден PDF.",
+    "mustSignIn": "Влез, за да купиш.",
+    "consentRequired": "Трябва да потвърдиш, за да продължиш.",
+    "alreadyPurchased": "Вече си купил този продукт.",
+    "practitionerNotReady": "Този специалист все още не може да приема плащания.",
+    "paymentsPaused": "Плащанията временно са спрени.",
+    "notAvailable": "Този продукт вече не е наличен."
+  },
   "Email": {
     "bookingConfirmationClientSubject": "Резервацията ти с {counterpartyName} е потвърдена",
     "bookingConfirmationClientHeading": "Резервацията е потвърдена",

@@ -1058,6 +1058,24 @@
     "tooLong": "Your reply is too long (maximum {max} characters).",
     "genericError": "Your reply wasn't saved. Please try again."
   },
+  "DigitalProducts": {
+    "navLabel": "Digital products",
+    "genericError": "Something went wrong. Please try again.",
+    "titleRequired": "Enter a title.",
+    "descTooLong": "The description is too long.",
+    "priceRange": "The price must be between €1 and €5000.",
+    "badVideo": "Paste a valid YouTube link or ID.",
+    "cannotDeletePurchased": "This product has been purchased and can't be deleted. Hide it instead.",
+    "pdfRequired": "Choose a PDF file.",
+    "pdfTooLarge": "The file is too large.",
+    "pdfNotPdf": "The file is not a valid PDF.",
+    "mustSignIn": "Sign in to buy.",
+    "consentRequired": "You must confirm to continue.",
+    "alreadyPurchased": "You already own this product.",
+    "practitionerNotReady": "This specialist can't accept payments yet.",
+    "paymentsPaused": "Payments are temporarily paused.",
+    "notAvailable": "This product is no longer available."
+  },
   "Email": {
     "bookingConfirmationClientSubject": "Your booking with {counterpartyName} is confirmed",
     "bookingConfirmationClientHeading": "Booking confirmed",

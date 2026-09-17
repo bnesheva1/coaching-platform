@@ -196,13 +196,20 @@ export async function runPayoutReleaseSweep(): Promise<PayoutSweepSummary> {
     .eq("status", "succeeded")
     .in("transfer_status", ["pending", "held"]);
   const rows = candidates ?? [];
-  if (rows.length === 0) return summary;
+  // No early return on empty booking candidates: the content-purchase pass below
+  // must still run (it has its own release_at, independent of any booking). The
+  // .in() fetches are guarded for empty inputs so an empty booking set is a clean
+  // no-op rather than an `id=in.()` query.
 
   const bookingIds = rows.map((r) => r.booking_id).filter(Boolean) as string[];
-  const { data: bookings } = await supabase.from("bookings").select("id, end_utc, practitioner_id").in("id", bookingIds);
+  const { data: bookings } = bookingIds.length
+    ? await supabase.from("bookings").select("id, end_utc, practitioner_id").in("id", bookingIds)
+    : { data: [] as { id: string; end_utc: string; practitioner_id: string }[] };
   const bookingById = new Map((bookings ?? []).map((b) => [b.id as string, b]));
   const pracIds = [...new Set((bookings ?? []).map((b) => b.practitioner_id as string))];
-  const { data: pracs } = await supabase.from("practitioner_profiles").select("id, billing_model, payouts_frozen").in("id", pracIds);
+  const { data: pracs } = pracIds.length
+    ? await supabase.from("practitioner_profiles").select("id, billing_model, payouts_frozen").in("id", pracIds)
+    : { data: [] as { id: string; billing_model: string; payouts_frozen: boolean }[] };
   const pracById = new Map((pracs ?? []).map((p) => [p.id as string, p]));
 
   let owedNow = 0; // total practitioner share of everything due-and-releasable, for the balance check
