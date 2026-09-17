@@ -9,6 +9,14 @@ export type RefundRequestState = { error?: string; success?: boolean } | null;
 // A client submits a refund request for one of their OWN past bookings. One per
 // booking (DB unique on booking_id). Goes to the admin queue as 'pending' — no
 // auto-approval. RLS enforces ownership; this re-checks for a clean message.
+//
+// Scope note (intentional, not an oversight): this self-serve flow is
+// BOOKING-ONLY. Gated content purchases are deliberately NOT here — at checkout
+// the buyer waives the 14-day digital-withdrawal right (consent checkbox), so
+// the only ground left is a rare genuine technical failure, handled admin-manual
+// (the buyer contacts support; an admin refunds via the Stripe dashboard, which
+// reverses the transfer if the content payout already released). No self-serve
+// "other" category for content is offered by design — see lib/payments/content.ts.
 export async function submitRefundRequest(bookingId: string, _prev: RefundRequestState, formData: FormData): Promise<RefundRequestState> {
   const t = await getTranslations("RefundRequest");
   const supabase = await createClient();

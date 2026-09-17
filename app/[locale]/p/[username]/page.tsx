@@ -17,6 +17,7 @@ import { PractitionerProfileView } from "@/components/practitioner-profile/Pract
 import { ProfileUnavailableNotice } from "@/components/practitioner-profile/ProfileUnavailableNotice";
 import { localizedAlternates, profileMetaTitle, profileMetaDescription, SITE_URL } from "@/lib/seo";
 import specialtiesData from "@/data/specialties.json";
+import { buildEmbedUrl } from "@/lib/videos";
 
 // Per-profile metadata — the fix for every profile sharing the homepage's
 // generic <title>. Keyword-first title (name + specialties) + a description
@@ -371,6 +372,43 @@ export default async function PublicProfilePage({
   const jsonLd = { "@context": "https://schema.org", "@graph": [practitionerEntity, breadcrumb] };
   const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
+  // Digital products for the profile section: active items (preview columns only
+  // — the grant hides the unlock fields), which of them the viewer has purchased,
+  // and a server-built embed URL for purchased VIDEO items (resolved via the
+  // purchaser RPC, so a non-purchaser never receives an id/embed).
+  const { data: contentRows } = await supabase
+    .from("content_items")
+    .select("id, type, title, description, price_cents, currency")
+    .eq("practitioner_id", practitionerProfile.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+  const purchasedIds = new Set<string>();
+  if (authData.user && (contentRows?.length ?? 0) > 0) {
+    const { data: purchases } = await supabase.from("content_purchases").select("content_item_id").eq("buyer_id", authData.user.id).eq("status", "completed");
+    for (const p of purchases ?? []) purchasedIds.add(p.content_item_id as string);
+  }
+  const contentItems = await Promise.all(
+    (contentRows ?? []).map(async (c) => {
+      const purchased = purchasedIds.has(c.id as string);
+      let embedUrl: string | null = null;
+      if (purchased && c.type === "video_youtube") {
+        const { data } = await supabase.rpc("get_purchased_content_item", { p_item_id: c.id });
+        const vid = Array.isArray(data) ? data[0]?.youtube_video_id : null;
+        if (vid) embedUrl = buildEmbedUrl("youtube", vid);
+      }
+      return {
+        id: c.id as string,
+        type: c.type as "video_youtube" | "pdf",
+        title: c.title as string,
+        description: (c.description as string | null) ?? null,
+        priceCents: c.price_cents as number,
+        currency: c.currency as string,
+        purchased,
+        embedUrl,
+      };
+    }),
+  );
+
   return (
     <main style={{ padding: "var(--space-8) 0" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript }} />
@@ -443,6 +481,7 @@ export default async function PublicProfilePage({
             title: v.title,
             thumbnailUrl: v.thumbnail_url,
           }))}
+          contentItems={contentItems}
         />
         </div>
       </ContentContainer>

@@ -18,6 +18,7 @@ import { GallerySection, type GalleryImage } from "./GallerySection";
 import { initialsFromName } from "@/lib/initials";
 import { isAnonymised } from "@/lib/deleted-user";
 import { VideosSection, type ProfileVideo } from "./VideosSection";
+import { DigitalProductsSection, type ProfileContentItem } from "./DigitalProductsSection";
 import { BrandTwoHeader } from "./BrandTwoHeader";
 import { layoutBrand, type Brand } from "@/lib/brand-config";
 import { EditableSpecialties } from "./EditableSpecialties";
@@ -139,6 +140,10 @@ export type PractitionerProfileViewProps = {
   // public view; the owner still sees the editor in edit mode.
   videos?: ProfileVideo[];
   gallery?: GalleryImage[];
+  // Sellable digital products, shown as their own section below Services. A
+  // purchased video carries a server-built embedUrl; non-purchasers get neither
+  // that nor any id/path. Empty → the section self-omits.
+  contentItems?: ProfileContentItem[];
   // The active white-label brand (from resolveBrand(), server-side). "two" swaps
   // the profile header for the brand-two design (no banner, dominant intro,
   // hairline summary card, availability rule); the shared sections below are
@@ -196,6 +201,7 @@ export function PractitionerProfileView({
   showDeliveryBadges = false,
   videos = [],
   gallery = [],
+  contentItems = [],
   brand = "warm",
 }: PractitionerProfileViewProps) {
   // Layout follows brand two for both two and three (layoutBrand maps three →
@@ -935,6 +941,10 @@ export function PractitionerProfileView({
             </div>
           )}
         </div>
+
+        {/* Digital products — directly below Services. Self-omits when empty;
+            locked-preview tiles for non-purchasers, embed/download for buyers. */}
+        <DigitalProductsSection items={contentItems} username={username ?? ""} />
 
         {/* Videos — after Services, before Gallery. Self-omits when empty on
             the public view; the shared MediaModal handles the iframe embed. */}

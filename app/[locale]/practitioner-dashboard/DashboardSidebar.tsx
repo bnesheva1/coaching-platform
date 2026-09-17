@@ -6,7 +6,7 @@ import { NavItem } from "@/components/dashboard/NavItem";
 import { useDashboardNavigate } from "@/components/dashboard/DashboardShell";
 import { Button } from "@/components/ui/Button";
 import { signOut } from "@/app/actions";
-import { House, CalendarDays, CircleUser, Sparkles, Clock, ChartColumn, Star, Settings, type LucideIcon } from "lucide-react";
+import { House, CalendarDays, CircleUser, Sparkles, Clock, ChartColumn, Star, Settings, Package, type LucideIcon } from "lucide-react";
 
 export type DashboardPulse = {
   sessionCount: number;
@@ -20,6 +20,7 @@ const NAV_ITEMS: NavEntry[] = [
   { href: "/practitioner-dashboard/stats", key: "stats" },
   { href: "/practitioner-dashboard/profile", key: "profile" },
   { href: "/practitioner-dashboard/services", key: "services" },
+  { href: "/practitioner-dashboard/digital-products", key: "digitalProducts" },
   { href: "/practitioner-dashboard/schedule", key: "schedule" },
   { href: "/practitioner-dashboard/bookings", key: "bookings" },
   { href: "/practitioner-dashboard/reviews", key: "reviews" },
@@ -33,6 +34,7 @@ const NAV_ITEMS_TWO: NavEntry[] = [
   { href: "/practitioner-dashboard/bookings", key: "bookings", Icon: CalendarDays },
   { href: "/practitioner-dashboard/profile", key: "profile", Icon: CircleUser },
   { href: "/practitioner-dashboard/services", key: "services", Icon: Sparkles },
+  { href: "/practitioner-dashboard/digital-products", key: "digitalProducts", Icon: Package },
   { href: "/practitioner-dashboard/schedule", key: "schedule", Icon: Clock },
   { href: "/practitioner-dashboard/stats", key: "stats", Icon: ChartColumn },
   { href: "/practitioner-dashboard/reviews", key: "reviews", Icon: Star },
