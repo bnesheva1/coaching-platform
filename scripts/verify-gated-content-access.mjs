@@ -83,6 +83,16 @@ console.log("\n=== 6. A user cannot create a content item attributed to someone 
 const spoof = await nonBuyerC.supabase.from("content_items").insert({ practitioner_id: pracA.user.id, type: "video_youtube", title: "spoof", price_cents: 100, youtube_video_id: REAL_ID }).select("id");
 check("C inserting an item as practitioner A is rejected by RLS with-check", !!spoof.error);
 
+console.log("\n=== 7b. Entitlement does NOT expire: an old, payout-released purchase still unlocks ===");
+// Age buyer B's completed purchase a year back and mark its payout released —
+// the unlock must still work, since entitlement keys on status='completed', not
+// time or payout state (only the embed/PDF regenerate fresh per request).
+await serviceRole.from("content_purchases")
+  .update({ purchased_at: new Date(Date.now() - 365 * 24 * 3600e3).toISOString(), transfer_status: "released" })
+  .eq("content_item_id", itemId).eq("buyer_id", buyerB.user.id);
+const bAged = await buyerB.supabase.rpc("get_purchased_content_item", { p_item_id: itemId });
+check("a year-old, released purchase STILL returns the unlock fields", bAged.data?.[0]?.youtube_video_id === REAL_ID);
+
 console.log("\n=== 7. Pending (not completed) purchase does NOT unlock ===");
 const { data: item2 } = await pracA.supabase.from("content_items").insert({ practitioner_id: pracA.user.id, type: "video_youtube", title: "Gated Video 2", price_cents: 2000, youtube_video_id: "abcdefghijk" }).select("id").single();
 await serviceRole.from("content_purchases").insert({ content_item_id: item2.id, buyer_id: buyerB.user.id, practitioner_id: pracA.user.id, status: "pending", amount_cents: 2000, currency: "EUR" });
