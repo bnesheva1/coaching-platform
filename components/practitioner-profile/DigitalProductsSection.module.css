@@ -1,0 +1,138 @@
+/* Digital-product tiles — same card language as the profile's other cards, all
+   token-driven so they read correctly across brands. Neutral icon cover (no
+   thumbnail), a lock badge while unpurchased. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-2);
+  color: var(--text-tertiary);
+}
+.lockBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--bg-inverse) 70%, transparent);
+  color: var(--text-on-inverse);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 16px;
+  flex: 1;
+}
+.title {
+  margin: 0;
+  font: var(--text-heading-sm);
+  color: var(--text-primary);
+}
+.desc {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.footer {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.downloadLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.downloadLink:hover {
+  text-decoration: underline;
+}
+
+/* Buy confirm-dialog */
+.dialogScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--overlay-scrim);
+}
+.dialog {
+  width: min(460px, 100%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+}
+.dialogTitle {
+  margin: 0 0 4px;
+  font: var(--text-heading-md);
+  color: var(--text-primary);
+}
+.dialogPrice {
+  margin: 0 0 16px;
+  font: var(--text-heading-sm);
+  color: var(--accent);
+}
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.consentText {
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+.error {
+  margin: 0;
+  font: var(--text-body-sm);
+  color: var(--color-danger);
+}
+.dialogActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.cancelBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: var(--text-body-sm);
+  color: var(--text-secondary);
+}
