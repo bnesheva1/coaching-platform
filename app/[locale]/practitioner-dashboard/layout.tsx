@@ -6,8 +6,9 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { layoutBrand } from "@/lib/brand";
 import { ModerationNotice } from "@/components/dashboard/ModerationNotice";
 import { SubscriptionNotice } from "@/components/dashboard/SubscriptionNotice";
-import { TinNotice } from "@/components/dashboard/TinNotice";
+import { TaxDetailsNotice } from "@/components/dashboard/TaxDetailsNotice";
 import { hasTin } from "@/lib/tax/practitionerTin";
+import { hasIban } from "@/lib/tax/practitionerIban";
 import { isEnabled } from "@/lib/flags";
 import { DashboardSidebar } from "./DashboardSidebar";
 
@@ -94,8 +95,8 @@ export default async function PractitionerDashboardLayout({ children }: { childr
     subStatus = (subCtx as { subscription_status: typeof subStatus } | null)?.subscription_status ?? "not_required";
   }
 
-  // DAC7: prompt for a missing TIN (non-blocking — never gates access).
-  const tinMissing = !(await hasTin(user.id));
+  // DAC7: prompt for missing TIN / IBAN (non-blocking — never gates access).
+  const [tinMissing, ibanMissing] = await Promise.all([hasTin(user.id).then((h) => !h), hasIban(user.id).then((h) => !h)]);
 
   return (
     <DashboardShell
@@ -112,7 +113,7 @@ export default async function PractitionerDashboardLayout({ children }: { childr
         />
       )}
       {subscriptionBillingOn && <SubscriptionNotice subscriptionStatus={subStatus} />}
-      {tinMissing && <TinNotice />}
+      {(tinMissing || ibanMissing) && <TaxDetailsNotice missingTin={tinMissing} missingIban={ibanMissing} />}
       {children}
     </DashboardShell>
   );

@@ -1128,7 +1128,20 @@
     "saveFailed": "Couldn't save. Please try again.",
     "bannerTitle": "Add your tax number",
     "bannerBody": "We need your ЕГН or VAT number for tax reporting (DAC7).",
-    "bannerCta": "Add it now"
+    "bannerCta": "Add it now",
+    "ibanTitle": "IBAN (bank account)",
+    "ibanDescription": "Needed for tax reporting (DAC7). Only you and our team can see it.",
+    "ibanLabel": "IBAN",
+    "ibanPlaceholder": "BG80BNBG96611020345678",
+    "ibanRequired": "Enter an IBAN.",
+    "invalidIban": "Invalid IBAN. Please check the number.",
+    "ibanBannerTitle": "Add your IBAN",
+    "ibanBannerBody": "We need your IBAN for payouts and tax reporting (DAC7).",
+    "ibanBannerCta": "Add it now",
+    "detailsBannerTitle": "Complete your tax details",
+    "detailsBannerBoth": "We need your ЕГН/VAT number and IBAN for tax reporting (DAC7).",
+    "detailsBannerTin": "We need your ЕГН or VAT number for tax reporting (DAC7).",
+    "detailsBannerIban": "We need your IBAN for payouts and tax reporting (DAC7)."
   },
   "Email": {
     "bookingConfirmationClientSubject": "Your booking with {counterpartyName} is confirmed",

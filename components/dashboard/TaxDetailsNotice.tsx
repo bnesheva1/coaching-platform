@@ -1,12 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
-// Non-blocking backfill prompt: shown on the practitioner dashboard when no TIN
-// is on file (new signups and existing practitioners alike — we can't invent
-// this data). Deliberately does NOT gate dashboard access; it flags, links to
-// settings, and gets out of the way once the TIN is saved.
-export async function TinNotice() {
+// One non-blocking backfill banner for the DAC7 tax details (TIN + IBAN). The
+// body adapts to what's actually missing so a practitioner never sees two
+// stacked banners. Never gates dashboard access; links to settings and clears
+// once both are on file. Render only when something is missing.
+export async function TaxDetailsNotice({ missingTin, missingIban }: { missingTin: boolean; missingIban: boolean }) {
   const t = await getTranslations("TaxId");
+  const body = missingTin && missingIban ? t("detailsBannerBoth") : missingTin ? t("detailsBannerTin") : t("detailsBannerIban");
   return (
     <div
       role="status"
@@ -23,8 +24,8 @@ export async function TinNotice() {
       }}
     >
       <div style={{ flex: 1, minWidth: 220 }}>
-        <strong style={{ font: "var(--text-body-md)", display: "block" }}>{t("bannerTitle")}</strong>
-        <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{t("bannerBody")}</span>
+        <strong style={{ font: "var(--text-body-md)", display: "block" }}>{t("detailsBannerTitle")}</strong>
+        <span style={{ font: "var(--text-body-sm)", color: "var(--text-secondary)" }}>{body}</span>
       </div>
       <Link
         href="/practitioner-dashboard/settings"

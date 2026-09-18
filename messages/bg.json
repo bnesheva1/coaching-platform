@@ -1128,7 +1128,20 @@
     "saveFailed": "Неуспешно запазване. Опитай отново.",
     "bannerTitle": "Добави данъчния си номер",
     "bannerBody": "Нужен ни е ЕГН или ДДС номер за данъчно отчитане (DAC7).",
-    "bannerCta": "Добави сега"
+    "bannerCta": "Добави сега",
+    "ibanTitle": "IBAN (банкова сметка)",
+    "ibanDescription": "Нужен ни е за данъчно отчитане (DAC7). Виждаш го само ти и нашият екип.",
+    "ibanLabel": "IBAN",
+    "ibanPlaceholder": "BG80BNBG96611020345678",
+    "ibanRequired": "Въведи IBAN.",
+    "invalidIban": "Невалиден IBAN. Провери номера.",
+    "ibanBannerTitle": "Добави своя IBAN",
+    "ibanBannerBody": "Нужен ни е IBAN за изплащане и данъчно отчитане (DAC7).",
+    "ibanBannerCta": "Добави сега",
+    "detailsBannerTitle": "Завърши данъчните си данни",
+    "detailsBannerBoth": "Нужни са ни твоят ЕГН/ДДС номер и IBAN за данъчно отчитане (DAC7).",
+    "detailsBannerTin": "Нужен ни е твоят ЕГН или ДДС номер за данъчно отчитане (DAC7).",
+    "detailsBannerIban": "Нужен ни е твоят IBAN за изплащане и данъчно отчитане (DAC7)."
   },
   "Email": {
     "bookingConfirmationClientSubject": "Резервацията ти с {counterpartyName} е потвърдена",
