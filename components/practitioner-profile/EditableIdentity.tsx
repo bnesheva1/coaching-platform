@@ -97,7 +97,7 @@ export function EditableIdentity({
       </label>
       <label>
         {t("headlineLabel")}
-        <input name="headline" type="text" defaultValue={state?.values?.headline ?? headline} maxLength={MAX_HEADLINE_LENGTH} className="form-field" style={{ width: "100%" }} />
+        <textarea name="headline" defaultValue={state?.values?.headline ?? headline} rows={3} maxLength={MAX_HEADLINE_LENGTH} className="form-field" style={{ width: "100%" }} />
       </label>
       <label>
         {t("locationLabel")}
