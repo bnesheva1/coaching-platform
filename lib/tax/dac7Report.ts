@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import type { TinType } from "./tin";
+import type { PractitionerAddress } from "./address";
 
 // DAC7 quarterly aggregation — read-only, service-role only, NEVER exposed
 // publicly. "Can we correctly compute the numbers", not the NRA submission
@@ -38,6 +39,8 @@ export type Dac7QuarterRow = {
   tinMissing: boolean;
   iban: string | null;
   ibanMissing: boolean;
+  address: PractitionerAddress | null;
+  addressMissing: boolean;
   quarter: 1 | 2 | 3 | 4;
   source: Dac7ConsiderationSource;
   considerationCents: number; // gross (client's full charge, or listed price)
@@ -54,6 +57,7 @@ export type Dac7Report = {
   rows: Dac7QuarterRow[];
   practitionersMissingTin: { practitionerId: string; displayName: string | null }[];
   practitionersMissingIban: { practitionerId: string; displayName: string | null }[];
+  practitionersMissingAddress: { practitionerId: string; displayName: string | null }[];
 };
 
 const quarterOf = (ts: string): 1 | 2 | 3 | 4 => (Math.floor(new Date(ts).getUTCMonth() / 3) + 1) as 1 | 2 | 3 | 4;
@@ -90,7 +94,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     const k = key(pracId, q, source);
     const row =
       acc.get(k) ??
-      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, iban: null, ibanMissing: true, quarter: q, source, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
+      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, iban: null, ibanMissing: true, address: null, addressMissing: true, quarter: q, source, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
     row.considerationCents += amount;
     row.commissionCents += commission;
     row.netCents += amount - commission;
@@ -133,7 +137,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
   const pracIds = [...new Set([...acc.values()].map((r) => r.practitionerId))];
   if (pracIds.length > 0) {
     const [{ data: profs }, { data: names }] = await Promise.all([
-      svc.from("practitioner_profiles").select("id, tin, tin_type, iban").in("id", pracIds),
+      svc.from("practitioner_profiles").select("id, tin, tin_type, iban, address_street, address_building, address_postcode, address_city, address_country").in("id", pracIds),
       svc.from("profiles").select("id, display_name").in("id", pracIds),
     ]);
     const tinById = new Map((profs ?? []).map((p) => [p.id as string, p]));
@@ -145,6 +149,12 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
       row.tinMissing = !row.tin;
       row.iban = (t?.iban as string | null) ?? null;
       row.ibanMissing = !row.iban;
+      // Address is all-or-nothing at rest; treat a full set as present.
+      const full = !!(t?.address_street && t?.address_building && t?.address_postcode && t?.address_city && t?.address_country);
+      row.address = full
+        ? { street: t!.address_street as string, building: t!.address_building as string, postcode: t!.address_postcode as string, city: t!.address_city as string, country: t!.address_country as string }
+        : null;
+      row.addressMissing = !full;
       row.displayName = nameById.get(row.practitionerId) ?? null;
     }
   }
@@ -156,6 +166,9 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
   const practitionersMissingIban = [
     ...new Map(rows.filter((r) => r.ibanMissing).map((r) => [r.practitionerId, { practitionerId: r.practitionerId, displayName: r.displayName }])).values(),
   ];
+  const practitionersMissingAddress = [
+    ...new Map(rows.filter((r) => r.addressMissing).map((r) => [r.practitionerId, { practitionerId: r.practitionerId, displayName: r.displayName }])).values(),
+  ];
 
   return {
     year,
@@ -164,5 +177,6 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     rows,
     practitionersMissingTin,
     practitionersMissingIban,
+    practitionersMissingAddress,
   };
 }

@@ -24,9 +24,15 @@ async function mkUser(role) {
   if (role === "practitioner") for (let i = 0; i < 25; i++) { if ((await db.from("practitioner_profiles").select("id").eq("id", data.user.id).maybeSingle()).data) break; await sleep(200); }
   return data.user.id;
 }
-async function mkPractitioner(tin, billingModel = "commission", iban = null) {
+async function mkPractitioner(tin, billingModel = "commission", iban = null, address = null) {
   const id = await mkUser("practitioner");
-  await db.from("practitioner_profiles").update({ billing_model: billingModel, stripe_connected_account_id: "acct_" + id.slice(0, 8), ...(tin ? { tin, tin_type: "egn" } : {}), ...(iban ? { iban } : {}) }).eq("id", id);
+  await db.from("practitioner_profiles").update({
+    billing_model: billingModel,
+    stripe_connected_account_id: "acct_" + id.slice(0, 8),
+    ...(tin ? { tin, tin_type: "egn" } : {}),
+    ...(iban ? { iban } : {}),
+    ...(address ? { address_street: address.street, address_building: address.building, address_postcode: address.postcode, address_city: address.city, address_country: address.country } : {}),
+  }).eq("id", id);
   return id;
 }
 // A completed booking with NO payments row — a software_provider session
@@ -58,9 +64,10 @@ console.log("=== Setup ===");
 const VALID_EGN = "7523169263";
 const VALID_EGN2 = "8032056031";
 const VALID_IBAN = "BG80BNBG96611020345678";
-const pracWithTin = await mkPractitioner(VALID_EGN, "commission", VALID_IBAN); // has both TIN + IBAN
-const pracNoTin = await mkPractitioner(null); // missing both
-const pracSoftware = await mkPractitioner(VALID_EGN2, "software_provider"); // TIN, no IBAN
+const ADDR = { street: "ul. Vitosha", building: "12A", postcode: "1000", city: "Sofia", country: "BG" };
+const pracWithTin = await mkPractitioner(VALID_EGN, "commission", VALID_IBAN, ADDR); // TIN + IBAN + address
+const pracNoTin = await mkPractitioner(null); // missing all three
+const pracSoftware = await mkPractitioner(VALID_EGN2, "software_provider"); // TIN only, no IBAN/address
 const buyer = await mkUser("client");
 const svc1 = await mkService(pracWithTin);
 const svc2 = await mkService(pracNoTin);
@@ -108,6 +115,12 @@ check("pracNoTin Q1 flagged IBAN missing", q1?.ibanMissing === true);
 check("pracNoTin in practitionersMissingIban", (report.practitionersMissingIban ?? []).some((p) => p.practitionerId === pracNoTin));
 check("pracWithTin NOT in practitionersMissingIban", !(report.practitionersMissingIban ?? []).some((p) => p.practitionerId === pracWithTin));
 check("pracSoftware (has TIN, no IBAN) in practitionersMissingIban but NOT missing TIN", (report.practitionersMissingIban ?? []).some((p) => p.practitionerId === pracSoftware) && !(report.practitionersMissingTin ?? []).some((p) => p.practitionerId === pracSoftware));
+
+check("pracWithTin Q2 address present, not flagged missing", q2?.address?.city === "Sofia" && q2?.address?.country === "BG" && q2?.addressMissing === false);
+check("pracNoTin Q1 flagged address missing", q1?.addressMissing === true);
+check("pracNoTin in practitionersMissingAddress", (report.practitionersMissingAddress ?? []).some((p) => p.practitionerId === pracNoTin));
+check("pracWithTin NOT in practitionersMissingAddress", !(report.practitionersMissingAddress ?? []).some((p) => p.practitionerId === pracWithTin));
+check("pracSoftware (TIN only) flagged missing address + IBAN, not TIN", (report.practitionersMissingAddress ?? []).some((p) => p.practitionerId === pracSoftware) && !(report.practitionersMissingTin ?? []).some((p) => p.practitionerId === pracSoftware));
 const sw = rowsFor(pracSoftware, 2);
 check("pracSoftware Q2 listed-price consideration = 8000 (booking's listed price)", sw?.considerationCents === 8000, sw?.considerationCents);
 check("pracSoftware Q2 commission = 0 (no platform cut off-platform)", sw?.commissionCents === 0);

@@ -5,9 +5,12 @@ import { Link } from "@/i18n/navigation";
 // body adapts to what's actually missing so a practitioner never sees two
 // stacked banners. Never gates dashboard access; links to settings and clears
 // once both are on file. Render only when something is missing.
-export async function TaxDetailsNotice({ missingTin, missingIban }: { missingTin: boolean; missingIban: boolean }) {
+export async function TaxDetailsNotice({ missingTin, missingIban, missingAddress }: { missingTin: boolean; missingIban: boolean; missingAddress: boolean }) {
   const t = await getTranslations("TaxId");
-  const body = missingTin && missingIban ? t("detailsBannerBoth") : missingTin ? t("detailsBannerTin") : t("detailsBannerIban");
+  // List whatever's missing, so one banner scales across TIN / IBAN / address
+  // without enumerating every combination.
+  const items = [missingTin ? t("itemTin") : null, missingIban ? t("itemIban") : null, missingAddress ? t("itemAddress") : null].filter(Boolean);
+  const body = `${t("detailsBannerIntro")} ${items.join(", ")}.`;
   return (
     <div
       role="status"
