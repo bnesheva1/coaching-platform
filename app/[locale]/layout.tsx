@@ -59,13 +59,17 @@ const fontTwoMono = Ubuntu_Mono({
 // Brand three: Vollkorn drives the DISPLAY font (headings — a warm humanist
 // serif), Roboto the UI/body font — two distinct families (unlike brand two's
 // single Ubuntu), so brand three does NOT alias --font-display in colors.css.
-// Cyrillic is explicit on both (Bulgarian-first). Display weights in use are
-// 400/700; body weights 400/500/600/700 with 400 italic (placeholders) — matched
-// to the type scale in typography.css, nothing speculative.
+// Cyrillic is explicit on both (Bulgarian-first). Display weights are
+// 400/500/600/700, plus a real italic face — the profile headline quote renders in
+// italic Vollkorn (PractitionerProfileView), and without style:italic the
+// browser synthesizes a faux slant instead of Vollkorn's drawn italic. Body
+// weights 400/500/600/700 with 400 italic (placeholders) — matched to the type
+// scale in typography.css, nothing speculative.
 const fontThreeDisplay = Vollkorn({
   variable: "--font-display",
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 const fontThreeBody = Roboto({
