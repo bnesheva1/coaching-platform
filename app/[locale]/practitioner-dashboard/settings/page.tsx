@@ -4,6 +4,8 @@ import { StripeConnectSection } from "@/components/practitioner-profile/StripeCo
 import { UsernameSection } from "@/components/settings/UsernameSection";
 import { EmergencyContactField } from "@/components/settings/EmergencyContactField";
 import { getEmergencyContact } from "@/lib/profile/emergencyContact";
+import { TinField } from "@/components/settings/TinField";
+import { getMyTin } from "@/lib/tax/practitionerTin";
 import { getRenameUsage } from "@/lib/rename-limits";
 
 // Auth/role guard already ran in the shared layout.tsx.
@@ -26,12 +28,13 @@ export default async function PractitionerSettingsPage({
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const [{ data: profile }, { data: practitionerProfile }, { data: connectStatusRaw }, emergencyContact] = await Promise.all([
+  const [{ data: profile }, { data: practitionerProfile }, { data: connectStatusRaw }, emergencyContact, tin] = await Promise.all([
     supabase.from("profiles").select("display_name, marketing_consent, marketing_consent_updated_at").eq("id", userId).single(),
     supabase.from("practitioner_profiles").select("username").eq("id", userId).single(),
     supabase.rpc("get_my_connect_status").single(),
-    // Excluded from the client column grant — read via service role.
+    // Both excluded from the client column grant — read via service role.
     getEmergencyContact(userId),
+    getMyTin(userId),
   ]);
 
   const connectStatus = connectStatusRaw as { is_connected: boolean; transfers_active: boolean } | null;
@@ -55,6 +58,7 @@ export default async function PractitionerSettingsPage({
               usage={await getRenameUsage(userId, "username")}
             />
             <EmergencyContactField initialContact={emergencyContact} />
+            <TinField initial={tin} />
           </>
         }
       />
