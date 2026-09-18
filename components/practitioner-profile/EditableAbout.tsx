@@ -10,7 +10,7 @@ const initialState: ProfileFormState = null;
 
 // Mirrors MAX_BIO_LENGTH in actions.ts — see EditableIdentity.tsx's
 // identical comment on why this is duplicated rather than imported.
-const MAX_BIO_LENGTH = 1000;
+const MAX_BIO_LENGTH = 3000;
 const MAX_QUOTE_LENGTH = 300;
 
 // Inline replace-with-textarea on pencil click (LinkedIn's own About-

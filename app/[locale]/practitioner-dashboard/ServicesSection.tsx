@@ -515,7 +515,11 @@ function PriceField({ defaultValue, readOnly = false, earnings }: { defaultValue
           type="number"
           min={earnings.minPriceEuros}
           max={earnings.maxPriceEuros}
-          step={0.01}
+          // step="any": the spinner arrows move by whole euros (their default
+          // step is 1) instead of by a cent, while any typed value — including
+          // cents like 24.99 — stays valid. A numeric step of 0.01 stepped the
+          // arrows a cent at a time and is what we're fixing.
+          step="any"
           required
           readOnly={readOnly}
           value={priceEuros}

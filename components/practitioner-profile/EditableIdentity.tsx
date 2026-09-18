@@ -19,7 +19,7 @@ const initialState: ProfileFormState = null;
 // is just so the browser stops you before you type past the limit
 // instead of only failing on submit.
 const MAX_DISPLAY_NAME_LENGTH = 100;
-const MAX_HEADLINE_LENGTH = 150;
+const MAX_HEADLINE_LENGTH = 350;
 const MAX_LOCATION_LENGTH = 100;
 
 // One pencil for name + headline + location together, rather than three

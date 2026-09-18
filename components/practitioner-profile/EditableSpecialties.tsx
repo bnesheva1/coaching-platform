@@ -20,6 +20,10 @@ const initialState: ProfileFormState = null;
 // to just those, and the server re-enforces the same constraint.
 const ACTIVE_DOMAINS = domainsData.filter((d) => d.active);
 
+// A curated few — mirrors MAX_SPECIALTIES in actions.ts. The UI disables
+// further chips past this count; the server re-checks it authoritatively.
+const MAX_SPECIALTIES = 3;
+
 // Domain (single-select, required) + specialties (multi-select, narrowed by the
 // chosen domain) live in ONE editor because they're interdependent: the domain
 // decides which specialties are offerable, so they save together as a unit.
@@ -50,11 +54,22 @@ export function EditableSpecialties({ specialties, domain }: { specialties: stri
   const domainSpecialties = ACTIVE_DOMAINS.find((d) => d.key === selectedDomain)?.specialties ?? [];
 
   const selectDomain = (key: string) => {
+    // Clicking the already-selected domain removes it (its ✕) — a domain is
+    // required to save, but in the editor you can clear it to switch. With no
+    // domain, no specialties are offerable, so drop them all.
+    if (selectedDomain === key) {
+      setSelectedDomain(null);
+      setSelected([]);
+      return;
+    }
     setSelectedDomain(key);
     // Drop any selected specialty that doesn't belong to the new domain.
     const allowed = new Set(ACTIVE_DOMAINS.find((d) => d.key === key)?.specialties ?? []);
     setSelected((prev) => prev.filter((s) => allowed.has(s)));
   };
+
+  // Cap specialties at MAX_SPECIALTIES — once reached, unselected chips disable.
+  const atMax = selected.length >= MAX_SPECIALTIES;
 
   if (!isEditing) {
     return (
@@ -103,33 +118,40 @@ export function EditableSpecialties({ specialties, domain }: { specialties: stri
           <span style={{ font: "var(--text-label)", color: "var(--text-secondary)" }}>{t("domainSelectLabel")}</span>
           <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
             {ACTIVE_DOMAINS.map((d) => (
-              <Chip key={d.key} selected={selectedDomain === d.key} onClick={() => selectDomain(d.key)}>
+              <Chip key={d.key} selected={selectedDomain === d.key} removable onClick={() => selectDomain(d.key)}>
                 {d[locale]}
               </Chip>
             ))}
           </div>
         </div>
 
-        {/* Specialties — narrowed to the chosen domain. */}
+        {/* Specialties — narrowed to the chosen domain, capped at MAX_SPECIALTIES. */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           <span style={{ font: "var(--text-label)", color: "var(--text-secondary)" }}>{t("specialtiesLabel")}</span>
           {selectedDomain ? (
-            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-              {domainSpecialties.map((key) => {
-                const isSelected = selected.includes(key);
-                return (
-                  <Chip
-                    key={key}
-                    selected={isSelected}
-                    onClick={() =>
-                      setSelected((prev) => (isSelected ? prev.filter((k) => k !== key) : [...prev, key]))
-                    }
-                  >
-                    {specialtyLabel(key)}
-                  </Chip>
-                );
-              })}
-            </div>
+            <>
+              <p style={{ margin: 0, font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
+                {t("specialtiesHint", { max: MAX_SPECIALTIES, count: selected.length })}
+              </p>
+              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+                {domainSpecialties.map((key) => {
+                  const isSelected = selected.includes(key);
+                  return (
+                    <Chip
+                      key={key}
+                      selected={isSelected}
+                      removable
+                      disabled={!isSelected && atMax}
+                      onClick={() =>
+                        setSelected((prev) => (isSelected ? prev.filter((k) => k !== key) : [...prev, key]))
+                      }
+                    >
+                      {specialtyLabel(key)}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </>
           ) : (
             <span style={{ font: "var(--text-body-sm)", color: "var(--text-tertiary)" }}>
               {t("specialtiesPickDomainFirst")}

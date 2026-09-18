@@ -30,9 +30,9 @@ export type ProfileFormState = { error?: string; success?: boolean; values?: Rec
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2MB, matches the bucket's own limit
 const ALLOWED_AVATAR_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_DISPLAY_NAME_LENGTH = 100;
-const MAX_HEADLINE_LENGTH = 150;
+const MAX_HEADLINE_LENGTH = 350;
 const MAX_LOCATION_LENGTH = 100;
-const MAX_BIO_LENGTH = 1000;
+const MAX_BIO_LENGTH = 3000;
 const MAX_QUOTE_LENGTH = 300;
 // Gallery + Videos: up to 9 of each per practitioner (also enforced by DB
 // triggers, see migration 20260905130000, so a race can't exceed it). Gallery
@@ -61,6 +61,10 @@ const MAX_SUGGESTION_LENGTH = 100;
 // this count; this is the authoritative check for a direct API call
 // that skips the UI entirely.
 const MAX_TOPICS = 3;
+// Specialties are capped the same way (mirrors MAX_SPECIALTIES in
+// EditableSpecialties.tsx). The UI disables further chips past this count;
+// this is the authoritative check a direct API call can't skip.
+const MAX_SPECIALTIES = 3;
 
 // "layout" — the dashboard is a shared layout + six pages; this
 // invalidates the layout and every page beneath it, not just the
@@ -214,6 +218,9 @@ export async function updateSpecialties(
   const specialties = (formData.getAll("specialties") as string[]).filter(
     (key) => KNOWN_SPECIALTY_KEYS.has(key) && allowedSpecialties.has(key),
   );
+  if (specialties.length > MAX_SPECIALTIES) {
+    return { error: t("specialtiesMaxExceeded", { max: MAX_SPECIALTIES }) };
+  }
 
   const { error } = await supabase.from("practitioner_profiles").update({ domain, specialties }).eq("id", user.id);
   if (error) {

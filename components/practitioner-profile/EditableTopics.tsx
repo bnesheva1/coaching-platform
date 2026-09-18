@@ -10,11 +10,10 @@ import topicsData from "@/data/topics.json";
 
 const initialState: ProfileFormState = null;
 
-// A curated handful reads as focused; specialties has no such cap (a
-// practitioner's modality/method is a factual list, not a pitch), but
-// topics is closer to "what to lead with" — capped here AND re-checked
-// in updateTopics server-side (this only stops the UI from letting you
-// select a 4th; a direct API call could still try).
+// A curated handful reads as focused — capped here AND re-checked in
+// updateTopics server-side (this only stops the UI from letting you select a
+// 4th; a direct API call could still try). Specialties carry the same cap of 3
+// (EditableSpecialties.tsx / MAX_SPECIALTIES in actions.ts).
 const MAX_TOPICS = 3;
 
 // Mirrors EditableSpecialties.tsx exactly — same pencil/chip-toggle/save
@@ -77,6 +76,7 @@ export function EditableTopics({ topics }: { topics: string[] }) {
             <Chip
               key={topic.key}
               selected={isSelected}
+              removable
               disabled={!isSelected && atMax}
               onClick={() =>
                 setSelected((prev) =>
