@@ -61,7 +61,7 @@ export async function releaseBookingPayout(bookingId: string): Promise<ReleaseRe
   const shareCents = payment.amount_cents - payment.commission_cents;
   if (shareCents <= 0) {
     // Full commission (e.g. 100%) → nothing to transfer; the whole amount stays.
-    await supabase.from("payments").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", payment.id);
+    await supabase.from("payments").update({ transfer_status: "released", transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", payment.id);
     return { released: true };
   }
 
@@ -77,7 +77,7 @@ export async function releaseBookingPayout(bookingId: string): Promise<ReleaseRe
     // double-run), the share is already paid — mark released and never
     // double-pay. Makes the sweep safe regardless of migration/deploy order.
     if (pi.transfer_data || charge?.transfer) {
-      await supabase.from("payments").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", payment.id);
+      await supabase.from("payments").update({ transfer_status: "released", transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", payment.id);
       return { released: true };
     }
     const transfer = await stripe.transfers.create({
@@ -90,7 +90,7 @@ export async function releaseBookingPayout(bookingId: string): Promise<ReleaseRe
     });
     await supabase
       .from("payments")
-      .update({ transfer_status: "released", stripe_transfer_id: transfer.id, updated_at: new Date().toISOString() })
+      .update({ transfer_status: "released", stripe_transfer_id: transfer.id, transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("id", payment.id);
     return { released: true };
   } catch (err) {
@@ -137,7 +137,7 @@ export async function releaseContentPayout(purchaseId: string): Promise<ReleaseR
 
   const shareCents = (purchase.amount_cents as number) - ((purchase.commission_cents as number | null) ?? 0);
   if (shareCents <= 0) {
-    await supabase.from("content_purchases").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", purchase.id);
+    await supabase.from("content_purchases").update({ transfer_status: "released", transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", purchase.id);
     return { released: true };
   }
   const paymentIntentId = purchase.stripe_payment_intent_id as string | null;
@@ -148,7 +148,7 @@ export async function releaseContentPayout(purchaseId: string): Promise<ReleaseR
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] });
     const charge = pi.latest_charge && typeof pi.latest_charge === "object" ? pi.latest_charge : null;
     if (pi.transfer_data || charge?.transfer) {
-      await supabase.from("content_purchases").update({ transfer_status: "released", updated_at: new Date().toISOString() }).eq("id", purchase.id);
+      await supabase.from("content_purchases").update({ transfer_status: "released", transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", purchase.id);
       return { released: true };
     }
     const transfer = await stripe.transfers.create({
@@ -158,7 +158,7 @@ export async function releaseContentPayout(purchaseId: string): Promise<ReleaseR
       ...(charge?.id ? { source_transaction: charge.id } : {}),
       metadata: { content_purchase_id: purchaseId },
     });
-    await supabase.from("content_purchases").update({ transfer_status: "released", stripe_transfer_id: transfer.id, updated_at: new Date().toISOString() }).eq("id", purchase.id);
+    await supabase.from("content_purchases").update({ transfer_status: "released", stripe_transfer_id: transfer.id, transferred_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", purchase.id);
     return { released: true };
   } catch (err) {
     await raiseAlert({
