@@ -36,6 +36,8 @@ export type Dac7QuarterRow = {
   tin: string | null;
   tinType: TinType | null;
   tinMissing: boolean;
+  iban: string | null;
+  ibanMissing: boolean;
   quarter: 1 | 2 | 3 | 4;
   source: Dac7ConsiderationSource;
   considerationCents: number; // gross (client's full charge, or listed price)
@@ -51,6 +53,7 @@ export type Dac7Report = {
   basis: string;
   rows: Dac7QuarterRow[];
   practitionersMissingTin: { practitionerId: string; displayName: string | null }[];
+  practitionersMissingIban: { practitionerId: string; displayName: string | null }[];
 };
 
 const quarterOf = (ts: string): 1 | 2 | 3 | 4 => (Math.floor(new Date(ts).getUTCMonth() / 3) + 1) as 1 | 2 | 3 | 4;
@@ -87,7 +90,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     const k = key(pracId, q, source);
     const row =
       acc.get(k) ??
-      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, quarter: q, source, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
+      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, iban: null, ibanMissing: true, quarter: q, source, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
     row.considerationCents += amount;
     row.commissionCents += commission;
     row.netCents += amount - commission;
@@ -130,7 +133,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
   const pracIds = [...new Set([...acc.values()].map((r) => r.practitionerId))];
   if (pracIds.length > 0) {
     const [{ data: profs }, { data: names }] = await Promise.all([
-      svc.from("practitioner_profiles").select("id, tin, tin_type").in("id", pracIds),
+      svc.from("practitioner_profiles").select("id, tin, tin_type, iban").in("id", pracIds),
       svc.from("profiles").select("id, display_name").in("id", pracIds),
     ]);
     const tinById = new Map((profs ?? []).map((p) => [p.id as string, p]));
@@ -140,6 +143,8 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
       row.tin = (t?.tin as string | null) ?? null;
       row.tinType = (t?.tin_type as TinType | null) ?? null;
       row.tinMissing = !row.tin;
+      row.iban = (t?.iban as string | null) ?? null;
+      row.ibanMissing = !row.iban;
       row.displayName = nameById.get(row.practitionerId) ?? null;
     }
   }
@@ -148,6 +153,9 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
   const practitionersMissingTin = [
     ...new Map(rows.filter((r) => r.tinMissing).map((r) => [r.practitionerId, { practitionerId: r.practitionerId, displayName: r.displayName }])).values(),
   ];
+  const practitionersMissingIban = [
+    ...new Map(rows.filter((r) => r.ibanMissing).map((r) => [r.practitionerId, { practitionerId: r.practitionerId, displayName: r.displayName }])).values(),
+  ];
 
   return {
     year,
@@ -155,5 +163,6 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     basis: "Two sources, flagged per row. transfer: commission bookings + content sales we processed, bucketed by Stripe Transfer (payout release) date, released only, refunds/reversals excluded, gross consideration + commission separate. listed_price: software_provider completed bookings (payment off-platform, no payments row) at the booking's listed price, commission 0, bucketed by session/completion date. Not the NRA filing format.",
     rows,
     practitionersMissingTin,
+    practitionersMissingIban,
   };
 }
