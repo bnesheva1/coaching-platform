@@ -17,6 +17,19 @@ import type { TinType } from "./tin";
 // a separate figure (DAC7 has both as distinct elements); net is derived for
 // cross-checking. Which maps to which NRA element is the accountant's call.
 
+// A row's consideration comes from ONE source:
+//   "transfer"     — money we actually processed + transferred to the seller
+//                    (commission bookings + content sales), bucketed by the
+//                    Stripe Transfer date, commission withheld.
+//   "listed_price" — a software_provider booking where payment was taken
+//                    off-platform (no payments row): DAC7 still applies (we
+//                    facilitate the booking/contract, not just payment
+//                    processing), so consideration is the booking's LISTED price,
+//                    bucketed by the session/completion date, commission 0.
+// Kept distinct because the filing may treat "known transferred amount" vs
+// "listed/contracted amount" differently.
+export type Dac7ConsiderationSource = "transfer" | "listed_price";
+
 export type Dac7QuarterRow = {
   practitionerId: string;
   displayName: string | null;
@@ -24,10 +37,11 @@ export type Dac7QuarterRow = {
   tinType: TinType | null;
   tinMissing: boolean;
   quarter: 1 | 2 | 3 | 4;
-  considerationCents: number; // gross (client's full charge)
-  commissionCents: number; // platform commission withheld
-  netCents: number; // considerationCents - commissionCents (credited to seller)
-  activities: number; // completed paid sessions + content sales credited this quarter
+  source: Dac7ConsiderationSource;
+  considerationCents: number; // gross (client's full charge, or listed price)
+  commissionCents: number; // platform commission withheld (0 for listed_price)
+  netCents: number; // considerationCents - commissionCents
+  activities: number; // completed sessions + content sales in this quarter
   currency: string;
 };
 
@@ -66,14 +80,14 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     .lt("transferred_at", end);
 
   // Aggregate per (practitioner, quarter).
-  const key = (pracId: string, q: number) => `${pracId}:${q}`;
+  const key = (pracId: string, q: number, source: Dac7ConsiderationSource) => `${pracId}:${q}:${source}`;
   const acc = new Map<string, Dac7QuarterRow>();
-  const bump = (pracId: string, ts: string, amount: number, commission: number, currency: string) => {
+  const bump = (pracId: string, source: Dac7ConsiderationSource, ts: string, amount: number, commission: number, currency: string) => {
     const q = quarterOf(ts);
-    const k = key(pracId, q);
+    const k = key(pracId, q, source);
     const row =
       acc.get(k) ??
-      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, quarter: q, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
+      ({ practitionerId: pracId, displayName: null, tin: null, tinType: null, tinMissing: true, quarter: q, source, considerationCents: 0, commissionCents: 0, netCents: 0, activities: 0, currency } as Dac7QuarterRow);
     row.considerationCents += amount;
     row.commissionCents += commission;
     row.netCents += amount - commission;
@@ -85,10 +99,31 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     // PostgREST embeds a to-one relation as an object (or a 1-element array).
     const b = p.bookings as unknown as { practitioner_id: string } | { practitioner_id: string }[];
     const pracId = Array.isArray(b) ? b[0]?.practitioner_id : b?.practitioner_id;
-    if (pracId && p.transferred_at) bump(pracId, p.transferred_at as string, p.amount_cents as number, p.commission_cents as number, (p.currency as string) ?? "EUR");
+    if (pracId && p.transferred_at) bump(pracId, "transfer", p.transferred_at as string, p.amount_cents as number, p.commission_cents as number, (p.currency as string) ?? "EUR");
   }
   for (const c of contentRows ?? []) {
-    if (c.practitioner_id && c.transferred_at) bump(c.practitioner_id as string, c.transferred_at as string, c.amount_cents as number, (c.commission_cents as number) ?? 0, (c.currency as string) ?? "EUR");
+    if (c.practitioner_id && c.transferred_at) bump(c.practitioner_id as string, "transfer", c.transferred_at as string, c.amount_cents as number, (c.commission_cents as number) ?? 0, (c.currency as string) ?? "EUR");
+  }
+
+  // Listed-price consideration: completed bookings with NO payments row — i.e.
+  // software_provider practitioners, who take payment off-platform but whose
+  // booking we still facilitate (in DAC7 scope). Consideration = the booking's
+  // listed price; commission 0; bucketed by the session/completion date
+  // (end_utc), since there's no transfer event to date it by. Bookings WITH a
+  // payment are handled by the transfer path above, so they're skipped here (no
+  // double count).
+  const { data: completedBookings } = await svc
+    .from("bookings")
+    .select("id, practitioner_id, price_cents, currency, end_utc")
+    .eq("status", "completed")
+    .gte("end_utc", start)
+    .lt("end_utc", end);
+  const bkIds = (completedBookings ?? []).map((b) => b.id as string);
+  const { data: paidRows } = bkIds.length ? await svc.from("payments").select("booking_id").in("booking_id", bkIds) : { data: [] as { booking_id: string }[] };
+  const paidSet = new Set((paidRows ?? []).map((p) => p.booking_id as string));
+  for (const b of completedBookings ?? []) {
+    if (paidSet.has(b.id as string)) continue; // has a payment → counted via transfer path
+    if (b.practitioner_id && b.end_utc) bump(b.practitioner_id as string, "listed_price", b.end_utc as string, (b.price_cents as number) ?? 0, 0, (b.currency as string) ?? "EUR");
   }
 
   // Enrich with TIN (service-role read of the excluded columns) + display name.
@@ -109,7 +144,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
     }
   }
 
-  const rows = [...acc.values()].sort((a, b) => (a.displayName ?? "").localeCompare(b.displayName ?? "") || a.quarter - b.quarter);
+  const rows = [...acc.values()].sort((a, b) => (a.displayName ?? "").localeCompare(b.displayName ?? "") || a.quarter - b.quarter || a.source.localeCompare(b.source));
   const practitionersMissingTin = [
     ...new Map(rows.filter((r) => r.tinMissing).map((r) => [r.practitionerId, { practitionerId: r.practitionerId, displayName: r.displayName }])).values(),
   ];
@@ -117,7 +152,7 @@ export async function buildDac7QuarterlyReport(year: number): Promise<Dac7Report
   return {
     year,
     generatedAt: new Date().toISOString(),
-    basis: "Consideration bucketed by Stripe Transfer (payout release) date; released rows only; gross consideration with commission separate; refunds/reversals excluded; bookings + content sales.",
+    basis: "Two sources, flagged per row. transfer: commission bookings + content sales we processed, bucketed by Stripe Transfer (payout release) date, released only, refunds/reversals excluded, gross consideration + commission separate. listed_price: software_provider completed bookings (payment off-platform, no payments row) at the booking's listed price, commission 0, bucketed by session/completion date. Not the NRA filing format.",
     rows,
     practitionersMissingTin,
   };
