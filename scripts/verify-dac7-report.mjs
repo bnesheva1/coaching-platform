@@ -24,10 +24,18 @@ async function mkUser(role) {
   if (role === "practitioner") for (let i = 0; i < 25; i++) { if ((await db.from("practitioner_profiles").select("id").eq("id", data.user.id).maybeSingle()).data) break; await sleep(200); }
   return data.user.id;
 }
-async function mkPractitioner(tin) {
+async function mkPractitioner(tin, billingModel = "commission") {
   const id = await mkUser("practitioner");
-  await db.from("practitioner_profiles").update({ billing_model: "commission", stripe_connected_account_id: "acct_" + id.slice(0, 8), ...(tin ? { tin, tin_type: "egn" } : {}) }).eq("id", id);
+  await db.from("practitioner_profiles").update({ billing_model: billingModel, stripe_connected_account_id: "acct_" + id.slice(0, 8), ...(tin ? { tin, tin_type: "egn" } : {}) }).eq("id", id);
   return id;
+}
+// A completed booking with NO payments row — a software_provider session
+// (payment off-platform). Consideration = its listed price.
+async function mkListedBooking(pracId, buyerId, serviceId, { price, endUtc }) {
+  const startUtc = new Date(new Date(endUtc).getTime() - 30 * 60000).toISOString();
+  const { data: b, error } = await db.from("bookings").insert({ practitioner_id: pracId, client_id: buyerId, service_id: serviceId, start_utc: startUtc, end_utc: endUtc, status: "completed", delivery_type: "online", service_name: "DAC7 Svc", price_cents: price, currency: "EUR" }).select("id").single();
+  if (error) { console.error("mkListedBooking failed:", error); process.exit(1); }
+  return b.id;
 }
 async function mkService(pracId) {
   const { data } = await db.from("services").insert({ practitioner_id: pracId, name: "DAC7 Svc", duration_minutes: 30, price_cents: 5000, currency: "EUR", is_active: true, delivery_type: "online", delivery_info: "x" }).select("id").single();
@@ -48,11 +56,14 @@ async function mkContentSale(pracId, buyerId, { amount, commission, transferStat
 
 console.log("=== Setup ===");
 const VALID_EGN = "7523169263";
+const VALID_EGN2 = "8032056031";
 const pracWithTin = await mkPractitioner(VALID_EGN);
 const pracNoTin = await mkPractitioner(null);
+const pracSoftware = await mkPractitioner(VALID_EGN2, "software_provider");
 const buyer = await mkUser("client");
 const svc1 = await mkService(pracWithTin);
 const svc2 = await mkService(pracNoTin);
+const svc3 = await mkService(pracSoftware);
 
 // pracWithTin: Q2 booking (released), Q3 content sale (released), a REFUNDED
 // booking (excluded), a PENDING payout (excluded).
@@ -62,6 +73,9 @@ await mkPayment(pracWithTin, buyer, svc1, { amount: 9999, commission: 1000, stat
 await mkPayment(pracWithTin, buyer, svc1, { amount: 7777, commission: 1000, status: "succeeded", transferStatus: "pending", transferredAt: null });
 // pracNoTin: Q1 booking (released).
 await mkPayment(pracNoTin, buyer, svc2, { amount: 5000, commission: 750, status: "succeeded", transferStatus: "released", transferredAt: "2026-02-10T12:00:00.000Z" });
+// pracSoftware: a completed Q2 booking with NO payment (payment off-platform) →
+// listed-price consideration, bucketed by end_utc, commission 0.
+await mkListedBooking(pracSoftware, buyer, svc3, { price: 8000, endUtc: "2026-05-20T10:00:00.000Z" });
 
 console.log("\n=== Report ===");
 const res = await fetch(`${BASE}/api/admin/dac7-report?year=${YEAR}`, { headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` } });
@@ -86,15 +100,25 @@ check("pracNoTin Q1 flagged TIN missing", q1?.tinMissing === true);
 check("pracNoTin appears in practitionersMissingTin", (report.practitionersMissingTin ?? []).some((p) => p.practitionerId === pracNoTin));
 check("pracWithTin NOT in practitionersMissingTin", !(report.practitionersMissingTin ?? []).some((p) => p.practitionerId === pracWithTin));
 
+check("pracWithTin Q2 source = transfer", q2?.source === "transfer");
+const sw = rowsFor(pracSoftware, 2);
+check("pracSoftware Q2 listed-price consideration = 8000 (booking's listed price)", sw?.considerationCents === 8000, sw?.considerationCents);
+check("pracSoftware Q2 commission = 0 (no platform cut off-platform)", sw?.commissionCents === 0);
+check("pracSoftware Q2 net = 8000", sw?.netCents === 8000);
+check("pracSoftware Q2 source = listed_price (distinct from transfer rows)", sw?.source === "listed_price");
+check("pracSoftware Q2 activities = 1", sw?.activities === 1);
+check("pracSoftware in scope with TIN present", sw?.tin === VALID_EGN2 && sw?.tinMissing === false);
+
 // Refund/pending must not have inflated any total for pracWithTin.
 const withTinTotal = (report.rows ?? []).filter((r) => r.practitionerId === pracWithTin).reduce((s, r) => s + r.considerationCents, 0);
 check("pracWithTin total across quarters = 12000 (10000 + 2000 only)", withTinTotal === 12000, withTinTotal);
 
 console.log("\n=== Cleanup ===");
+const allPracs = [pracWithTin, pracNoTin, pracSoftware];
 await db.from("content_purchases").delete().eq("buyer_id", buyer);
-await db.from("payments").delete().in("booking_id", (await db.from("bookings").select("id").in("practitioner_id", [pracWithTin, pracNoTin])).data?.map((b) => b.id) ?? []);
-await db.from("bookings").delete().in("practitioner_id", [pracWithTin, pracNoTin]);
-await db.from("content_items").delete().in("practitioner_id", [pracWithTin, pracNoTin]);
+await db.from("payments").delete().in("booking_id", (await db.from("bookings").select("id").in("practitioner_id", allPracs)).data?.map((b) => b.id) ?? []);
+await db.from("bookings").delete().in("practitioner_id", allPracs);
+await db.from("content_items").delete().in("practitioner_id", allPracs);
 for (const id of created) await db.auth.admin.deleteUser(id).catch(() => {});
 
 console.log(`\n=== RESULT: ${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`} ===`);
