@@ -23,7 +23,7 @@ export default async function ServicesPage() {
 
   const { data: services } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type, image_url, documents_enabled")
+    .select("id, name, description, duration_minutes, price_cents, currency, is_active, delivery_type, image_url, documents_enabled, intake_prompt")
     .eq("practitioner_id", userId)
     .order("created_at", { ascending: true });
 

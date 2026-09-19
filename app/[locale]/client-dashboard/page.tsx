@@ -60,7 +60,7 @@ export default async function ClientUpcomingPage({
     supabase.from("profiles").select("display_name").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled")
+      .select("id, practitioner_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled, intake_prompt, intake_answer")
       .eq("client_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -184,6 +184,8 @@ export default async function ClientUpcomingPage({
     counterpartUsername: practitionerUsernameById.get(b.practitioner_id) ?? null,
     serviceImageUrl: serviceById.get(b.service_id)?.image_url ?? null,
     documentsAllowed: b.documents_enabled,
+    intakePrompt: b.intake_prompt,
+    intakeAnswer: b.intake_answer,
     clientDocument: documentSlots.get(b.id)?.client ?? null,
     practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
   }));

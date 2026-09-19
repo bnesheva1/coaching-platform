@@ -30,6 +30,7 @@ type Service = {
   phone_number: string | null;
   image_url: string | null;
   documents_enabled: boolean;
+  intake_prompt: string | null;
   // Active/upcoming bookings for THIS service — > 0 locks price/
   // duration/deliveryType in the edit form (Option B: structural fields
   // become read-only once someone has already booked under the current
@@ -49,6 +50,9 @@ const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_DELIVERY_INFO_LENGTH = 500;
 const MAX_PHONE_LENGTH = 30;
+// Mirrors MAX_INTAKE_LENGTH in lib/text/intakeText.ts. Client stop-typing bound;
+// the server sanitizer re-caps regardless.
+const MAX_INTAKE_PROMPT = 300;
 // Mirrors MIN_DURATION_MINUTES/MAX_DURATION_MINUTES in
 // services-actions.ts — the fixed dropdown offers exactly these 7
 // values, no free entry.
@@ -338,6 +342,31 @@ function DocumentsToggle({ defaultChecked }: { defaultChecked: boolean }) {
   );
 }
 
+// Optional per-service intake question — a short prompt the client answers when
+// (or after) booking, e.g. an astrologer asking for date/time/place of birth.
+// Always available (no brand flag); empty = the service asks nothing. Not a
+// locked field: it only affects FUTURE bookings, each of which snapshots it.
+function IntakePromptField({ defaultValue }: { defaultValue: string }) {
+  const t = useTranslations("Intake");
+  return (
+    <label>
+      {t("promptLabel")}
+      <textarea
+        name="intakePrompt"
+        rows={2}
+        defaultValue={defaultValue}
+        maxLength={MAX_INTAKE_PROMPT}
+        placeholder={t("promptPlaceholder")}
+        className="form-field"
+        style={{ width: "100%" }}
+      />
+      <span style={{ display: "block", font: "var(--text-caption)", color: "var(--text-tertiary)", marginTop: "var(--space-1)" }}>
+        {t("promptHint")}
+      </span>
+    </label>
+  );
+}
+
 function DurationField({ defaultValue, locked }: { defaultValue: number; locked: boolean }) {
   const t = useTranslations("Services");
   const [duration, setDuration] = useState(defaultValue);
@@ -619,6 +648,7 @@ function ServiceRow({ service, enabledTypes, documentsFeatureEnabled, earnings }
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values ? state.values.documentsEnabled === "on" : service.documents_enabled} />
             )}
+            <IntakePromptField defaultValue={state?.values?.intakePrompt ?? (service.intake_prompt ?? "")} />
             {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>
@@ -830,6 +860,7 @@ export function ServicesSection({ services, enabledTypes, documentsFeatureEnable
             {documentsFeatureEnabled && (
               <DocumentsToggle defaultChecked={state?.values?.documentsEnabled === "on"} />
             )}
+            <IntakePromptField defaultValue={state?.values?.intakePrompt ?? ""} />
             {state?.error && <p style={{ color: "var(--color-danger)" }}>{state.error}</p>}
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
               <Button type="submit" disabled={pending}>

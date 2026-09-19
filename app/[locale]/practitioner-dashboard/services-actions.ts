@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUpcomingBookingCount } from "@/lib/services/bookingLock";
 import { isEnabled } from "@/lib/flags";
 import { isDeliveryTypeEnabled } from "@/lib/delivery";
+import { sanitizeIntakeText } from "@/lib/text/intakeText";
 
 // values echoes back whatever text fields were actually submitted, on an
 // error return only — React 19 resets a <form action={...}> after ANY
@@ -108,6 +109,7 @@ type ParsedServiceForm =
       deliveryInfo: string | null;
       phoneNumber: string | null;
       documentsEnabled: boolean;
+      intakePrompt: string | null;
     }
   | { ok: false; error: string; values: Record<string, string> };
 
@@ -146,6 +148,10 @@ async function parseServiceForm(
   // delivery below): if the brand has file exchange off, a stale form or
   // forged submission can't turn it on for a service.
   const documentsEnabled = formData.get("documentsEnabled") === "on" && (await isEnabled("sessionDocuments"));
+  // Optional intake question. Sanitised (control chars stripped, capped at 300)
+  // here; the DB CHECK is the backstop. Empty after sanitising = the service
+  // asks nothing (stored NULL). Not feature-flagged — always available.
+  const intakePrompt = sanitizeIntakeText(formData.get("intakePrompt") as string | null);
 
   // Echoed back on every error return below so a rejected submission can
   // redisplay what was actually typed instead of the pre-edit/blank
@@ -164,6 +170,7 @@ async function parseServiceForm(
     deliveryInfo: deliveryInfo ?? "",
     phoneNumber: phoneNumber ?? "",
     documentsEnabled: documentsEnabled ? "on" : "",
+    intakePrompt,
   };
 
   if (!name) {
@@ -255,6 +262,7 @@ async function parseServiceForm(
     deliveryInfo: rawDeliveryType === "in_person" ? deliveryInfo : null,
     phoneNumber: rawDeliveryType === "phone" ? phoneNumber : null,
     documentsEnabled,
+    intakePrompt: intakePrompt || null,
   };
 }
 
@@ -294,6 +302,7 @@ export async function createService(
       delivery_info: parsed.deliveryInfo,
       phone_number: parsed.phoneNumber,
       documents_enabled: parsed.documentsEnabled,
+      intake_prompt: parsed.intakePrompt,
     })
     .select("id")
     .single();
@@ -383,6 +392,7 @@ export async function updateService(
     phone_number: string | null;
     image_url?: string | null;
     documents_enabled: boolean;
+    intake_prompt: string | null;
   } = {
     name: parsed.name,
     description: parsed.description,
@@ -393,6 +403,8 @@ export async function updateService(
     // Not a locked field — editable regardless of upcoming bookings (it
     // only affects FUTURE bookings, since each snapshots it at creation).
     documents_enabled: parsed.documentsEnabled,
+    // Same: editable anytime; only future bookings snapshot the new prompt.
+    intake_prompt: parsed.intakePrompt,
   };
 
   // delivery_info isn't collected in the form at all for online (see

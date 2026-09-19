@@ -1690,5 +1690,22 @@
     "invalidType": "Only PDF, DOC, DOCX and TXT files are allowed.",
     "uploadFailed": "Upload failed. Please try again.",
     "saveFailed": "Something went wrong. Please try again."
+  },
+  "Intake": {
+    "promptLabel": "Question for the client (optional)",
+    "promptPlaceholder": "e.g. date, time and place of birth",
+    "promptHint": "If you fill this in, the client sees the question and can answer it when booking or later. The answer is never required.",
+    "sectionHeading": "Question from the specialist",
+    "answerLabel": "Your answer",
+    "answerPlaceholder": "Write your answer here",
+    "noAnswerYet": "No answer yet.",
+    "saveAnswer": "Save answer",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "notLoggedIn": "You need to be logged in.",
+    "notAllowed": "You're not allowed to do that.",
+    "rateLimited": "Too many attempts. Please wait a moment and try again.",
+    "expired": "The answer window for this session has passed.",
+    "saveFailed": "Something went wrong. Please try again."
   }
 }

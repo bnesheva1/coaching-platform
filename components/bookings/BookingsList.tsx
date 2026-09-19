@@ -17,6 +17,7 @@ import { splitTextAndUrls } from "@/lib/linkify";
 import { sessionTimeState } from "@/lib/video/sessionWindow";
 import { JoinSessionLink } from "./JoinSessionLink";
 import { SessionDocuments, type SessionDocumentSlot } from "./SessionDocuments";
+import { BookingIntake } from "./BookingIntake";
 import rowStyles from "./ResponsiveImageRow.module.css";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
 
@@ -146,6 +147,12 @@ export type SessionBooking = {
   // slot. Only read when the sessionDocuments flag is on.
   clientDocument?: SessionDocumentSlot;
   practitionerDocument?: SessionDocumentSlot;
+  // The service's intake question, snapshotted onto the booking, and the
+  // client's answer. Present (non-null prompt) = this booking's service asked
+  // something. No feature flag — the intake block shows whenever a prompt
+  // exists. The answer is optional and editable within the active window.
+  intakePrompt?: string | null;
+  intakeAnswer?: string | null;
   // Only ever populated on the client path (a client's counterpart is a
   // practitioner, who has a public-facing photo). Left undefined on the
   // practitioner path — a client's own avatar isn't fetched there today,
@@ -582,6 +589,18 @@ export function BookingDetailsDisclosure({
           clientDocument={booking.clientDocument ?? null}
           practitionerDocument={booking.practitionerDocument ?? null}
           timezone={timezone}
+        />
+      )}
+
+      {/* Intake question — the service's prompt (snapshot) + the client's
+          optional answer. Shown whenever this booking carries a prompt; no
+          brand flag. The client edits, the practitioner sees the answer. */}
+      {booking.intakePrompt && (
+        <BookingIntake
+          bookingId={booking.id}
+          perspective={perspective}
+          prompt={booking.intakePrompt}
+          answer={booking.intakeAnswer ?? null}
         />
       )}
     </details>

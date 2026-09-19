@@ -35,7 +35,7 @@ export default async function BookingsPage({
     supabase.from("practitioner_profiles").select("timezone").eq("id", userId).single(),
     supabase
       .from("bookings")
-      .select("id, client_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled")
+      .select("id, client_id, service_id, start_utc, end_utc, status, service_name, delivery_type, price_cents, currency, created_at, documents_enabled, intake_prompt, intake_answer")
       .eq("practitioner_id", userId)
       .order("start_utc", { ascending: true }),
   ]);
@@ -102,6 +102,8 @@ export default async function BookingsPage({
     emergencyContactRevoked: sessionStateByBookingId.get(b.id)?.emergency_contact_revoked ?? false,
     videoOpensAt: sessionStateByBookingId.get(b.id)?.opens_at ?? null,
     documentsAllowed: b.documents_enabled,
+    intakePrompt: b.intake_prompt,
+    intakeAnswer: b.intake_answer,
     clientDocument: documentSlots.get(b.id)?.client ?? null,
     practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
   }));
