@@ -1,13 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SessionDocumentSlot } from "@/components/bookings/SessionDocuments";
+import type { SessionDocumentFile } from "@/components/bookings/SessionDocuments";
 
-export type BookingDocumentSlots = { client: SessionDocumentSlot; practitioner: SessionDocumentSlot };
+export type BookingDocumentSlots = { client: SessionDocumentFile[]; practitioner: SessionDocumentFile[] };
 
-// Loads the current document slot metadata for a set of bookings, keyed
-// by booking id. RLS restricts the rows to bookings the caller is a party
-// to, so passing the caller's user client is sufficient — no id filtering
-// beyond the `in (…)` narrowing. storage_path is grant-excluded and never
-// selected here; downloads mint a signed URL on demand instead.
+// Loads the current document metadata for a set of bookings, keyed by booking
+// id — up to 3 files per side (raised from one). RLS restricts the rows to
+// bookings the caller is a party to, so passing the caller's user client is
+// sufficient. storage_path is grant-excluded and never selected here; downloads
+// mint a signed URL per file on demand instead.
 export async function getSessionDocumentSlots(
   supabase: SupabaseClient,
   bookingIds: string[],
@@ -17,8 +17,9 @@ export async function getSessionDocumentSlots(
 
   const { data, error } = await supabase
     .from("session_documents")
-    .select("booking_id, side, file_name, byte_size, uploaded_at")
-    .in("booking_id", bookingIds);
+    .select("id, booking_id, side, file_name, byte_size, uploaded_at")
+    .in("booking_id", bookingIds)
+    .order("uploaded_at", { ascending: true });
 
   if (error) {
     // Resilient to the migration not being applied yet: fall back to an
@@ -28,14 +29,15 @@ export async function getSessionDocumentSlots(
   }
 
   for (const row of data ?? []) {
-    const entry = map.get(row.booking_id) ?? { client: null, practitioner: null };
-    const slot: SessionDocumentSlot = {
+    const entry = map.get(row.booking_id) ?? { client: [], practitioner: [] };
+    const file: SessionDocumentFile = {
+      id: row.id,
       fileName: row.file_name,
       byteSize: row.byte_size,
       uploadedAt: row.uploaded_at,
     };
-    if (row.side === "client") entry.client = slot;
-    else entry.practitioner = slot;
+    if (row.side === "client") entry.client.push(file);
+    else entry.practitioner.push(file);
     map.set(row.booking_id, entry);
   }
   return map;

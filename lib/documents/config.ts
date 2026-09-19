@@ -30,6 +30,11 @@ export const SESSION_DOCUMENT_RETENTION_DAYS = positiveIntEnv(process.env.SESSIO
 // How many days before deletion both parties are warned.
 export const SESSION_DOCUMENT_RETENTION_WARN_DAYS = positiveIntEnv(process.env.SESSION_DOCUMENT_RETENTION_WARN_DAYS, 3);
 
+// Files each side may attach to a booking. Default 3 (raised from the original
+// one-per-side). Enforced app-side in the upload action AND by a DB trigger
+// (migration 20260919130000) so a concurrent double-submit can't exceed it.
+export const SESSION_DOCUMENT_MAX_FILES_PER_SIDE = positiveIntEnv(process.env.SESSION_DOCUMENT_MAX_FILES_PER_SIDE, 3);
+
 // The fixed, non-configurable format allowlist: allowed MIME type ->
 // canonical file extension. Both the server action and the storage
 // bucket enforce this set; the extension is what the stored object's
@@ -39,6 +44,11 @@ export const ALLOWED_DOCUMENT_TYPES = {
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
   "text/plain": "txt",
+  // Images — the coffee-cup-reading case (a client uploading several photos).
+  // JPG/PNG both have unambiguous magic numbers, so validate.ts accepts them
+  // via the same sniff-and-allowlist path as PDF/DOCX.
+  "image/jpeg": "jpg",
+  "image/png": "png",
 } as const;
 
 export type AllowedDocumentMime = keyof typeof ALLOWED_DOCUMENT_TYPES;
@@ -46,4 +56,4 @@ export type AllowedDocumentMime = keyof typeof ALLOWED_DOCUMENT_TYPES;
 // The <input type="file"> accept attribute — mirrors the allowlist so the
 // native picker nudges toward valid files (the server-side magic-byte
 // check is what actually enforces it).
-export const DOCUMENT_ACCEPT_ATTR = ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+export const DOCUMENT_ACCEPT_ATTR = ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png";

@@ -121,7 +121,7 @@ const serviceDocsEnabled = async (id) => (await db.from("services").select("docu
     await page.goto(`${BASE}/bg/client-dashboard`, { waitUntil: "networkidle" });
     const clientOn = detailsFor("Consult-ON");
     await clientOn.locator("summary").click();
-    check("client sees the practitioner's document (their slot)", await clientOn.getByText("Документ от другата страна").first().isVisible().catch(() => false));
+    check("client sees the practitioner's document (their slot)", await clientOn.getByText("Файлове от другата страна").first().isVisible().catch(() => false));
     check("client sees the uploaded filename", await clientOn.getByText(uploadedName).first().isVisible().catch(() => false));
 
     // Download opens a short-lived signed URL via window.open. Stub it to

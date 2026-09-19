@@ -16,7 +16,7 @@ import { isPastCancellationCutoff, ACTIVE_STATUSES, CANCELLED_STATUSES } from "@
 import { splitTextAndUrls } from "@/lib/linkify";
 import { sessionTimeState } from "@/lib/video/sessionWindow";
 import { JoinSessionLink } from "./JoinSessionLink";
-import { SessionDocuments, type SessionDocumentSlot } from "./SessionDocuments";
+import { SessionDocuments, type SessionDocumentFile } from "./SessionDocuments";
 import { BookingIntake } from "./BookingIntake";
 import rowStyles from "./ResponsiveImageRow.module.css";
 import homeStyles from "@/components/dashboard/DashboardHome.module.css";
@@ -141,12 +141,12 @@ export type SessionBooking = {
   // brand flag AND this are both true, so toggling the service later never
   // changes an existing booking.
   documentsAllowed?: boolean;
-  // Session document slots — one per side. Both perspectives populate
-  // both fields (each page maps from session_documents); the disclosure
-  // decides which is "yours" from the perspective. null = empty/purged
-  // slot. Only read when the sessionDocuments flag is on.
-  clientDocument?: SessionDocumentSlot;
-  practitionerDocument?: SessionDocumentSlot;
+  // Session document files — up to 3 per side. Both perspectives populate
+  // both lists (each page maps from session_documents); the disclosure
+  // decides which is "yours" from the perspective. Empty array = no files.
+  // Only read when the sessionDocuments flag is on.
+  clientDocuments?: SessionDocumentFile[];
+  practitionerDocuments?: SessionDocumentFile[];
   // The service's intake question, snapshotted onto the booking, and the
   // client's answer. Present (non-null prompt) = this booking's service asked
   // something. No feature flag — the intake block shows whenever a prompt
@@ -586,8 +586,8 @@ export function BookingDetailsDisclosure({
         <SessionDocuments
           bookingId={booking.id}
           perspective={perspective}
-          clientDocument={booking.clientDocument ?? null}
-          practitionerDocument={booking.practitionerDocument ?? null}
+          clientDocuments={booking.clientDocuments ?? []}
+          practitionerDocuments={booking.practitionerDocuments ?? []}
           timezone={timezone}
         />
       )}

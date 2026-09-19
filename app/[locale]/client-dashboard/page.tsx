@@ -186,8 +186,8 @@ export default async function ClientUpcomingPage({
     documentsAllowed: b.documents_enabled,
     intakePrompt: b.intake_prompt,
     intakeAnswer: b.intake_answer,
-    clientDocument: documentSlots.get(b.id)?.client ?? null,
-    practitionerDocument: documentSlots.get(b.id)?.practitioner ?? null,
+    clientDocuments: documentSlots.get(b.id)?.client ?? [],
+    practitionerDocuments: documentSlots.get(b.id)?.practitioner ?? [],
   }));
 
   const { upcoming, past } = splitUpcomingPast(mergedBookings);

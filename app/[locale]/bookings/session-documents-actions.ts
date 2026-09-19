@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isEnabled } from "@/lib/flags";
 import { checkRateLimit, documentUploadLimiter } from "@/lib/rate-limit";
 import { validateDocumentBytes } from "@/lib/documents/validate";
-import { SESSION_DOCUMENT_MAX_BYTES, SESSION_DOCUMENT_RETENTION_DAYS } from "@/lib/documents/config";
+import { SESSION_DOCUMENT_MAX_BYTES, SESSION_DOCUMENT_MAX_FILES_PER_SIDE, SESSION_DOCUMENT_RETENTION_DAYS } from "@/lib/documents/config";
 
 const BUCKET = "session-documents";
 const SIGNED_URL_TTL_SECONDS = 60;
@@ -32,10 +32,10 @@ function revalidateBookingViews() {
 
 // Loads the booking (RLS already restricts this to rows where the caller
 // is a party) and confirms the caller owns THIS side. Also enforces the
-// upload window: a document may be added/replaced any time up to the
-// retention deletion date (end_utc + RETENTION_DAYS), regardless of the
-// booking's status — a contract before, a summary after. Past that date
-// the slot is purged and locked.
+// upload window: a file may be added any time up to the retention deletion
+// date (end_utc + RETENTION_DAYS), regardless of the booking's status — a
+// contract before, a summary after. Past that date the slot is purged and
+// locked.
 async function authorizeSide(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -63,15 +63,14 @@ async function authorizeSide(
   return { ok: true, expired: Date.now() > deletionDate.getTime() };
 }
 
-// Fetches the current stored object path for a slot via the narrow
-// definer RPC — the only route to storage_path, which is grant-excluded
-// from every direct query. Returns null for an empty/purged slot.
-async function currentPath(
+// The path for a single file via the narrow definer RPC — the only route to
+// storage_path, grant-excluded from every direct query. Returns null when the
+// document doesn't exist or the caller isn't a party.
+async function pathById(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  bookingId: string,
-  side: Side,
+  documentId: string,
 ): Promise<string | null> {
-  const { data } = await supabase.rpc("get_session_document_path", { p_booking_id: bookingId, p_side: side });
+  const { data } = await supabase.rpc("get_session_document_path", { p_document_id: documentId });
   return (data as string | null) ?? null;
 }
 
@@ -99,6 +98,17 @@ export async function uploadSessionDocument(
   if (!auth.ok) return { error: t("notAllowed") };
   if (auth.expired) return { error: t("expired") };
 
+  // Per-side cap. App-side check for a clean message; the DB trigger
+  // (migration 20260919130000) is the authoritative backstop against a race.
+  const { count } = await supabase
+    .from("session_documents")
+    .select("id", { count: "exact", head: true })
+    .eq("booking_id", bookingId)
+    .eq("side", side);
+  if ((count ?? 0) >= SESSION_DOCUMENT_MAX_FILES_PER_SIDE) {
+    return { error: t("limitReached", { max: SESSION_DOCUMENT_MAX_FILES_PER_SIDE }) };
+  }
+
   const entry = formData.get("file");
   const file = entry instanceof File && entry.size > 0 ? entry : null;
   if (!file) return { error: t("fileRequired") };
@@ -112,14 +122,9 @@ export async function uploadSessionDocument(
   const validation = await validateDocumentBytes(bytes, file.type);
   if (!validation.ok) return { error: t("invalidType") };
 
-  // A replacement is an outright swap: keep the old path so we can delete
-  // it after the new one is safely stored (no versioning — one slot, one
-  // document).
-  const oldPath = await currentPath(supabase, bookingId, side);
-
-  // Unguessable, non-enumerable, and self-describing enough for the
-  // storage RLS insert check ({booking_id}/{side}/...). A fresh token per
-  // upload means the signed URL changes on replace with no cache-busting.
+  // Unguessable, non-enumerable, self-describing enough for the storage RLS
+  // insert check ({booking_id}/{side}/...). One object per row; adding a file
+  // is always a fresh INSERT now (no replace/swap — remove + add instead).
   const newPath = `${bookingId}/${side}/${randomUUID()}.${validation.ext}`;
 
   const { error: uploadError } = await supabase.storage
@@ -130,65 +135,35 @@ export async function uploadSessionDocument(
     return { error: t("uploadFailed") };
   }
 
-  // Insert-or-update explicitly rather than upsert: `INSERT ... ON CONFLICT
-  // DO UPDATE` requires wider table SELECT privilege than our column grant
-  // allows (which deliberately excludes storage_path), so an upsert is
-  // rejected outright. A row exists iff there's a current path (both the
-  // user-remove and the retention purge DELETE the row, never leave a
-  // null-path row), so oldPath is a reliable "is this a replacement?" flag.
-  // No .select() on either — return=minimal, so nothing tries to read
-  // storage_path back.
-  const nowIso = new Date().toISOString();
-  const { error: rowError } = oldPath
-    ? await supabase
-        .from("session_documents")
-        .update({
-          uploader_id: user.id,
-          file_name: file.name.slice(0, 255),
-          byte_size: file.size,
-          mime_type: validation.mime,
-          storage_path: newPath,
-          uploaded_at: nowIso,
-          // A new file restarts the retention warning cycle.
-          retention_warned_at: null,
-        })
-        .eq("booking_id", bookingId)
-        .eq("side", side)
-    : await supabase.from("session_documents").insert({
-        booking_id: bookingId,
-        side,
-        uploader_id: user.id,
-        file_name: file.name.slice(0, 255),
-        byte_size: file.size,
-        mime_type: validation.mime,
-        storage_path: newPath,
-        uploaded_at: nowIso,
-      });
+  // No .select() — return=minimal, so nothing tries to read storage_path back
+  // through the grant that excludes it. The DB trigger may reject this insert
+  // if a racing upload already filled the last slot; roll back the object then.
+  const { error: rowError } = await supabase.from("session_documents").insert({
+    booking_id: bookingId,
+    side,
+    uploader_id: user.id,
+    file_name: file.name.slice(0, 255),
+    byte_size: file.size,
+    mime_type: validation.mime,
+    storage_path: newPath,
+    uploaded_at: new Date().toISOString(),
+  });
 
   if (rowError) {
-    // Metadata write failed — roll back the just-uploaded object so we
-    // don't leak an orphan the record doesn't know about.
     await supabase.storage.from(BUCKET).remove([newPath]).catch(() => {});
-    console.error("uploadSessionDocument: metadata upsert failed", { bookingId, side, error: rowError });
-    return { error: t("saveFailed") };
+    // A trigger-rejected insert (the per-side cap raced) reads as the limit
+    // message; anything else is a generic save failure.
+    const limitHit = rowError.message?.includes("session_document_limit_reached");
+    console.error("uploadSessionDocument: metadata insert failed", { bookingId, side, error: rowError });
+    return { error: limitHit ? t("limitReached", { max: SESSION_DOCUMENT_MAX_FILES_PER_SIDE }) : t("saveFailed") };
   }
 
-  // New object stored and recorded — now best-effort delete the replaced
-  // one. An orphaned old object is a far smaller problem than failing a
-  // succeeded upload, and the retention sweep is a backstop.
-  if (oldPath && oldPath !== newPath) {
-    await supabase.storage.from(BUCKET).remove([oldPath]).catch((err) => {
-      console.error("uploadSessionDocument: failed to remove replaced object", { oldPath, err });
-    });
-  }
-
-  // Append to the audit log (survives the file). Best-effort: the file is
-  // already stored, so a log hiccup must not fail the user's upload.
+  // Append to the audit log (survives the file). Best-effort.
   const { error: eventError } = await supabase.from("session_document_events").insert({
     booking_id: bookingId,
     side,
     actor_id: user.id,
-    action: oldPath ? "replaced" : "uploaded",
+    action: "uploaded",
     file_name: file.name.slice(0, 255),
     byte_size: file.size,
     mime_type: validation.mime,
@@ -212,24 +187,29 @@ export async function removeSessionDocument(
   } = await supabase.auth.getUser();
   if (!user) return { error: t("notLoggedIn") };
 
-  const bookingId = String(formData.get("bookingId") ?? "");
-  const side = parseSide(formData.get("side"));
-  if (!bookingId || !side) return { error: t("notAllowed") };
+  const documentId = String(formData.get("documentId") ?? "");
+  if (!documentId) return { error: t("notAllowed") };
 
-  const auth = await authorizeSide(supabase, user.id, bookingId, side);
+  // The row's side/booking (RLS lets a party read it) — needed to confirm the
+  // caller owns THIS side and to log the event.
+  const { data: doc } = await supabase
+    .from("session_documents")
+    .select("id, booking_id, side")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) return { error: t("notAllowed") };
+
+  const side = doc.side as Side;
+  const auth = await authorizeSide(supabase, user.id, doc.booking_id, side);
   if (!auth.ok) return { error: t("notAllowed") };
 
-  const path = await currentPath(supabase, bookingId, side);
+  const path = await pathById(supabase, documentId);
 
-  // Delete the live slot first (RLS restricts this to the caller's own
-  // side); the row going is what empties the slot for the UI.
-  const { error: deleteError } = await supabase
-    .from("session_documents")
-    .delete()
-    .eq("booking_id", bookingId)
-    .eq("side", side);
+  // RLS restricts this DELETE to the caller's own side; authorizeSide has
+  // already confirmed that, so this removes exactly the one row.
+  const { error: deleteError } = await supabase.from("session_documents").delete().eq("id", documentId);
   if (deleteError) {
-    console.error("removeSessionDocument: row delete failed", { bookingId, side, error: deleteError });
+    console.error("removeSessionDocument: row delete failed", { documentId, error: deleteError });
     return { error: t("saveFailed") };
   }
 
@@ -240,25 +220,22 @@ export async function removeSessionDocument(
   }
 
   const { error: eventError } = await supabase.from("session_document_events").insert({
-    booking_id: bookingId,
+    booking_id: doc.booking_id,
     side,
     actor_id: user.id,
     action: "deleted_by_user",
   });
-  if (eventError) console.error("removeSessionDocument: event log insert failed", { bookingId, side, error: eventError });
+  if (eventError) console.error("removeSessionDocument: event log insert failed", { documentId, error: eventError });
 
   revalidateBookingViews();
   return { success: true };
 }
 
-// Called on demand from the client (a download click), not a form
-// action: mints a short-lived signed URL and returns ONLY the URL — the
-// raw storage path never reaches the browser. Either party may download
-// either side's document.
-export async function getSessionDocumentUrl(
-  bookingId: string,
-  side: Side,
-): Promise<{ url: string | null; error?: string }> {
+// Called on demand from the client (a download click), not a form action:
+// mints a short-lived signed URL for one file and returns ONLY the URL — the
+// raw storage path never reaches the browser. Either party may download either
+// side's files.
+export async function getSessionDocumentUrl(documentId: string): Promise<{ url: string | null; error?: string }> {
   if (!(await isEnabled("sessionDocuments"))) return { url: null, error: "unavailable" };
 
   const supabase = await createClient();
@@ -267,12 +244,12 @@ export async function getSessionDocumentUrl(
   } = await supabase.auth.getUser();
   if (!user) return { url: null, error: "unauthenticated" };
 
-  const path = await currentPath(supabase, bookingId, side);
+  const path = await pathById(supabase, documentId);
   if (!path) return { url: null };
 
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
   if (error || !data) {
-    console.error("getSessionDocumentUrl: createSignedUrl failed", { bookingId, side, error });
+    console.error("getSessionDocumentUrl: createSignedUrl failed", { documentId, error });
     return { url: null, error: "failed" };
   }
   return { url: data.signedUrl };

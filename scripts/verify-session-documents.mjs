@@ -28,6 +28,8 @@ const ALLOWED = {
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
   "text/plain": "txt",
+  "image/jpeg": "jpg",
+  "image/png": "png",
 };
 function isUtf8Text(bytes) {
   if (bytes.includes(0)) return false;
@@ -195,10 +197,11 @@ async function main() {
   const leaked = (grabPath.data ?? []).some((r) => r.storage_path);
   check("storage_path is NOT readable via a plain select (grant-excluded)", grabPath.error != null || !leaked, grabPath.error?.message ?? JSON.stringify(grabPath.data));
 
-  console.log("\n=== get_session_document_path RPC ===");
-  const pathAsParty = await prac.client.rpc("get_session_document_path", { p_booking_id: activeBooking, p_side: "client" });
+  console.log("\n=== get_session_document_path RPC (per document id) ===");
+  const clientDocId = insOwn.data?.id;
+  const pathAsParty = await prac.client.rpc("get_session_document_path", { p_document_id: clientDocId });
   check("a party gets the path via the definer RPC", pathAsParty.data === clientPath, pathAsParty.data);
-  const pathAsOutsider = await outsider.client.rpc("get_session_document_path", { p_booking_id: activeBooking, p_side: "client" });
+  const pathAsOutsider = await outsider.client.rpc("get_session_document_path", { p_document_id: clientDocId });
   check("an outsider gets NULL from the RPC", !pathAsOutsider.data, JSON.stringify(pathAsOutsider.data));
 
   console.log("\n=== Event log ===");
